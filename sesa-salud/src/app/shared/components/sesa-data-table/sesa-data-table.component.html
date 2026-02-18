@@ -1,0 +1,29 @@
+<div class="sesa-table-wrapper">
+  <table class="sesa-table">
+    <thead>
+      <tr>
+        <th *ngFor="let col of columns" [style.width]="col.width || 'auto'">
+          {{ col.label }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of data">
+        <td *ngFor="let col of columns">
+          <ng-container *ngIf="row[col.key] as value; else emptyCell">
+            {{ value }}
+          </ng-container>
+          <ng-template #emptyCell>
+            <span class="sesa-table-cell-empty">—</span>
+          </ng-template>
+        </td>
+      </tr>
+      <tr *ngIf="!data || data.length === 0">
+        <td class="sesa-table-empty" [attr.colspan]="columns.length || 1">
+          {{ emptyMessage }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+

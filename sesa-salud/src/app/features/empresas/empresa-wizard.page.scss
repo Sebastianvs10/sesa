@@ -1,0 +1,1021 @@
+/* ========================================
+   Empresa Wizard - Diseño Premium
+   Autor: Ing. J Sebastian Vargas S
+   ======================================== */
+
+// Variables y mixins
+$color-primary: var(--sesa-secondary);
+$color-accent: var(--sesa-accent);
+$color-error: var(--sesa-error);
+$color-text-primary: var(--sesa-text-primary);
+$color-text-secondary: var(--sesa-text-secondary);
+$color-border: var(--sesa-border);
+$color-bg: var(--sesa-bg);
+$color-surface: var(--sesa-surface);
+
+$radius-sm: 6px;
+$radius-md: 12px;
+$radius-lg: 16px;
+
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+
+/* ========== Contenedor de página centrado ========== */
+
+.sesa-empresa-wizard-page {
+  max-width: 1200px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+}
+
+/* ========== Header y Navegación ========== */
+
+.sesa-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba($color-border, 0.5);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  /* Variante premium */
+  &--premium {
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, rgba($color-primary, 0.04) 0%, rgba($color-accent, 0.02) 100%);
+    border-radius: $radius-lg;
+    border: 1px solid rgba($color-primary, 0.12);
+    border-bottom: 2px solid rgba($color-primary, 0.2);
+  }
+}
+
+/* Espaciador para centrar el título (mismo ancho que el botón Volver) */
+.sesa-page-header-spacer {
+  width: 120px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.sesa-btn-back {
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    order: -1;
+  }
+}
+
+.sesa-page-header-content {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.sesa-page-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  svg { width: 1.5rem; height: 1.5rem; }
+  font-size: 1.75rem;
+  background: linear-gradient(135deg, $color-primary, $color-accent);
+  border-radius: $radius-md;
+  box-shadow: 0 4px 16px rgba($color-primary, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05) rotate(-2deg);
+    box-shadow: 0 6px 24px rgba($color-primary, 0.4);
+  }
+}
+
+.sesa-btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.sesa-btn--premium:hover .sesa-btn-arrow {
+  transform: translateX(-3px);
+}
+
+.sesa-page-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $color-text-primary;
+  letter-spacing: -0.5px;
+}
+
+.sesa-page-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: $color-text-secondary;
+  font-weight: 400;
+}
+
+/* ========== Botones Mejorados ========== */
+
+.sesa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: $radius-md;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.3px;
+  box-shadow: $shadow-sm;
+  position: relative;
+  overflow: hidden;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  &:hover::before:not(:disabled) {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+.sesa-btn-primary {
+  background: linear-gradient(135deg, $color-primary, $color-accent);
+  color: #fff;
+  box-shadow: $shadow-md;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+.sesa-btn-secondary {
+  background: rgba($color-text-primary, 0.05);
+  color: $color-text-primary;
+  border: 1.5px solid $color-border;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-text-primary, 0.1);
+    border-color: $color-text-primary;
+    transform: translateX(-2px);
+  }
+}
+
+.sesa-btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ========== Progress Bar ========== */
+
+.sesa-progress-wrapper {
+  margin-bottom: 2rem;
+}
+
+.sesa-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba($color-border, 0.3);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: inset $shadow-sm;
+}
+
+.sesa-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary, $color-accent);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba($color-primary, 0.4);
+}
+
+.sesa-progress-text {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: $color-text-secondary;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ========== Pestañas (Tabs) ========== */
+
+.sesa-wizard-container {
+  max-width: 1200px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sesa-wizard-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, $color-border, transparent);
+  }
+}
+
+.sesa-wizard-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: $radius-md;
+  border: 1.5px solid transparent;
+  background: rgba($color-text-primary, 0.03);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:not(:disabled):hover {
+    background: rgba($color-text-primary, 0.08);
+    border-color: $color-border;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--active {
+    background: linear-gradient(135deg, rgba($color-primary, 0.1), rgba($color-accent, 0.1));
+    border-color: $color-primary;
+    color: $color-primary;
+    box-shadow: 0 4px 12px rgba($color-primary, 0.15);
+
+    .sesa-wizard-tab-icon {
+      background: linear-gradient(135deg, $color-primary, $color-accent);
+      color: white;
+    }
+  }
+
+  &--completed {
+    .sesa-wizard-tab-icon {
+      background: var(--sesa-success, #10b981);
+      color: white;
+    }
+  }
+}
+
+.sesa-wizard-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba($color-text-primary, 0.1);
+  color: $color-text-secondary;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.sesa-wizard-tab-label {
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+/* ========== Tarjeta Principal ========== */
+
+.sesa-wizard-card {
+  margin-top: 0;
+  background: $color-surface;
+  border: 1px solid rgba($color-border, 0.5);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  padding: 2rem;
+  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+}
+
+/* Animación de cambio de paso */
+.sesa-wizard-form--premium,
+.sesa-modules-section {
+  animation: stepFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes stepFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ========== Mensajes de Error Mejorados ========== */
+
+.sesa-login-error {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, rgba($color-error, 0.05), rgba($color-error, 0.1));
+  border: 1px solid rgba($color-error, 0.2);
+  animation: shake 0.3s cubic-bezier(0.36, 0, 0.66, -0.56);
+
+  @keyframes shake {
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    25% {
+      transform: translateX(-8px);
+    }
+
+    75% {
+      transform: translateX(8px);
+    }
+  }
+}
+
+.sesa-error-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.sesa-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sesa-error-title {
+  margin: 0;
+  font-weight: 700;
+  color: $color-error;
+  font-size: 0.95rem;
+}
+
+.sesa-error-message {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $color-error;
+  opacity: 0.9;
+}
+
+/* ========== Formularios ========== */
+
+.sesa-wizard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+
+  &--premium {
+    gap: 1.35rem;
+  }
+}
+
+/* Selects premium con estilo consistente */
+.sesa-select--premium {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231f6ae1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 14px;
+  padding-right: 2.75rem;
+  cursor: pointer;
+}
+
+/* ========== Secciones de Formulario ========== */
+
+.sesa-form-section {
+  padding: 1.15rem 1.25rem;
+  border-radius: $radius-md;
+  background: rgba($color-text-primary, 0.02);
+  border: 1px solid rgba($color-border, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba($color-primary, 0.3);
+    background: rgba($color-primary, 0.02);
+  }
+
+  &--nested {
+    background: rgba($color-primary, 0.03);
+    border-color: rgba($color-primary, 0.2);
+    margin-top: 1rem;
+  }
+}
+
+.sesa-form-section-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 2px solid rgba($color-border, 0.4);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+
+  /* Con icono premium */
+  .sesa-form-section-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, rgba($color-primary, 0.1), rgba($color-accent, 0.08));
+    border-radius: $radius-sm;
+    border: 1px solid rgba($color-primary, 0.15);
+    flex-shrink: 0;
+    svg { width: 1em; height: 1em; }
+  }
+}
+
+.sesa-form-section--premium {
+  background: linear-gradient(135deg, rgba($color-text-primary, 0.015) 0%, rgba($color-primary, 0.03) 100%);
+  border: 1px solid rgba($color-border, 0.35);
+  padding: 1.2rem 1.35rem;
+  border-radius: $radius-lg;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba($color-primary, 0.25), transparent);
+    opacity: 0.6;
+  }
+
+  &:hover {
+    border-color: rgba($color-primary, 0.25);
+    box-shadow: 0 4px 20px rgba($color-primary, 0.06);
+  }
+}
+
+.sesa-form-section-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $color-text-primary;
+  letter-spacing: -0.3px;
+
+  &--small {
+    font-size: 1rem;
+  }
+}
+
+.sesa-form-section-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $color-text-secondary;
+  font-weight: 400;
+}
+
+/* ========== Grid de Formulario ========== */
+
+.sesa-form-grid {
+  display: grid;
+  gap: 1.25rem;
+
+  &--two-cols {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  &--four-cols {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ========== Módulos y Submódulos - Premium Compacto ========== */
+
+.sesa-modules-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  .sesa-form-section-header {
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  &--premium {
+    .sesa-modules-section-header {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+.sesa-modules-header-content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.sesa-modules-toggle-btns {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sesa-modules-toggle-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba($color-primary, 0.3);
+  background: rgba($color-primary, 0.06);
+  color: $color-primary;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($color-primary, 0.12);
+    border-color: $color-primary;
+  }
+}
+
+/* Estados de carga y error */
+.sesa-modulos-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  color: var(--sesa-text-secondary);
+
+  .sesa-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}
+
+.sesa-modulos-error {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, rgba($color-error, 0.06), rgba($color-error, 0.1));
+  border: 1px solid rgba($color-error, 0.25);
+
+  .sesa-error-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .sesa-modulos-error-title {
+    margin: 0 0 0.35rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: $color-error;
+  }
+
+  .sesa-modulos-error-message {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--sesa-text-secondary);
+  }
+}
+
+/* Contenedor con scroll interno: evita que toda la página haga scroll */
+.sesa-modulos-scroll-wrapper {
+  max-height: 56vh;
+  overflow-y: auto;
+
+  @media (max-height: 700px) {
+    max-height: 48vh;
+  }
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  margin: 0 -0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($color-primary, 0.4) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($color-primary, 0.3);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba($color-primary, 0.5);
+    }
+  }
+}
+
+/* Lista tipo acordeón: check + desplegable contraído por defecto */
+.sesa-modulos-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sesa-modulo-row {
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: var(--sesa-surface);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: rgba($color-primary, 0.3);
+  }
+
+  &--selected {
+    border-color: $color-primary;
+    background: linear-gradient(135deg, rgba($color-primary, 0.04), rgba($color-accent, 0.02));
+    box-shadow: 0 1px 8px rgba($color-primary, 0.1);
+  }
+
+  &--expanded {
+    border-color: rgba($color-primary, 0.4);
+    box-shadow: 0 2px 12px rgba($color-primary, 0.08);
+  }
+}
+
+.sesa-modulo-row-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  transition: background 0.2s ease;
+  min-height: 44px;
+
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: rgba($color-primary, 0.04);
+    }
+  }
+}
+
+.sesa-modulo-row--expanded .sesa-modulo-row-header--clickable {
+  background: rgba($color-primary, 0.05);
+}
+
+/* Checkbox personalizado premium */
+.sesa-modulo-check-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sesa-modulo-check {
+  position: absolute;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.sesa-modulo-check-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid $color-border;
+  border-radius: 5px;
+  background: var(--sesa-surface);
+  transition: all 0.2s ease;
+
+  /* Parcial: relleno sin check (solo algunos submódulos) */
+  &--partial {
+    background: $color-primary;
+    border-color: $color-primary;
+
+    &::after {
+      content: '';
+      display: block;
+      width: 10px;
+      height: 2px;
+      background: white;
+      border-radius: 1px;
+    }
+  }
+
+  /* Completo: relleno con check (todos los submódulos) */
+  &--full {
+    background: $color-primary;
+    border-color: $color-primary;
+
+    &::after {
+      content: '✓';
+      display: block;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+
+  .sesa-modulo-check:focus-visible + & {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+
+  .sesa-modulo-check-wrap:hover & {
+    border-color: $color-primary;
+  }
+}
+
+.sesa-modulo-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .sesa-modulo-row--selected & {
+    color: $color-primary;
+  }
+}
+
+.sesa-modulo-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  background: rgba($color-text-primary, 0.08);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sesa-modulo-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: $color-primary;
+  font-size: 0.9rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+/* Contenido desplegable */
+.sesa-modulo-dropdown {
+  border-top: 1px solid rgba($color-border, 0.5);
+  background: rgba($color-primary, 0.02);
+  animation: modDropdownIn 0.25s ease;
+}
+
+@keyframes modDropdownIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sesa-submodulos-list {
+  list-style: none;
+  padding: 0.5rem 1rem 0.75rem 3rem;
+  margin: 0;
+  column-count: 2;
+  column-gap: 2rem;
+
+  @media (min-width: 900px) {
+    column-count: 3;
+  }
+
+  @media (max-width: 600px) {
+    column-count: 1;
+    padding-left: 1rem;
+  }
+}
+
+@keyframes subsFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sesa-submodulo-item {
+  break-inside: avoid;
+  margin-bottom: 0.25rem;
+}
+
+.sesa-submodulo-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba($color-primary, 0.06);
+    color: var(--sesa-text-primary);
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: $color-primary;
+    flex-shrink: 0;
+  }
+
+  &:has(input:checked) {
+    color: $color-primary;
+    font-weight: 600;
+  }
+}
+
+.sesa-submodulo-name {
+  flex: 1;
+  line-height: 1.35;
+}
+
+/* ========== Tarjetas de Límite de Usuarios ========== */
+
+.sesa-user-limit-card {
+  position: relative;
+  padding: 1.25rem;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-accent, 0.05));
+  border: 2px solid rgba($color-primary, 0.15);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba($color-primary, 0.3);
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+}
+
+.sesa-user-limit-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.8;
+  svg { width: 1em; height: 1em; }
+}
+
+/* ========== Acciones ========== */
+
+.sesa-wizard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba($color-border, 0.3);
+  margin-top: 2rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    justify-content: stretch;
+
+    .sesa-btn {
+      width: 100%;
+    }
+  }
+}
+
+/* ========== Loading Spinner ========== */
+
+.sesa-loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/* ========== Responsive ========== */
+
+@media (max-width: 768px) {
+  .sesa-wizard-card {
+    padding: 1.5rem;
+  }
+
+  .sesa-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+}

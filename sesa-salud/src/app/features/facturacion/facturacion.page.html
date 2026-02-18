@@ -1,0 +1,54 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Facturación</h1>
+    <p class="sesa-page-subtitle">Cuentas médicas, validación y exportación RIPS (CSV)</p>
+  </header>
+
+  @if (error) { <p class="sesa-error">{{ error }}</p> }
+
+  <sesa-card title="Facturas por paciente">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Paciente</label>
+        <select [(ngModel)]="selectedPacienteId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (p of pacientes; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="cargarFacturas()">Consultar</button>
+      </div>
+    </div>
+    <div class="sesa-table-wrap">
+      <table class="sesa-table">
+        <thead><tr><th>ID</th><th>Orden</th><th>Valor</th><th>Estado</th><th>Fecha</th></tr></thead>
+        <tbody>
+          @for (f of facturas; track f.id) {
+            <tr>
+              <td>{{ f.id }}</td>
+              <td>{{ f.ordenId || '—' }}</td>
+              <td>{{ f.valorTotal }}</td>
+              <td>{{ f.estado || '—' }}</td>
+              <td>{{ f.fechaFactura || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">Sin facturas para el paciente.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </sesa-card>
+
+  <sesa-card title="Exportar RIPS">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field"><label>Desde</label><input type="date" [(ngModel)]="desde" /></div>
+      <div class="sesa-form-field"><label>Hasta</label><input type="date" [(ngModel)]="hasta" /></div>
+      <div class="sesa-form-actions"><button type="button" class="sesa-btn sesa-btn-secondary" (click)="exportarRips()">Generar RIPS</button></div>
+    </div>
+    @if (ripsCsv) {
+      <textarea rows="10" [value]="ripsCsv" readonly></textarea>
+    }
+  </sesa-card>
+</section>

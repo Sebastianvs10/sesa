@@ -1,0 +1,266 @@
+/* Lista de pacientes - Premium Edition */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-page-pacientes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sesa-page-header-premium {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sesa-page-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.sesa-page-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.25);
+}
+
+.sesa-page-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  svg { width: 1em; height: 1em; }
+}
+
+/* Tarjetas de resumen */
+.sesa-stats-row {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.sesa-stat-card {
+  min-width: 140px;
+  padding: 1rem 1.25rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  box-shadow: var(--sesa-shadow-sm);
+  transition:
+    box-shadow var(--sesa-transition-smooth),
+    transform var(--sesa-transition-smooth),
+    border-color var(--sesa-transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.sesa-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
+  opacity: 0;
+  transition: opacity var(--sesa-transition-smooth);
+}
+
+.sesa-stat-card:hover {
+  box-shadow: var(--sesa-shadow-md);
+  transform: translateY(-2px);
+  border-color: rgba(31, 106, 225, 0.12);
+}
+
+.sesa-stat-card:hover::before {
+  opacity: 1;
+}
+
+.sesa-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sesa-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.sesa-stat-label {
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+  font-weight: 500;
+}
+
+/* Búsqueda */
+.sesa-search-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sesa-input-search {
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  transition:
+    border-color var(--sesa-transition),
+    box-shadow var(--sesa-transition);
+}
+
+.sesa-input-search::placeholder {
+  color: var(--sesa-input-placeholder);
+}
+
+.sesa-input-search:focus {
+  outline: none;
+  border-color: var(--sesa-secondary);
+  box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.12);
+}
+
+/* Tabla premium */
+.sesa-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+}
+
+.sesa-table-premium {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: var(--sesa-surface);
+
+  th,
+  td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--sesa-border-light);
+    color: var(--sesa-text-primary);
+  }
+
+  thead th {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  tbody tr {
+    transition: background-color var(--sesa-transition-fast);
+  }
+
+  tbody tr:hover {
+    background: rgba(31, 106, 225, 0.03);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .sesa-col-actions {
+    white-space: nowrap;
+  }
+}
+
+.sesa-cell-doc {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.sesa-cell-name {
+  color: var(--sesa-text-primary);
+  font-weight: 600;
+}
+
+.sesa-actions-cell {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sesa-actions-cell .sesa-btn {
+  text-decoration: none;
+}
+
+/* Estado vacío */
+.sesa-loading-wrap {
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.sesa-loading {
+  margin: 0;
+  color: var(--sesa-text-muted);
+  font-size: 0.9rem;
+}
+
+.sesa-error {
+  background-color: var(--sesa-error-bg);
+  color: var(--sesa-error);
+  padding: 1rem 1.25rem;
+  border-radius: var(--sesa-radius-md);
+  border-left: 3px solid var(--sesa-error);
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.sesa-empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+  svg { width: 1em; height: 1em; }
+}
+
+.sesa-empty-state p {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+/* Paginación */
+.sesa-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--sesa-border);
+  flex-wrap: wrap;
+}
+
+.sesa-pagination-info {
+  font-size: 0.8125rem;
+  color: var(--sesa-text-muted);
+  font-weight: 500;
+}

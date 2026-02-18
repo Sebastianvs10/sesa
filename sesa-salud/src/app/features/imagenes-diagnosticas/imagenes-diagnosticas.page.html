@@ -1,0 +1,42 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Imágenes diagnósticas</h1>
+    <p class="sesa-page-subtitle">Orden, informe y firma digital (vía registro de resultado)</p>
+  </header>
+
+  @if (error) { <p class="sesa-error">{{ error }}</p> }
+
+  <sesa-card title="Registrar imagen diagnóstica">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field"><label>Atención *</label><input type="number" [(ngModel)]="form.atencionId" /></div>
+      <div class="sesa-form-field"><label>Tipo imagen</label><input type="text" [(ngModel)]="form.tipo" placeholder="RX, TAC, RM, etc." /></div>
+      <div class="sesa-form-field"><label>URL archivo/informe</label><input type="text" [(ngModel)]="form.urlArchivo" /></div>
+      <div class="sesa-form-field"><label>Informe / resultado</label><textarea rows="3" [(ngModel)]="form.resultado"></textarea></div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crear()">Guardar imagen</button>
+  </sesa-card>
+
+  <sesa-card title="Consultar por atención">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field"><label>Atención</label><input type="number" [(ngModel)]="atencionId" /></div>
+      <div class="sesa-form-actions"><button type="button" class="sesa-btn sesa-btn-secondary" (click)="buscar()">Buscar</button></div>
+    </div>
+    <div class="sesa-table-wrap">
+      <table class="sesa-table">
+        <thead><tr><th>Tipo</th><th>Informe</th><th>Archivo</th><th>Fecha</th></tr></thead>
+        <tbody>
+          @for (i of imagenes; track i.id) {
+            <tr>
+              <td>{{ i.tipo || '—' }}</td>
+              <td>{{ i.resultado || '—' }}</td>
+              <td>{{ i.urlArchivo || '—' }}</td>
+              <td>{{ i.createdAt || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4">Sin imágenes.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </sesa-card>
+</section>

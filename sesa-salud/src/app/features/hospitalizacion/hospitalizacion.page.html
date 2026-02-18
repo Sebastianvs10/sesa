@@ -1,0 +1,57 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Hospitalización</h1>
+    <p class="sesa-page-subtitle">Ingreso, evolución y egreso de pacientes internados</p>
+  </header>
+
+  @if (error) { <p class="sesa-error">{{ error }}</p> }
+
+  <sesa-card title="Nuevo ingreso hospitalario">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Paciente</label>
+        <select [(ngModel)]="form.pacienteId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (p of pacientes; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field"><label>Servicio</label><input type="text" [(ngModel)]="form.servicio" /></div>
+      <div class="sesa-form-field"><label>Cama</label><input type="text" [(ngModel)]="form.cama" /></div>
+      <div class="sesa-form-field">
+        <label>Estado</label>
+        <select [(ngModel)]="form.estado">
+          <option value="INGRESADO">INGRESADO</option>
+          <option value="ESTABLE">ESTABLE</option>
+          <option value="EGRESADO">EGRESADO</option>
+        </select>
+      </div>
+      <div class="sesa-form-field"><label>Evolución diaria</label><textarea rows="2" [(ngModel)]="form.evolucionDiaria"></textarea></div>
+      <div class="sesa-form-field"><label>Órdenes médicas</label><textarea rows="2" [(ngModel)]="form.ordenesMedicas"></textarea></div>
+      <div class="sesa-form-field"><label>Epicrisis</label><textarea rows="2" [(ngModel)]="form.epicrisis"></textarea></div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crear()">Guardar ingreso</button>
+  </sesa-card>
+
+  <sesa-card title="Pacientes hospitalizados">
+    <div class="sesa-table-wrap">
+      <table class="sesa-table">
+        <thead><tr><th>Paciente</th><th>Servicio</th><th>Cama</th><th>Estado</th><th>Ingreso</th></tr></thead>
+        <tbody>
+          @for (h of hospitalizaciones; track h.id) {
+            <tr>
+              <td>{{ h.pacienteNombre }}</td>
+              <td>{{ h.servicio || '—' }}</td>
+              <td>{{ h.cama || '—' }}</td>
+              <td>{{ h.estado || '—' }}</td>
+              <td>{{ h.fechaIngreso || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">Sin registros.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </sesa-card>
+</section>

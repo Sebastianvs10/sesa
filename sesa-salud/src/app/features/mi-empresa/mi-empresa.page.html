@@ -1,0 +1,51 @@
+<div class="sesa-mi-empresa">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Mi empresa</h1>
+    <p class="sesa-page-subtitle">Datos y logo de tu organización</p>
+  </header>
+
+  <sesa-card titulo="Identidad">
+    <div class="sesa-mi-empresa-content">
+      <div class="sesa-mi-empresa-preview">
+        @if (empresaCurrent.hasLogo()) {
+          <img [src]="empresaCurrent.currentEmpresa().logoUrl!" alt="Logo actual" class="sesa-mi-empresa-logo" />
+        } @else {
+          <div class="sesa-mi-empresa-logo-placeholder">Sin logo</div>
+        }
+        <p class="sesa-mi-empresa-nombre">{{ empresaCurrent.displayName() }}</p>
+      </div>
+
+      @if (canUploadLogo) {
+        <div class="sesa-mi-empresa-upload">
+          <label class="sesa-mi-empresa-label">Subir logo de la empresa</label>
+          <p class="sesa-mi-empresa-hint">Formatos: PNG, JPG, WebP o SVG. Se mostrará en el menú y en la cabecera.</p>
+          <div class="sesa-mi-empresa-row">
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,.webp,.svg"
+              (change)="onFileSelected($event)"
+              class="sesa-mi-empresa-input" />
+            <button
+              type="button"
+              class="sesa-btn sesa-btn-primary"
+              [disabled]="!selectedFile || loading()"
+              (click)="uploadLogo()">
+              {{ loading() ? 'Subiendo…' : 'Subir logo' }}
+            </button>
+          </div>
+          @if (selectedFile) {
+            <p class="sesa-mi-empresa-filename">{{ selectedFile.name }}</p>
+          }
+          @if (error()) {
+            <p class="sesa-mi-empresa-error" role="alert">{{ error() }}</p>
+          }
+          @if (success()) {
+            <p class="sesa-mi-empresa-success">Logo actualizado correctamente.</p>
+          }
+        </div>
+      } @else {
+        <p class="sesa-mi-empresa-hint">Solo un administrador puede cambiar el logo de la empresa.</p>
+      }
+    </div>
+  </sesa-card>
+</div>

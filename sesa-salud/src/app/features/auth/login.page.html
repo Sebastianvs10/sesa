@@ -1,0 +1,178 @@
+<div class="sesa-login">
+  <div class="sesa-login-bg">
+    <div class="sesa-login-bg-image" role="img" aria-label="Fondo SESA"></div>
+    <div class="sesa-login-bg-overlay"></div>
+    <div class="sesa-login-bg-content">
+      <h2 class="sesa-login-bg-title">Sistema Electrónico de Salud</h2>
+      <p class="sesa-login-bg-subtitle">Plataforma de administración clínica para organizaciones de salud. Gestión de pacientes, citas, historias clínicas y más.</p>
+      <div class="sesa-login-bg-line"></div>
+    </div>
+  </div>
+  <div class="sesa-login-panel">
+    <!-- Partículas decorativas (solo visibles en dark) -->
+    @if (themeService.isDark()) {
+      <div class="sesa-login-particles" aria-hidden="true">
+        <span class="sesa-login-particle sesa-login-particle--1"></span>
+        <span class="sesa-login-particle sesa-login-particle--2"></span>
+        <span class="sesa-login-particle sesa-login-particle--3"></span>
+        <span class="sesa-login-particle sesa-login-particle--4"></span>
+        <span class="sesa-login-particle sesa-login-particle--5"></span>
+        <span class="sesa-login-particle sesa-login-particle--6"></span>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="sesa-login-theme-toggle"
+      (click)="themeService.toggle()"
+      [attr.title]="themeService.isDark() ? 'Tema claro' : 'Tema oscuro'"
+      [attr.aria-label]="themeService.isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
+      <fa-icon [icon]="themeService.isDark() ? faSun : faMoon"></fa-icon>
+    </button>
+    <div class="sesa-login-panel-inner sesa-login-panel-inner--centered">
+      <div class="sesa-login-logo-full sesa-login-logo-full--centered">
+        <img src="/icon2.png" alt="SESA" class="sesa-login-logo-img" />
+        <div class="sesa-login-logo-text">
+          <span class="sesa-login-logo-title">SESA</span>
+          <span class="sesa-login-logo-subtitle">Sistema Electrónico de Salud</span>
+        </div>
+      </div>
+
+      <p class="sesa-login-label sesa-login-label--centered">Acceso al portal</p>
+      <h1 class="sesa-login-main-title sesa-login-main-title--centered">Iniciar sesión</h1>
+
+      <form class="sesa-login-form sesa-login-form--centered" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Selector de modo: correo o identificación -->
+        <div class="sesa-login-mode-toggle">
+          <button
+            type="button"
+            class="sesa-login-mode-btn"
+            [class.sesa-login-mode-btn--active]="loginMode === 'email'"
+            (click)="setLoginMode('email')">
+            <fa-icon [icon]="faEnvelope"></fa-icon>
+            <span>Correo</span>
+          </button>
+          <button
+            type="button"
+            class="sesa-login-mode-btn"
+            [class.sesa-login-mode-btn--active]="loginMode === 'identificacion'"
+            (click)="setLoginMode('identificacion')">
+            <fa-icon [icon]="faIdCard"></fa-icon>
+            <span>Identificación</span>
+          </button>
+        </div>
+
+        <sesa-form-field
+          [label]="loginMode === 'email' ? 'Correo electrónico' : 'Número de identificación'"
+          [required]="true"
+          [error]="getLoginFieldError()">
+          <div class="sesa-input-icon">
+            <span class="sesa-input-icon-symbol" aria-hidden="true">
+              @if (loginMode === 'email') {
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/><path d="M8 12h8"/></svg>
+              }
+            </span>
+            <input
+              [type]="loginMode === 'email' ? 'email' : 'text'"
+              [placeholder]="loginMode === 'email' ? 'nombre@organizacion.com' : 'Documento o cédula'"
+              formControlName="email"
+              [autocomplete]="loginMode === 'email' ? 'email' : 'username'" />
+          </div>
+        </sesa-form-field>
+
+        <sesa-form-field
+          label="Contraseña"
+          [required]="true"
+          [error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched ? 'La contraseña es obligatoria' : ''">
+          <div class="sesa-input-icon sesa-input-icon--password">
+            <span class="sesa-input-icon-symbol" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input
+              [type]="passwordVisible ? 'text' : 'password'"
+              placeholder="••••••••••••"
+              formControlName="password"
+              autocomplete="current-password" />
+            <button
+              type="button"
+              class="sesa-input-password-toggle"
+              (click)="togglePasswordVisibility()"
+              [attr.title]="passwordVisible ? 'Ocultar contraseña' : 'Ver contraseña'"
+              [attr.aria-label]="passwordVisible ? 'Ocultar contraseña' : 'Ver contraseña'">
+              <fa-icon [icon]="passwordVisible ? faEyeSlash : faEye" class="sesa-input-password-toggle-icon"></fa-icon>
+            </button>
+          </div>
+        </sesa-form-field>
+
+        <div class="sesa-login-row sesa-login-row--between">
+          <label class="sesa-login-remember">
+            <input type="checkbox" formControlName="remember" />
+            <span>Recordarme</span>
+          </label>
+          <a href="javascript:void(0)" class="sesa-link-inline" (click)="toggleReset()">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        @if (errorMessage) {
+          <div class="sesa-login-error" role="alert">
+            {{ errorMessage }}
+          </div>
+        }
+
+        <div class="sesa-login-actions">
+          <button
+            type="submit"
+            class="sesa-btn sesa-btn-primary sesa-btn-block"
+            [disabled]="loading">
+            {{ loading ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+          </button>
+        </div>
+
+        <div class="sesa-login-footer-links sesa-login-footer-links--centered">
+          <span>¿No tienes una cuenta?</span>
+          <a href="javascript:void(0)" class="sesa-link-inline">Solicitar acceso</a>
+        </div>
+      </form>
+
+      @if (showReset) {
+        <div class="sesa-login-reset">
+          <h3>Recuperación de contraseña</h3>
+          <form [formGroup]="resetRequestForm" (ngSubmit)="solicitarReset()">
+            <sesa-form-field label="Correo" [required]="true">
+              <input type="email" formControlName="email" placeholder="correo@empresa.com" />
+            </sesa-form-field>
+            <button type="submit" class="sesa-btn sesa-btn-secondary">Solicitar token</button>
+          </form>
+
+          <form [formGroup]="resetConfirmForm" (ngSubmit)="confirmarReset()">
+            <sesa-form-field label="Token" [required]="true">
+              <input type="text" formControlName="token" />
+            </sesa-form-field>
+            <sesa-form-field label="Nueva contraseña" [required]="true">
+              <div class="sesa-input-icon sesa-input-icon--password sesa-input-icon--toggle-only">
+                <input
+                  [type]="resetPasswordVisible ? 'text' : 'password'"
+                  formControlName="newPassword"
+                  placeholder="Mínimo 6 caracteres" />
+                <button
+                  type="button"
+                  class="sesa-input-password-toggle"
+                  (click)="toggleResetPasswordVisibility()"
+                  [attr.title]="resetPasswordVisible ? 'Ocultar contraseña' : 'Ver contraseña'"
+                  [attr.aria-label]="resetPasswordVisible ? 'Ocultar contraseña' : 'Ver contraseña'">
+                  <fa-icon [icon]="resetPasswordVisible ? faEyeSlash : faEye" class="sesa-input-password-toggle-icon"></fa-icon>
+                </button>
+              </div>
+            </sesa-form-field>
+            <button type="submit" class="sesa-btn sesa-btn-primary">Restablecer contraseña</button>
+          </form>
+
+          @if (resetMessage) {
+            <div class="sesa-login-success">{{ resetMessage }}</div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,92 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Gestión de usuarios y roles</h1>
+      <p class="sesa-page-subtitle">Crear, editar y eliminar usuarios del sistema</p>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="openCreate()">Nuevo usuario</button>
+  </header>
+
+  @if (error) {
+    <p class="sesa-error">{{ error }}</p>
+  }
+
+  @if (showForm) {
+    <sesa-card title="{{ editingId == null ? 'Crear usuario' : 'Editar usuario' }}">
+      <div class="sesa-form-grid">
+        <div class="sesa-form-field">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="form.email" />
+        </div>
+        <div class="sesa-form-field">
+          <label>Nombre completo</label>
+          <input type="text" [(ngModel)]="form.nombreCompleto" />
+        </div>
+        <div class="sesa-form-field">
+          <label>Rol</label>
+          <select [(ngModel)]="selectedRol">
+            <option value="">Seleccione...</option>
+            @for (r of roles; track r.value) {
+              <option [value]="r.value">{{ r.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="sesa-form-field">
+          <label>Contraseña {{ editingId == null ? '*' : '(opcional)' }}</label>
+          <input type="password" [(ngModel)]="form.password" />
+        </div>
+        <div class="sesa-form-field sesa-form-check">
+          <label><input type="checkbox" [(ngModel)]="form.activo" /> Activo</label>
+        </div>
+      </div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancel()" [disabled]="saving">Cancelar</button>
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </sesa-card>
+  }
+
+  <sesa-card title="Usuarios">
+    @if (loading) {
+      <p class="sesa-loading">Cargando...</p>
+    } @else {
+      <table class="sesa-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nombre</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of list; track u.id) {
+            <tr>
+              <td>{{ u.email }}</td>
+              <td>{{ u.nombreCompleto }}</td>
+              <td>{{ u.roles.join(', ') || '—' }}</td>
+              <td>{{ u.activo ? 'Activo' : 'Inactivo' }}</td>
+              <td>
+                <button type="button" class="sesa-link-inline" (click)="openEdit(u)">Editar</button>
+                <button type="button" class="sesa-link-inline sesa-link-danger" (click)="delete(u)">Eliminar</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">No hay usuarios registrados.</td></tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalElements > size) {
+        <div class="sesa-pagination">
+          <button type="button" class="sesa-btn sesa-btn-sm" (click)="prevPage()" [disabled]="page===0">Anterior</button>
+          <span>Página {{ page + 1 }}</span>
+          <button type="button" class="sesa-btn sesa-btn-sm" (click)="nextPage()" [disabled]="(page+1)*size>=totalElements">Siguiente</button>
+        </div>
+      }
+    }
+  </sesa-card>
+</section>

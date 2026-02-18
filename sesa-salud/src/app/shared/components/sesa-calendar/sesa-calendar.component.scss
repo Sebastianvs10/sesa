@@ -1,0 +1,142 @@
+/* Calendario premium - compatible con tema claro/oscuro */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-calendar {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+  padding: 1rem;
+  box-shadow: var(--sesa-shadow-sm);
+}
+
+.sesa-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.sesa-calendar-nav {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-sm);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-primary);
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background var(--sesa-transition), border-color var(--sesa-transition);
+
+  &:hover {
+    background: var(--sesa-surface-hover);
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+  }
+}
+
+.sesa-calendar-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  text-transform: capitalize;
+}
+
+.sesa-calendar-today {
+  display: block;
+  width: 100%;
+  padding: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--sesa-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--sesa-radius-sm);
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  transition: background var(--sesa-transition);
+
+  &:hover {
+    background: rgba(31, 106, 225, 0.08);
+  }
+}
+
+.sesa-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.sesa-calendar-weekday {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sesa-text-muted);
+  text-align: center;
+  padding: 0.35rem 0;
+}
+
+.sesa-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.sesa-calendar-day {
+  aspect-ratio: 1;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--sesa-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--sesa-radius-sm);
+  cursor: pointer;
+  transition: background var(--sesa-transition), color var(--sesa-transition), box-shadow var(--sesa-transition);
+
+  &:hover {
+    background: var(--sesa-surface-hover);
+  }
+
+  &--other {
+    color: var(--sesa-text-muted);
+    opacity: 0.6;
+  }
+
+  &--today {
+    background: rgba(31, 106, 225, 0.12);
+    color: var(--sesa-secondary);
+    font-weight: 700;
+  }
+
+  &--highlighted {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--sesa-accent);
+    }
+  }
+
+  &--selected {
+    background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(31, 106, 225, 0.35);
+  }
+}

@@ -1,0 +1,224 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Gestión de personal</h1>
+      <p class="sesa-page-subtitle">
+        Cree, liste, edite y elimine el personal de la empresa. Los datos se gestionan en el esquema de la empresa actual.
+      </p>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="openCreate()">
+      Nuevo integrante
+    </button>
+  </header>
+
+  @if (showForm) {
+    <sesa-card title="{{ editingId != null ? 'Editar persona' : 'Crear usuario' }}">
+      @if (saveError) {
+        <p class="sesa-error">{{ saveError }}</p>
+      }
+      <div class="sesa-form-grid">
+        <div class="sesa-form-field">
+          <label for="identificacion">Identificación <span class="required">*</span></label>
+          <input id="identificacion" type="text" [(ngModel)]="form.identificacion" placeholder="Documento de identidad" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="primerNombre">Primer nombre <span class="required">*</span></label>
+          <input id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="segundoNombre">Segundo nombre</label>
+          <input id="segundoNombre" type="text" [(ngModel)]="form.segundoNombre" placeholder="Segundo nombre" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="primerApellido">Primer apellido <span class="required">*</span></label>
+          <input id="primerApellido" type="text" [(ngModel)]="form.primerApellido" placeholder="Primer apellido" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="segundoApellido">Segundo apellido</label>
+          <input id="segundoApellido" type="text" [(ngModel)]="form.segundoApellido" placeholder="Segundo apellido" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="celular">Número de celular <span class="required">*</span></label>
+          <input id="celular" type="text" [(ngModel)]="form.celular" placeholder="Celular" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="email">Correo electrónico <span class="required">*</span></label>
+          <input id="email" type="email" [(ngModel)]="form.email" placeholder="correo&#64;empresa.com" />
+        </div>
+        @if (editingId == null) {
+          <div class="sesa-form-field">
+            <label for="password">Contraseña <span class="required">*</span></label>
+            <input id="password" type="password" [(ngModel)]="form.password" placeholder="Para ingresar sesión" />
+          </div>
+        }
+        <div class="sesa-form-field">
+          <label for="rol">Rol de usuario <span class="required">*</span></label>
+          <select id="rol" [(ngModel)]="form.rol">
+            <option value="">Seleccione rol</option>
+            @for (r of rolesPersonal; track r.value) {
+              <option [value]="r.value" [disabled]="r.disabled">{{ r.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="sesa-form-field sesa-form-field-full">
+          <label for="institucionPrestadora">Institución prestadora de servicio</label>
+          <input id="institucionPrestadora" type="text" [(ngModel)]="form.institucionPrestadora" placeholder="Ej. IPS, ESE, etc." />
+        </div>
+        <div class="sesa-form-field">
+          <label for="cargo">Cargo <span class="required">*</span></label>
+          <input id="cargo" type="text" [(ngModel)]="form.cargo" placeholder="Ej. Médico general, Enfermera" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="servicio">Servicio</label>
+          <input id="servicio" type="text" [(ngModel)]="form.servicio" placeholder="Ej. Consulta externa, Urgencias" />
+        </div>
+        <div class="sesa-form-field">
+          <label for="turno">Turno</label>
+          <input id="turno" type="text" [(ngModel)]="form.turno" placeholder="Ej. Mañana, Noche" />
+        </div>
+        <div class="sesa-form-field sesa-form-field-full">
+          <label>Foto del profesional</label>
+          <input type="file" accept=".png,.jpg,.jpeg,.webp" (change)="onFotoSelected($event)" />
+          @if (fotoFile) {
+            <span class="sesa-form-hint">{{ fotoFile.name }}</span>
+          }
+        </div>
+        <div class="sesa-form-field sesa-form-field-full">
+          <label>Firma del profesional</label>
+          <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" (change)="onFirmaSelected($event)" />
+          @if (firmaFile) {
+            <span class="sesa-form-hint">{{ firmaFile.name }}</span>
+          }
+        </div>
+        <div class="sesa-form-field sesa-form-field-check">
+          <label>
+            <input type="checkbox" [(ngModel)]="form.activo" />
+            Activo
+          </label>
+        </div>
+      </div>
+      <p class="sesa-form-note">El personal podrá ingresar con su correo y contraseña. Los datos se asocian a la empresa actual.</p>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancelForm()" [disabled]="saving">
+          Cancelar
+        </button>
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </sesa-card>
+  }
+
+  <sesa-card title="Personal activo">
+    @if (isSuperAdmin) {
+      <div class="sesa-toolbar">
+        <div class="sesa-form-field sesa-form-field-inline">
+          <label for="empresa">Empresa</label>
+          <select
+            id="empresa"
+            [ngModel]="selectedSchema"
+            (ngModelChange)="selectedSchema = $event; onEmpresaChange()"
+            [disabled]="loadingEmpresas"
+          >
+            @if (loadingEmpresas) {
+              <option value="">Cargando empresas…</option>
+            } @else {
+              <option [ngValue]="null">Seleccione una empresa</option>
+              <option value="public">Public (administración)</option>
+              @for (e of empresas; track e.id) {
+                <option [ngValue]="e.schemaName">{{ e.razonSocial }} ({{ e.schemaName }})</option>
+              }
+            }
+          </select>
+        </div>
+      </div>
+    } @else if (selectedSchema) {
+      <p class="sesa-info">Empresa actual: <strong>{{ selectedSchema }}</strong></p>
+    }
+    <div class="sesa-toolbar">
+      <div class="sesa-search">
+        <input
+          type="text"
+          [(ngModel)]="searchQ"
+          placeholder="Buscar por nombre, apellido o cargo…"
+          (keyup.enter)="search()"
+        />
+        <button type="button" class="sesa-btn sesa-btn-sm" (click)="search()">Buscar</button>
+        @if (searchQ) {
+          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="clearSearch()">
+            Limpiar
+          </button>
+        }
+      </div>
+    </div>
+    @if (isSuperAdmin && !loadingEmpresas && selectedSchema === null && empresas.length > 0) {
+      <p class="sesa-info">Seleccione una empresa para ver y gestionar su personal.</p>
+    } @else if (loading) {
+      <p class="sesa-loading">Cargando…</p>
+    } @else if (error) {
+      <p class="sesa-error">{{ error }}</p>
+    } @else {
+      <div class="sesa-table-wrap">
+        <table class="sesa-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Cargo</th>
+              <th>Servicio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of list; track p.id) {
+              <tr>
+                <td>{{ fullName(p) }}</td>
+                <td>{{ p.email || '—' }}</td>
+                <td>{{ p.rol || '—' }}</td>
+                <td>{{ p.cargo }}</td>
+                <td>{{ p.servicio || '—' }}</td>
+                <td>{{ p.activo ? 'Activo' : 'Inactivo' }}</td>
+                <td>
+                  <button type="button" class="sesa-link-inline" (click)="openEdit(p)">Editar</button>
+                  <button type="button" class="sesa-link-inline sesa-link-danger" (click)="delete(p)">
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  @if (isSuperAdmin && selectedSchema) {
+                    No hay personal en esta empresa. Use «Nuevo integrante» para agregar.
+                  } @else if (!isSuperAdmin) {
+                    No hay personal. Use «Nuevo integrante» para agregar.
+                  } @else {
+                    Seleccione una empresa para ver su personal.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalElements > size) {
+        <div class="sesa-pagination">
+          <button type="button" class="sesa-btn sesa-btn-sm" (click)="prevPage()" [disabled]="page === 0">
+            Anterior
+          </button>
+          <span>Página {{ page + 1 }} ({{ totalElements }} total)</span>
+          <button
+            type="button"
+            class="sesa-btn sesa-btn-sm"
+            (click)="nextPage()"
+            [disabled]="(page + 1) * size >= totalElements"
+          >
+            Siguiente
+          </button>
+        </div>
+      }
+    }
+  </sesa-card>
+</section>

@@ -1,0 +1,142 @@
+/* Página de Reportes - Gráficas de indicadores */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-reportes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sesa-reportes-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sesa-reportes-back {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  color: var(--sesa-text-secondary);
+  text-decoration: none;
+  transition: background var(--sesa-transition), color var(--sesa-transition);
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--sesa-surface-hover);
+    color: var(--sesa-secondary);
+  }
+}
+
+.sesa-reportes-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(31, 106, 225, 0.3);
+}
+
+.sesa-reportes-icon {
+  font-size: 1.75rem;
+  color: #fff;
+  line-height: 1;
+}
+
+.sesa-reportes-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.sesa-reportes-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-reportes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: var(--sesa-text-muted);
+}
+
+.sesa-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--sesa-border);
+  border-top-color: var(--sesa-secondary);
+  border-radius: 50%;
+  animation: sesa-spin 0.7s linear infinite;
+}
+
+@keyframes sesa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sesa-reportes-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+  background: var(--sesa-error-bg);
+  border-radius: var(--sesa-radius-md);
+  border-left: 4px solid var(--sesa-error);
+  color: var(--sesa-error);
+  text-align: center;
+}
+
+.sesa-reportes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 840px) {
+  .sesa-reportes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sesa-report-card {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
+    opacity: 0.9;
+  }
+}
+
+.sesa-report-card-doughnut {
+  max-width: 460px;
+}
+
+.sesa-reportes-empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--sesa-text-muted);
+  font-size: 0.95rem;
+}

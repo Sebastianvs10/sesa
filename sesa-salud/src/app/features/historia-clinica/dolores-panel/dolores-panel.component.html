@@ -1,0 +1,312 @@
+<!-- ═══════ TOAST ═══════ -->
+<div class="dolor-toast dolor-toast-success" *ngIf="exito">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ exito }}
+</div>
+<div class="dolor-toast dolor-toast-error" *ngIf="error">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    <button class="dolor-toast-close" (click)="error = null"><i class="bi bi-x-lg"></i></button>
+</div>
+
+<!-- ═══════ STATS ═══════ -->
+<div class="dolor-stats-row">
+    <div class="dolor-stat-card stat-total">
+        <i class="bi bi-clipboard2-pulse"></i>
+        <div class="stat-info"><span class="stat-number">{{ totalDolores }}</span><span class="stat-label">Total</span>
+        </div>
+    </div>
+    <div class="dolor-stat-card stat-active">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <div class="stat-info"><span class="stat-number">{{ activeDolores }}</span><span
+                class="stat-label">Activos</span></div>
+    </div>
+    <div class="dolor-stat-card stat-treatment">
+        <i class="bi bi-bandaid"></i>
+        <div class="stat-info"><span class="stat-number">{{ tratamientoDolores }}</span><span
+                class="stat-label">Tratamiento</span></div>
+    </div>
+    <div class="dolor-stat-card stat-resolved">
+        <i class="bi bi-check-circle-fill"></i>
+        <div class="stat-info"><span class="stat-number">{{ resueltoDolores }}</span><span
+                class="stat-label">Resueltos</span></div>
+    </div>
+</div>
+
+<!-- ═══════ MAIN LAYOUT ═══════ -->
+<div class="dolor-main-layout">
+
+    <!-- ─── LEFT: BODY MAP ─── -->
+    <div class="bodymap-card">
+        <!-- Header -->
+        <div class="bodymap-header">
+            <div class="bodymap-title">
+                <i class="bi bi-body-text"></i>
+                <span>Diagrama Corporal</span>
+            </div>
+            <div class="bodymap-view-toggle">
+                <button [class.active]="bodyView === 'front'" (click)="bodyView = 'front'">
+                    <i class="bi bi-person-standing me-1"></i>Frontal
+                </button>
+                <button [class.active]="bodyView === 'back'" (click)="bodyView = 'back'">
+                    <i class="bi bi-person me-1"></i>Posterior
+                </button>
+            </div>
+        </div>
+
+        <!-- Mapa corporal: imágenes + coordenadas por zona -->
+        <div class="medical-diagram">
+            <div class="diagram-body">
+                <div class="body-image-frame" [attr.data-view]="bodyView">
+                    <img class="body-image"
+                        [src]="bodyView === 'front' ? 'assets/body_front.png' : 'assets/body_back.png'"
+                        [alt]="bodyView === 'front' ? 'Vista frontal del cuerpo' : 'Vista posterior del cuerpo'" />
+                    <svg class="diagram-overlay" viewBox="0 0 300 640" preserveAspectRatio="xMidYMid meet"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <!-- Líneas conectoras: dot → label -->
+                        <g class="connector-lines">
+                            <line *ngFor="let zone of getZonesForLeftColumn()" class="connector-line"
+                                [class.connector-active]="hasDolorInZone(zone.id)"
+                                [class.connector-hover]="hoveredZone === zone.id || isZoneSelected(zone.id)"
+                                [attr.x1]="zone.dotX" [attr.y1]="zone.dotY" [attr.x2]="zone.labelX"
+                                [attr.y2]="zone.labelY * 6.4" />
+                            <line *ngFor="let zone of getZonesForRightColumn()" class="connector-line"
+                                [class.connector-active]="hasDolorInZone(zone.id)"
+                                [class.connector-hover]="hoveredZone === zone.id || isZoneSelected(zone.id)"
+                                [attr.x1]="zone.dotX" [attr.y1]="zone.dotY" [attr.x2]="zone.labelX"
+                                [attr.y2]="zone.labelY * 6.4" />
+                        </g>
+                        <ng-container *ngFor="let zone of getZonesForView()">
+                            <g class="body-dot-wrap">
+                                <circle *ngIf="isZoneSelected(zone.id)" [attr.cx]="zone.dotX" [attr.cy]="zone.dotY"
+                                    class="body-dot-pulse" r="12" fill="none" stroke="#1f8f8a" stroke-width="1.5" />
+                                <circle [attr.cx]="zone.dotX" [attr.cy]="zone.dotY"
+                                    [attr.r]="isZoneSelected(zone.id) ? 7 : (isZoneHighlighted(zone.id) ? 6 : 5)"
+                                    class="body-dot" [class.body-dot--pain]="hasDolorInZone(zone.id)"
+                                    [class.body-dot--selected]="isZoneSelected(zone.id)"
+                                    [class.body-dot--hovered]="hoveredZone === zone.id"
+                                    [style.fill]="hasDolorInZone(zone.id) ? getDotColor(zone.id) : ''"
+                                    (mouseenter)="hoveredZone = zone.id" (mouseleave)="hoveredZone = null"
+                                    (click)="selectZone(zone)" />
+                            </g>
+                        </ng-container>
+                    </svg>
+                    <div class="diagram-labels labels-left">
+                        <div *ngFor="let zone of getZonesForLeftColumn()" class="zone-label"
+                            [class.zone-label--active]="hasDolorInZone(zone.id)"
+                            [class.zone-label--selected]="isZoneSelected(zone.id)"
+                            [class.zone-label--hovered]="hoveredZone === zone.id" [style.top.%]="zone.labelY"
+                            (mouseenter)="hoveredZone = zone.id" (mouseleave)="hoveredZone = null"
+                            (click)="selectZone(zone)">
+                            <span class="label-text">{{ zone.label }}</span>
+                            <span class="label-dot"
+                                [style.background]="hasDolorInZone(zone.id) ? getDotColor(zone.id) : ''"></span>
+                        </div>
+                    </div>
+                    <div class="diagram-labels labels-right">
+                        <div *ngFor="let zone of getZonesForRightColumn()" class="zone-label"
+                            [class.zone-label--active]="hasDolorInZone(zone.id)"
+                            [class.zone-label--selected]="isZoneSelected(zone.id)"
+                            [class.zone-label--hovered]="hoveredZone === zone.id" [style.top.%]="zone.labelY"
+                            (mouseenter)="hoveredZone = zone.id" (mouseleave)="hoveredZone = null"
+                            (click)="selectZone(zone)">
+                            <span class="label-dot"
+                                [style.background]="hasDolorInZone(zone.id) ? getDotColor(zone.id) : ''"></span>
+                            <span class="label-text">{{ zone.label }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bodymap-legend">
+            <span class="legend-title">Severidad:</span>
+            <span><span class="ldot ldot-leve"></span>Leve</span>
+            <span><span class="ldot ldot-moderada"></span>Moderada</span>
+            <span><span class="ldot ldot-grave"></span>Grave</span>
+        </div>
+    </div>
+
+    <!-- ─── RIGHT: PANEL ─── -->
+    <div class="dolor-panel">
+
+        <!-- FORM -->
+        <div class="panel-card" *ngIf="showForm">
+            <div class="panel-header">
+                <h4><i class="bi bi-pencil-square me-2"></i>{{ editingDolor ? 'Editar' : 'Registrar' }} Dolor</h4>
+                <button class="btn-x" (click)="cancelForm()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+                    <div class="fg full">
+                        <label>Zona corporal</label>
+                        <select [(ngModel)]="formData.zonaCorporal" (change)="onZoneSelected($event)">
+                            <option value="">-- Selecciona --</option>
+                            <optgroup label="Frontal">
+                                <option *ngFor="let z of zones" [value]="z.id" [hidden]="z.view !== 'front'">{{ z.label
+                                    }}</option>
+                            </optgroup>
+                            <optgroup label="Posterior">
+                                <option *ngFor="let z of zones" [value]="z.id" [hidden]="z.view !== 'back'">{{ z.label
+                                    }}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="fg"><label>Tipo</label>
+                        <select [(ngModel)]="formData.tipoDolor">
+                            <option value="">-- Tipo --</option>
+                            <option *ngFor="let t of tiposDolor" [value]="t">{{ t }}</option>
+                        </select>
+                    </div>
+                    <div class="fg"><label>Intensidad (EVA)</label>
+                        <div class="eva-wrap">
+                            <input type="range" min="1" max="10" [(ngModel)]="formData.intensidad"
+                                (ngModelChange)="onIntensityChange()"
+                                [style.accent-color]="getIntensityColor(formData.intensidad)">
+                            <span class="eva-val" [style.color]="getIntensityColor(formData.intensidad)">{{
+                                formData.intensidad }}</span>
+                        </div>
+                    </div>
+                    <div class="fg"><label>Severidad</label>
+                        <select [(ngModel)]="formData.severidad">
+                            <option *ngFor="let s of severidades" [value]="s">{{ s | titlecase }}</option>
+                        </select>
+                    </div>
+                    <div class="fg"><label>Estado</label>
+                        <select [(ngModel)]="formData.estado">
+                            <option value="activo">Activo</option>
+                            <option value="tratamiento">En tratamiento</option>
+                            <option value="resuelto">Resuelto</option>
+                        </select>
+                    </div>
+                    <div class="fg"><label>Fecha inicio</label><input type="date" [(ngModel)]="formData.fechaInicio">
+                    </div>
+                    <div class="fg"><label>Resolución</label><input type="date" [(ngModel)]="formData.fechaResolucion">
+                    </div>
+                    <div class="fg full"><label>Descripción</label><textarea rows="2" [(ngModel)]="formData.descripcion"
+                            placeholder="Detalle..."></textarea></div>
+                    <div class="fg"><label>Agravantes</label><textarea rows="2"
+                            [(ngModel)]="formData.factoresAgravantes" placeholder="Ej: movimiento"></textarea></div>
+                    <div class="fg"><label>Aliviantes</label><textarea rows="2"
+                            [(ngModel)]="formData.factoresAliviantes" placeholder="Ej: reposo"></textarea></div>
+                    <div class="fg full"><label>Tratamiento</label><textarea rows="2" [(ngModel)]="formData.tratamiento"
+                            placeholder="Indicado..."></textarea></div>
+                    <div class="fg full"><label>Notas</label><textarea rows="2" [(ngModel)]="formData.notas"
+                            placeholder="Notas..."></textarea></div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-outline" (click)="cancelForm()">Cancelar</button>
+                    <button class="btn-primary" (click)="saveDolor()"
+                        [disabled]="!formData.zonaCorporal || !formData.fechaInicio">
+                        <i class="bi bi-check-lg me-1"></i>{{ editingDolor ? 'Guardar' : 'Registrar' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAIL -->
+        <div class="panel-card" *ngIf="showDetail && detailDolor">
+            <div class="panel-header">
+                <h4><i class="bi bi-info-circle me-2"></i>Detalle</h4>
+                <button class="btn-x" (click)="closeDetail()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="panel-body">
+                <div class="detail-sev" [style.background]="getSeverityColor(detailDolor.severidad)">
+                    {{ detailDolor.severidad | titlecase }}
+                </div>
+                <div class="detail-eva">
+                    <div class="eva-circle" [style.border-color]="getIntensityColor(detailDolor.intensidad)">
+                        <span [style.color]="getIntensityColor(detailDolor.intensidad)">{{ detailDolor.intensidad
+                            }}</span>
+                        <small>EVA</small>
+                    </div>
+                    <div class="eva-bar-bg">
+                        <div class="eva-bar-fill" [style.width.%]="detailDolor.intensidad * 10"
+                            [style.background]="getIntensityColor(detailDolor.intensidad)"></div>
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    <div class="df"><span class="dl">Zona</span><span>{{ detailDolor.zonaLabel }}</span></div>
+                    <div class="df"><span class="dl">Tipo</span><span>{{ detailDolor.tipoDolor || '—' }}</span></div>
+                    <div class="df"><span class="dl">Inicio</span><span>{{ formatDate(detailDolor.fechaInicio) }}</span>
+                    </div>
+                    <div class="df"><span class="dl">Resolución</span><span>{{ formatDate(detailDolor.fechaResolucion)
+                            }}</span></div>
+                    <div class="df"><span class="dl">Estado</span><span><i class="bi me-1"
+                                [ngClass]="getStatusIcon(detailDolor.estado)"
+                                [style.color]="getStatusColor(detailDolor.estado)"></i>{{
+                            getStatusLabel(detailDolor.estado) }}</span></div>
+                    <div class="df"><span class="dl">Duración</span><span>{{ getDaysSince(detailDolor.fechaInicio) }}
+                            días</span></div>
+                    <div class="df full" *ngIf="detailDolor.descripcion"><span class="dl">Descripción</span><span>{{
+                            detailDolor.descripcion }}</span></div>
+                    <div class="df full" *ngIf="detailDolor.factoresAgravantes"><span
+                            class="dl">Agravantes</span><span>{{ detailDolor.factoresAgravantes }}</span></div>
+                    <div class="df full" *ngIf="detailDolor.factoresAliviantes"><span
+                            class="dl">Aliviantes</span><span>{{ detailDolor.factoresAliviantes }}</span></div>
+                    <div class="df full" *ngIf="detailDolor.tratamiento"><span class="dl">Tratamiento</span><span>{{
+                            detailDolor.tratamiento }}</span></div>
+                    <div class="df full" *ngIf="detailDolor.notas"><span class="dl">Notas</span><span>{{
+                            detailDolor.notas }}</span></div>
+                </div>
+                <div class="detail-actions">
+                    <button class="btn-outline btn-sm" (click)="openEditDolorForm(detailDolor)"><i
+                            class="bi bi-pencil me-1"></i>Editar</button>
+                    <button class="btn-danger btn-sm" (click)="deleteDolor(detailDolor)"><i
+                            class="bi bi-trash me-1"></i>Eliminar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIST -->
+        <div class="panel-card" *ngIf="!showForm && !showDetail">
+            <div class="panel-header">
+                <h4><i class="bi bi-list-ul me-2"></i>Historial</h4>
+                <button class="btn-primary btn-sm" (click)="openNewDolorForm()"><i
+                        class="bi bi-plus-lg me-1"></i>Nuevo</button>
+            </div>
+            <div class="list-filters">
+                <button [class.active]="filterStatus === 'all'" (click)="setFilter('all')">Todas</button>
+                <button [class.active]="filterStatus === 'activo'" (click)="setFilter('activo')">Activos</button>
+                <button [class.active]="filterStatus === 'tratamiento'"
+                    (click)="setFilter('tratamiento')">Tratamiento</button>
+                <button [class.active]="filterStatus === 'resuelto'" (click)="setFilter('resuelto')">Resueltos</button>
+            </div>
+            <div *ngIf="cargando" class="empty-state">
+                <div class="spinner"></div>Cargando...
+            </div>
+            <div *ngIf="!cargando && filteredDolores.length === 0" class="empty-state">
+                <i class="bi bi-shield-check"></i>
+                <p>Sin dolores registrados</p>
+            </div>
+            <div class="list-items" *ngIf="!cargando">
+                <div *ngFor="let d of filteredDolores" class="list-item" (click)="viewDetail(d)">
+                    <div class="item-bar" [style.background]="getStatusColor(d.estado)"></div>
+                    <div class="item-body">
+                        <div class="item-top">
+                            <span class="item-zone">{{ d.zonaLabel }}</span>
+                            <span class="item-sev" [style.background]="getSeverityColor(d.severidad) + '1a'"
+                                [style.color]="getSeverityColor(d.severidad)">{{ d.severidad | titlecase }}</span>
+                        </div>
+                        <div class="item-type">{{ d.tipoDolor || 'Sin tipificar' }}</div>
+                        <div class="item-meta">
+                            <span><i class="bi bi-calendar3 me-1"></i>{{ formatDate(d.fechaInicio) }}</span>
+                            <span><i class="bi bi-clock me-1"></i>{{ getDaysSince(d.fechaInicio) }}d</span>
+                        </div>
+                        <div class="item-eva">
+                            <div class="eva-mini-bg">
+                                <div class="eva-mini-fill" [style.width.%]="d.intensidad * 10"
+                                    [style.background]="getIntensityColor(d.intensidad)"></div>
+                            </div>
+                            <span class="eva-mini-val" [style.color]="getIntensityColor(d.intensidad)">{{ d.intensidad
+                                }}/10</span>
+                        </div>
+                    </div>
+                    <div class="item-actions" (click)="$event.stopPropagation()">
+                        <button title="Editar" (click)="openEditDolorForm(d)"><i class="bi bi-pencil"></i></button>
+                        <button class="btn-icon-danger" title="Eliminar" (click)="deleteDolor(d)"><i
+                                class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

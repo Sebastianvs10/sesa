@@ -1,0 +1,161 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Nueva Historia Clínica</h1>
+      <p class="sesa-page-subtitle">
+        Busca un paciente existente o crea uno nuevo para iniciar su historia clínica
+      </p>
+    </div>
+  </header>
+
+  <sesa-card title="Buscar Paciente">
+    <div class="sesa-search-form">
+      <sesa-form-field label="Número de Documento">
+        <input
+          type="text"
+          placeholder="Ej: 12345678"
+          [(ngModel)]="documento"
+          (keyup.enter)="buscarPaciente()"
+          [disabled]="buscando"
+        />
+      </sesa-form-field>
+      <button
+        type="button"
+        class="sesa-btn sesa-btn-primary"
+        (click)="buscarPaciente()"
+        [disabled]="buscando"
+      >
+        {{ buscando ? 'Buscando...' : 'Buscar' }}
+      </button>
+    </div>
+
+    @if (errorBusqueda) {
+      <p class="sesa-error">{{ errorBusqueda }}</p>
+    }
+
+    @if (pacientesEncontrados.length > 0) {
+      <div class="sesa-pacientes-list">
+        <h3>Pacientes encontrados:</h3>
+        @for (p of pacientesEncontrados; track p.id) {
+          <div class="sesa-paciente-item" (click)="seleccionarPaciente(p)">
+            <div class="sesa-paciente-info">
+              <strong>{{ p.nombres }} {{ p.apellidos || '' }}</strong>
+              <span class="sesa-meta">{{ p.tipoDocumento || 'CC' }} {{ p.documento }}</span>
+              <span class="sesa-meta">{{ (p.fechaNacimiento ? calcularEdad(p.fechaNacimiento) : null) ?? 'Edad no registrada' }}</span>
+            </div>
+            <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-primary">
+              Seleccionar
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </sesa-card>
+
+  @if (mostrarFormularioCrear) {
+    <sesa-card title="Crear Nuevo Paciente">
+      <div class="sesa-form-grid">
+        <div class="sesa-form-col-2">
+          <sesa-form-field label="Tipo de Documento">
+            <select [(ngModel)]="nuevoTipoDocumento">
+              <option value="CC">Cédula de Ciudadanía (CC)</option>
+              <option value="TI">Tarjeta de Identidad (TI)</option>
+              <option value="CE">Cédula de Extranjería (CE)</option>
+              <option value="PA">Pasaporte (PA)</option>
+              <option value="RC">Registro Civil (RC)</option>
+            </select>
+          </sesa-form-field>
+          <sesa-form-field label="Número de Documento *">
+            <input
+              type="text"
+              placeholder="Ej: 12345678"
+              [(ngModel)]="nuevoDocumento"
+              [disabled]="creando"
+            />
+          </sesa-form-field>
+        </div>
+
+        <div class="sesa-form-col-2">
+          <sesa-form-field label="Nombre *">
+            <input
+              type="text"
+              placeholder="Nombre del paciente"
+              [(ngModel)]="nuevoNombre"
+              [disabled]="creando"
+            />
+          </sesa-form-field>
+          <sesa-form-field label="Apellido">
+            <input
+              type="text"
+              placeholder="Apellido del paciente"
+              [(ngModel)]="nuevoApellido"
+              [disabled]="creando"
+            />
+          </sesa-form-field>
+        </div>
+
+        <div class="sesa-form-col-2">
+          <sesa-form-field label="Sexo">
+            <select [(ngModel)]="nuevoSexo" [disabled]="creando">
+              <option value="">Seleccionar</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="O">Otro</option>
+            </select>
+          </sesa-form-field>
+          <sesa-form-field label="Fecha de Nacimiento">
+            <input
+              type="date"
+              [(ngModel)]="nuevaFechaNacimiento"
+              [disabled]="creando"
+            />
+          </sesa-form-field>
+        </div>
+
+        <div class="sesa-form-col-2">
+          <sesa-form-field label="Teléfono">
+            <input
+              type="tel"
+              placeholder="+57 300 123 4567"
+              [(ngModel)]="nuevoTelefono"
+              [disabled]="creando"
+            />
+          </sesa-form-field>
+        </div>
+      </div>
+
+      @if (errorCreacion) {
+        <p class="sesa-error">{{ errorCreacion }}</p>
+      }
+
+      <div class="sesa-form-actions">
+        <button
+          type="button"
+          class="sesa-btn sesa-btn-primary"
+          (click)="crearPaciente()"
+          [disabled]="creando"
+        >
+          {{ creando ? 'Creando...' : 'Crear Paciente e Iniciar HC' }}
+        </button>
+        <button
+          type="button"
+          class="sesa-btn sesa-btn-secondary"
+          (click)="toggleFormularioCrear()"
+          [disabled]="creando"
+        >
+          Cancelar
+        </button>
+      </div>
+    </sesa-card>
+  } @else {
+    <div class="sesa-card">
+      <button
+        type="button"
+        class="sesa-btn sesa-btn-secondary"
+        (click)="toggleFormularioCrear()"
+      >
+        + Crear Nuevo Paciente
+      </button>
+    </div>
+  }
+</section>

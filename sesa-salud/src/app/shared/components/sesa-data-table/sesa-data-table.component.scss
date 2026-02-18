@@ -1,0 +1,76 @@
+/* Tabla de datos premium — rounded corners, smooth hover, polished header */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-table-wrapper {
+  width: 100%;
+  overflow: auto;
+  border-radius: var(--sesa-radius-md);
+}
+
+.sesa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background-color: var(--sesa-surface);
+}
+
+.sesa-table thead {
+  background: linear-gradient(135deg, rgba(10, 46, 79, 0.97), rgba(31, 106, 225, 0.88));
+  color: #fff;
+}
+
+.sesa-table th,
+.sesa-table td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sesa-border-light);
+  white-space: nowrap;
+}
+
+.sesa-table th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.sesa-table th:first-child {
+  border-radius: var(--sesa-radius-md) 0 0 0;
+}
+
+.sesa-table th:last-child {
+  border-radius: 0 var(--sesa-radius-md) 0 0;
+}
+
+.sesa-table tbody tr {
+  transition: background-color var(--sesa-transition-fast);
+}
+
+.sesa-table tbody tr:nth-child(even) {
+  background-color: rgba(15, 23, 42, 0.015);
+}
+
+[data-theme='dark'] .sesa-table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.sesa-table tbody tr:hover {
+  background-color: rgba(31, 106, 225, 0.04);
+}
+
+.sesa-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sesa-table-empty {
+  text-align: center;
+  padding: 1.5rem 0.85rem;
+  color: var(--sesa-text-muted);
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.sesa-table-cell-empty {
+  color: var(--sesa-text-muted);
+}

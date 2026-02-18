@@ -1,0 +1,943 @@
+/* Login SESA - Premium Dark Edition */
+/* Autor: Ing. J Sebastian Vargas S */
+
+/* ── Base container ── */
+.sesa-login {
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  background: #0c1222;
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='light'] .sesa-login {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #0f172a 100%);
+}
+
+[data-theme='dark'] .sesa-login {
+  background: #030712;
+}
+
+/* ── Panel izquierdo: fondo con imagen ── */
+.sesa-login-bg {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(2rem, 4vw, 3.5rem);
+  overflow: hidden;
+}
+
+.sesa-login-bg-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('/fondo1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.sesa-login-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(12, 18, 34, 0.3) 0%,
+      rgba(12, 18, 34, 0.65) 45%,
+      rgba(12, 18, 34, 0.92) 100%);
+  transition: opacity 0.4s ease;
+}
+
+[data-theme='dark'] .sesa-login-bg-overlay {
+  background: linear-gradient(180deg,
+      rgba(3, 7, 18, 0.25) 0%,
+      rgba(3, 7, 18, 0.55) 45%,
+      rgba(3, 7, 18, 0.95) 100%);
+}
+
+/* Orbes de luz animados en el panel izquierdo */
+.sesa-login-bg::before,
+.sesa-login-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.12;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sesa-login-bg::before {
+  width: 420px;
+  height: 420px;
+  background: var(--sesa-secondary);
+  top: 8%;
+  left: -12%;
+  animation: loginBlobFloat 14s ease-in-out infinite;
+}
+
+.sesa-login-bg::after {
+  width: 360px;
+  height: 360px;
+  background: var(--sesa-accent);
+  bottom: 18%;
+  right: -8%;
+  animation: loginBlobFloat 18s ease-in-out infinite reverse;
+}
+
+[data-theme='dark'] .sesa-login-bg::before {
+  opacity: 0.18;
+}
+
+[data-theme='dark'] .sesa-login-bg::after {
+  opacity: 0.15;
+}
+
+@keyframes loginBlobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -25px) scale(1.06); }
+  66% { transform: translate(-18px, 18px) scale(0.94); }
+}
+
+.sesa-login-bg-content {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  max-width: 420px;
+}
+
+.sesa-login-bg-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.sesa-login-bg-subtitle {
+  margin: 0;
+  font-size: clamp(0.875rem, 1.2vw, 0.95rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 400;
+}
+
+.sesa-login-bg-line {
+  margin-top: 1.75rem;
+  width: 56px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--sesa-accent), var(--sesa-secondary));
+  border-radius: 2px;
+}
+
+/* ── Panel derecho: formulario ── */
+.sesa-login-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.75rem, 3.5vw, 3.25rem);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+[data-theme='dark'] .sesa-login-panel {
+  background: linear-gradient(160deg, #060b16 0%, #0a1020 40%, #070d18 100%);
+  box-shadow: -8px 0 48px rgba(0, 0, 0, 0.5);
+}
+
+/* Orbes de luz en el panel derecho (solo dark) */
+[data-theme='dark'] .sesa-login-panel::before,
+[data-theme='dark'] .sesa-login-panel::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme='dark'] .sesa-login-panel::before {
+  width: 300px;
+  height: 300px;
+  background: rgba(31, 106, 225, 0.08);
+  top: -80px;
+  right: -60px;
+  animation: panelOrb1 10s ease-in-out infinite;
+}
+
+[data-theme='dark'] .sesa-login-panel::after {
+  width: 250px;
+  height: 250px;
+  background: rgba(43, 176, 166, 0.06);
+  bottom: -60px;
+  left: -40px;
+  animation: panelOrb2 13s ease-in-out infinite;
+}
+
+@keyframes panelOrb1 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.8; }
+  50% { transform: translate(-30px, 40px); opacity: 1; }
+}
+
+@keyframes panelOrb2 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.7; }
+  50% { transform: translate(25px, -35px); opacity: 1; }
+}
+
+/* ── Card del formulario (Glassmorphism en dark) ── */
+.sesa-login-panel-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: 2.25rem 2.5rem;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.06),
+    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(226, 232, 240, 0.5);
+  animation: loginCardIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sesa-login-panel-inner--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+[data-theme='dark'] .sesa-login-panel-inner {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(43, 176, 166, 0.1);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 80px -20px rgba(31, 106, 225, 0.08);
+}
+
+@keyframes loginCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Toggle de tema ── */
+.sesa-login-theme-toggle {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+  z-index: 10;
+}
+
+.sesa-login-theme-toggle:hover {
+  color: var(--sesa-secondary);
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-secondary);
+}
+
+[data-theme='dark'] .sesa-login-theme-toggle {
+  border-color: rgba(42, 58, 82, 0.6);
+  background: rgba(15, 22, 36, 0.6);
+  backdrop-filter: blur(8px);
+  color: var(--sesa-text-secondary);
+}
+
+[data-theme='dark'] .sesa-login-theme-toggle:hover {
+  color: var(--sesa-accent);
+  background: rgba(43, 176, 166, 0.1);
+  border-color: rgba(43, 176, 166, 0.4);
+}
+
+.sesa-login-theme-toggle fa-icon {
+  font-size: 1.1rem;
+}
+
+.sesa-login-theme-toggle fa-icon svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* ── Logo ── */
+.sesa-login-logo-full {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.sesa-login-logo-full--centered {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sesa-login-logo-img {
+  width: 4rem;
+  height: 4rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  margin-top: 0.05rem;
+  transition: filter 0.3s ease;
+}
+
+[data-theme='dark'] .sesa-login-logo-img {
+  filter: drop-shadow(0 0 12px rgba(43, 176, 166, 0.3));
+}
+
+.sesa-login-logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sesa-login-logo-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+[data-theme='dark'] .sesa-login-logo-title {
+  color: #f1f5f9;
+  background: linear-gradient(135deg, #f1f5f9 0%, rgba(43, 176, 166, 0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sesa-login-logo-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+[data-theme='dark'] .sesa-login-logo-subtitle {
+  color: #64748b;
+}
+
+/* ── Textos del formulario ── */
+.sesa-login-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.sesa-login-label--centered {
+  text-align: center;
+}
+
+[data-theme='dark'] .sesa-login-label {
+  color: rgba(43, 176, 166, 0.7);
+}
+
+.sesa-login-main-title {
+  margin: 0 0 1.75rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.sesa-login-main-title--centered {
+  text-align: center;
+}
+
+[data-theme='dark'] .sesa-login-main-title {
+  color: #f1f5f9;
+}
+
+/* ── Formulario ── */
+.sesa-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  width: 100%;
+}
+
+.sesa-login-form--centered {
+  align-items: stretch;
+}
+
+/* ── Selector modo: correo / identificación ── */
+.sesa-login-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  background: var(--sesa-surface-hover);
+  border-radius: 14px;
+  border: 1px solid var(--sesa-border-light);
+}
+
+[data-theme='dark'] .sesa-login-mode-toggle {
+  background: rgba(10, 16, 30, 0.5);
+  border-color: rgba(42, 58, 82, 0.4);
+}
+
+.sesa-login-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.sesa-login-mode-btn fa-icon {
+  font-size: 1rem;
+}
+
+.sesa-login-mode-btn:hover {
+  color: var(--sesa-text-primary);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme='dark'] .sesa-login-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sesa-text-primary);
+}
+
+.sesa-login-mode-btn--active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  box-shadow: 0 2px 8px rgba(31, 106, 225, 0.3);
+}
+
+.sesa-login-mode-btn--active:hover {
+  color: #fff;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+}
+
+[data-theme='dark'] .sesa-login-mode-btn--active {
+  box-shadow:
+    0 2px 12px rgba(43, 176, 166, 0.3),
+    0 0 0 1px rgba(43, 176, 166, 0.15);
+}
+
+/* ── Inputs premium ── */
+.sesa-input-icon {
+  display: flex;
+  align-items: center;
+  height: 54px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  transition:
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.3s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme='dark'] .sesa-input-icon {
+  border-color: rgba(42, 58, 82, 0.6);
+  background: rgba(10, 16, 30, 0.5);
+}
+
+.sesa-input-icon:hover {
+  border-color: #cbd5e1;
+  box-shadow:
+    0 4px 14px rgba(31, 106, 225, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+[data-theme='dark'] .sesa-input-icon:hover {
+  border-color: rgba(43, 176, 166, 0.3);
+  box-shadow: 0 4px 18px rgba(43, 176, 166, 0.06);
+}
+
+.sesa-input-icon:focus-within {
+  border-color: var(--sesa-secondary);
+  box-shadow:
+    0 0 0 4px rgba(31, 106, 225, 0.16),
+    0 10px 28px rgba(31, 106, 225, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .sesa-input-icon:focus-within {
+  border-color: var(--sesa-accent);
+  box-shadow:
+    0 0 0 4px rgba(43, 176, 166, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 30px -10px rgba(43, 176, 166, 0.2);
+  transform: translateY(-1px);
+}
+
+.sesa-input-icon-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 0.25s ease;
+}
+
+.sesa-input-icon-symbol svg {
+  display: block;
+  color: inherit;
+}
+
+.sesa-input-icon:focus-within .sesa-input-icon-symbol {
+  color: var(--sesa-secondary);
+}
+
+[data-theme='dark'] .sesa-input-icon:focus-within .sesa-input-icon-symbol {
+  color: var(--sesa-accent);
+}
+
+.sesa-input-icon input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 0 1rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #0f172a;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+}
+
+.sesa-input-icon--toggle-only input {
+  padding-left: 1rem;
+}
+
+.sesa-input-icon--password input {
+  padding-right: 0.5rem;
+}
+
+[data-theme='dark'] .sesa-input-icon input {
+  color: #f1f5f9;
+}
+
+.sesa-input-icon input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+[data-theme='dark'] .sesa-input-icon input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+/* ── Botón ver/ocultar contraseña ── */
+.sesa-input-password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 100%;
+  min-height: 44px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 10px;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.sesa-input-password-toggle:hover {
+  color: var(--sesa-secondary);
+  background: rgba(31, 106, 225, 0.08);
+}
+
+.sesa-input-password-toggle:active {
+  transform: scale(0.96);
+}
+
+[data-theme='dark'] .sesa-input-password-toggle:hover {
+  color: var(--sesa-accent);
+  background: rgba(43, 176, 166, 0.1);
+}
+
+.sesa-input-password-toggle-icon {
+  font-size: 1.1rem;
+
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+}
+
+/* ── Fila recordar / olvidé ── */
+.sesa-login-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sesa-login-row--between {
+  justify-content: space-between;
+}
+
+.sesa-login-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+}
+
+[data-theme='dark'] .sesa-login-remember {
+  color: #94a3b8;
+}
+
+.sesa-login-remember input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--sesa-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sesa-login-remember input:hover {
+  transform: scale(1.08);
+}
+
+.sesa-login-remember input:checked {
+  transform: scale(1.05);
+}
+
+[data-theme='dark'] .sesa-login-remember input {
+  accent-color: var(--sesa-accent);
+}
+
+.sesa-link-inline {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sesa-link-inline:hover {
+  color: var(--sesa-accent);
+  text-decoration: underline;
+}
+
+/* ── Error message ── */
+.sesa-login-error {
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #fecaca;
+  animation: sesaFadeIn 0.25s ease-out;
+}
+
+[data-theme='dark'] .sesa-login-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+@keyframes sesaFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Botón principal (gradient + glow) ── */
+.sesa-login-actions {
+  margin-top: 0.35rem;
+}
+
+.sesa-login-form .sesa-btn-primary {
+  height: 52px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--sesa-secondary) 0%, #1558c9 50%, var(--sesa-accent) 100%);
+  background-size: 200% auto;
+  color: #fff;
+  box-shadow:
+    0 4px 15px rgba(31, 106, 225, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  transition:
+    background-position 0.4s ease,
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sesa-login-form .sesa-btn-primary:hover:not(:disabled) {
+  background-position: right center;
+  box-shadow:
+    0 8px 28px rgba(31, 106, 225, 0.45),
+    0 4px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.sesa-login-form .sesa-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(31, 106, 225, 0.35);
+}
+
+[data-theme='dark'] .sesa-login-form .sesa-btn-primary {
+  box-shadow:
+    0 4px 24px rgba(43, 176, 166, 0.25),
+    0 0 0 1px rgba(43, 176, 166, 0.12),
+    0 0 40px -10px rgba(43, 176, 166, 0.2);
+}
+
+[data-theme='dark'] .sesa-login-form .sesa-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 8px 36px rgba(43, 176, 166, 0.35),
+    0 0 0 1px rgba(43, 176, 166, 0.18),
+    0 0 60px -10px rgba(43, 176, 166, 0.3);
+}
+
+.sesa-btn-secondary {
+  background: transparent;
+  color: var(--sesa-secondary);
+  border: 1.5px solid var(--sesa-border);
+  border-radius: 12px;
+}
+
+.sesa-btn-secondary:hover {
+  background: rgba(31, 106, 225, 0.06);
+  border-color: var(--sesa-secondary);
+}
+
+/* ── Footer links ── */
+.sesa-login-footer-links {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.sesa-login-footer-links--centered {
+  text-align: center;
+}
+
+[data-theme='dark'] .sesa-login-footer-links {
+  border-color: rgba(42, 58, 82, 0.4);
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-login-footer-links a {
+  font-weight: 500;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+}
+
+.sesa-login-footer-links a:hover {
+  text-decoration: underline;
+}
+
+[data-theme='dark'] .sesa-login-footer-links a {
+  color: var(--sesa-accent);
+}
+
+/* ── Reset modal ── */
+.sesa-login-reset {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.sesa-login-reset h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--sesa-text-primary);
+}
+
+.sesa-login-success {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ── Partículas decorativas (solo dark) ── */
+.sesa-login-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sesa-login-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.sesa-login-particle--1 {
+  width: 3px;
+  height: 3px;
+  background: rgba(43, 176, 166, 0.6);
+  top: 15%;
+  left: 20%;
+  animation: particleFloat 8s ease-in-out infinite;
+}
+
+.sesa-login-particle--2 {
+  width: 2px;
+  height: 2px;
+  background: rgba(31, 106, 225, 0.5);
+  top: 40%;
+  right: 25%;
+  animation: particleFloat 11s ease-in-out 2s infinite;
+}
+
+.sesa-login-particle--3 {
+  width: 4px;
+  height: 4px;
+  background: rgba(43, 176, 166, 0.4);
+  bottom: 30%;
+  left: 35%;
+  animation: particleFloat 9s ease-in-out 4s infinite;
+}
+
+.sesa-login-particle--4 {
+  width: 2px;
+  height: 2px;
+  background: rgba(31, 106, 225, 0.4);
+  top: 65%;
+  right: 15%;
+  animation: particleFloat 12s ease-in-out 1s infinite;
+}
+
+.sesa-login-particle--5 {
+  width: 3px;
+  height: 3px;
+  background: rgba(43, 176, 166, 0.5);
+  top: 25%;
+  right: 40%;
+  animation: particleFloat 10s ease-in-out 3s infinite;
+}
+
+.sesa-login-particle--6 {
+  width: 2px;
+  height: 2px;
+  background: rgba(139, 92, 246, 0.4);
+  bottom: 20%;
+  right: 30%;
+  animation: particleFloat 14s ease-in-out 5s infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 0.8;
+    transform: translateY(-15px) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-35px) scale(0.8);
+  }
+  80% {
+    opacity: 0.3;
+    transform: translateY(-55px) scale(0.6);
+  }
+}
+
+/* Línea luminosa en top del card (solo dark) */
+[data-theme='dark'] .sesa-login-panel-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(43, 176, 166, 0.5) 30%,
+    rgba(31, 106, 225, 0.5) 70%,
+    transparent 100%);
+  border-radius: 1px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .sesa-login {
+    grid-template-columns: 1fr;
+    grid-template-rows: 32vh 1fr;
+  }
+
+  .sesa-login-bg {
+    min-height: 32vh;
+    padding: 1.5rem;
+    align-items: flex-end;
+  }
+
+  .sesa-login-bg-content {
+    max-width: 100%;
+  }
+
+  .sesa-login-bg-line {
+    margin-top: 1rem;
+  }
+
+  .sesa-login-panel {
+    padding: 1.25rem;
+    align-items: flex-start;
+  }
+
+  .sesa-login-panel-inner {
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+}

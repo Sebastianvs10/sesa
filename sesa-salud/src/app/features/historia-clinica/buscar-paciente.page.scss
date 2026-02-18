@@ -1,0 +1,78 @@
+.sesa-search-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+
+  sesa-form-field {
+    flex: 1;
+  }
+
+  button {
+    height: 38px;
+  }
+}
+
+.sesa-pacientes-list {
+  margin-top: 2rem;
+
+  h3 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+
+  .sesa-paciente-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .sesa-paciente-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      strong {
+        color: var(--text-primary);
+      }
+
+      .sesa-meta {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+    }
+  }
+}
+
+.sesa-form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sesa-form-col-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.sesa-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+
+  button {
+    flex: 1;
+  }
+}

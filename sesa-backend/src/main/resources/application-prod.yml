@@ -1,0 +1,68 @@
+# Producción: editar url, username, password, jwt.secret y cors según el entorno
+spring:
+  application:
+    name: sesa-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sesa_prod
+    username: sesa_dbuser
+    password: cambiar_password_produccion
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      connection-test-query: SELECT 1
+      max-lifetime: 1800000
+      idle-timeout: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    min-response-size: 1024
+  error:
+    include-message: never
+
+sesa:
+  jwt:
+    secret: cambiar_jwt_secret_produccion_minimo_256_bits_para_hs256
+    expiration-ms: 86400000
+  upload:
+    path: /var/sesa/uploads
+  cors:
+    allowed-origins: https://app.sesa.com
+
+logging:
+  level:
+    root: WARN
+    com.sesa: INFO
+    org.springframework.security: WARN
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/sesa/application.log
+    max-size: 100MB
+    max-history: 30
+
+management:
+  endpoints:
+    web:
+      exposure: include=health,info
+  endpoint:
+    health:
+      show-details: when-authorized

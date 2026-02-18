@@ -1,0 +1,82 @@
+<div class="sesa-page-header">
+  <h1 class="sesa-page-title">{{ isEdit ? 'Editar paciente' : 'Nuevo paciente' }}</h1>
+  <a class="sesa-btn sesa-btn-secondary" routerLink="/pacientes">← Volver</a>
+</div>
+
+<sesa-card>
+  @if (error) {
+    <div class="sesa-error-banner">{{ error }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="sesa-form-grid">
+      <sesa-form-field label="Tipo documento">
+        <select formControlName="tipoDocumento">
+          <option value="CC">Cédula</option>
+          <option value="CE">Cédula extranjera</option>
+          <option value="TI">Tarjeta identidad</option>
+        </select>
+      </sesa-form-field>
+      <sesa-form-field label="Documento" [required]="true" [error]="form.get('documento')?.invalid && form.get('documento')?.touched ? 'Requerido' : ''">
+        <input type="text" formControlName="documento" placeholder="Número de documento" />
+      </sesa-form-field>
+      <sesa-form-field label="Nombres" [required]="true" [error]="form.get('nombres')?.invalid && form.get('nombres')?.touched ? 'Requerido' : ''">
+        <input type="text" formControlName="nombres" placeholder="Nombres" />
+      </sesa-form-field>
+      <sesa-form-field label="Apellidos">
+        <input type="text" formControlName="apellidos" placeholder="Apellidos" />
+      </sesa-form-field>
+      <sesa-form-field label="Fecha nacimiento">
+        <input type="date" formControlName="fechaNacimiento" />
+      </sesa-form-field>
+      <sesa-form-field label="Sexo">
+        <select formControlName="sexo">
+          <option value="">Seleccione</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </sesa-form-field>
+      <sesa-form-field label="Grupo sanguíneo">
+        <select formControlName="grupoSanguineo">
+          <option value="">Seleccione</option>
+          <option value="A+">A+</option>
+          <option value="A-">A-</option>
+          <option value="B+">B+</option>
+          <option value="B-">B-</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB-</option>
+          <option value="O+">O+</option>
+          <option value="O-">O-</option>
+        </select>
+      </sesa-form-field>
+      <sesa-form-field label="Teléfono">
+        <input type="tel" formControlName="telefono" placeholder="Teléfono" />
+      </sesa-form-field>
+      <sesa-form-field label="Email">
+        <input type="email" formControlName="email" placeholder="Correo electrónico" />
+      </sesa-form-field>
+      <sesa-form-field label="Dirección">
+        <input type="text" formControlName="direccion" placeholder="Dirección" />
+      </sesa-form-field>
+      <sesa-form-field label="EPS">
+        <select formControlName="epsId">
+          <option [ngValue]="null">Seleccione</option>
+          @for (e of epsList; track e.id) {
+            <option [ngValue]="e.id">{{ e.nombre }}</option>
+          }
+        </select>
+      </sesa-form-field>
+      <sesa-form-field label="Activo">
+        <input type="checkbox" formControlName="activo" />
+      </sesa-form-field>
+    </div>
+
+    <div class="sesa-form-actions">
+      <button type="button" class="sesa-btn sesa-btn-secondary" routerLink="/pacientes">Cancelar</button>
+      <button type="submit" class="sesa-btn sesa-btn-primary" [disabled]="loading">
+        {{ loading ? 'Guardando…' : (isEdit ? 'Guardar' : 'Crear paciente') }}
+      </button>
+    </div>
+  </form>
+</sesa-card>

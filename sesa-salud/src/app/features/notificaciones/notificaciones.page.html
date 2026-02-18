@@ -1,0 +1,271 @@
+<div class="sesa-notif-page">
+
+  <!-- ========== Pestañas ========== -->
+  <div class="sesa-notif-tabs">
+    <button
+      class="sesa-notif-tab"
+      [class.sesa-notif-tab--active]="tab() === 'recibidas'"
+      (click)="switchTab('recibidas')">
+      <fa-icon [icon]="faInbox" class="sesa-notif-tab-icon"></fa-icon>
+      Recibidas
+      @if (noLeidas() > 0) {
+        <span class="sesa-notif-badge">{{ noLeidas() }}</span>
+      }
+    </button>
+    <button
+      class="sesa-notif-tab"
+      [class.sesa-notif-tab--active]="tab() === 'enviadas'"
+      (click)="switchTab('enviadas')">
+      <fa-icon [icon]="faPaperPlane" class="sesa-notif-tab-icon"></fa-icon>
+      Enviadas
+    </button>
+    <button
+      class="sesa-notif-tab"
+      [class.sesa-notif-tab--active]="tab() === 'redactar'"
+      (click)="switchTab('redactar')">
+      <fa-icon [icon]="faPenToSquare" class="sesa-notif-tab-icon"></fa-icon>
+      Redactar
+    </button>
+  </div>
+
+  <!-- ========== Alertas ========== -->
+  @if (error()) {
+    <div class="sesa-notif-alert sesa-notif-alert--error">
+      {{ error() }}
+      <button (click)="error.set(null)">&times;</button>
+    </div>
+  }
+  @if (success()) {
+    <div class="sesa-notif-alert sesa-notif-alert--success">
+      {{ success() }}
+      <button (click)="success.set(null)">&times;</button>
+    </div>
+  }
+
+  <!-- ========== Panel principal ========== -->
+  <div class="sesa-notif-body">
+
+    <!-- ===== DETALLE (overlay) ===== -->
+    @if (selectedNotif(); as n) {
+      <div class="sesa-notif-detail">
+        <div class="sesa-notif-detail-header">
+          <h2>{{ n.titulo }}</h2>
+          <button class="sesa-notif-close" (click)="closeDetail()">&times;</button>
+        </div>
+        <div class="sesa-notif-detail-meta">
+          <span class="sesa-notif-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
+          <span>De: <strong>{{ n.remitenteNombre || 'Sistema' }}</strong></span>
+          <span>{{ n.fechaEnvio | date:'medium' }}</span>
+        </div>
+        <div class="sesa-notif-detail-content" [innerHTML]="n.contenido"></div>
+
+        @if (n.adjuntos && n.adjuntos.length > 0) {
+          <div class="sesa-notif-adjuntos-section">
+            <h4>Adjuntos ({{ n.adjuntos.length }})</h4>
+            <div class="sesa-notif-adjuntos-grid">
+              @for (adj of n.adjuntos; track adj.id) {
+                <div class="sesa-notif-adjunto-card">
+                  @if (isImageType(adj.contentType)) {
+                    <img [src]="adjuntoPreviewUrl(n.id, adj.id)" [alt]="adj.nombreArchivo" class="sesa-notif-adjunto-preview" />
+                  } @else if (isVideoType(adj.contentType)) {
+                    <video [src]="adjuntoPreviewUrl(n.id, adj.id)" class="sesa-notif-adjunto-preview" controls></video>
+                  } @else {
+                    <div class="sesa-notif-adjunto-icon"><fa-icon [icon]="faPaperclip"></fa-icon></div>
+                  }
+                  <div class="sesa-notif-adjunto-info">
+                    <span class="sesa-notif-adjunto-name">{{ adj.nombreArchivo }}</span>
+                    @if (adj.tamano) {
+                      <span class="sesa-notif-adjunto-size">{{ formatFileSize(adj.tamano) }}</span>
+                    }
+                  </div>
+                  <button class="sesa-notif-adjunto-dl" (click)="downloadFile(n.id, adj)">Descargar</button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (n.destinatarios && n.destinatarios.length > 0) {
+          <div class="sesa-notif-destinatarios-section">
+            <h4>Destinatarios ({{ n.destinatarios.length }})</h4>
+            <div class="sesa-notif-destinatarios-list">
+              @for (d of n.destinatarios; track d.usuarioId) {
+                <div class="sesa-notif-dest-item">
+                  <span class="sesa-notif-dest-avatar">{{ (d.usuarioNombre || d.usuarioEmail || '?').charAt(0).toUpperCase() }}</span>
+                  <span class="sesa-notif-dest-name">{{ d.usuarioNombre || d.usuarioEmail }}</span>
+                  @if (d.leido) {
+                    <span class="sesa-notif-dest-leido">Leído</span>
+                  } @else {
+                    <span class="sesa-notif-dest-no-leido">No leído</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- ===== LISTA RECIBIDAS ===== -->
+      @if (tab() === 'recibidas') {
+        <div class="sesa-notif-list">
+          @if (loading()) {
+            <div class="sesa-notif-loading">
+              <div class="sesa-spinner"></div>
+              <span>Cargando...</span>
+            </div>
+          } @else if (recibidas().length === 0) {
+            <div class="sesa-notif-empty">
+              <fa-icon [icon]="faInbox" class="sesa-notif-empty-icon"></fa-icon>
+              <p>No tiene notificaciones recibidas.</p>
+            </div>
+          } @else {
+            @for (n of recibidas(); track n.id) {
+              <button class="sesa-notif-row" (click)="viewNotif(n)">
+                <div class="sesa-notif-row-left">
+                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
+                  <span class="sesa-notif-row-avatar">{{ (n.remitenteNombre || '?').charAt(0).toUpperCase() }}</span>
+                </div>
+                <div class="sesa-notif-row-body">
+                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
+                  <div class="sesa-notif-row-from">{{ n.remitenteNombre || 'Sistema' }}</div>
+                </div>
+                <div class="sesa-notif-row-right">
+                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
+                  @if (n.adjuntos && n.adjuntos.length > 0) {
+                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
+                  }
+                </div>
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <!-- ===== LISTA ENVIADAS ===== -->
+      @if (tab() === 'enviadas') {
+        <div class="sesa-notif-list">
+          @if (loading()) {
+            <div class="sesa-notif-loading">
+              <div class="sesa-spinner"></div>
+              <span>Cargando...</span>
+            </div>
+          } @else if (enviadas().length === 0) {
+            <div class="sesa-notif-empty">
+              <fa-icon [icon]="faPaperPlane" class="sesa-notif-empty-icon"></fa-icon>
+              <p>No ha enviado notificaciones.</p>
+            </div>
+          } @else {
+            @for (n of enviadas(); track n.id) {
+              <button class="sesa-notif-row" (click)="viewNotif(n)">
+                <div class="sesa-notif-row-left">
+                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
+                </div>
+                <div class="sesa-notif-row-body">
+                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
+                  <div class="sesa-notif-row-from">Para: {{ n.destinatarios?.length || 0 }} destinatarios</div>
+                </div>
+                <div class="sesa-notif-row-right">
+                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
+                  @if (n.adjuntos && n.adjuntos.length > 0) {
+                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
+                  }
+                </div>
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <!-- ===== REDACTAR ===== -->
+      @if (tab() === 'redactar') {
+        <div class="sesa-notif-compose">
+          <form [formGroup]="form" (ngSubmit)="send()" class="sesa-notif-compose-form">
+            <div class="sesa-notif-compose-left">
+              <div class="sesa-field">
+                <label class="sesa-label">Título *</label>
+                <input class="sesa-input" formControlName="titulo" placeholder="Asunto de la notificación" />
+              </div>
+
+              <div class="sesa-field">
+                <label class="sesa-label">Tipo</label>
+                <select class="sesa-input" formControlName="tipo">
+                  <option value="GENERAL">General</option>
+                  <option value="URGENTE">Urgente</option>
+                  <option value="INFORMATIVO">Informativo</option>
+                </select>
+              </div>
+
+              <div class="sesa-field sesa-field--grow">
+                <label class="sesa-label">Contenido *</label>
+                <textarea
+                  class="sesa-input sesa-textarea"
+                  formControlName="contenido"
+                  placeholder="Escriba el contenido de la notificación (admite HTML)..."
+                  rows="10"></textarea>
+              </div>
+
+              <div class="sesa-field">
+                <label class="sesa-label">Adjuntos</label>
+                <div class="sesa-adjuntos-upload">
+                  <label class="sesa-upload-btn">
+                    <input type="file" multiple (change)="onFilesSelected($event)" hidden />
+                    <fa-icon [icon]="faPaperclip"></fa-icon>
+                    <span> Agregar archivos</span>
+                  </label>
+                  @if (adjuntos.length > 0) {
+                    <div class="sesa-adjuntos-list">
+                      @for (f of adjuntos; track $index) {
+                        <div class="sesa-adjunto-chip">
+                          <span>{{ f.name }} ({{ formatFileSize(f.size) }})</span>
+                          <button type="button" (click)="removeAdjunto($index)">&times;</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="sesa-notif-compose-right">
+              <label class="sesa-label">Destinatarios *</label>
+              <div class="sesa-dest-toolbar">
+                <input
+                  class="sesa-input sesa-dest-search"
+                  [(ngModel)]="searchUsuarios"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Buscar usuario..." />
+                <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
+                <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
+              </div>
+              <div class="sesa-dest-grid">
+                @for (u of filteredUsuarios(); track u.id) {
+                  <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
+                    <input
+                      type="checkbox"
+                      [checked]="isSelected(u.id)"
+                      (change)="toggleDestinatario(u.id)" />
+                    <div class="sesa-dest-option-info">
+                      <span class="sesa-dest-option-name">{{ u.nombreCompleto }}</span>
+                      <span class="sesa-dest-option-email">{{ u.email }}</span>
+                    </div>
+                  </label>
+                }
+              </div>
+              <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+            </div>
+
+            <div class="sesa-notif-compose-actions">
+              <button type="submit" class="sesa-btn sesa-btn--primary" [disabled]="loading()">
+                @if (loading()) {
+                  <span class="sesa-spinner-sm"></span> Enviando...
+                } @else {
+                  Enviar notificación
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    }
+  </div>
+</div>

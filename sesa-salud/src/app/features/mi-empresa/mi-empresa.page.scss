@@ -1,0 +1,136 @@
+/* Mi empresa - logo y datos de la organización */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-mi-empresa {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sesa-page-header {
+  margin-bottom: 0.25rem;
+}
+
+.sesa-page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.sesa-page-subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-mi-empresa-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sesa-mi-empresa-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--sesa-bg);
+  border-radius: 12px;
+  border: 1px solid var(--sesa-border);
+}
+
+.sesa-mi-empresa-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--sesa-surface);
+}
+
+.sesa-mi-empresa-logo-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--sesa-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-mi-empresa-nombre {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.sesa-mi-empresa-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sesa-mi-empresa-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.sesa-mi-empresa-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-mi-empresa-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sesa-mi-empresa-input {
+  font-size: 0.875rem;
+  color: var(--sesa-text-primary);
+}
+
+.sesa-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: var(--sesa-secondary);
+  color: #fff;
+}
+
+.sesa-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sesa-btn-primary {
+  background: var(--sesa-secondary);
+}
+
+.sesa-mi-empresa-filename {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-mi-empresa-error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sesa-error);
+}
+
+.sesa-mi-empresa-success {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sesa-success);
+}

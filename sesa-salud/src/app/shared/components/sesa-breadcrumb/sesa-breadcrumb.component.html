@@ -1,0 +1,10 @@
+<nav class="sesa-breadcrumb" aria-label="Ruta de navegación">
+  @for (item of items(); track item.path; let last = $last) {
+    @if (last) {
+      <span class="sesa-breadcrumb-current">{{ item.label }}</span>
+    } @else {
+      <a [routerLink]="item.path" class="sesa-breadcrumb-link">{{ item.label }}</a>
+      <span class="sesa-breadcrumb-sep" aria-hidden="true">›</span>
+    }
+  }
+</nav>

@@ -1,0 +1,19 @@
+<label class="sesa-field" [class.sesa-field--success]="success">
+  <span class="sesa-field-label">
+    {{ label }}
+    <span *ngIf="required" class="sesa-field-required">*</span>
+    @if (tooltip) {
+      <span class="sesa-field-tooltip" [attr.data-tooltip]="tooltip" [attr.title]="tooltip" tabindex="0">ℹ️</span>
+    }
+  </span>
+  <div class="sesa-field-control">
+    <ng-content></ng-content>
+  </div>
+  <div class="sesa-field-hint" *ngIf="hint && !error">
+    {{ hint }}
+  </div>
+  <div class="sesa-field-error" *ngIf="error">
+    {{ error }}
+  </div>
+</label>
+

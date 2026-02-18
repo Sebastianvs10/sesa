@@ -1,0 +1,355 @@
+/* Estilos universales SESA - Premium Design System */
+/* Autor: Ing. J Sebastian Vargas S */
+
+:root {
+  /* Brand */
+  --sesa-primary: #0a2e4f;
+  --sesa-secondary: #1f6ae1;
+  --sesa-accent: #2bb0a6;
+
+  /* Backgrounds */
+  --sesa-bg: #f4f7fb;
+  --sesa-surface: #ffffff;
+  --sesa-surface-hover: #f8fafc;
+
+  /* Inputs (formularios) - tema claro */
+  --sesa-input-bg: #ffffff;
+  --sesa-input-bg-hover: #ffffff;
+  --sesa-input-bg-focus: #ffffff;
+  --sesa-input-border: #e2e8f0;
+  --sesa-input-placeholder: rgba(100, 116, 139, 0.65);
+  --sesa-input-readonly-bg: #f1f5f9;
+  --sesa-input-disabled-bg: #f1f5f9;
+
+  /* Text */
+  --sesa-text-primary: #1e293b;
+  --sesa-text-secondary: #64748b;
+  --sesa-text-muted: #94a3b8;
+
+  /* Borders */
+  --sesa-border: #e2e8f0;
+  --sesa-border-light: #f1f5f9;
+
+  /* Topbar y avatar (header) */
+  --sesa-topbar-bg: rgba(255, 255, 255, 0.85);
+  --sesa-avatar-ring: rgba(31, 106, 225, 0.2);
+
+  /* States */
+  --sesa-success: #22c55e;
+  --sesa-success-bg: #f0fdf4;
+  --sesa-success-border: #22c55e;
+  --sesa-warning: #f59e0b;
+  --sesa-warning-bg: rgba(245, 158, 11, 0.08);
+  --sesa-error: #ef4444;
+  --sesa-error-bg: #fee2e2;
+  --sesa-error-border: #dc2626;
+  --sesa-info: #0ea5e9;
+
+  /* Premium shadows */
+  --sesa-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sesa-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sesa-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --sesa-shadow-lg: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.04);
+  --sesa-shadow-xl: 0 20px 40px -5px rgba(15, 23, 42, 0.1), 0 8px 16px rgba(15, 23, 42, 0.06);
+
+  /* Premium radius */
+  --sesa-radius-sm: 6px;
+  --sesa-radius-md: 10px;
+  --sesa-radius-lg: 14px;
+  --sesa-radius-xl: 20px;
+
+  /* Transitions */
+  --sesa-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --sesa-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --sesa-transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tema oscuro */
+[data-theme='dark'] {
+  --sesa-bg: #0c1222;
+  --sesa-surface: #1a2235;
+  --sesa-surface-hover: #212d42;
+  --sesa-text-primary: #f1f5f9;
+  --sesa-text-secondary: #94a3b8;
+  --sesa-text-muted: #64748b;
+  --sesa-border: #2a3a52;
+  --sesa-border-light: #1e2d44;
+
+  /* Topbar y avatar - tema oscuro */
+  --sesa-topbar-bg: rgba(26, 34, 53, 0.9);
+  --sesa-avatar-ring: rgba(43, 176, 166, 0.25);
+
+  /* Inputs - tema oscuro */
+  --sesa-input-bg: #1a2235;
+  --sesa-input-bg-hover: #212d42;
+  --sesa-input-bg-focus: #212d42;
+  --sesa-input-border: #2a3a52;
+  --sesa-input-placeholder: rgba(148, 163, 184, 0.7);
+  --sesa-input-readonly-bg: #0f172a;
+  --sesa-input-disabled-bg: #0f172a;
+
+  /* States - tema oscuro */
+  --sesa-success-bg: rgba(34, 197, 94, 0.12);
+  --sesa-success-border: #22c55e;
+  --sesa-error-bg: rgba(239, 68, 68, 0.15);
+  --sesa-error-border: #f87171;
+  --sesa-warning-bg: rgba(245, 158, 11, 0.12);
+
+  /* Shadows - tema oscuro */
+  --sesa-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sesa-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --sesa-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --sesa-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.15);
+  --sesa-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.35), 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--sesa-text-primary);
+  background-color: var(--sesa-bg);
+  line-height: 1.5;
+}
+
+body {
+  min-height: 100vh;
+}
+
+app-root,
+sesa-root {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--sesa-bg);
+}
+
+/* Premium text selection */
+::selection {
+  background: rgba(31, 106, 225, 0.15);
+  color: inherit;
+}
+
+/* Premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sesa-border);
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sesa-text-muted);
+}
+
+/* ==============================================
+   Global Premium Button System
+   ============================================== */
+
+.sesa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 1.1rem;
+  border-radius: var(--sesa-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--sesa-transition),
+    border-color var(--sesa-transition),
+    color var(--sesa-transition),
+    box-shadow var(--sesa-transition),
+    transform var(--sesa-transition-fast);
+  outline: none;
+}
+
+.sesa-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.25);
+}
+
+.sesa-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.sesa-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.sesa-btn-primary {
+  background: linear-gradient(135deg, var(--sesa-secondary), #1558c9);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(31, 106, 225, 0.25);
+}
+
+.sesa-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2575ef, var(--sesa-secondary));
+  box-shadow: 0 6px 20px rgba(31, 106, 225, 0.35);
+  transform: translateY(-1px);
+}
+
+.sesa-btn-secondary {
+  background: var(--sesa-surface);
+  color: var(--sesa-secondary);
+  border-color: var(--sesa-border);
+}
+
+.sesa-btn-secondary:hover:not(:disabled) {
+  background: rgba(31, 106, 225, 0.06);
+  border-color: var(--sesa-secondary);
+  transform: translateY(-1px);
+}
+
+.sesa-btn-outline {
+  background: transparent;
+  color: var(--sesa-text-primary);
+  border-color: var(--sesa-border);
+}
+
+.sesa-btn-outline:hover:not(:disabled) {
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-text-muted);
+  transform: translateY(-1px);
+}
+
+.sesa-btn-danger {
+  background: transparent;
+  color: var(--sesa-error);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.sesa-btn-danger:hover:not(:disabled) {
+  background: var(--sesa-error-bg);
+  border-color: var(--sesa-error);
+  transform: translateY(-1px);
+}
+
+.sesa-btn-sm {
+  height: 34px;
+  padding: 0 0.85rem;
+  font-size: 0.8125rem;
+  border-radius: var(--sesa-radius-sm);
+}
+
+.sesa-btn-block {
+  width: 100%;
+}
+
+.sesa-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sesa-btn-icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--sesa-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sesa-btn-icon-only svg {
+  flex-shrink: 0;
+}
+
+/* ==============================================
+   Global Premium Page Patterns
+   ============================================== */
+
+.sesa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: sesaFadeIn 0.35s ease-out;
+}
+
+@keyframes sesaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sesa-page-header {
+  margin-bottom: 0.25rem;
+}
+
+.sesa-page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.sesa-page-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.5;
+}
+
+/* ==============================================
+   Form utilities
+   ============================================== */
+.sesa-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sesa-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.sesa-error-banner {
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--sesa-radius-md);
+  border-left: 3px solid var(--sesa-error);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}

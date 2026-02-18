@@ -1,0 +1,120 @@
+<section class="sesa-page sesa-page-pacientes">
+  <header class="sesa-page-header sesa-page-header-premium">
+    <div class="sesa-page-header-left">
+      <div class="sesa-page-icon-wrap">
+        <fa-icon [icon]="faUsers" class="sesa-page-icon" aria-hidden="true"></fa-icon>
+      </div>
+      <div>
+        <h1 class="sesa-page-title">Pacientes</h1>
+        <p class="sesa-page-subtitle">Gestión de pacientes y acceso a historia clínica</p>
+      </div>
+    </div>
+    @if (canCreate) {
+      <a class="sesa-btn sesa-btn-primary sesa-btn-icon" routerLink="/pacientes/nuevo">
+        <fa-icon [icon]="faPlus" aria-hidden="true"></fa-icon>
+        Nuevo paciente
+      </a>
+    }
+  </header>
+
+  <!-- Tarjetas de resumen -->
+  <div class="sesa-stats-row">
+    <div class="sesa-stat-card">
+      <span class="sesa-stat-value">{{ totalElements }}</span>
+      <span class="sesa-stat-label">Total pacientes</span>
+    </div>
+    <div class="sesa-stat-card">
+      <span class="sesa-stat-value">{{ pacientes.length }}</span>
+      <span class="sesa-stat-label">En esta página</span>
+    </div>
+  </div>
+
+  <sesa-card>
+    <div class="sesa-search-row">
+      <input
+        type="text"
+        class="sesa-input-search"
+        placeholder="Buscar por nombre o documento..."
+        [(ngModel)]="searchQ"
+        (keyup.enter)="onSearch()"
+      />
+      <button type="button" class="sesa-btn sesa-btn-primary" (click)="onSearch()">Buscar</button>
+    </div>
+
+    @if (loading) {
+      <div class="sesa-loading-wrap">
+        <p class="sesa-loading">Cargando…</p>
+      </div>
+    } @else if (error) {
+      <p class="sesa-error">{{ error }}</p>
+    } @else {
+      <div class="sesa-table-wrap">
+        <table class="sesa-table sesa-table-premium">
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Nombres</th>
+              <th>Apellidos</th>
+              <th>Teléfono</th>
+              <th>EPS</th>
+              <th class="sesa-col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pacientes; track p.id) {
+              <tr>
+                <td><span class="sesa-cell-doc">{{ p.documento }}</span></td>
+                <td><strong class="sesa-cell-name">{{ p.nombres }}</strong></td>
+                <td>{{ p.apellidos || '—' }}</td>
+                <td>{{ p.telefono || '—' }}</td>
+                <td>{{ p.epsNombre || '—' }}</td>
+                <td class="sesa-col-actions">
+                  <div class="sesa-actions-cell">
+                    <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: p.id }" class="sesa-btn sesa-btn-icon-only sesa-btn-outline" title="Historia clínica">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </a>
+                    @if (canCreate) {
+                      <a [routerLink]="['/pacientes', p.id, 'editar']" class="sesa-btn sesa-btn-icon-only sesa-btn-secondary" title="Editar paciente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </a>
+                    }
+                    @if (canDelete) {
+                      <button type="button" class="sesa-btn sesa-btn-icon-only sesa-btn-danger" (click)="delete(p.id, p.nombres)" title="Eliminar paciente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="6">
+                  <div class="sesa-empty-state">
+                    <fa-icon [icon]="faClipboardList" class="sesa-empty-icon" aria-hidden="true"></fa-icon>
+                    <p>No hay pacientes.</p>
+                    @if (canCreate) {
+                      <a routerLink="/pacientes/nuevo" class="sesa-btn sesa-btn-primary">Crear primer paciente</a>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalElements > size) {
+        <div class="sesa-pagination">
+          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="prevPage()" [disabled]="page === 0">
+            ‹ Anterior
+          </button>
+          <span class="sesa-pagination-info">Página {{ page + 1 }} de {{ totalPages }} ({{ totalElements }} en total)</span>
+          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="nextPage()"
+            [disabled]="(page + 1) * size >= totalElements">
+            Siguiente ›
+          </button>
+        </div>
+      }
+    }
+  </sesa-card>
+</section>

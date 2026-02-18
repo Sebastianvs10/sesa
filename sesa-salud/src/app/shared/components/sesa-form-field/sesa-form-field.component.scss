@@ -1,0 +1,387 @@
+/* ========================================
+   Campo de Formulario Premium
+   Autor: Ing. J Sebastian Vargas S
+   ======================================== */
+
+// Variables
+$color-primary: var(--sesa-secondary);
+$color-accent: var(--sesa-accent);
+$color-error: var(--sesa-error);
+$color-text-primary: var(--sesa-text-primary);
+$color-text-secondary: var(--sesa-text-secondary);
+$color-border: var(--sesa-border);
+$color-success: var(--sesa-success, #10b981);
+
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+
+$transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* ========== Contenedor del Campo ========== */
+
+.sesa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  position: relative;
+  width: 100%;
+}
+
+/* ========== Label ========== */
+
+.sesa-field-label {
+  font-weight: 600;
+  color: $color-text-primary;
+  font-size: 0.95rem;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+
+  // Transición suave al enfocar
+  transition: color $transition-fast;
+}
+
+.sesa-field-required {
+  color: $color-error;
+  font-weight: 700;
+  font-size: 1.1em;
+  margin-left: 0.2rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Tooltip contextual premium */
+.sesa-field-tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 0.75rem;
+  border-radius: 50%;
+  background: rgba($color-primary, 0.12);
+  color: $color-primary;
+  cursor: help;
+  position: relative;
+  transition: all $transition-fast;
+
+  &:hover,
+  &:focus {
+    background: rgba($color-primary, 0.2);
+    outline: none;
+
+    &::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -8px) scale(1);
+    }
+  }
+
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, -4px) scale(0.95);
+    padding: 0.5rem 0.75rem;
+    min-width: 180px;
+    max-width: 280px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.4;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-lg;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 101;
+  }
+
+  &:hover::before,
+  &:focus::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(4px);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ========== Control de Campo ========== */
+
+.sesa-field-control {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+/* ========== Inputs, Selects y Textareas ========== */
+/* ::ng-deep necesario para que los estilos apliquen al contenido proyectado (ng-content) */
+
+/* Usar variables de tema (light/dark) para que el cambio de tema actualice los inputs */
+:host ::ng-deep .sesa-field-control input,
+:host ::ng-deep .sesa-field-control select,
+:host ::ng-deep .sesa-field-control textarea {
+  width: 100%;
+  padding: 0.875rem 1.125rem;
+  border-radius: $radius-md;
+  border: 1.5px solid var(--sesa-input-border);
+  background-color: var(--sesa-input-bg);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--sesa-text-primary);
+  outline: none;
+  cursor: text;
+  appearance: none;
+  -webkit-appearance: none;
+
+  transition:
+    border-color $transition-smooth,
+    box-shadow $transition-smooth,
+    background-color $transition-smooth,
+    transform $transition-fast;
+
+  position: relative;
+  z-index: 1;
+
+  &::placeholder {
+    color: var(--sesa-input-placeholder);
+    font-weight: 400;
+    opacity: 1;
+  }
+
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
+  0 2px 6px rgba(0, 0, 0, 0.08);
+
+  &:hover:not(:disabled):not([readonly]) {
+    border-color: rgba($color-primary, 0.4);
+    background-color: var(--sesa-input-bg-hover);
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.05),
+      0 4px 12px rgba($color-primary, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible,
+  &:focus {
+    border-color: $color-primary;
+    background-color: var(--sesa-input-bg-focus);
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.05),
+      0 0 0 3px rgba($color-primary, 0.15),
+      0 0 0 1px rgba($color-primary, 0.25),
+      0 8px 24px rgba($color-primary, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &[readonly] {
+    background-color: var(--sesa-input-readonly-bg);
+    border-color: var(--sesa-input-border);
+    color: var(--sesa-text-primary);
+    opacity: 0.85;
+    cursor: not-allowed;
+  }
+
+  &:disabled {
+    background-color: var(--sesa-input-disabled-bg);
+    border-color: var(--sesa-input-border);
+    color: var(--sesa-text-primary);
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+/* Select con flecha personalizada */
+:host ::ng-deep .sesa-field-control select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231f6ae1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 14px;
+  padding-right: 2.75rem;
+  cursor: pointer;
+}
+
+/* ========== Hint (Pista de ayuda) ========== */
+
+.sesa-field-hint {
+  font-size: 0.85rem;
+  color: rgba($color-text-secondary, 0.8);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: -0.2rem;
+  line-height: 1.4;
+
+  &::before {
+    content: 'ℹ️';
+    font-size: 0.9rem;
+  }
+}
+
+/* ========== Error Message ========== */
+
+.sesa-field-error {
+  font-size: 0.85rem;
+  color: $color-error;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.4;
+
+  &::before {
+    content: '\26A0'; /* Unicode warning sign */
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Textarea ========== */
+
+:host ::ng-deep .sesa-field-control textarea {
+  min-height: 120px !important;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+
+  &:focus-visible {
+    resize: both;
+  }
+}
+
+/* ========== Estados de Validación ========== */
+
+:host ::ng-deep .sesa-field:has(.sesa-field-error) .sesa-field-control input,
+:host ::ng-deep .sesa-field:has(.sesa-field-error) .sesa-field-control select,
+:host ::ng-deep .sesa-field:has(.sesa-field-error) .sesa-field-control textarea {
+  border-color: rgba($color-error, 0.5) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 0 0 3px rgba($color-error, 0.08),
+    0 0 0 1px rgba($color-error, 0.15) !important;
+
+  &:focus-visible,
+  &:focus {
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.05),
+      0 0 0 3px rgba($color-error, 0.15),
+      0 0 0 1px rgba($color-error, 0.3),
+      0 8px 24px rgba($color-error, 0.15) !important;
+  }
+}
+
+:host ::ng-deep .sesa-field--success .sesa-field-control input,
+:host ::ng-deep .sesa-field--success .sesa-field-control select,
+:host ::ng-deep .sesa-field--success .sesa-field-control textarea {
+  border-color: rgba($color-success, 0.5);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 0 0 2px rgba($color-success, 0.1);
+
+  &:not(:focus):not(:focus-visible) {
+    background-color: var(--sesa-input-bg);
+  }
+}
+
+/* ========== Responsive ========== */
+
+@media (max-width: 640px) {
+  .sesa-field {
+    gap: 0.4rem;
+  }
+
+  :host ::ng-deep .sesa-field-control input,
+  :host ::ng-deep .sesa-field-control select,
+  :host ::ng-deep .sesa-field-control textarea {
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+    border-radius: $radius-sm;
+  }
+
+  .sesa-field-label {
+    font-size: 0.9rem;
+  }
+
+  .sesa-field-hint,
+  .sesa-field-error {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tema light/dark: los inputs usan variables CSS (--sesa-input-*) definidas en styles.scss
+   según [data-theme='dark'] en el root. No usar prefers-color-scheme para respetar el
+   selector de tema de la aplicación. */
+
+/* ========== Accessibility ========== */
+
+:host ::ng-deep .sesa-field-control input:focus-visible,
+:host ::ng-deep .sesa-field-control select:focus-visible,
+:host ::ng-deep .sesa-field-control textarea:focus-visible {
+  outline: none;
+}
+
+@media (prefers-contrast: more) {
+
+  :host ::ng-deep .sesa-field-control input,
+  :host ::ng-deep .sesa-field-control select,
+  :host ::ng-deep .sesa-field-control textarea {
+    border-width: 2px;
+
+    &:focus-visible {
+      box-shadow:
+        0 0 0 4px rgba($color-primary, 0.4),
+        inset 0 0 0 1px $color-primary !important;
+    }
+  }
+}

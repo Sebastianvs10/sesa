@@ -1,0 +1,338 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Historia clínica</h1>
+      <p class="sesa-page-subtitle">
+        Visualiza y actualiza la historia clínica completa del paciente,
+        incluyendo antecedentes, consultas, medicamentos y documentos.
+      </p>
+    </div>
+  </header>
+
+  @if (cargando) {
+  <p class="sesa-loading">Cargando...</p>
+  } @else if (error) {
+  <p class="sesa-error">{{ error }}</p>
+  } @else if (!selectedPatient) {
+  <sesa-card title="Consultar historia clínica">
+    <p class="sesa-muted">Selecciona una consulta para abrir la historia clínica del paciente.</p>
+    @if (misConsultas.length === 0) {
+    <p class="sesa-muted">No hay consultas registradas a tu nombre. Crea una consulta desde un paciente o usa «Crear
+      Historia Clínica» en el menú.</p>
+    <a routerLink="/historia-clinica/nueva" class="sesa-btn sesa-btn-primary sesa-mt-1">Ir a Crear Historia Clínica</a>
+    } @else {
+    <div class="sesa-consultas-list">
+      <table class="sesa-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Paciente</th>
+            <th>Motivo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of misConsultas; track c.id) {
+          <tr>
+            <td>{{ formatFechaConsulta(c.fechaConsulta) }}</td>
+            <td>{{ c.pacienteNombre }}</td>
+            <td>{{ c.motivoConsulta || '—' }}</td>
+            <td>
+              <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: c.pacienteId }"
+                class="sesa-btn sesa-btn-sm sesa-btn-primary">Ver HC</a>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </sesa-card>
+  } @else {
+  @if (exito) {
+  <p class="sesa-success">{{ exito }}</p>
+  }
+  <!-- Cabecera del paciente (como en los diseños) -->
+  <sesa-card>
+    <div class="sesa-patient-header">
+      <div class="sesa-patient-header-main">
+        <div class="sesa-patient-avatar">{{ (selectedPatient.nombres.charAt(0) + (selectedPatient.apellidos ?
+          selectedPatient.apellidos.charAt(0) : '')) }}</div>
+        <div>
+          <div class="sesa-patient-name">{{ selectedPatient.nombres }} {{ selectedPatient.apellidos || '' }}</div>
+          <div class="sesa-patient-meta">
+            <span>{{ selectedPatient.tipoDocumento || 'CC' }} {{ selectedPatient.documento }}</span>
+            @if (selectedPatient.fechaNacimiento) {
+            <span>• {{ calculateAge(selectedPatient.fechaNacimiento) }} años</span>
+            } @else {
+            <span>• Edad no registrada</span>
+            }
+            <span>• {{ selectedPatient.telefono || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sesa-tabs">
+        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'historia'"
+          (click)="setTab('historia')">
+          Historia clínica
+        </button>
+        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'notas'"
+          (click)="setTab('notas')">
+          Notas médicas
+        </button>
+        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'medicamentos'"
+          (click)="setTab('medicamentos')">
+          Medicamentos
+        </button>
+        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'documentos'"
+          (click)="setTab('documentos')">
+          Documentos
+        </button>
+        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'dolores'"
+          (click)="setTab('dolores')">
+          Dolores
+        </button>
+      </div>
+
+      <!-- Acciones dentro de HC -->
+      <div class="sesa-hc-actions">
+        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="irVerDetalle()">
+          Ver detalle
+        </button>
+        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="irAgregarEvolucion()">
+          Agregar evolución a HC
+        </button>
+        @if (historiaClinica && historiaClinica.estado !== 'CERRADA') {
+        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="cerrarHC()">
+          Cerrar HC
+        </button>
+        }
+        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="imprimirExportar()">
+          Imprimir / Exportar
+        </button>
+      </div>
+    </div>
+  </sesa-card>
+
+  <!-- Contenido principal según pestaña -->
+  <div *ngIf="activeTab === 'historia'" class="sesa-card-grid">
+    @if (canStartNewHistoria) {
+    <sesa-card title="Historia clínica no creada">
+      <p class="sesa-muted">Este paciente aún no tiene un historia clínica. Crea una nueva para comenzar.</p>
+      <button type="button" class="sesa-btn sesa-btn-primary" (click)="iniciarNuevaHistoria()">
+        + Nueva Historia Clínica
+      </button>
+    </sesa-card>
+    } @else if (historiaClinica) {
+    <sesa-card title="Información General de Historia Clínica">
+      <div class="sesa-info-grid">
+        <div class="sesa-info-item">
+          <label>Abierta:</label>
+          <span>{{ historiaClinica.fechaApertura }}</span>
+        </div>
+        <div class="sesa-info-item">
+          <label>Estado:</label>
+          <span>{{ historiaClinica.estado }}</span>
+        </div>
+        <div class="sesa-info-item">
+          <label>Grupo Sanguíneo:</label>
+          <span>{{ historiaClinica.grupoSanguineo || '—' }}</span>
+        </div>
+      </div>
+    </sesa-card>
+    }
+
+    <sesa-card title="Resumen de consultas recientes">
+      <sesa-data-table [columns]="consultasTableColumns" [data]="consultasTableData"></sesa-data-table>
+    </sesa-card>
+
+    @if (historiaClinica) {
+    <sesa-card title="Alergias Generales">
+      <p>{{ historiaClinica.alergiasGenerales || 'No registradas' }}</p>
+    </sesa-card>
+
+    <sesa-card title="Antecedentes Personales">
+      <p>{{ historiaClinica.antecedentesPersonales || 'No registrados' }}</p>
+    </sesa-card>
+
+    <sesa-card title="Antecedentes Familiares">
+      <p>{{ historiaClinica.antecedentesFamiliares || 'No registrados' }}</p>
+    </sesa-card>
+    }
+  </div>
+
+  <div *ngIf="activeTab === 'notas'" class="sesa-card-grid">
+    <sesa-card title="Crear consulta (autoselección Cita → Consulta)">
+      <div class="sesa-card-three-columns">
+        <sesa-form-field label="Cita relacionada">
+          <select [(ngModel)]="consultaForm.citaId" (ngModelChange)="onCitaChange($event)">
+            <option [ngValue]="null">Sin cita</option>
+            @for (c of citasPaciente; track c.id) {
+            <option [ngValue]="c.id">#{{ c.id }} - {{ c.servicio }} - {{ c.estado }}</option>
+            }
+          </select>
+        </sesa-form-field>
+        <sesa-form-field label="Profesional *">
+          <select [(ngModel)]="consultaForm.profesionalId">
+            <option [ngValue]="null">Seleccione...</option>
+            @for (p of profesionales; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+            }
+          </select>
+        </sesa-form-field>
+        <sesa-form-field label="Motivo de consulta *">
+          <input type="text" [(ngModel)]="consultaForm.motivoConsulta" />
+        </sesa-form-field>
+      </div>
+      <div class="sesa-card-three-columns">
+        <sesa-form-field label="Enfermedad actual">
+          <textarea rows="3" [(ngModel)]="consultaForm.enfermedadActual"></textarea>
+        </sesa-form-field>
+        <sesa-form-field label="Antecedentes personales">
+          <textarea rows="3" [(ngModel)]="consultaForm.antecedentesPersonales"></textarea>
+        </sesa-form-field>
+        <sesa-form-field label="Antecedentes familiares / alergias">
+          <textarea rows="3" [(ngModel)]="consultaForm.antecedentesFamiliares"></textarea>
+        </sesa-form-field>
+      </div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearConsulta()">
+          Guardar consulta
+        </button>
+      </div>
+    </sesa-card>
+  </div>
+
+  <div *ngIf="activeTab === 'medicamentos'" class="sesa-card-grid">
+    @if (consultasPaciente.length === 0) {
+    <sesa-card title="Consultas necesarias">
+      <p class="sesa-muted">No hay consultas registradas para este paciente. Las órdenes (laboratorio, medicamentos,
+        etc.) se asocian a una consulta.</p>
+      <p class="sesa-muted">Cree primero una consulta en la pestaña <strong>Notas médicas</strong> y luego vuelva aquí
+        para crear la orden.</p>
+      <button type="button" class="sesa-btn sesa-btn-primary" (click)="setTab('notas')">
+        Ir a Notas médicas
+      </button>
+    </sesa-card>
+    }
+    <sesa-card title="Crear orden (autoselección Consulta → Orden)">
+      <div class="sesa-card-three-columns">
+        <sesa-form-field label="Consulta *">
+          <select [(ngModel)]="ordenForm.consultaId" (ngModelChange)="onConsultaChange($event)">
+            <option [ngValue]="null">Seleccione...</option>
+            @for (co of consultasPaciente; track co.id) {
+            <option [ngValue]="co.id">#{{ co.id }} - {{ co.motivoConsulta || 'Sin motivo' }}</option>
+            }
+          </select>
+          @if (consultasPaciente.length === 0) {
+          <span class="sesa-field-hint">Sin consultas. Cree una en Notas médicas.</span>
+          }
+        </sesa-form-field>
+        <sesa-form-field label="Tipo">
+          <select [(ngModel)]="ordenForm.tipo" (ngModelChange)="onTipoOrdenChange()">
+            <option value="LABORATORIO">Laboratorio</option>
+            <option value="MEDICAMENTO">Medicamento</option>
+            <option value="PROCEDIMIENTO">Procedimiento</option>
+            <option value="IMAGEN">Imagen diagnóstica</option>
+          </select>
+        </sesa-form-field>
+        <sesa-form-field label="Plantilla rápida">
+          @if (ordenForm.tipo === 'LABORATORIO') {
+          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+            <option value="">Seleccione laboratorio...</option>
+            @for (lab of catalogoLaboratorios; track lab) {
+            <option [value]="lab">{{ lab }}</option>
+            }
+          </select>
+          } @else if (ordenForm.tipo === 'MEDICAMENTO') {
+          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+            <option value="">Seleccione medicamento...</option>
+            @for (med of catalogoMedicamentos; track med) {
+            <option [value]="med">{{ med }}</option>
+            }
+          </select>
+          } @else {
+          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+            <option value="">Seleccione especialidad...</option>
+            @for (esp of especialidades; track esp) {
+            <option [value]="'Interconsulta: ' + esp">{{ esp }}</option>
+            }
+          </select>
+          }
+        </sesa-form-field>
+      </div>
+      <div class="sesa-card-three-columns">
+        <sesa-form-field label="Detalle de la orden">
+          <textarea rows="2" [(ngModel)]="ordenForm.detalle"></textarea>
+        </sesa-form-field>
+        <sesa-form-field label="Valor estimado">
+          <input type="number" [(ngModel)]="ordenForm.valorEstimado" />
+        </sesa-form-field>
+      </div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearOrden()">
+          Crear orden
+        </button>
+      </div>
+    </sesa-card>
+
+    <sesa-card title="Órdenes del paciente">
+      <sesa-data-table [columns]="ordenesTableColumns" [data]="ordenesTableData"></sesa-data-table>
+    </sesa-card>
+  </div>
+
+  <div *ngIf="activeTab === 'documentos'" class="sesa-card-grid">
+    <sesa-card title="Facturación (autoselección Orden → Factura)">
+      <div class="sesa-card-three-columns">
+        <sesa-form-field label="Orden">
+          <select [(ngModel)]="facturaForm.ordenId" (ngModelChange)="onOrdenChange($event)">
+            <option [ngValue]="null">Sin orden</option>
+            @for (o of ordenesPaciente; track o.id) {
+            <option [ngValue]="o.id">#{{ o.id }} - {{ o.tipo }}</option>
+            }
+          </select>
+        </sesa-form-field>
+        <sesa-form-field label="Valor total *">
+          <input type="number" [(ngModel)]="facturaForm.valorTotal" />
+        </sesa-form-field>
+        <sesa-form-field label="Descripción">
+          <input type="text" [(ngModel)]="facturaForm.descripcion" />
+        </sesa-form-field>
+      </div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearFactura()">
+          Crear factura
+        </button>
+      </div>
+    </sesa-card>
+
+    <sesa-card title="Facturas del paciente">
+      <sesa-data-table [columns]="facturasTableColumns" [data]="facturasTableData"></sesa-data-table>
+    </sesa-card>
+
+    <sesa-card title="Reporte general">
+      @if (resumen) {
+      <div class="sesa-info-grid">
+        <div class="sesa-info-item"><label>Total pacientes</label><span>{{ resumen.totalPacientes }}</span></div>
+        <div class="sesa-info-item"><label>Total citas</label><span>{{ resumen.totalCitas }}</span></div>
+        <div class="sesa-info-item"><label>Total consultas</label><span>{{ resumen.totalConsultas }}</span></div>
+        <div class="sesa-info-item"><label>Total órdenes</label><span>{{ resumen.totalOrdenes }}</span></div>
+        <div class="sesa-info-item"><label>Total facturas</label><span>{{ resumen.totalFacturas }}</span></div>
+        <div class="sesa-info-item"><label>Total facturado</label><span>{{ resumen.totalFacturado }}</span></div>
+      </div>
+      } @else {
+      <p class="sesa-muted">No hay datos de reporte.</p>
+      }
+      <button type="button" class="sesa-btn sesa-btn-secondary" (click)="refreshResumen()">
+        Actualizar reporte
+      </button>
+    </sesa-card>
+  </div>
+
+  <div *ngIf="activeTab === 'dolores'">
+    <sesa-dolores-panel [pacienteId]="selectedPatient.id"
+      [historiaClinicaId]="historiaClinica?.id"></sesa-dolores-panel>
+  </div>
+  }
+</section>

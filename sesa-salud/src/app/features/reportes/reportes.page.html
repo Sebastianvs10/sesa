@@ -1,0 +1,82 @@
+<section class="sesa-page sesa-reportes-page">
+  <header class="sesa-reportes-header">
+    <a routerLink="/dashboard" class="sesa-reportes-back" aria-label="Volver al dashboard">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    </a>
+    <div class="sesa-reportes-icon-wrap">
+      <fa-icon [icon]="faChartBar" class="sesa-reportes-icon" aria-hidden="true"></fa-icon>
+    </div>
+    <div>
+      <h1 class="sesa-reportes-title">Reportes</h1>
+      <p class="sesa-reportes-subtitle">Indicadores clínicos y operativos de la empresa</p>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="sesa-reportes-loading">
+      <span class="sesa-spinner"></span>
+      <p>Cargando reportes…</p>
+    </div>
+  } @else if (error && !hasAnyData) {
+    <div class="sesa-reportes-error">
+      <p>No se pudieron cargar los reportes. Intente de nuevo más tarde.</p>
+      <button class="sesa-btn sesa-btn-primary sesa-btn-sm" (click)="loadStats()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="sesa-reportes-grid">
+      <!-- Citas por día (barras) -->
+      @if (chartCitasPorDia.labels.length) {
+        <sesa-card title="Citas por día" subtitle="Últimos 7 días" alignHeader="start" class="sesa-report-card">
+          <sesa-dashboard-chart-bar
+            [labels]="chartCitasPorDia.labels"
+            [values]="chartCitasPorDia.values"
+            type="bar"
+            title="Citas"
+          />
+        </sesa-card>
+      }
+
+      <!-- Citas por estado (doughnut) -->
+      @if (chartCitasPorEstado.labels.length) {
+        <sesa-card title="Citas por estado" subtitle="Distribución actual" alignHeader="start" class="sesa-report-card sesa-report-card-doughnut">
+          <sesa-dashboard-chart-doughnut
+            [labels]="chartCitasPorEstado.labels"
+            [values]="chartCitasPorEstado.values"
+            title="Estados"
+          />
+        </sesa-card>
+      }
+
+      <!-- Consultas por mes (barras) -->
+      @if (chartConsultasPorMes.labels.length) {
+        <sesa-card title="Consultas por mes" subtitle="Últimos 6 meses" alignHeader="start" class="sesa-report-card">
+          <sesa-dashboard-chart-bar
+            [labels]="chartConsultasPorMes.labels"
+            [values]="chartConsultasPorMes.values"
+            type="bar"
+            title="Consultas"
+          />
+        </sesa-card>
+      }
+
+      <!-- Facturación por mes (línea) -->
+      @if (chartFacturacionPorMes.labels.length) {
+        <sesa-card title="Facturación por mes" subtitle="Últimos 6 meses (COP)" alignHeader="start" class="sesa-report-card">
+          <sesa-dashboard-chart-bar
+            [labels]="chartFacturacionPorMes.labels"
+            [values]="chartFacturacionPorMes.values"
+            type="line"
+            valueSuffix=" COP"
+            title="Valor"
+          />
+        </sesa-card>
+      }
+    </div>
+
+    @if (!hasAnyData) {
+      <div class="sesa-reportes-empty">
+        <p>No hay datos disponibles para generar reportes aún.</p>
+      </div>
+    }
+  }
+</section>

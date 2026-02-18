@@ -1,0 +1,67 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Farmacia</h1>
+    <p class="sesa-page-subtitle">Inventario, lotes, vencimientos y dispensación</p>
+  </header>
+
+  @if (error) { <p class="sesa-error">{{ error }}</p> }
+
+  <sesa-card title="Ingreso de medicamentos">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field"><label>Medicamento</label><input type="text" [(ngModel)]="medForm.nombre" /></div>
+      <div class="sesa-form-field"><label>Lote</label><input type="text" [(ngModel)]="medForm.lote" /></div>
+      <div class="sesa-form-field"><label>Vencimiento</label><input type="date" [(ngModel)]="medForm.fechaVencimiento" /></div>
+      <div class="sesa-form-field"><label>Cantidad</label><input type="number" [(ngModel)]="medForm.cantidad" /></div>
+      <div class="sesa-form-field"><label>Precio</label><input type="number" [(ngModel)]="medForm.precio" /></div>
+      <div class="sesa-form-field"><label>Stock mínimo</label><input type="number" [(ngModel)]="medForm.stockMinimo" /></div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearMedicamento()">Guardar medicamento</button>
+  </sesa-card>
+
+  <sesa-card title="Dispensación">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Medicamento</label>
+        <select [(ngModel)]="dispForm.medicamentoId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (m of medicamentos; track m.id) {
+            <option [ngValue]="m.id">{{ m.nombre }} (stock: {{ m.cantidad }})</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Paciente</label>
+        <select [(ngModel)]="dispForm.pacienteId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (p of pacientes; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field"><label>Cantidad</label><input type="number" [(ngModel)]="dispForm.cantidad" /></div>
+      <div class="sesa-form-field"><label>Entregado por</label><input type="text" [(ngModel)]="dispForm.entregadoPor" /></div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="dispensar()">Dispensar</button>
+  </sesa-card>
+
+  <sesa-card title="Inventario actual">
+    <div class="sesa-table-wrap">
+      <table class="sesa-table">
+        <thead><tr><th>Medicamento</th><th>Lote</th><th>Vencimiento</th><th>Cantidad</th><th>Stock mínimo</th></tr></thead>
+        <tbody>
+          @for (m of medicamentos; track m.id) {
+            <tr>
+              <td>{{ m.nombre }}</td>
+              <td>{{ m.lote || '—' }}</td>
+              <td>{{ m.fechaVencimiento || '—' }}</td>
+              <td>{{ m.cantidad }}</td>
+              <td>{{ m.stockMinimo || 0 }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">Sin medicamentos registrados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </sesa-card>
+</section>

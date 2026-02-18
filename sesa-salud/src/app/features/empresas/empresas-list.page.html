@@ -1,0 +1,68 @@
+<div class="sesa-page-header">
+  <h1 class="sesa-page-title">Gestión de empresas</h1>
+  @if (isSuperAdmin()) {
+    <a class="sesa-btn sesa-btn-primary" routerLink="/empresas/nueva">
+      Nueva empresa
+    </a>
+  }
+</div>
+
+<sesa-card>
+  @if (loading) {
+    <p class="sesa-loading">Cargando…</p>
+  } @else if (error) {
+    <p class="sesa-error">{{ error }}</p>
+  } @else {
+    <div class="sesa-table-wrap">
+      <table class="sesa-table">
+        <thead>
+          <tr>
+            <th>Schema</th>
+            <th>Razón social</th>
+            <th>Teléfono</th>
+            <th>Identificación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of empresas; track e.id) {
+            <tr>
+              <td>{{ e.schemaName }}</td>
+              <td>{{ e.razonSocial }}</td>
+              <td>{{ e.telefono || '—' }}</td>
+              <td>{{ e.identificacion || '—' }}</td>
+              <td>
+                <a [routerLink]="['/empresas', e.id, 'editar']" class="sesa-link-inline">Editar</a>
+                <button type="button" class="sesa-link-inline sesa-link-danger" (click)="delete(e.id, e.razonSocial)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          }
+          @empty {
+            <tr>
+              <td colspan="5">
+                No hay empresas.
+                @if (isSuperAdmin()) {
+                  Cree una desde «Nueva empresa».
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalElements > size) {
+      <div class="sesa-pagination">
+        <button type="button" class="sesa-btn sesa-btn-sm" (click)="prevPage()" [disabled]="page === 0">
+          Anterior
+        </button>
+        <span>Página {{ page + 1 }} ({{ totalElements }} total)</span>
+        <button type="button" class="sesa-btn sesa-btn-sm" (click)="nextPage()"
+                [disabled]="(page + 1) * size >= totalElements">
+          Siguiente
+        </button>
+      </div>
+    }
+  }
+</sesa-card>

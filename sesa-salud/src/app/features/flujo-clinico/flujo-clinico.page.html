@@ -1,0 +1,155 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Flujo clínico completo</h1>
+      <p class="sesa-page-subtitle">Paciente → Cita → Consulta → Orden → Facturación → Reporte</p>
+    </div>
+  </header>
+
+  @if (error) {
+    <p class="sesa-error">{{ error }}</p>
+  }
+  @if (ok) {
+    <p class="sesa-success">{{ ok }}</p>
+  }
+
+  <sesa-card title="1) Seleccionar paciente">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Paciente</label>
+        <select [(ngModel)]="selectedPacienteId" (ngModelChange)="onPacienteChange()">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (p of pacientes; track p.id) {
+            <option [ngValue]="p.id">{{ labelPaciente(p) }} - {{ p.documento }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </sesa-card>
+
+  <sesa-card title="2) Crear cita">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Profesional</label>
+        <select [(ngModel)]="citaForm.profesionalId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (per of profesionales; track per.id) {
+            <option [ngValue]="per.id">{{ per.nombres }} {{ per.apellidos || '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Servicio</label>
+        <input type="text" [(ngModel)]="citaForm.servicio" />
+      </div>
+      <div class="sesa-form-field">
+        <label>Fecha y hora</label>
+        <input type="datetime-local" [(ngModel)]="citaForm.fechaHora" />
+      </div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearCita()">Crear cita</button>
+  </sesa-card>
+
+  <sesa-card title="3) Crear consulta">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Cita relacionada (opcional)</label>
+        <select [(ngModel)]="consultaForm.citaId">
+          <option [ngValue]="null">Sin cita</option>
+          @for (c of citas; track c.id) {
+            <option [ngValue]="c.id">Cita #{{ c.id }} - {{ c.servicio }} - {{ c.estado }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Profesional</label>
+        <select [(ngModel)]="consultaForm.profesionalId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (per of profesionales; track per.id) {
+            <option [ngValue]="per.id">{{ per.nombres }} {{ per.apellidos || '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field sesa-form-field-full">
+        <label>Motivo de consulta</label>
+        <textarea rows="2" [(ngModel)]="consultaForm.motivoConsulta"></textarea>
+      </div>
+      <div class="sesa-form-field sesa-form-field-full">
+        <label>Enfermedad actual</label>
+        <textarea rows="2" [(ngModel)]="consultaForm.enfermedadActual"></textarea>
+      </div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearConsulta()">Crear consulta</button>
+  </sesa-card>
+
+  <sesa-card title="4) Crear orden clínica">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Consulta</label>
+        <select [(ngModel)]="ordenForm.consultaId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (co of consultas; track co.id) {
+            <option [ngValue]="co.id">Consulta #{{ co.id }} - {{ co.motivoConsulta || 'Sin motivo' }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Tipo</label>
+        <select [(ngModel)]="ordenForm.tipo">
+          <option value="LABORATORIO">Laboratorio</option>
+          <option value="PROCEDIMIENTO">Procedimiento</option>
+          <option value="MEDICAMENTO">Medicamento</option>
+          <option value="IMAGEN">Imagen diagnóstica</option>
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Valor estimado</label>
+        <input type="number" [(ngModel)]="ordenForm.valorEstimado" />
+      </div>
+      <div class="sesa-form-field sesa-form-field-full">
+        <label>Detalle</label>
+        <textarea rows="2" [(ngModel)]="ordenForm.detalle"></textarea>
+      </div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearOrden()">Crear orden</button>
+  </sesa-card>
+
+  <sesa-card title="5) Facturación">
+    <div class="sesa-form-grid">
+      <div class="sesa-form-field">
+        <label>Orden (opcional)</label>
+        <select [(ngModel)]="facturaForm.ordenId">
+          <option [ngValue]="null">Sin orden</option>
+          @for (o of ordenes; track o.id) {
+            <option [ngValue]="o.id">Orden #{{ o.id }} - {{ o.tipo }}</option>
+          }
+        </select>
+      </div>
+      <div class="sesa-form-field">
+        <label>Valor total</label>
+        <input type="number" [(ngModel)]="facturaForm.valorTotal" />
+      </div>
+      <div class="sesa-form-field sesa-form-field-full">
+        <label>Descripción</label>
+        <textarea rows="2" [(ngModel)]="facturaForm.descripcion"></textarea>
+      </div>
+    </div>
+    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearFactura()">Crear factura</button>
+  </sesa-card>
+
+  <sesa-card title="6) Reporte">
+    @if (resumen) {
+      <div class="sesa-kpi-grid">
+        <div class="sesa-kpi-item">Pacientes: <strong>{{ resumen.totalPacientes }}</strong></div>
+        <div class="sesa-kpi-item">Citas: <strong>{{ resumen.totalCitas }}</strong></div>
+        <div class="sesa-kpi-item">Consultas: <strong>{{ resumen.totalConsultas }}</strong></div>
+        <div class="sesa-kpi-item">Órdenes: <strong>{{ resumen.totalOrdenes }}</strong></div>
+        <div class="sesa-kpi-item">Facturas: <strong>{{ resumen.totalFacturas }}</strong></div>
+        <div class="sesa-kpi-item">Total facturado: <strong>{{ resumen.totalFacturado }}</strong></div>
+      </div>
+    } @else {
+      <p>Sin datos de resumen.</p>
+    }
+    <button type="button" class="sesa-btn sesa-btn-secondary" (click)="refreshResumen()">Actualizar reporte</button>
+  </sesa-card>
+</section>

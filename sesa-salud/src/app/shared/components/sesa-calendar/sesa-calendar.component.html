@@ -1,0 +1,30 @@
+<div class="sesa-calendar">
+  <header class="sesa-calendar-header">
+    <button type="button" class="sesa-calendar-nav" (click)="prevMonth()" aria-label="Mes anterior">‹</button>
+    <h3 class="sesa-calendar-title">{{ monthLabel }}</h3>
+    <button type="button" class="sesa-calendar-nav" (click)="nextMonth()" aria-label="Mes siguiente">›</button>
+  </header>
+  <button type="button" class="sesa-calendar-today" (click)="goToday()">Ir a hoy</button>
+  <div class="sesa-calendar-weekdays">
+    @for (wd of weekdays; track wd) {
+      <span class="sesa-calendar-weekday">{{ wd }}</span>
+    }
+  </div>
+  <div class="sesa-calendar-grid">
+    @for (week of grid; track $index) {
+      @for (cell of week; track cell.date) {
+        <button
+          type="button"
+          class="sesa-calendar-day"
+          [class.sesa-calendar-day--other]="!cell.isCurrentMonth"
+          [class.sesa-calendar-day--today]="cell.isToday"
+          [class.sesa-calendar-day--highlighted]="cell.isHighlighted"
+          [class.sesa-calendar-day--selected]="cell.isSelected"
+          (click)="selectDate(cell.date)"
+        >
+          {{ cell.day }}
+        </button>
+      }
+    }
+  </div>
+</div>

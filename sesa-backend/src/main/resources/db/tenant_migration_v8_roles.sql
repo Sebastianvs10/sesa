@@ -1,0 +1,18 @@
+-- Migración v8: roles del sistema RBAC
+-- Ejecutar con search_path = schema_tenant para cada esquema existente
+-- Roles disponibles (sincronizados con RoleConstants.java):
+--   SUPERADMINISTRADOR: acceso total, gestión de roles
+--   ADMIN: administración, usuarios, facturación, reportes
+--   MEDICO: dashboard, pacientes, historia clínica, laboratorios, imágenes, urgencias,
+--           hospitalización, farmacia (prescribir), citas
+--   ODONTOLOGO: igual que médico en su ámbito
+--   BACTERIOLOGO: pacientes (datos básicos), laboratorios (crear/validar resultados), dashboard lab
+--   ENFERMERO: pacientes, historia clínica, urgencias, hospitalización, citas
+--   JEFE_ENFERMERIA: todo lo de enfermería + hospitalización completa, turnos, supervisión
+--   AUXILIAR_ENFERMERIA: pacientes, signos vitales, medicamentos, urgencias, hospitalización básica
+--   PSICOLOGO: pacientes, historia clínica (módulo psicológico), citas
+--   REGENTE_FARMACIA: farmacia, órdenes, inventario, pacientes básicos
+--   RECEPCIONISTA: pacientes (administrativo), citas, facturación básica
+--
+-- No se requieren cambios de esquema. Los roles se almacenan en usuario_roles.rol (VARCHAR 50).
+-- La lógica de permisos está en PermissionService (backend).

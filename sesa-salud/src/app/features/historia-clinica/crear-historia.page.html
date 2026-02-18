@@ -1,0 +1,335 @@
+<section class="sesa-page sesa-page-crear-hc">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Nueva Historia Clínica</h1>
+      <p class="sesa-page-subtitle">Completa la historia clínica del paciente</p>
+    </div>
+  </header>
+
+  @if (cargandoPaciente) {
+    <p class="sesa-loading">Cargando datos del paciente...</p>
+  } @else if (errorPaciente) {
+    <p class="sesa-error">{{ errorPaciente }}</p>
+  } @else if (!paciente) {
+    <p class="sesa-error">Paciente no encontrado</p>
+  } @else {
+    @if (exito) {
+      <sesa-card class="sesa-success-card">
+        <p class="sesa-success">✓ Historia clínica creada exitosamente. Redirigiendo...</p>
+      </sesa-card>
+    }
+
+    <!-- Pestañas -->
+    <div class="sesa-tabs-wrap">
+      <div class="sesa-tabs" role="tablist">
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'paciente'"
+          (click)="setTab('paciente')"
+          role="tab"
+        >
+          Paciente
+        </button>
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'motivo'"
+          (click)="setTab('motivo')"
+          role="tab"
+        >
+          Motivo y enfermedad
+        </button>
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'antecedentes'"
+          (click)="setTab('antecedentes')"
+          role="tab"
+        >
+          Antecedentes
+        </button>
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'revision'"
+          (click)="setTab('revision')"
+          role="tab"
+        >
+          Revisión por sistemas
+        </button>
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'examen'"
+          (click)="setTab('examen')"
+          role="tab"
+        >
+          Examen físico
+        </button>
+        <button
+          type="button"
+          class="sesa-tab"
+          [class.sesa-tab-active]="activeTab === 'plan'"
+          (click)="setTab('plan')"
+          role="tab"
+        >
+          Diagnóstico y plan
+        </button>
+      </div>
+
+      <!-- Contenido por pestaña -->
+      @if (activeTab === 'paciente') {
+        <sesa-card title="Datos del Paciente">
+          <div class="sesa-form-grid">
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="Nombre Completo">
+                <input type="text" [value]="paciente.nombres + ' ' + (paciente.apellidos || '')" readonly />
+              </sesa-form-field>
+              <sesa-form-field label="Tipo de Documento">
+                <input type="text" [value]="paciente.tipoDocumento || 'CC'" readonly />
+              </sesa-form-field>
+            </div>
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="Número de Documento">
+                <input type="text" [value]="paciente.documento" readonly />
+              </sesa-form-field>
+              <sesa-form-field label="Edad">
+                <input type="text" [value]="paciente.fechaNacimiento ? calculateAge(paciente.fechaNacimiento) + ' años' : '—'" readonly />
+              </sesa-form-field>
+            </div>
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="Sexo">
+                <input type="text" [value]="paciente.sexo || '—'" readonly />
+              </sesa-form-field>
+              <sesa-form-field label="Fecha de Nacimiento">
+                <input type="text" [value]="paciente.fechaNacimiento || '—'" readonly />
+              </sesa-form-field>
+            </div>
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="Dirección">
+                <input type="text" [value]="paciente.direccion || '—'" readonly />
+              </sesa-form-field>
+              <sesa-form-field label="Teléfono">
+                <input type="text" [value]="paciente.telefono || '—'" readonly />
+              </sesa-form-field>
+            </div>
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="EPS / ARL">
+                <input type="text" [value]="paciente.epsNombre || 'Particular'" readonly />
+              </sesa-form-field>
+            </div>
+          </div>
+        </sesa-card>
+      }
+
+      @if (activeTab === 'motivo') {
+        <sesa-card title="Motivo y Enfermedad Actual">
+          <sesa-form-field label="Razón de la consulta *">
+            <textarea
+              rows="3"
+              placeholder="Describa brevemente el motivo por el que el paciente acude al servicio"
+              [(ngModel)]="motivoConsulta"
+              [disabled]="guardando"
+            ></textarea>
+          </sesa-form-field>
+          <div class="sesa-form-grid">
+            <sesa-form-field label="Descripción de la enfermedad actual *">
+              <textarea
+                rows="4"
+                placeholder="Descripción detallada del problema"
+                [(ngModel)]="enfermedad"
+                [disabled]="guardando"
+              ></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Inicio de síntomas">
+              <textarea rows="2" placeholder="¿Cuándo comenzó?" [(ngModel)]="versionEnfermedad" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Síntomas asociados">
+              <textarea rows="2" placeholder="Otros síntomas relacionados" [(ngModel)]="sintomasAsociados" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <div class="sesa-form-col-2">
+              <sesa-form-field label="Factores que mejoran">
+                <textarea rows="2" placeholder="Ej: descanso, medicamentos" [(ngModel)]="factoresMejoran" [disabled]="guardando"></textarea>
+              </sesa-form-field>
+              <sesa-form-field label="Factores que empeoran">
+                <textarea rows="2" placeholder="Ej: actividad física" [(ngModel)]="factoresEmpeoran" [disabled]="guardando"></textarea>
+              </sesa-form-field>
+            </div>
+          </div>
+        </sesa-card>
+      }
+
+      @if (activeTab === 'antecedentes') {
+        <sesa-card title="Antecedentes">
+          <div class="sesa-form-grid">
+            <sesa-form-field label="Antecedentes patológicos personales">
+              <textarea rows="2" placeholder="Enfermedades previas" [(ngModel)]="antecedentesPatologicos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes quirúrgicos">
+              <textarea rows="2" placeholder="Cirugías previas" [(ngModel)]="antecedentesQuirurgicos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes farmacológicos">
+              <textarea rows="2" placeholder="Medicamentos actuales o previos" [(ngModel)]="antecedentesFarmacologicos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes alérgicos">
+              <textarea rows="2" placeholder="Alergias" [(ngModel)]="antecedentesAlergicos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes traumáticos">
+              <textarea rows="2" placeholder="Traumatismos previos" [(ngModel)]="antecedentesTraumaticos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes ginecoobstétricos (si aplica)">
+              <textarea rows="2" placeholder="Embarazos, partos" [(ngModel)]="antecedentesGinecoobstetricos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Antecedentes familiares">
+              <textarea rows="2" placeholder="Enfermedades hereditarias" [(ngModel)]="antecedentesFamiliares" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <div class="sesa-form-grid sesa-checkboxes-row">
+              <label class="sesa-checkbox">
+                <input type="checkbox" [(ngModel)]="habitosTabaco" [disabled]="guardando" />
+                <span>Hábito de tabaco</span>
+              </label>
+              <label class="sesa-checkbox">
+                <input type="checkbox" [(ngModel)]="habitosAlcohol" [disabled]="guardando" />
+                <span>Consumo de alcohol</span>
+              </label>
+              <label class="sesa-checkbox">
+                <input type="checkbox" [(ngModel)]="habitosSustancias" [disabled]="guardando" />
+                <span>Consumo de sustancias</span>
+              </label>
+            </div>
+            <sesa-form-field label="Detalles de hábitos">
+              <textarea rows="2" placeholder="Frecuencia y cantidad si aplica" [(ngModel)]="habitosDetalles" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+          </div>
+        </sesa-card>
+      }
+
+      @if (activeTab === 'revision') {
+        <sesa-card title="Revisión por Sistemas">
+          <div class="sesa-form-grid">
+            <sesa-form-field label="Sistema Respiratorio">
+              <textarea rows="2" placeholder="Tos, disnea, etc." [(ngModel)]="sistemaRespiratoria" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Cardiovascular">
+              <textarea rows="2" placeholder="Palpitaciones, dolor torácico" [(ngModel)]="sistemaCardiovascular" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Digestivo">
+              <textarea rows="2" placeholder="Náuseas, vómito, diarrea" [(ngModel)]="sistemaDigestivo" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Urinario">
+              <textarea rows="2" placeholder="Disuria, poliuria" [(ngModel)]="sistemaUrinario" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Nervioso">
+              <textarea rows="2" placeholder="Cefalea, vértigo" [(ngModel)]="sistemaNervioso" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Endocrino">
+              <textarea rows="2" placeholder="Cambios de peso" [(ngModel)]="sistemaEndocrino" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Musculoesquelético">
+              <textarea rows="2" placeholder="Dolor articular" [(ngModel)]="sistemaMusculos" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Sistema Psiquiátrico">
+              <textarea rows="2" placeholder="Depresión, ansiedad" [(ngModel)]="sistemaPsiquiatrico" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+          </div>
+        </sesa-card>
+      }
+
+      @if (activeTab === 'examen') {
+        <sesa-card title="Examen Físico">
+          <div class="sesa-form-grid">
+            <h3>Signos Vitales</h3>
+            <div class="sesa-form-col-4">
+              <sesa-form-field label="Presión Arterial (mmHg)">
+                <input type="text" placeholder="Ej: 120/80" [(ngModel)]="presionArterial" [disabled]="guardando" />
+              </sesa-form-field>
+              <sesa-form-field label="Frecuencia Cardíaca (bpm)">
+                <input type="number" placeholder="Ej: 80" [(ngModel)]="frecuenciaCardiaca" [disabled]="guardando" />
+              </sesa-form-field>
+              <sesa-form-field label="Frecuencia Respiratoria (rpm)">
+                <input type="number" placeholder="Ej: 16" [(ngModel)]="frecuenciaRespiratoria" [disabled]="guardando" />
+              </sesa-form-field>
+              <sesa-form-field label="Temperatura (°C)">
+                <input type="number" step="0.1" placeholder="Ej: 37.0" [(ngModel)]="temperatura" [disabled]="guardando" />
+              </sesa-form-field>
+            </div>
+            <h3>Antropometría</h3>
+            <div class="sesa-form-col-4">
+              <sesa-form-field label="Peso (kg)">
+                <input type="number" step="0.1" placeholder="Ej: 70" [(ngModel)]="peso" (change)="calcularIMC()" [disabled]="guardando" />
+              </sesa-form-field>
+              <sesa-form-field label="Talla (cm)">
+                <input type="number" placeholder="Ej: 175" [(ngModel)]="talla" (change)="calcularIMC()" [disabled]="guardando" />
+              </sesa-form-field>
+              <sesa-form-field label="IMC">
+                <input type="text" [value]="imc || '—'" readonly />
+              </sesa-form-field>
+              <sesa-form-field label="Grupo Sanguíneo">
+                <input type="text" [value]="paciente.grupoSanguineo || '—'" readonly />
+              </sesa-form-field>
+            </div>
+            <sesa-form-field label="Evaluación General">
+              <textarea rows="2" placeholder="Aspecto general del paciente" [(ngModel)]="evaluacionGeneral" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Hallazgos Relevantes">
+              <textarea rows="3" placeholder="Hallazgos del examen físico" [(ngModel)]="hallazosMuerte" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+          </div>
+        </sesa-card>
+      }
+
+      @if (activeTab === 'plan') {
+        <sesa-card title="Impresión Diagnóstica">
+          <div class="sesa-form-grid">
+            <sesa-form-field label="Diagnóstico presuntivo o definitivo">
+              <textarea rows="3" placeholder="Diagnóstico principal" [(ngModel)]="diagnostico" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Código CIE-10 (opcional)">
+              <input type="text" placeholder="Ej: E10.9" [(ngModel)]="codigoCIE10" [disabled]="guardando" />
+            </sesa-form-field>
+          </div>
+        </sesa-card>
+        <sesa-card title="Plan de Manejo">
+          <div class="sesa-form-grid">
+            <sesa-form-field label="Tratamiento farmacológico">
+              <textarea rows="2" placeholder="Medicamentos, dosis" [(ngModel)]="tratamientoFarmacologico" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Órdenes médicas">
+              <textarea rows="2" placeholder="Instrucciones médicas" [(ngModel)]="ordenesMedicas" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Exámenes solicitados">
+              <textarea rows="2" placeholder="Laboratorio, imágenes" [(ngModel)]="examenesSolicitados" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Incapacidad (si aplica)">
+              <textarea rows="2" placeholder="Días de incapacidad" [(ngModel)]="incapacidad" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+            <sesa-form-field label="Recomendaciones">
+              <textarea rows="2" placeholder="Recomendaciones al paciente" [(ngModel)]="recomendaciones" [disabled]="guardando"></textarea>
+            </sesa-form-field>
+          </div>
+        </sesa-card>
+      }
+    </div>
+
+    <!-- Acciones fijas al final -->
+    <sesa-card class="sesa-actions-card">
+      @if (errorGuardado) {
+        <p class="sesa-error">{{ errorGuardado }}</p>
+      }
+      <div class="sesa-form-actions">
+        <button
+          type="button"
+          class="sesa-btn sesa-btn-primary"
+          (click)="guardarHistoria()"
+          [disabled]="guardando || !paciente"
+        >
+          {{ guardando ? 'Guardando...' : '✓ Crear Historia Clínica' }}
+        </button>
+        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancelar()" [disabled]="guardando">
+          Cancelar
+        </button>
+      </div>
+    </sesa-card>
+  }
+</section>

@@ -1,0 +1,51 @@
+<!-- Banner flotante de estado offline -->
+@if (connection.isOffline()) {
+<div class="sesa-offline-banner" role="alert">
+  <div class="sesa-offline-banner-icon">
+    <span class="sesa-offline-pulse"></span>
+    <fa-icon [icon]="faBolt" class="sesa-offline-icon-text"></fa-icon>
+  </div>
+  <div class="sesa-offline-banner-content">
+    <p class="sesa-offline-banner-title">Sin conexión a internet</p>
+    <p class="sesa-offline-banner-desc">
+      Los cambios se guardan localmente y se sincronizarán automáticamente.
+    </p>
+  </div>
+  @if (sync.hasPending()) {
+  <span class="sesa-offline-pending-badge">{{ sync.pendingCount() }} pendientes</span>
+  }
+</div>
+}
+
+<!-- Banner de sincronización activa -->
+@if (sync.syncing()) {
+<div class="sesa-sync-banner" role="status">
+  <span class="sesa-sync-spinner"></span>
+  <span class="sesa-sync-text">Sincronizando operaciones pendientes…</span>
+</div>
+}
+
+<!-- Badge pequeño cuando está online pero hay pendientes -->
+@if (connection.isOnline() && !sync.syncing() && sync.hasPending()) {
+<button class="sesa-pending-float-btn" (click)="forceSync()" title="Sincronizar operaciones pendientes">
+  <fa-icon [icon]="faArrowsRotate" class="sesa-pending-float-icon"></fa-icon>
+  <span class="sesa-pending-float-count">{{ sync.pendingCount() }}</span>
+</button>
+}
+
+<!-- Indicador: no se pudo contactar el servidor tras varios intentos -->
+@if (connection.status() === 'unstable') {
+<div class="sesa-unstable-banner" role="alert">
+  <fa-icon [icon]="faTriangleExclamation"></fa-icon>
+  <span>No se pudo contactar el servidor en los últimos intentos. Compruebe que el backend esté en ejecución o espere unos segundos; puede seguir usando la aplicación.</span>
+  <button type="button" class="sesa-unstable-retry" (click)="retryConnection()" [disabled]="checkingConnection()" title="Comprobar de nuevo la conexión con el servidor">
+    @if (checkingConnection()) {
+      <span class="sesa-unstable-spinner"></span>
+      <span>Comprobando…</span>
+    } @else {
+      <fa-icon [icon]="faArrowsRotate"></fa-icon>
+      <span>Reintentar</span>
+    }
+  </button>
+</div>
+}

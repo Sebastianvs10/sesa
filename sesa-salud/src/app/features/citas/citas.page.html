@@ -1,0 +1,160 @@
+<section class="sesa-page sesa-page-citas">
+  <header class="sesa-page-header sesa-page-header-premium">
+    <div class="sesa-page-header-left">
+      <div class="sesa-page-icon-wrap">
+        <fa-icon [icon]="faCalendarDays" class="sesa-page-icon" aria-hidden="true"></fa-icon>
+      </div>
+      <div>
+        <h1 class="sesa-page-title">Citas</h1>
+        <p class="sesa-page-subtitle">
+          Programación y seguimiento de citas médicas · {{ fechaHoyFormateada }}
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tarjetas de resumen -->
+  <div class="sesa-stats-row">
+    <div class="sesa-stat-card">
+      <span class="sesa-stat-value">{{ citasHoy.length }}</span>
+      <span class="sesa-stat-label">Citas hoy</span>
+    </div>
+    <div class="sesa-stat-card">
+      <span class="sesa-stat-value">{{ citasPendientes }}</span>
+      <span class="sesa-stat-label">Pendientes</span>
+    </div>
+  </div>
+
+  <div class="sesa-citas-layout">
+    <!-- Panel izquierdo: formularios -->
+    <div class="sesa-citas-panel-form">
+      <sesa-card title="Nueva cita rápida">
+        @if (error) {
+          <p class="sesa-error">{{ error }}</p>
+        }
+        @if (exito) {
+          <p class="sesa-success">{{ exito }}</p>
+        }
+        <div class="sesa-form-grid">
+          <sesa-form-field label="Paciente" [required]="true">
+            <select [(ngModel)]="form.pacienteId">
+              <option [ngValue]="null">Seleccione...</option>
+              @for (p of pacientes; track p.id) {
+                <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }} — {{ p.documento }}</option>
+              }
+            </select>
+          </sesa-form-field>
+          <sesa-form-field label="Profesional" [required]="true">
+            <select [(ngModel)]="form.profesionalId">
+              <option [ngValue]="null">Seleccione...</option>
+              @for (per of profesionales; track per.id) {
+                <option [ngValue]="per.id">{{ per.nombres }} {{ per.apellidos || '' }}</option>
+              }
+            </select>
+          </sesa-form-field>
+          <sesa-form-field label="Servicio" [required]="true">
+            <select [(ngModel)]="form.servicio">
+              <option value="">Seleccione...</option>
+              @for (esp of especialidades; track esp) {
+                <option [value]="esp">{{ esp }}</option>
+              }
+            </select>
+          </sesa-form-field>
+          <sesa-form-field label="Fecha y hora" [required]="true">
+            <input type="datetime-local" [(ngModel)]="form.fechaHora" />
+          </sesa-form-field>
+        </div>
+        <div class="sesa-form-actions">
+          <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearCita()">Crear cita</button>
+          <button type="button" class="sesa-btn sesa-btn-secondary" (click)="abrirHistoriaDesdeCita()">
+            Continuar a historia clínica
+          </button>
+        </div>
+      </sesa-card>
+
+      <sesa-card title="Reprogramar cita">
+        <sesa-form-field label="Cita">
+          <select [(ngModel)]="reprogramar.citaId">
+            <option [ngValue]="null">Seleccione cita...</option>
+            @for (c of citasHoy; track c.id) {
+              <option [ngValue]="c.id">{{ formatHora(c.fechaHora) }} — {{ c.pacienteNombre }} ({{ c.estado }})</option>
+            }
+          </select>
+        </sesa-form-field>
+        <sesa-form-field label="Nueva fecha y hora">
+          <input type="datetime-local" [(ngModel)]="reprogramar.nuevaFechaHora" />
+        </sesa-form-field>
+        <button type="button" class="sesa-btn sesa-btn-primary sesa-btn-block" (click)="reprogramarCita()">
+          Reprogramar
+        </button>
+      </sesa-card>
+    </div>
+
+    <!-- Panel derecho: listado premium -->
+    <div class="sesa-citas-panel-list">
+      <sesa-card title="Citas programadas para hoy" [subtitle]="fechaHoyFormateada">
+        @if (cargando) {
+          <div class="sesa-loading-wrap">
+            <span class="sesa-spinner"></span>
+            <p class="sesa-loading">Cargando citas...</p>
+          </div>
+        } @else if (citasHoy.length === 0) {
+          <div class="sesa-empty-state sesa-empty-state-citas">
+            <span class="sesa-empty-icon" aria-hidden="true">📅</span>
+            <p>No hay citas programadas para hoy.</p>
+            <p class="sesa-empty-hint">Crea una nueva cita usando el formulario de la izquierda.</p>
+          </div>
+        } @else {
+          <div class="sesa-table-wrap sesa-table-wrap-premium">
+            <table class="sesa-table sesa-table-premium">
+              <thead>
+                <tr>
+                  <th class="sesa-col-hora">Hora</th>
+                  <th class="sesa-col-paciente">Paciente</th>
+                  <th class="sesa-col-servicio">Servicio</th>
+                  <th class="sesa-col-profesional">Profesional</th>
+                  <th class="sesa-col-estado">Estado</th>
+                  <th class="sesa-col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of citasHoy; track c.id) {
+                  <tr class="sesa-cita-row">
+                    <td class="sesa-cell-hora">
+                      <span class="sesa-cell-hora-valor">{{ formatHora(c.fechaHora) }}</span>
+                    </td>
+                    <td class="sesa-cell-paciente">
+                      <strong>{{ c.pacienteNombre }}</strong>
+                    </td>
+                    <td class="sesa-cell-servicio">{{ c.servicio || 'Sin servicio' }}</td>
+                    <td class="sesa-cell-profesional">{{ c.profesionalNombre || 'Sin asignar' }}</td>
+                    <td>
+                      <span class="sesa-badge sesa-badge-estado" [ngClass]="getEstadoClass(c.estado)">
+                        {{ c.estado || 'Pendiente' }}
+                      </span>
+                    </td>
+                    <td class="sesa-col-actions">
+                      <div class="sesa-actions-cell">
+                        @if (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA') {
+                          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-icon-only" (click)="confirmarCita(c)" title="Confirmar">
+                            <fa-icon [icon]="faCheck"></fa-icon>
+                          </button>
+                          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-icon-only" (click)="marcarAtendido(c)" title="Marcar atendido">
+                            <fa-icon [icon]="faCircleCheck"></fa-icon>
+                          </button>
+                        }
+                        <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-danger sesa-btn-icon-only" (click)="cancelarCita(c)" title="Cancelar">
+                          <fa-icon [icon]="faXmark"></fa-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </sesa-card>
+    </div>
+  </div>
+</section>

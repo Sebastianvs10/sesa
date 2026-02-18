@@ -1,0 +1,45 @@
+/* Breadcrumb premium — pill-style current, chevron separator */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  font-size: 0.8125rem;
+  color: var(--sesa-text-muted);
+  padding: 0.35rem 0;
+}
+
+.sesa-breadcrumb-link {
+  color: var(--sesa-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--sesa-radius-sm);
+  transition:
+    color var(--sesa-transition-fast),
+    background-color var(--sesa-transition-fast);
+}
+
+.sesa-breadcrumb-link:hover {
+  color: var(--sesa-secondary);
+  background: rgba(31, 106, 225, 0.06);
+}
+
+.sesa-breadcrumb-sep {
+  color: var(--sesa-text-muted);
+  opacity: 0.5;
+  user-select: none;
+  font-size: 0.75rem;
+  margin: 0 0.1rem;
+}
+
+.sesa-breadcrumb-current {
+  color: var(--sesa-text-primary);
+  font-weight: 600;
+  background: rgba(31, 106, 225, 0.06);
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+  font-size: 0.8125rem;
+}

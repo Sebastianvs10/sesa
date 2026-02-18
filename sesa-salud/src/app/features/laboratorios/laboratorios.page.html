@@ -1,0 +1,27 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Laboratorios</h1>
+      <p class="sesa-page-subtitle">
+        Gestión de solicitudes, toma de muestras y resultados de laboratorio.
+      </p>
+    </div>
+  </header>
+
+  <sesa-card
+    title="Solicitudes de laboratorio"
+    subtitle="Órdenes pendientes y en proceso"
+  >
+    @if (error) {
+      <p class="sesa-error">{{ error }}</p>
+    } @else if (cargando) {
+      <p class="sesa-loading">Cargando solicitudes...</p>
+    } @else {
+      <sesa-data-table
+        [columns]="solicitudesColumns"
+        [data]="solicitudesData"
+      ></sesa-data-table>
+    }
+  </sesa-card>
+</section>
+

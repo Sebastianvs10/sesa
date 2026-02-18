@@ -1,0 +1,39 @@
+# ============================================
+# SESA Backend - Spring Boot .gitignore
+# ============================================
+
+# ── Build output ──
+target/
+build/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ── IDE ──
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+*.factorypath
+bin/
+out/
+
+# ── Maven wrapper ──
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Logs ──
+*.log
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Runtime data ──
+uploads/
+
+# ── Environment / Secrets ──
+.env
+.env.*

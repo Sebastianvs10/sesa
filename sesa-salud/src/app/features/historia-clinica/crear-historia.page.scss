@@ -1,0 +1,144 @@
+/* Crear Historia Clínica - formulario en pestañas */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-page-crear-hc {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sesa-tabs-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sesa-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid var(--sesa-border);
+}
+
+.sesa-tab {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sesa-tab:hover {
+  background: var(--sesa-bg);
+  color: var(--sesa-text-primary);
+}
+
+.sesa-tab-active {
+  background: var(--sesa-surface);
+  color: var(--sesa-secondary);
+  border: 1px solid var(--sesa-border);
+  border-bottom-color: var(--sesa-surface);
+  margin-bottom: -2px;
+}
+
+.sesa-actions-card {
+  margin-top: 0.5rem;
+}
+
+.sesa-form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h3 {
+    grid-column: 1 / -1;
+    margin: 1rem 0 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--sesa-text-primary);
+    font-weight: 500;
+  }
+}
+
+.sesa-checkboxes-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.sesa-form-col-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  grid-column: 1 / -1;
+}
+
+.sesa-form-col-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  grid-column: 1 / -1;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sesa-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+
+  input[type='checkbox'] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+  }
+
+  span {
+    color: var(--sesa-text-primary);
+    font-size: 0.95rem;
+  }
+}
+
+.sesa-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0;
+  padding-top: 0;
+
+  button {
+    flex: 1;
+  }
+}
+
+.sesa-success-card {
+  background-color: var(--sesa-success-bg);
+  border-color: var(--sesa-success-border);
+  margin-bottom: 1rem;
+
+  .sesa-success {
+    color: var(--sesa-success);
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
+sesa-form-field {
+  &[readOnly] input {
+    background-color: var(--sesa-input-readonly-bg);
+    cursor: not-allowed;
+  }
+}

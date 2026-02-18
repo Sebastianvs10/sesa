@@ -1,0 +1,54 @@
+# ============================================
+# SESA Frontend - Angular .gitignore
+# ============================================
+
+# ── Build output ──
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# ── Dependencies ──
+/node_modules
+
+# ── Angular cache ──
+/.angular/cache
+
+# ── Testing ──
+/coverage
+testem.log
+/typings
+
+# ── IDE ──
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# ── VS Code (keep shared config) ──
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# ── Sass ──
+.sass-cache/
+/connect.lock
+
+# ── Logs ──
+npm-debug.log
+yarn-error.log
+libpeerconnection.log
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Environment / Secrets ──
+.env
+.env.*

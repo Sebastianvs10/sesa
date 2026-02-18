@@ -1,0 +1,16 @@
+<article class="sesa-card">
+  <header class="sesa-card-header" [ngClass]="{ 'sesa-card-header--start': alignHeader === 'start' }">
+    <div>
+      <div class="sesa-card-title" *ngIf="title">{{ title }}</div>
+      <div class="sesa-card-subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+    </div>
+    <div class="sesa-card-header-extra">
+      <ng-content select="[card-header-extra]"></ng-content>
+    </div>
+  </header>
+
+  <section class="sesa-card-content">
+    <ng-content></ng-content>
+  </section>
+</article>
+

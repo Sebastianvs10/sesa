@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: sesa-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sesa_db
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+# JWT para OAuth2 Resource Server (emitido por nuestro login)
+sesa:
+  cors:
+    # Orígenes permitidos para el front (Angular). Incluir el puerto donde corre ng serve.
+    allowed-origins: http://localhost:3000,http://localhost:4200
+  jwt:
+    secret: MiClaveSecretaMuyLargaParaFirmarJWTMinimo256BitsParaHS256
+    expiration-ms: 86400000  # 24 horas
+  upload:
+    path: ./uploads
+
+logging:
+  level:
+    root: INFO
+    com.sesa: INFO
+    org.springframework.security: WARN

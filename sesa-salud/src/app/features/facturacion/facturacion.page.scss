@@ -1,0 +1,16 @@
+/* Facturación */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.sesa-form-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.sesa-form-field input, .sesa-form-field select, textarea {
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+.sesa-table { width: 100%; border-collapse: collapse; }
+.sesa-table th, .sesa-table td { border-bottom: 1px solid var(--sesa-border); padding: 0.5rem; text-align: left; }
+.sesa-error { color: #b91c1c; }
+@media (max-width: 960px) { .sesa-form-grid { grid-template-columns: 1fr; } }

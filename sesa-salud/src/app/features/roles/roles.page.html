@@ -1,0 +1,123 @@
+<section class="sesa-roles-page">
+  <div class="sesa-roles-scroll">
+    <header class="sesa-roles-header">
+      <div class="sesa-roles-header-content">
+        <h1 class="sesa-roles-title">Roles del sistema</h1>
+        <p class="sesa-roles-subtitle">Consulta y configura los módulos permitidos para cada rol</p>
+      </div>
+      <button type="button" class="sesa-roles-btn sesa-roles-btn--add" (click)="openCreate()">
+        <span class="sesa-roles-btn-icon">+</span>
+        Nuevo rol
+      </button>
+    </header>
+
+  @if (error) {
+    <div class="sesa-roles-alert sesa-roles-alert-error">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="sesa-roles-loading">
+      <span class="sesa-roles-spinner"></span>
+      <p>Cargando roles…</p>
+    </div>
+  } @else {
+    <div class="sesa-roles-card">
+      <div class="sesa-roles-card-header">
+        <h2 class="sesa-roles-card-title">Matriz de permisos RBAC</h2>
+        <span class="sesa-roles-card-badge">{{ roles.length }} roles</span>
+      </div>
+
+      <div class="sesa-roles-table-wrap">
+        <table class="sesa-roles-table">
+          <thead>
+            <tr>
+              <th class="sesa-roles-col-rol">Rol</th>
+              <th class="sesa-roles-col-modulos">Módulos permitidos</th>
+              <th class="sesa-roles-col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of roles; track r.codigo; let i = $index) {
+              <tr class="sesa-roles-row" [class.sesa-roles-row--editing]="isEditing(r)" [class.sesa-roles-row--zebra]="i % 2 === 1">
+                <td class="sesa-roles-col-rol">
+                  <span class="sesa-roles-rol-badge">{{ r.nombre }}</span>
+                </td>
+                <td class="sesa-roles-col-modulos">
+                  @if (isEditing(r)) {
+                    <div class="sesa-roles-edit-panel">
+                      <div class="sesa-roles-edit-chips">
+                        @for (m of modulosDisponibles; track m.codigo) {
+                          <label class="sesa-roles-chip sesa-roles-chip--check" [class.sesa-roles-chip--active]="hasModulo(m.codigo)">
+                            <input type="checkbox" [checked]="hasModulo(m.codigo)" (change)="toggleModulo(m.codigo)" />
+                            {{ m.label }}
+                          </label>
+                        }
+                      </div>
+                      <div class="sesa-roles-edit-actions">
+                        <button type="button" class="sesa-roles-btn sesa-roles-btn--secondary" (click)="cancelEdit()" [disabled]="saving">Cancelar</button>
+                        <button type="button" class="sesa-roles-btn sesa-roles-btn--primary" (click)="save()" [disabled]="saving">
+                          {{ saving ? 'Guardando…' : 'Guardar cambios' }}
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="sesa-roles-chips">
+                      @for (m of r.modulos; track m) {
+                        <span class="sesa-roles-chip">{{ getModuloLabel(m) }}</span>
+                      }
+                      @if (!r.modulos.length) {
+                        <span class="sesa-roles-chip sesa-roles-chip--empty">Sin módulos</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td class="sesa-roles-col-actions">
+                  @if (!isEditing(r)) {
+                    <button type="button" class="sesa-roles-btn sesa-roles-btn--edit" (click)="startEdit(r)">
+                      <span class="sesa-roles-btn-icon">✎</span>
+                      Editar
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="sesa-roles-empty">No hay roles configurados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sesa-roles-footer">
+        <span class="sesa-roles-footer-icon">ℹ</span>
+        Haga clic en «Editar» para modificar los módulos permitidos. Los cambios se aplican de inmediato.
+      </div>
+    </div>
+  }
+  </div>
+
+  @if (showCreateForm) {
+    <div class="sesa-roles-modal" (click)="closeCreate($event)">
+      <div class="sesa-roles-modal-content" (click)="$event.stopPropagation()">
+        <h3 class="sesa-roles-modal-title">Crear nuevo rol</h3>
+        <form class="sesa-roles-create-form" (ngSubmit)="createRole()">
+          <div class="sesa-roles-form-field">
+            <label for="rol-codigo">Código (mayúsculas, sin espacios)</label>
+            <input id="rol-codigo" type="text" [(ngModel)]="newRolCodigo" name="codigo" placeholder="EJ: NUEVO_ROL" required />
+          </div>
+          <div class="sesa-roles-form-field">
+            <label for="rol-nombre">Nombre del rol</label>
+            <input id="rol-nombre" type="text" [(ngModel)]="newRolNombre" name="nombre" placeholder="Ej: Nuevo rol" required />
+          </div>
+          <div class="sesa-roles-modal-actions">
+            <button type="button" class="sesa-roles-btn sesa-roles-btn--secondary" (click)="closeCreate($event)">Cancelar</button>
+            <button type="submit" class="sesa-roles-btn sesa-roles-btn--primary" [disabled]="creating || !newRolCodigo.trim() || !newRolNombre.trim()">
+              {{ creating ? 'Creando…' : 'Crear rol' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

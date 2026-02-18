@@ -1,0 +1,80 @@
+/* Tarjeta reutilizable premium — hover elevation, gradient accent */
+/* Autor: Ing. J Sebastian Vargas S */
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sesa-card {
+  height: 100%;
+  background-color: var(--sesa-surface);
+  border-radius: var(--sesa-radius-lg);
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--sesa-border);
+  box-shadow: var(--sesa-shadow-sm);
+  transition:
+    box-shadow var(--sesa-transition-smooth),
+    transform var(--sesa-transition-smooth),
+    border-color var(--sesa-transition-smooth);
+  position: relative;
+}
+
+.sesa-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
+  border-radius: 0 0 2px 2px;
+  opacity: 0;
+  transition: opacity var(--sesa-transition-smooth);
+}
+
+.sesa-card:hover {
+  box-shadow: var(--sesa-shadow-lg);
+  border-color: rgba(31, 106, 225, 0.12);
+}
+
+.sesa-card:hover::before {
+  opacity: 1;
+}
+
+.sesa-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.sesa-card-header--start {
+  justify-content: flex-start;
+}
+
+.sesa-card-title {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.sesa-card-subtitle {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+
+.sesa-card-header-extra {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sesa-card-content {
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+}

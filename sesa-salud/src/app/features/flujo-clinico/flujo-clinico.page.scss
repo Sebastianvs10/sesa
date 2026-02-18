@@ -1,0 +1,58 @@
+/* Flujo clínico end-to-end */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sesa-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sesa-form-field-full {
+  grid-column: 1 / -1;
+}
+
+.sesa-form-field label {
+  color: var(--sesa-text-secondary);
+  font-size: 0.85rem;
+}
+
+.sesa-form-field input,
+.sesa-form-field select,
+.sesa-form-field textarea {
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+.sesa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.sesa-kpi-item {
+  border: 1px solid var(--sesa-border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  background: var(--sesa-surface);
+}
+
+.sesa-success {
+  color: #0b9f66;
+}
+
+@media (max-width: 960px) {
+  .sesa-form-grid,
+  .sesa-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

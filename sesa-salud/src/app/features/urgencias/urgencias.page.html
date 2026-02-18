@@ -1,0 +1,27 @@
+<section class="sesa-page">
+  <header class="sesa-page-header">
+    <div>
+      <h1 class="sesa-page-title">Urgencias</h1>
+      <p class="sesa-page-subtitle">
+        Visualice y priorice los pacientes en servicio de urgencias según triage.
+      </p>
+    </div>
+  </header>
+
+  <sesa-card
+    title="Pacientes en urgencias"
+    subtitle="Listado rápido según último triage registrado"
+  >
+    @if (error) {
+      <p class="sesa-error">{{ error }}</p>
+    } @else if (cargando) {
+      <p class="sesa-loading">Cargando urgencias...</p>
+    } @else {
+      <sesa-data-table
+        [columns]="urgenciasColumns"
+        [data]="urgenciasData"
+      ></sesa-data-table>
+    }
+  </sesa-card>
+</section>
+
