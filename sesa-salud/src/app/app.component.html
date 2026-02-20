@@ -152,6 +152,28 @@
             <span class="sesa-nav-link-label">Citas</span>
           </a>
           }
+          @if (permissions.canAccess('AGENDA')) {
+          <a
+            class="sesa-nav-link"
+            routerLink="/agenda"
+            routerLinkActive="sesa-nav-link-active"
+            title="Agenda"
+          >
+            <fa-icon [icon]="faCalendarCheck" class="sesa-nav-link-icon"></fa-icon>
+            <span class="sesa-nav-link-label">Agenda</span>
+          </a>
+          }
+          @if (permissions.canAccess('EVOLUCION_ENFERMERIA')) {
+          <a
+            class="sesa-nav-link"
+            routerLink="/evolucion-enfermeria"
+            routerLinkActive="sesa-nav-link-active"
+            title="Evolución de Enfermería"
+          >
+            <fa-icon [icon]="faHeartPulse" class="sesa-nav-link-icon"></fa-icon>
+            <span class="sesa-nav-link-label">Evolución de Enfermería</span>
+          </a>
+          }
         </div>
 
         <div>
@@ -340,6 +362,18 @@
                 <div class="sesa-topbar-profile-name" role="none">{{ authService.currentUser()?.nombreCompleto ?? 'Usuario' }}</div>
                 <button
                   type="button"
+                  class="sesa-topbar-profile-action"
+                  role="menuitem"
+                  (click)="openPerfil()"
+                  title="Ver mi perfil">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Mi perfil
+                </button>
+                <button
+                  type="button"
                   class="sesa-topbar-profile-logout"
                   role="menuitem"
                   (click)="closeProfileAndLogout()"
@@ -366,3 +400,15 @@
     <sesa-offline-status />
   </div>
 </ng-template>
+
+<!-- Sistema de notificaciones toast (global) -->
+<sesa-toast-container />
+
+<!-- Overlay de carga global -->
+<sesa-loading-overlay />
+
+<!-- Dialog de confirmación premium (global) -->
+<sesa-confirm-dialog-outlet />
+
+<!-- Modal Mi Perfil (global) -->
+<sesa-perfil-modal-outlet />

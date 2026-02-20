@@ -30,11 +30,25 @@ export interface NotificacionDto {
   destinatarios?: DestinatarioInfo[];
 }
 
+export interface DestinatarioDisponible {
+  id: number;
+  nombre?: string;
+  email: string;
+  rol?: string;
+}
+
+export interface NotificacionBroadcastResult {
+  schemasProcessados: number;
+  totalDestinatarios: number;
+  errores: string[];
+}
+
 export interface NotificacionCreateRequest {
   titulo: string;
   contenido: string;
   tipo?: string;
-  destinatarioIds: number[];
+  destinatarioIds?: number[];
+  broadcastTodos?: boolean;
 }
 
 export interface PageResponse<T> {
@@ -97,5 +111,15 @@ export class NotificacionService {
   /** Descargar adjunto como blob */
   downloadAdjunto(notificacionId: number, adjuntoId: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`, { responseType: 'blob' });
+  }
+
+  /** Lista usuarios disponibles como destinatarios en el schema actual */
+  getDestinatariosDisponibles(): Observable<DestinatarioDisponible[]> {
+    return this.http.get<DestinatarioDisponible[]>(`${this.apiUrl}/destinatarios-disponibles`);
+  }
+
+  /** SUPERADMINISTRADOR: enviar notificación a los admins de todos los schemas */
+  broadcastAdmins(request: NotificacionCreateRequest): Observable<NotificacionBroadcastResult> {
+    return this.http.post<NotificacionBroadcastResult>(`${this.apiUrl}/broadcast-admins`, request);
   }
 }

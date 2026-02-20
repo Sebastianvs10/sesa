@@ -118,17 +118,18 @@ public class RolController {
 
     private static String nombreRol(String codigo) {
         return switch (codigo) {
-            case "SUPERADMINISTRADOR" -> "Super Usuario";
-            case "ADMIN" -> "Administrador del Sistema";
-            case "MEDICO" -> "Médico";
-            case "ODONTOLOGO" -> "Odontólogo/a";
-            case "BACTERIOLOGO" -> "Bacteriólogo";
-            case "ENFERMERO" -> "Enfermero/a";
-            case "JEFE_ENFERMERIA" -> "Jefe de Enfermería";
+            case "SUPERADMINISTRADOR"  -> "Super Usuario";
+            case "ADMIN"               -> "Administrador del Sistema";
+            case "MEDICO"              -> "Médico";
+            case "ODONTOLOGO"          -> "Odontólogo/a";
+            case "BACTERIOLOGO"        -> "Bacteriólogo";
+            case "ENFERMERO"           -> "Enfermero/a";
+            case "JEFE_ENFERMERIA"     -> "Jefe de Enfermería";
             case "AUXILIAR_ENFERMERIA" -> "Auxiliar de Enfermería";
-            case "PSICOLOGO" -> "Psicólogo";
-            case "REGENTE_FARMACIA" -> "Regente de Farmacia";
-            case "RECEPCIONISTA" -> "Recepcionista";
+            case "PSICOLOGO"           -> "Psicólogo";
+            case "REGENTE_FARMACIA"    -> "Regente de Farmacia";
+            case "RECEPCIONISTA"       -> "Recepcionista";
+            case "COORDINADOR_MEDICO"  -> "Coordinador Médico";
             default -> codigo;
         };
     }

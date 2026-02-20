@@ -1,19 +1,53 @@
-<label class="sesa-field" [class.sesa-field--success]="success">
+<label class="sesa-field" [class.sesa-field--success]="success && !error" [class.sesa-field--error]="!!error">
   <span class="sesa-field-label">
     {{ label }}
-    <span *ngIf="required" class="sesa-field-required">*</span>
+    @if (required) {
+      <span class="sesa-field-required" aria-hidden="true">*</span>
+    }
     @if (tooltip) {
-      <span class="sesa-field-tooltip" [attr.data-tooltip]="tooltip" [attr.title]="tooltip" tabindex="0">ℹ️</span>
+      <span
+        class="sesa-field-tooltip"
+        [attr.data-tooltip]="tooltip"
+        [attr.title]="tooltip"
+        tabindex="0"
+        aria-label="Información adicional"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </span>
     }
   </span>
-  <div class="sesa-field-control">
-    <ng-content></ng-content>
-  </div>
-  <div class="sesa-field-hint" *ngIf="hint && !error">
-    {{ hint }}
-  </div>
-  <div class="sesa-field-error" *ngIf="error">
-    {{ error }}
-  </div>
-</label>
 
+  @if (loading) {
+    <div class="sesa-field-skeleton">
+      <sesa-skeleton width="100%" height="2.75rem" />
+    </div>
+  } @else {
+    <div class="sesa-field-control" [class.sesa-field-control--error]="!!error">
+      <div class="sesa-field-prefix" aria-hidden="true">
+        <ng-content select="[field-prefix]"></ng-content>
+      </div>
+      <ng-content></ng-content>
+      <div class="sesa-field-suffix" aria-hidden="true">
+        <ng-content select="[field-suffix]"></ng-content>
+      </div>
+    </div>
+  }
+
+  @if (hint && !error && !loading) {
+    <div class="sesa-field-hint" role="note">{{ hint }}</div>
+  }
+  @if (error && !loading) {
+    <div class="sesa-field-error" role="alert" aria-live="assertive">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sesa-field-error-icon">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ error }}
+    </div>
+  }
+</label>

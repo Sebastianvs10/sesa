@@ -1,7 +1,14 @@
+/**
+ * Gestión de Usuarios — confirm dialog, toast CRUD, skeleton loading.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 import {
   PageResponse,
   ROLES_USUARIO,
@@ -13,12 +20,14 @@ import {
 @Component({
   standalone: true,
   selector: 'sesa-usuarios-page',
-  imports: [CommonModule, FormsModule, SesaCardComponent],
+  imports: [CommonModule, FormsModule, SesaCardComponent, SesaSkeletonComponent],
   templateUrl: './usuarios.page.html',
   styleUrl: './usuarios.page.scss',
 })
 export class UsuariosPageComponent implements OnInit {
   private readonly usuarioService = inject(UsuarioService);
+  private readonly toast = inject(SesaToastService);
+  private readonly confirmDialog = inject(SesaConfirmDialogService);
 
   roles = ROLES_USUARIO;
   list: UsuarioDto[] = [];
@@ -56,6 +65,7 @@ export class UsuariosPageComponent implements OnInit {
       error: (err) => {
         this.error = err?.error?.error || 'No se pudo cargar usuarios';
         this.loading = false;
+        this.toast.error(this.error!, 'Error');
       },
     });
   }
@@ -112,20 +122,33 @@ export class UsuariosPageComponent implements OnInit {
         this.saving = false;
         this.showForm = false;
         this.editingId = null;
+        this.toast.success(this.editingId != null ? 'Usuario actualizado.' : 'Usuario creado.', 'Guardado');
         this.load();
       },
       error: (err) => {
         this.error = err?.error?.error || 'No se pudo guardar usuario';
         this.saving = false;
+        this.toast.error(this.error!, 'Error');
       },
     });
   }
 
-  delete(u: UsuarioDto): void {
-    if (!confirm(`¿Eliminar usuario ${u.email}?`)) return;
+  async delete(u: UsuarioDto): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Eliminar usuario',
+      message: `¿Eliminar el usuario "${u.email}"? Esta acción no se puede deshacer.`,
+      type: 'danger',
+    });
+    if (!ok) return;
     this.usuarioService.delete(u.id).subscribe({
-      next: () => this.load(),
-      error: (err) => this.error = err?.error?.error || 'No se pudo eliminar usuario',
+      next: () => {
+        this.toast.success(`Usuario "${u.email}" eliminado.`, 'Eliminado');
+        this.load();
+      },
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo eliminar usuario';
+        this.toast.error(this.error!, 'Error');
+      },
     });
   }
 
@@ -141,5 +164,45 @@ export class UsuariosPageComponent implements OnInit {
       this.page--;
       this.load();
     }
+  }
+
+  userInitials(u: UsuarioDto): string {
+    const parts = (u.nombreCompleto || u.email || '').trim().split(' ');
+    const first = (parts[0] || '').charAt(0).toUpperCase();
+    const last  = (parts[1] || '').charAt(0).toUpperCase();
+    return (first + last) || '?';
+  }
+
+  avatarStyle(name: string): Record<string, string> {
+    const palettes: [string, string][] = [
+      ['#7c3aed', '#a855f7'],
+      ['#1f6ae1', '#2bb0a6'],
+      ['#059669', '#10b981'],
+      ['#d97706', '#f59e0b'],
+      ['#dc2626', '#f87171'],
+      ['#0891b2', '#38bdf8'],
+      ['#db2777', '#f472b6'],
+    ];
+    const idx = (name.charCodeAt(0) || 0) % palettes.length;
+    const [from, to] = palettes[idx];
+    return { background: `linear-gradient(135deg, ${from}, ${to})` };
+  }
+
+  roleClass(rol: string | undefined): string {
+    const map: Record<string, string> = {
+      MEDICO: 'medico',
+      COORDINADOR_MEDICO: 'coordinador',
+      ODONTOLOGO: 'odontologo',
+      BACTERIOLOGO: 'bacteriologo',
+      ENFERMERO: 'enfermero',
+      JEFE_ENFERMERIA: 'jefe-enfermeria',
+      AUXILIAR_ENFERMERIA: 'auxiliar',
+      PSICOLOGO: 'psicologo',
+      REGENTE_FARMACIA: 'farmacia',
+      RECEPCIONISTA: 'recepcionista',
+      ADMIN: 'admin',
+      SUPERADMINISTRADOR: 'super',
+    };
+    return map[(rol ?? '').toUpperCase()] || 'default';
   }
 }

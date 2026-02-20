@@ -1,0 +1,567 @@
+/* Modal premium "Mi Perfil" — backdrop blur, cover gradiente, avatar flotante, animaciones */
+/* Autor: Ing. J Sebastian Vargas S */
+
+/* ── Backdrop ─────────────────────────────────────────────────────────── */
+.spm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: spmBackdropIn 0.22s ease-out;
+  padding: 1rem;
+}
+
+[data-theme='dark'] .spm-backdrop {
+  background: rgba(3, 7, 18, 0.7);
+}
+
+.spm-backdrop--leaving {
+  animation: spmBackdropOut 0.28s ease-in forwards;
+}
+
+/* ── Modal card ───────────────────────────────────────────────────────── */
+.spm-modal {
+  position: relative;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-xl);
+  box-shadow: var(--sesa-shadow-xl), 0 0 0 1px rgba(31, 106, 225, 0.06);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  animation: spmModalIn 0.32s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.spm-modal--leaving {
+  animation: spmModalOut 0.26s ease-in forwards;
+}
+
+/* ── Botón cerrar ─────────────────────────────────────────────────────── */
+.spm-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--sesa-transition-fast), transform var(--sesa-transition-fast);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.32);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* ── Cover con gradiente animado ──────────────────────────────────────── */
+.spm-cover {
+  position: relative;
+  height: 110px;
+  background: linear-gradient(135deg, #0a2e4f 0%, #1f6ae1 55%, #2bb0a6 100%);
+  overflow: hidden;
+}
+
+[data-theme='dark'] .spm-cover {
+  background: linear-gradient(135deg, #060f1e 0%, #0f3a7a 55%, #1a6b65 100%);
+}
+
+.spm-cover-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 80% 20%, rgba(43, 176, 166, 0.2) 0%, transparent 50%);
+}
+
+.spm-cover-glow {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 60px;
+  background: radial-gradient(ellipse, rgba(31, 106, 225, 0.35) 0%, transparent 70%);
+  filter: blur(12px);
+}
+
+/* ── Avatar flotante ──────────────────────────────────────────────────── */
+.spm-avatar-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: -44px;
+  margin-bottom: 0.1rem;
+  z-index: 2;
+}
+
+.spm-avatar {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1f6ae1, #2bb0a6);
+  border: 4px solid var(--sesa-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(31, 106, 225, 0.35);
+  z-index: 2;
+  animation: spmAvatarPop 0.4s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.spm-avatar-initials {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  user-select: none;
+}
+
+.spm-avatar-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 102px;
+  height: 102px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: linear-gradient(var(--sesa-surface), var(--sesa-surface)) padding-box,
+              linear-gradient(135deg, #1f6ae1, #2bb0a6) border-box;
+  animation: spmRingPulse 3s ease-in-out infinite;
+}
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────── */
+.spm-body {
+  padding: 0.5rem 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.spm-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.025em;
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* ── Badge de rol ─────────────────────────────────────────────────────── */
+.spm-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: rgba(31, 106, 225, 0.1);
+  color: var(--sesa-secondary);
+  border: 1px solid rgba(31, 106, 225, 0.2);
+}
+
+[data-theme='dark'] .spm-role-badge {
+  background: rgba(31, 106, 225, 0.15);
+  border-color: rgba(31, 106, 225, 0.3);
+}
+
+.spm-role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Variantes de color por rol */
+.spm-role-badge--superadmin {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--superadmin {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.spm-role-badge--admin {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--admin {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.spm-role-badge--medico {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--medico {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.spm-role-badge--enfermero {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0ea5e9;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--enfermero {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.spm-role-badge--farmaceutico {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--farmaceutico {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.spm-role-badge--laboratorista {
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  border-color: rgba(236, 72, 153, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--laboratorista {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.3);
+}
+
+.spm-role-badge--recepcionista,
+.spm-role-badge--contador {
+  background: rgba(43, 176, 166, 0.1);
+  color: #2bb0a6;
+  border-color: rgba(43, 176, 166, 0.2);
+}
+[data-theme='dark'] .spm-role-badge--recepcionista,
+[data-theme='dark'] .spm-role-badge--contador {
+  background: rgba(43, 176, 166, 0.15);
+  border-color: rgba(43, 176, 166, 0.3);
+}
+
+/* ── Separador decorativo ─────────────────────────────────────────────── */
+.spm-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 0.5rem 0 0.2rem;
+}
+
+.spm-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--sesa-border);
+}
+
+.spm-divider-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sesa-text-muted);
+  flex-shrink: 0;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* ── Lista de información ─────────────────────────────────────────────── */
+.spm-info-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.spm-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+  transition: background var(--sesa-transition-fast), border-color var(--sesa-transition-fast);
+  animation: spmItemSlide 0.3s ease-out both;
+
+  &:nth-child(1) { animation-delay: 0.05s; }
+  &:nth-child(2) { animation-delay: 0.1s; }
+  &:nth-child(3) { animation-delay: 0.15s; }
+  &:nth-child(4) { animation-delay: 0.2s; }
+
+  &:hover {
+    background: var(--sesa-surface-hover);
+    border-color: var(--sesa-border);
+  }
+}
+
+[data-theme='dark'] .spm-info-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.05);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Iconos de info */
+.spm-info-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--sesa-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.spm-info-icon--email {
+  background: rgba(31, 106, 225, 0.1);
+  color: var(--sesa-secondary);
+}
+[data-theme='dark'] .spm-info-icon--email {
+  background: rgba(31, 106, 225, 0.15);
+}
+
+.spm-info-icon--empresa {
+  background: rgba(43, 176, 166, 0.1);
+  color: var(--sesa-accent);
+}
+[data-theme='dark'] .spm-info-icon--empresa {
+  background: rgba(43, 176, 166, 0.15);
+}
+
+.spm-info-icon--schema {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--sesa-warning);
+}
+[data-theme='dark'] .spm-info-icon--schema {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.spm-info-icon--id {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+[data-theme='dark'] .spm-info-icon--id {
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.spm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.spm-info-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--sesa-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.spm-info-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spm-info-value--mono {
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--sesa-text-secondary);
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.spm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 0.65rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sesa-border-light);
+}
+
+.spm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #16a34a;
+  letter-spacing: 0.02em;
+}
+
+[data-theme='dark'] .spm-status-badge {
+  color: #22c55e;
+}
+
+.spm-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: spmPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.spm-btn-close {
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--sesa-transition-fast),
+    color var(--sesa-transition-fast),
+    border-color var(--sesa-transition-fast),
+    transform var(--sesa-transition-fast);
+
+  &:hover {
+    background: var(--sesa-surface-hover);
+    color: var(--sesa-text-primary);
+    border-color: var(--sesa-border);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+[data-theme='dark'] .spm-btn-close {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* ── Animaciones ──────────────────────────────────────────────────────── */
+@keyframes spmBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spmBackdropOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes spmModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes spmModalOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.93) translateY(8px);
+  }
+}
+
+@keyframes spmAvatarPop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spmItemSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spmRingPulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.04); }
+}
+
+@keyframes spmPulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}

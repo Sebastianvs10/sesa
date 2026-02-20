@@ -1,6 +1,11 @@
+/**
+ * Mi Empresa — skeleton, spinner logo, toast.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
 import { EmpresaService } from '../../core/services/empresa.service';
@@ -16,6 +21,7 @@ export class MiEmpresaPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly empresaService = inject(EmpresaService);
   readonly empresaCurrent = inject(EmpresaCurrentService);
+  private readonly toast = inject(SesaToastService);
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -53,10 +59,13 @@ export class MiEmpresaPageComponent implements OnInit {
         this.success.set(true);
         this.selectedFile = null;
         this.empresaCurrent.refresh();
+        this.toast.success('Logo actualizado correctamente.', 'Logo guardado');
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err.error?.message || err.message || 'Error al subir el logo.');
+        const msg = err.error?.message || err.message || 'Error al subir el logo.';
+        this.error.set(msg);
+        this.toast.error(msg, 'Error');
       },
     });
   }

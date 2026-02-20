@@ -32,15 +32,6 @@ public class Personal {
     @Column(length = 150)
     private String apellidos;
 
-    @Column(nullable = false, length = 100)
-    private String cargo;
-
-    @Column(length = 100)
-    private String servicio;
-
-    @Column(length = 50)
-    private String turno;
-
     @Column(length = 50)
     private String identificacion;
 
@@ -64,9 +55,6 @@ public class Personal {
 
     @Column(length = 50)
     private String rol;
-
-    @Column(name = "institucion_prestadora", length = 255)
-    private String institucionPrestadora;
 
     @Column(name = "foto_url", length = 500)
     private String fotoUrl;

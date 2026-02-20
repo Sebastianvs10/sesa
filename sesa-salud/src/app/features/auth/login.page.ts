@@ -1,5 +1,9 @@
+/**
+ * Login — spinner en autenticación, toast errores/éxito.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -8,6 +12,7 @@ import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 @Component({
   standalone: true,
@@ -20,7 +25,7 @@ export class LoginPageComponent implements OnInit {
   loginForm: FormGroup;
   resetRequestForm: FormGroup;
   resetConfirmForm: FormGroup;
-  loading = false;
+  loading = signal(false);
   errorMessage: string | null = null;
   resetMessage: string | null = null;
   showReset = false;
@@ -37,6 +42,7 @@ export class LoginPageComponent implements OnInit {
   faIdCard = faIdCard;
 
   themeService = inject(ThemeService);
+  private readonly toast = inject(SesaToastService);
 
   constructor(
     private fb: FormBuilder,
@@ -72,15 +78,15 @@ export class LoginPageComponent implements OnInit {
       return;
     }
     const { email, password } = this.loginForm.getRawValue();
-    this.loading = true;
+    this.loading.set(true);
     this.authService.login({ email, password }).subscribe({
       next: () => {
-        this.loading = false;
+        this.loading.set(false);
         this.empresaCurrent.load();
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        this.loading = false;
+        this.loading.set(false);
         if (err.status === 401) {
           this.errorMessage = 'Correo o contraseña incorrectos.';
         } else if (err.error?.message) {
@@ -88,6 +94,7 @@ export class LoginPageComponent implements OnInit {
         } else {
           this.errorMessage = 'Error de conexión. Comprueba que el backend esté en ejecución.';
         }
+        this.toast.error(this.errorMessage!, 'Error de acceso');
       },
     });
   }
@@ -138,9 +145,11 @@ export class LoginPageComponent implements OnInit {
     this.authService.requestPasswordReset({ email }).subscribe({
       next: (res) => {
         this.resetMessage = `${res.message}${res.token ? ' Token: ' + res.token : ''}`;
+        this.toast.success('Solicitud enviada. Revisa tu correo.', 'Recuperación');
       },
       error: (err) => {
         this.errorMessage = err?.error?.error || 'No se pudo procesar la solicitud';
+        this.toast.error(this.errorMessage!, 'Error');
       },
     });
   }
@@ -155,9 +164,11 @@ export class LoginPageComponent implements OnInit {
     this.authService.resetPassword({ token, newPassword }).subscribe({
       next: (res) => {
         this.resetMessage = res.message;
+        this.toast.success('Contraseña restablecida correctamente. Inicia sesión.', 'Contraseña restablecida');
       },
       error: (err) => {
         this.errorMessage = err?.error?.error || 'No se pudo restablecer la contraseña';
+        this.toast.error(this.errorMessage!, 'Error');
       },
     });
   }

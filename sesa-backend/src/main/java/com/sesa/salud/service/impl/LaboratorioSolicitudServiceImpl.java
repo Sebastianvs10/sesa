@@ -6,6 +6,7 @@ package com.sesa.salud.service.impl;
 
 import com.sesa.salud.dto.LaboratorioSolicitudDto;
 import com.sesa.salud.dto.LaboratorioSolicitudRequestDto;
+import com.sesa.salud.dto.ResultadoLaboratorioDto;
 import com.sesa.salud.entity.LaboratorioSolicitud;
 import com.sesa.salud.entity.Paciente;
 import com.sesa.salud.entity.Personal;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -93,6 +95,30 @@ public class LaboratorioSolicitudServiceImpl implements LaboratorioSolicitudServ
 
     @Override
     @Transactional
+    public LaboratorioSolicitudDto registrarResultado(Long id, ResultadoLaboratorioDto dto) {
+        LaboratorioSolicitud l = laboratorioSolicitudRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Solicitud de laboratorio no encontrada: " + id));
+        l.setResultado(dto.getResultado());
+        l.setObservaciones(dto.getObservaciones());
+        l.setFechaResultado(Instant.now());
+        l.setEstado("COMPLETADO");
+        if (dto.getBacteriologoId() != null) {
+            personalRepository.findById(dto.getBacteriologoId()).ifPresent(l::setBacteriologo);
+        }
+        return toDto(laboratorioSolicitudRepository.save(l));
+    }
+
+    @Override
+    @Transactional
+    public LaboratorioSolicitudDto cambiarEstado(Long id, String nuevoEstado) {
+        LaboratorioSolicitud l = laboratorioSolicitudRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Solicitud de laboratorio no encontrada: " + id));
+        l.setEstado(nuevoEstado);
+        return toDto(laboratorioSolicitudRepository.save(l));
+    }
+
+    @Override
+    @Transactional
     public void deleteById(Long id) {
         if (!laboratorioSolicitudRepository.existsById(id)) {
             throw new RuntimeException("Solicitud de laboratorio no encontrada: " + id);
@@ -101,19 +127,31 @@ public class LaboratorioSolicitudServiceImpl implements LaboratorioSolicitudServ
     }
 
     private LaboratorioSolicitudDto toDto(LaboratorioSolicitud l) {
-        String pacienteNombre = l.getPaciente().getNombres() + " " + (l.getPaciente().getApellidos() != null ? l.getPaciente().getApellidos() : "");
+        String pacienteNombre = l.getPaciente().getNombres() + " "
+                + (l.getPaciente().getApellidos() != null ? l.getPaciente().getApellidos() : "");
         String solicitanteNombre = l.getSolicitante() != null
-                ? l.getSolicitante().getNombres() + " " + (l.getSolicitante().getApellidos() != null ? l.getSolicitante().getApellidos() : "")
+                ? l.getSolicitante().getNombres() + " "
+                    + (l.getSolicitante().getApellidos() != null ? l.getSolicitante().getApellidos() : "")
+                : null;
+        String bacteriologoNombre = l.getBacteriologo() != null
+                ? l.getBacteriologo().getNombres() + " "
+                    + (l.getBacteriologo().getApellidos() != null ? l.getBacteriologo().getApellidos() : "")
                 : null;
         return LaboratorioSolicitudDto.builder()
                 .id(l.getId())
                 .pacienteId(l.getPaciente().getId())
                 .pacienteNombre(pacienteNombre.trim())
+                .pacienteDocumento(l.getPaciente().getDocumento())
                 .solicitanteId(l.getSolicitante() != null ? l.getSolicitante().getId() : null)
                 .solicitanteNombre(solicitanteNombre != null ? solicitanteNombre.trim() : null)
                 .tipoPrueba(l.getTipoPrueba())
                 .estado(l.getEstado())
                 .fechaSolicitud(l.getFechaSolicitud())
+                .resultado(l.getResultado())
+                .observaciones(l.getObservaciones())
+                .fechaResultado(l.getFechaResultado())
+                .bacteriologoId(l.getBacteriologo() != null ? l.getBacteriologo().getId() : null)
+                .bacteriologoNombre(bacteriologoNombre != null ? bacteriologoNombre.trim() : null)
                 .createdAt(l.getCreatedAt())
                 .build();
     }

@@ -25,7 +25,9 @@ public class PacienteController {
     private final PacienteService pacienteService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO'," +
+                  "'ENFERMERO','JEFE_ENFERMERIA','AUXILIAR_ENFERMERIA','PSICOLOGO'," +
+                  "'REGENTE_FARMACIA','RECEPCIONISTA','COORDINADOR_MEDICO')")
     public Page<PacienteDto> list(
             @RequestParam(value = "q", required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -33,19 +35,21 @@ public class PacienteController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO'," +
+                  "'ENFERMERO','JEFE_ENFERMERIA','AUXILIAR_ENFERMERIA','PSICOLOGO'," +
+                  "'REGENTE_FARMACIA','RECEPCIONISTA','COORDINADOR_MEDICO')")
     public ResponseEntity<PacienteDto> get(@PathVariable("id") Long id) {
         return ResponseEntity.ok(pacienteService.findById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
     public ResponseEntity<PacienteDto> create(@Valid @RequestBody PacienteRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pacienteService.create(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
     public ResponseEntity<PacienteDto> update(@PathVariable("id") Long id, @Valid @RequestBody PacienteRequestDto dto) {
         return ResponseEntity.ok(pacienteService.update(id, dto));
     }

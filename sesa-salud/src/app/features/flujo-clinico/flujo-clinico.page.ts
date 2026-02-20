@@ -1,3 +1,7 @@
+/**
+ * Flujo Clínico — skeleton, toast errores/éxito.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +13,7 @@ import { ConsultaDto, ConsultaService } from '../../core/services/consulta.servi
 import { OrdenClinicaDto, OrdenClinicaService } from '../../core/services/orden-clinica.service';
 import { FacturaDto, FacturaService } from '../../core/services/factura.service';
 import { ReporteResumenDto, ReporteService } from '../../core/services/reporte.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 @Component({
   standalone: true,
@@ -25,6 +30,7 @@ export class FlujoClinicoPageComponent implements OnInit {
   private readonly ordenService = inject(OrdenClinicaService);
   private readonly facturaService = inject(FacturaService);
   private readonly reporteService = inject(ReporteService);
+  private readonly toast = inject(SesaToastService);
 
   pacientes: PacienteDto[] = [];
   profesionales: PersonalDto[] = [];
@@ -339,5 +345,6 @@ export class FlujoClinicoPageComponent implements OnInit {
   private setError(err: any, fallback: string): void {
     this.loading = false;
     this.error = err?.error?.error || err?.message || fallback;
+    this.toast.error(this.error!, 'Error');
   }
 }

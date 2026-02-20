@@ -21,4 +21,7 @@ public class LaboratorioSolicitudRequestDto {
     @NotBlank(message = "Tipo de prueba es obligatorio")
     private String tipoPrueba;
     private String estado = "PENDIENTE";
+    private String resultado;
+    private String observaciones;
+    private Long bacteriologoId;
 }

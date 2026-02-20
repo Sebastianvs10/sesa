@@ -1,338 +1,985 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <div>
-      <h1 class="sesa-page-title">Historia clínica</h1>
-      <p class="sesa-page-subtitle">
-        Visualiza y actualiza la historia clínica completa del paciente,
-        incluyendo antecedentes, consultas, medicamentos y documentos.
-      </p>
-    </div>
-  </header>
+<section class="hc-page">
 
-  @if (cargando) {
-  <p class="sesa-loading">Cargando...</p>
-  } @else if (error) {
-  <p class="sesa-error">{{ error }}</p>
-  } @else if (!selectedPatient) {
-  <sesa-card title="Consultar historia clínica">
-    <p class="sesa-muted">Selecciona una consulta para abrir la historia clínica del paciente.</p>
-    @if (misConsultas.length === 0) {
-    <p class="sesa-muted">No hay consultas registradas a tu nombre. Crea una consulta desde un paciente o usa «Crear
-      Historia Clínica» en el menú.</p>
-    <a routerLink="/historia-clinica/nueva" class="sesa-btn sesa-btn-primary sesa-mt-1">Ir a Crear Historia Clínica</a>
-    } @else {
-    <div class="sesa-consultas-list">
-      <table class="sesa-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Paciente</th>
-            <th>Motivo</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (c of misConsultas; track c.id) {
-          <tr>
-            <td>{{ formatFechaConsulta(c.fechaConsulta) }}</td>
-            <td>{{ c.pacienteNombre }}</td>
-            <td>{{ c.motivoConsulta || '—' }}</td>
-            <td>
-              <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: c.pacienteId }"
-                class="sesa-btn sesa-btn-sm sesa-btn-primary">Ver HC</a>
-            </td>
-          </tr>
+  <!-- ════════════════════ SIN PACIENTE → MIS CONSULTAS ════════════════════ -->
+  @if (!selectedPatient() && !loadingPatient()) {
+    <header class="hc-header">
+      <div class="hc-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="hc-title">Historia Clínica</h1>
+        <p class="hc-subtitle">Registro médico electrónico · Gestión clínica integral del paciente</p>
+      </div>
+    </header>
+
+    <div class="hc-mis-consultas">
+      @if (loadingMisConsultas()) {
+        <div class="hc-skeleton-card">
+          @for (s of skeletonRows; track s) {
+            <div class="hc-sk-row">
+              <sesa-skeleton variant="rounded" width="80px" height="14px" />
+              <sesa-skeleton variant="text" width="140px" height="14px" />
+              <sesa-skeleton variant="text" width="180px" height="14px" />
+              <sesa-skeleton variant="rounded" width="70px" height="28px" borderRadius="8px" />
+            </div>
           }
-        </tbody>
-      </table>
+        </div>
+      } @else if (misConsultas.length === 0) {
+        <sesa-empty-state
+          icon="clipboard"
+          title="Sin consultas registradas"
+          message="No hay consultas a tu nombre. Busca un paciente para abrir su historia clínica."
+          actionLabel="Buscar paciente"
+          (action)="null">
+        </sesa-empty-state>
+        <div class="hc-empty-action">
+          <a routerLink="/historia-clinica/nueva" class="hc-btn hc-btn--primary">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+            Crear nueva historia clínica
+          </a>
+        </div>
+      } @else {
+        <div class="hc-section-card">
+          <div class="hc-section-card-header">
+            <h2 class="hc-section-title">Mis consultas recientes</h2>
+            <a routerLink="/historia-clinica/nueva" class="hc-btn hc-btn--primary hc-btn--sm">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              Nueva HC
+            </a>
+          </div>
+          <div class="hc-table-wrap">
+            <table class="hc-table">
+              <thead>
+                <tr><th>Fecha</th><th>Paciente</th><th>Motivo de consulta</th><th></th></tr>
+              </thead>
+              <tbody>
+                @for (c of misConsultas; track c.id) {
+                  <tr>
+                    <td class="hc-td-fecha">{{ formatFecha(c.fechaConsulta) }}</td>
+                    <td>
+                      <div class="hc-td-paciente">
+                        <div class="hc-mini-avatar">{{ (c.pacienteNombre || 'P')[0].toUpperCase() }}</div>
+                        {{ c.pacienteNombre }}
+                      </div>
+                    </td>
+                    <td class="hc-td-motivo">{{ c.motivoConsulta || '—' }}</td>
+                    <td>
+                      <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: c.pacienteId }"
+                         class="hc-btn hc-btn--ghost hc-btn--sm">
+                        Ver HC →
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     </div>
-    }
-  </sesa-card>
-  } @else {
-  @if (exito) {
-  <p class="sesa-success">{{ exito }}</p>
   }
-  <!-- Cabecera del paciente (como en los diseños) -->
-  <sesa-card>
-    <div class="sesa-patient-header">
-      <div class="sesa-patient-header-main">
-        <div class="sesa-patient-avatar">{{ (selectedPatient.nombres.charAt(0) + (selectedPatient.apellidos ?
-          selectedPatient.apellidos.charAt(0) : '')) }}</div>
-        <div>
-          <div class="sesa-patient-name">{{ selectedPatient.nombres }} {{ selectedPatient.apellidos || '' }}</div>
-          <div class="sesa-patient-meta">
-            <span>{{ selectedPatient.tipoDocumento || 'CC' }} {{ selectedPatient.documento }}</span>
-            @if (selectedPatient.fechaNacimiento) {
-            <span>• {{ calculateAge(selectedPatient.fechaNacimiento) }} años</span>
-            } @else {
-            <span>• Edad no registrada</span>
+
+  <!-- ════════════════════ LOADING INICIAL ════════════════════ -->
+  @if (loadingPatient()) {
+    <div class="hc-loading-banner">
+      <div class="hc-loading-avatar-sk">
+        <sesa-skeleton variant="circle" width="72px" height="72px" />
+      </div>
+      <div class="hc-loading-info">
+        <sesa-skeleton variant="text" width="220px" height="20px" />
+        <sesa-skeleton variant="text" width="160px" height="14px" />
+        <sesa-skeleton variant="text" width="280px" height="14px" />
+      </div>
+    </div>
+    <div class="hc-sk-tabs">
+      @for (s of [1,2,3,4,5]; track s) {
+        <sesa-skeleton variant="rounded" width="110px" height="38px" borderRadius="10px" />
+      }
+    </div>
+    <div class="hc-sk-content-grid">
+      @for (s of skeletonRows; track s) {
+        <sesa-skeleton variant="rounded" width="100%" height="120px" borderRadius="14px" />
+      }
+    </div>
+  }
+
+  <!-- ════════════════════ PACIENTE CARGADO ════════════════════ -->
+  @if (selectedPatient() && !loadingPatient()) {
+    <!-- ── BANNER DEL PACIENTE ────────────────────────────────────── -->
+    <div class="hc-patient-banner">
+      <div class="hc-banner-main">
+        <div class="hc-patient-avatar">
+          {{ (selectedPatient()!.nombres.charAt(0) + (selectedPatient()!.apellidos?.charAt(0) ?? '')).toUpperCase() }}
+        </div>
+
+        <div class="hc-patient-info">
+          <h2 class="hc-patient-name">
+            {{ selectedPatient()!.nombres }} {{ selectedPatient()!.apellidos ?? '' }}
+          </h2>
+          <div class="hc-patient-meta">
+            <span class="hc-meta-chip">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2a2 2 0 012-2h8a2 2 0 012 2v12l-6-3-6 3V2z"/></svg>
+              {{ selectedPatient()!.tipoDocumento ?? 'CC' }} {{ selectedPatient()!.documento }}
+            </span>
+            @if (selectedPatient()!.fechaNacimiento) {
+              <span class="hc-meta-chip">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2 2H6a4 4 0 00-4 4v.5h12V14a4 4 0 00-4-4z"/></svg>
+                {{ calculateAge(selectedPatient()!.fechaNacimiento!) }} años
+              </span>
             }
-            <span>• {{ selectedPatient.telefono || '—' }}</span>
+            @if (selectedPatient()!.sexo) {
+              <span class="hc-meta-chip">{{ selectedPatient()!.sexo }}</span>
+            }
+            @if (selectedPatient()!.telefono) {
+              <span class="hc-meta-chip">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.654 1.328a.678.678 0 00-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 004.168 6.608 17.569 17.569 0 006.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 00-.063-1.015l-2.307-1.794a.678.678 0 00-.58-.122l-2.19.547a1.745 1.745 0 01-1.657-.459L5.482 8.062a1.745 1.745 0 01-.46-1.657l.548-2.19a.678.678 0 00-.122-.58L3.654 1.328z"/></svg>
+                {{ selectedPatient()!.telefono }}
+              </span>
+            }
+            @if (selectedPatient()!.epsNombre) {
+              <span class="hc-meta-chip hc-meta-chip--eps">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm0 3a1 1 0 100 2 1 1 0 000-2zm-1 3a1 1 0 011-1h.01a1 1 0 01.99 1.14l-.5 3a.5.5 0 01-.99 0l-.5-3A1 1 0 017 9z"/></svg>
+                EPS: {{ selectedPatient()!.epsNombre }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- Indicadores rápidos -->
+        <div class="hc-patient-stats">
+          @if (historiaClinica()) {
+            <div class="hc-stat-item">
+              <span class="hc-stat-val">{{ totalConsultas() }}</span>
+              <span class="hc-stat-lbl">Consultas</span>
+            </div>
+            <div class="hc-stat-item">
+              <span class="hc-stat-val">{{ totalOrdenes() }}</span>
+              <span class="hc-stat-lbl">Órdenes</span>
+            </div>
+            <div class="hc-stat-item">
+              <span class="hc-stat-val">{{ totalFacturas() }}</span>
+              <span class="hc-stat-lbl">Facturas</span>
+            </div>
+            <div class="hc-stat-item">
+              <span class="hc-stat-val hc-gs">{{ historiaClinica()!.grupoSanguineo || '—' }}</span>
+              <span class="hc-stat-lbl">Grupo Sang.</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- HC estado + acciones -->
+      <div class="hc-banner-footer">
+        <div class="hc-banner-status">
+          @if (historiaClinica()) {
+            <span class="hc-badge" [ngClass]="hcEstadoBadge()">HC {{ historiaClinica()!.estado }}</span>
+            <span class="hc-banner-open">Apertura: {{ formatFecha(historiaClinica()!.fechaApertura) }}</span>
+          } @else {
+            <span class="hc-badge badge--warning">Sin historia clínica</span>
+          }
+        </div>
+        <div class="hc-banner-actions">
+          @if (canStartNewHistoria) {
+            <button type="button" class="hc-btn hc-btn--primary" (click)="iniciarNuevaHistoria()">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              Crear Historia Clínica
+            </button>
+          }
+          @if (historiaClinica()) {
+            <button type="button" class="hc-btn hc-btn--ghost" (click)="abrirEditarHC()">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              Editar HC
+            </button>
+            @if (historiaClinica()!.estado !== 'CERRADA') {
+              <button type="button" class="hc-btn hc-btn--danger-ghost"
+                [disabled]="savingCerrarHC()" (click)="cerrarHC()">
+                @if (savingCerrarHC()) { <span class="hc-btn-spinner"></span> } @else {
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>
+                }
+                Cerrar HC
+              </button>
+            }
+          }
+          <button type="button" class="hc-btn hc-btn--ghost" (click)="imprimirExportar()">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"/></svg>
+            Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TABS DE NAVEGACIÓN ────────────────────────────────────── -->
+    <div class="hc-tabs" role="tablist">
+      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'historia'" (click)="setTab('historia')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+        Historia
+      </button>
+      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'soap'" (click)="setTab('soap')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+        Nota SOAP
+        @if (consultasPaciente.length > 0) {
+          <span class="hc-tab-badge">{{ consultasPaciente.length }}</span>
+        }
+      </button>
+      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'ordenes'" (click)="setTab('ordenes')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg>
+        Órdenes
+        @if (ordenesPaciente.length > 0) {
+          <span class="hc-tab-badge">{{ ordenesPaciente.length }}</span>
+        }
+      </button>
+      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'documentos'" (click)="setTab('documentos')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z"/></svg>
+        Documentos
+      </button>
+      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'dolores'" (click)="setTab('dolores')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+        Mapa de Dolor
+      </button>
+    </div>
+
+    <!-- ══════════════ TAB: HISTORIA ══════════════ -->
+    @if (activeTab() === 'historia') {
+      @if (canStartNewHistoria) {
+        <div class="hc-no-historia">
+          <sesa-empty-state
+            icon="clipboard"
+            title="Sin historia clínica"
+            message="Este paciente aún no tiene una historia clínica electrónica. Crea una para registrar sus antecedentes, consultas y evolución clínica."
+            actionLabel="Crear Historia Clínica"
+            (action)="iniciarNuevaHistoria()">
+          </sesa-empty-state>
+        </div>
+      } @else if (historiaClinica()) {
+        <div class="hc-historia-layout">
+          <!-- Columna izquierda -->
+          <div class="hc-col-left">
+            <!-- Info general HC -->
+            <div class="hc-section-card">
+              <div class="hc-section-card-header">
+                <h3 class="hc-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+                  Información General
+                </h3>
+                <span class="hc-badge" [ngClass]="hcEstadoBadge()">{{ historiaClinica()!.estado }}</span>
+              </div>
+              <div class="hc-info-grid">
+                <div class="hc-info-item">
+                  <span class="hc-info-label">Número de HC</span>
+                  <span class="hc-info-value">#{{ historiaClinica()!.id }}</span>
+                </div>
+                <div class="hc-info-item">
+                  <span class="hc-info-label">Fecha apertura</span>
+                  <span class="hc-info-value">{{ formatFecha(historiaClinica()!.fechaApertura) }}</span>
+                </div>
+                <div class="hc-info-item">
+                  <span class="hc-info-label">Grupo sanguíneo</span>
+                  <span class="hc-info-value hc-gs">{{ historiaClinica()!.grupoSanguineo || '—' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alergias -->
+            <div class="hc-section-card">
+              <div class="hc-section-card-header">
+                <h3 class="hc-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+                  Alergias
+                </h3>
+              </div>
+              @if (alergiasTags(historiaClinica()!.alergiasGenerales).length > 0) {
+                <div class="hc-alergia-tags">
+                  @for (a of alergiasTags(historiaClinica()!.alergiasGenerales); track a) {
+                    <span class="hc-alergia-tag">⚠️ {{ a }}</span>
+                  }
+                </div>
+              } @else {
+                <p class="hc-empty-text">No se han registrado alergias conocidas.</p>
+              }
+            </div>
+
+            <!-- Antecedentes personales -->
+            <div class="hc-section-card">
+              <div class="hc-section-card-header">
+                <h3 class="hc-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+                  Antecedentes personales
+                </h3>
+              </div>
+              <p class="hc-ante-text">{{ historiaClinica()!.antecedentesPersonales || 'No registrados.' }}</p>
+            </div>
+
+            <!-- Antecedentes familiares -->
+            <div class="hc-section-card">
+              <div class="hc-section-card-header">
+                <h3 class="hc-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                  Antecedentes familiares
+                </h3>
+              </div>
+              <p class="hc-ante-text">{{ historiaClinica()!.antecedentesFamiliares || 'No registrados.' }}</p>
+            </div>
+          </div>
+
+          <!-- Columna derecha: timeline de consultas -->
+          <div class="hc-col-right">
+            <div class="hc-section-card hc-timeline-card">
+              <div class="hc-section-card-header">
+                <h3 class="hc-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/></svg>
+                  Evolución clínica
+                </h3>
+                <span class="hc-count-badge">{{ consultasPaciente.length }} consultas</span>
+              </div>
+
+              @if (loadingFlujo()) {
+                @for (s of [1,2,3]; track s) {
+                  <div class="hc-timeline-sk">
+                    <sesa-skeleton variant="circle" width="36px" height="36px" />
+                    <div style="flex:1">
+                      <sesa-skeleton variant="text" width="120px" height="14px" />
+                      <sesa-skeleton variant="text" width="80%" height="12px" />
+                    </div>
+                  </div>
+                }
+              } @else if (consultasOrdenadas.length === 0) {
+                <p class="hc-empty-text">Sin consultas registradas aún.</p>
+                <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTab('soap')">
+                  + Registrar primera consulta
+                </button>
+              } @else {
+                <div class="hc-timeline">
+                  @for (c of consultasOrdenadas; track c.id) {
+                    <div class="hc-timeline-item">
+                      <div class="hc-timeline-dot"></div>
+                      <div class="hc-timeline-content">
+                        <div class="hc-timeline-header">
+                          <span class="hc-timeline-date">{{ formatFecha(c.fechaConsulta) }}</span>
+                          <span class="hc-timeline-serv">{{ getServicioCita(c.citaId) }}</span>
+                        </div>
+                        <p class="hc-timeline-motivo">{{ c.motivoConsulta || 'Sin motivo registrado' }}</p>
+                        @if (c.profesionalNombre) {
+                          <span class="hc-timeline-prof">Dr(a). {{ c.profesionalNombre }}</span>
+                        }
+                        @if (c.enfermedadActual) {
+                          <p class="hc-timeline-nota">{{ c.enfermedadActual | slice:0:120 }}{{ c.enfermedadActual.length > 120 ? '...' : '' }}</p>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ══════════════ TAB: NOTA SOAP ══════════════ -->
+    @if (activeTab() === 'soap') {
+      <div class="hc-soap-layout">
+        <!-- Formulario SOAP -->
+        <div class="hc-soap-form">
+          <div class="hc-soap-header">
+            <div class="hc-soap-header-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="hc-soap-title">Nueva nota clínica SOAP</h3>
+              <p class="hc-soap-subtitle">Subjetivo · Objetivo · Análisis · Plan</p>
+            </div>
+          </div>
+
+          <!-- S: Subjetivo -->
+          <div class="hc-soap-section" [class.hc-soap-section--open]="soapSectionOpen() === 'S'">
+            <button class="hc-soap-section-toggle" type="button" (click)="toggleSoapSection('S')">
+              <span class="hc-soap-letter hc-soap-letter--S">S</span>
+              <span class="hc-soap-section-lbl">Subjetivo — Anamnesis</span>
+              <svg class="hc-soap-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+            @if (soapSectionOpen() === 'S') {
+              <div class="hc-soap-body">
+                <div class="hc-form-row hc-form-row--2">
+                  <div class="hc-field">
+                    <label class="hc-label">Cita relacionada</label>
+                    <select class="hc-select" [(ngModel)]="soapS.citaId" (ngModelChange)="onCitaChange($event)">
+                      <option [ngValue]="null">Sin cita</option>
+                      @for (c of citasPaciente; track c.id) {
+                        <option [ngValue]="c.id">#{{ c.id }} — {{ c.servicio }} ({{ c.estado }})</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="hc-field">
+                    <label class="hc-label">Profesional <span class="hc-required">*</span></label>
+                    <select class="hc-select" [(ngModel)]="soapS.profesionalId">
+                      <option [ngValue]="null">Seleccione...</option>
+                      @for (p of profesionales; track p.id) {
+                        <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos ?? '' }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="hc-field">
+                  <label class="hc-label">Motivo de consulta <span class="hc-required">*</span></label>
+                  <input type="text" class="hc-input" [(ngModel)]="soapS.motivoConsulta"
+                    placeholder="Describa el motivo principal de la consulta..." />
+                </div>
+                <div class="hc-field">
+                  <label class="hc-label">Enfermedad actual</label>
+                  <textarea class="hc-textarea" rows="3" [(ngModel)]="soapS.enfermedadActual"
+                    placeholder="Descripción detallada de la enfermedad actual, inicio, evolución, síntomas..."></textarea>
+                </div>
+                <div class="hc-form-row hc-form-row--2">
+                  <div class="hc-field">
+                    <label class="hc-label">Revisión por sistemas</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="soapS.revisionSistemas"
+                      placeholder="Síntomas por sistema (cardiovascular, respiratorio, digestivo...)"></textarea>
+                  </div>
+                  <div class="hc-field">
+                    <label class="hc-label">Alergias conocidas</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="soapS.alergias"
+                      placeholder="Medicamentos, alimentos, sustancias..."></textarea>
+                  </div>
+                </div>
+                <div class="hc-form-row hc-form-row--2">
+                  <div class="hc-field">
+                    <label class="hc-label">Antecedentes personales</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="soapS.antecedentesPersonales"
+                      placeholder="HTA, DM2, cirugías previas..."></textarea>
+                  </div>
+                  <div class="hc-field">
+                    <label class="hc-label">Antecedentes familiares</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="soapS.antecedentesFamiliares"
+                      placeholder="Enfermedades familiares relevantes..."></textarea>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- O: Objetivo -->
+          <div class="hc-soap-section" [class.hc-soap-section--open]="soapSectionOpen() === 'O'">
+            <button class="hc-soap-section-toggle" type="button" (click)="toggleSoapSection('O')">
+              <span class="hc-soap-letter hc-soap-letter--O">O</span>
+              <span class="hc-soap-section-lbl">Objetivo — Examen físico y signos vitales</span>
+              <svg class="hc-soap-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+            @if (soapSectionOpen() === 'O') {
+              <div class="hc-soap-body">
+                <div class="hc-sv-grid">
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 110-2h4a1 1 0 011 1v4a1 1 0 11-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 112 0v1.586l2.293-2.293a1 1 0 011.414 1.414L6.414 15H8a1 1 0 110 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 110-2h1.586l-2.293-2.293a1 1 0 011.414-1.414L15 13.586V12a1 1 0 011-1z"/></svg>
+                      T/A (mmHg)
+                    </label>
+                    <input type="text" class="hc-sv-input" [(ngModel)]="soapO.presionArterial" placeholder="120/80" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+                      FC (lpm)
+                    </label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.frecuenciaCardiaca" placeholder="72" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z"/></svg>
+                      FR (rpm)
+                    </label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.frecuenciaRespiratoria" placeholder="18" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"/></svg>
+                      Temp (°C)
+                    </label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.temperatura" placeholder="36.5" step="0.1" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
+                      SpO₂ (%)
+                    </label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.saturacionO2" placeholder="98" min="0" max="100" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">⚖️ Peso (kg)</label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.peso" (ngModelChange)="calcularIMC()" placeholder="70" />
+                  </div>
+                  <div class="hc-sv-item">
+                    <label class="hc-sv-label">📏 Talla (cm)</label>
+                    <input type="number" class="hc-sv-input" [(ngModel)]="soapO.talla" (ngModelChange)="calcularIMC()" placeholder="170" />
+                  </div>
+                  <div class="hc-sv-item hc-sv-imc" [class.hc-sv-imc--calculado]="!!soapO.imc">
+                    <label class="hc-sv-label">🔢 IMC</label>
+                    <input type="text" class="hc-sv-input" [(ngModel)]="soapO.imc" placeholder="Auto" readonly />
+                  </div>
+                </div>
+                <div class="hc-field" style="margin-top: 1rem">
+                  <label class="hc-label">Hallazgos del examen físico</label>
+                  <textarea class="hc-textarea" rows="3" [(ngModel)]="soapO.hallazgosExamen"
+                    placeholder="Descripción de hallazgos por sistema (cardiopulmonar, abdominal, neurológico...)"></textarea>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- A: Análisis / Evaluación -->
+          <div class="hc-soap-section" [class.hc-soap-section--open]="soapSectionOpen() === 'A'">
+            <button class="hc-soap-section-toggle" type="button" (click)="toggleSoapSection('A')">
+              <span class="hc-soap-letter hc-soap-letter--A">A</span>
+              <span class="hc-soap-section-lbl">Análisis — Diagnóstico</span>
+              <svg class="hc-soap-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+            @if (soapSectionOpen() === 'A') {
+              <div class="hc-soap-body">
+                <div class="hc-form-row hc-form-row--2">
+                  <div class="hc-field">
+                    <label class="hc-label">Diagnóstico</label>
+                    <input type="text" class="hc-input" [(ngModel)]="soapA.diagnostico"
+                      placeholder="Diagnóstico clínico principal y secundarios..." />
+                  </div>
+                  <div class="hc-field">
+                    <label class="hc-label">Código CIE-10</label>
+                    <input type="text" class="hc-input" [(ngModel)]="soapA.codigoCie10"
+                      placeholder="ej. J06.9, I10, E11..." />
+                  </div>
+                </div>
+                <div class="hc-field">
+                  <label class="hc-label">Observaciones clínicas</label>
+                  <textarea class="hc-textarea" rows="2" [(ngModel)]="soapA.observaciones"
+                    placeholder="Impresión diagnóstica, análisis diferencial..."></textarea>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- P: Plan -->
+          <div class="hc-soap-section" [class.hc-soap-section--open]="soapSectionOpen() === 'P'">
+            <button class="hc-soap-section-toggle" type="button" (click)="toggleSoapSection('P')">
+              <span class="hc-soap-letter hc-soap-letter--P">P</span>
+              <span class="hc-soap-section-lbl">Plan — Tratamiento y conducta</span>
+              <svg class="hc-soap-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+              </svg>
+            </button>
+            @if (soapSectionOpen() === 'P') {
+              <div class="hc-soap-body">
+                <div class="hc-field">
+                  <label class="hc-label">Plan de tratamiento (no farmacológico)</label>
+                  <textarea class="hc-textarea" rows="2" [(ngModel)]="soapP.planTratamiento"
+                    placeholder="Dieta, ejercicio, reposo, fisioterapia..."></textarea>
+                </div>
+                <div class="hc-field">
+                  <label class="hc-label">Tratamiento farmacológico</label>
+                  <textarea class="hc-textarea" rows="2" [(ngModel)]="soapP.tratamientoFarmacologico"
+                    placeholder="Medicamentos: nombre, dosis, vía, frecuencia, duración..."></textarea>
+                </div>
+                <div class="hc-field">
+                  <label class="hc-label">Recomendaciones y seguimiento</label>
+                  <textarea class="hc-textarea" rows="2" [(ngModel)]="soapP.recomendaciones"
+                    placeholder="Signos de alarma, próxima cita, remisiones..."></textarea>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Botón guardar -->
+          <div class="hc-soap-submit">
+            <button type="button" class="hc-btn hc-btn--primary hc-btn--large"
+              [disabled]="savingConsulta()" (click)="crearConsulta()">
+              @if (savingConsulta()) {
+                <span class="hc-btn-spinner"></span> Guardando nota SOAP...
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                Guardar nota SOAP
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Timeline de consultas previas -->
+        <div class="hc-soap-sidebar">
+          <div class="hc-section-card">
+            <div class="hc-section-card-header">
+              <h3 class="hc-section-title">Consultas anteriores</h3>
+              <span class="hc-count-badge">{{ consultasPaciente.length }}</span>
+            </div>
+            @if (loadingFlujo()) {
+              @for (s of [1,2,3]; track s) {
+                <div class="hc-prev-sk">
+                  <sesa-skeleton variant="text" width="90px" height="12px" />
+                  <sesa-skeleton variant="text" width="100%" height="14px" />
+                </div>
+              }
+            } @else if (consultasOrdenadas.length === 0) {
+              <p class="hc-empty-text">Sin consultas previas.</p>
+            } @else {
+              <div class="hc-prev-list">
+                @for (c of consultasOrdenadas; track c.id) {
+                  <div class="hc-prev-item">
+                    <span class="hc-prev-date">{{ formatFecha(c.fechaConsulta) }}</span>
+                    <p class="hc-prev-motivo">{{ c.motivoConsulta || 'Sin motivo' }}</p>
+                    @if (c.profesionalNombre) {
+                      <span class="hc-prev-prof">{{ c.profesionalNombre }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
         </div>
       </div>
+    }
 
-      <div class="sesa-tabs">
-        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'historia'"
-          (click)="setTab('historia')">
-          Historia clínica
-        </button>
-        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'notas'"
-          (click)="setTab('notas')">
-          Notas médicas
-        </button>
-        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'medicamentos'"
-          (click)="setTab('medicamentos')">
-          Medicamentos
-        </button>
-        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'documentos'"
-          (click)="setTab('documentos')">
-          Documentos
-        </button>
-        <button type="button" class="sesa-tab" [class.sesa-tab-active]="activeTab === 'dolores'"
-          (click)="setTab('dolores')">
-          Dolores
+    <!-- ══════════════ TAB: ÓRDENES ══════════════ -->
+    @if (activeTab() === 'ordenes') {
+      <div class="hc-ordenes-layout">
+        <!-- Formulario nueva orden -->
+        <div class="hc-section-card">
+          <div class="hc-section-card-header">
+            <h3 class="hc-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg>
+              Nueva orden clínica
+            </h3>
+          </div>
+
+          @if (consultasPaciente.length === 0) {
+            <div class="hc-warning-banner">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+              Se requiere una consulta previa para emitir órdenes.
+              <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTab('soap')">
+                Ir a Nota SOAP
+              </button>
+            </div>
+          }
+
+          <!-- Tipo de orden — chips visuales -->
+          <div class="hc-tipo-chips">
+            @for (tipo of [
+              { id:'LABORATORIO', label:'Laboratorio', icon:'🧪' },
+              { id:'MEDICAMENTO', label:'Medicamento', icon:'💊' },
+              { id:'PROCEDIMIENTO', label:'Procedimiento', icon:'🩺' },
+              { id:'IMAGEN', label:'Imagen', icon:'🔬' }
+            ]; track tipo.id) {
+              <button type="button" class="hc-tipo-chip"
+                [class.hc-tipo-chip--active]="ordenForm.tipo === tipo.id"
+                (click)="ordenForm.tipo = tipo.id; onTipoOrdenChange()">
+                <span>{{ tipo.icon }}</span>{{ tipo.label }}
+              </button>
+            }
+          </div>
+
+          <div class="hc-form-row hc-form-row--2">
+            <div class="hc-field">
+              <label class="hc-label">Consulta vinculada <span class="hc-required">*</span></label>
+              <select class="hc-select" [(ngModel)]="ordenForm.consultaId">
+                <option [ngValue]="null">Seleccione consulta...</option>
+                @for (co of consultasPaciente; track co.id) {
+                  <option [ngValue]="co.id">#{{ co.id }} — {{ co.motivoConsulta || 'Sin motivo' }} ({{ formatFecha(co.fechaConsulta) }})</option>
+                }
+              </select>
+            </div>
+            <div class="hc-field">
+              <label class="hc-label">Plantilla rápida</label>
+              @if (ordenForm.tipo === 'LABORATORIO') {
+                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+                  <option value="">Seleccione...</option>
+                  @for (lab of catalogoLaboratorios; track lab) { <option [value]="lab">{{ lab }}</option> }
+                </select>
+              } @else if (ordenForm.tipo === 'MEDICAMENTO') {
+                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+                  <option value="">Seleccione...</option>
+                  @for (med of catalogoMedicamentos; track med) { <option [value]="med">{{ med }}</option> }
+                </select>
+              } @else {
+                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
+                  <option value="">Seleccione especialidad...</option>
+                  @for (esp of catalogoEspecialidades; track esp) { <option [value]="'Interconsulta: ' + esp">{{ esp }}</option> }
+                </select>
+              }
+            </div>
+          </div>
+
+          <div class="hc-form-row hc-form-row--2">
+            <div class="hc-field">
+              <label class="hc-label">Detalle de la orden</label>
+              <textarea class="hc-textarea" rows="2" [(ngModel)]="ordenForm.detalle"
+                placeholder="Especificaciones, dosis, indicaciones..."></textarea>
+            </div>
+            <div class="hc-field">
+              <label class="hc-label">Valor estimado (COP)</label>
+              <input type="number" class="hc-input" [(ngModel)]="ordenForm.valorEstimado" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="hc-form-actions">
+            <button type="button" class="hc-btn hc-btn--primary" [disabled]="savingOrden()" (click)="crearOrden()">
+              @if (savingOrden()) { <span class="hc-btn-spinner"></span> Creando... } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                Emitir orden
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Listado de órdenes -->
+        <div class="hc-section-card">
+          <div class="hc-section-card-header">
+            <h3 class="hc-section-title">Órdenes emitidas</h3>
+            <div class="hc-filter-chips">
+              <button class="hc-filter-chip" [class.hc-filter-chip--active]="filterTipoOrden() === ''" (click)="setFilterTipoOrden('')">Todas</button>
+              @for (t of ['LABORATORIO','MEDICAMENTO','PROCEDIMIENTO','IMAGEN']; track t) {
+                <button class="hc-filter-chip" [class.hc-filter-chip--active]="filterTipoOrden() === t" (click)="setFilterTipoOrden(t)">{{ tipoOrdenIcon(t) }} {{ t | titlecase }}</button>
+              }
+            </div>
+          </div>
+
+          @if (loadingFlujo()) {
+            @for (s of [1,2,3]; track s) {
+              <sesa-skeleton variant="rounded" width="100%" height="64px" borderRadius="10px" />
+            }
+          } @else if (ordenesFiltradas().length === 0) {
+            <sesa-empty-state icon="clipboard" title="Sin órdenes" message="No hay órdenes clínicas emitidas aún." [compact]="true"></sesa-empty-state>
+          } @else {
+            <div class="hc-orden-list">
+              @for (o of ordenesFiltradas(); track o.id) {
+                <div class="hc-orden-item">
+                  <span class="hc-orden-icon">{{ tipoOrdenIcon(o.tipo) }}</span>
+                  <div class="hc-orden-info">
+                    <span class="hc-orden-tipo">{{ o.tipo }}</span>
+                    <p class="hc-orden-detalle">{{ o.detalle || 'Sin detalle' }}</p>
+                    @if (o.valorEstimado) {
+                      <span class="hc-orden-valor">$ {{ o.valorEstimado | number }}</span>
+                    }
+                  </div>
+                  <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════ TAB: DOCUMENTOS ══════════════ -->
+    @if (activeTab() === 'documentos') {
+      <div class="hc-docs-layout">
+        <!-- Facturación -->
+        <div class="hc-section-card">
+          <div class="hc-section-card-header">
+            <h3 class="hc-section-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z"/></svg>
+              Nueva factura
+            </h3>
+          </div>
+          <div class="hc-form-row hc-form-row--3">
+            <div class="hc-field">
+              <label class="hc-label">Orden vinculada</label>
+              <select class="hc-select" [(ngModel)]="facturaForm.ordenId">
+                <option [ngValue]="null">Sin orden</option>
+                @for (o of ordenesPaciente; track o.id) {
+                  <option [ngValue]="o.id">#{{ o.id }} — {{ tipoOrdenIcon(o.tipo) }} {{ o.tipo }}</option>
+                }
+              </select>
+            </div>
+            <div class="hc-field">
+              <label class="hc-label">Valor total <span class="hc-required">*</span></label>
+              <input type="number" class="hc-input" [(ngModel)]="facturaForm.valorTotal" placeholder="0.00" />
+            </div>
+            <div class="hc-field">
+              <label class="hc-label">Descripción</label>
+              <input type="text" class="hc-input" [(ngModel)]="facturaForm.descripcion" placeholder="Concepto de la factura..." />
+            </div>
+          </div>
+          <div class="hc-form-actions">
+            <button type="button" class="hc-btn hc-btn--primary" [disabled]="savingFactura()" (click)="crearFactura()">
+              @if (savingFactura()) { <span class="hc-btn-spinner"></span> Creando... } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+                Generar factura
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Listado facturas -->
+        <div class="hc-section-card">
+          <div class="hc-section-card-header">
+            <h3 class="hc-section-title">Facturas del paciente</h3>
+            <span class="hc-count-badge">{{ facturasPaciente.length }}</span>
+          </div>
+          @if (loadingFlujo()) {
+            @for (s of [1,2]; track s) {
+              <sesa-skeleton variant="rounded" width="100%" height="54px" borderRadius="10px" />
+            }
+          } @else if (facturasPaciente.length === 0) {
+            <sesa-empty-state icon="document" title="Sin facturas" message="No hay facturas generadas para este paciente." [compact]="true"></sesa-empty-state>
+          } @else {
+            <div class="hc-table-wrap">
+              <table class="hc-table">
+                <thead>
+                  <tr><th>Fecha</th><th>Orden</th><th>Descripción</th><th>Estado</th><th class="hc-td-right">Valor</th></tr>
+                </thead>
+                <tbody>
+                  @for (f of facturasPaciente; track f.id) {
+                    <tr>
+                      <td class="hc-td-fecha">{{ formatFecha(f.fechaFactura) }}</td>
+                      <td>{{ f.ordenId ? '#' + f.ordenId : '—' }}</td>
+                      <td>{{ f.descripcion || '—' }}</td>
+                      <td><span class="hc-badge" [ngClass]="estadoBadge(f.estado)">{{ f.estado }}</span></td>
+                      <td class="hc-td-right hc-td-valor">$ {{ f.valorTotal | number }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <!-- Resumen global -->
+        @if (resumen) {
+          <div class="hc-section-card">
+            <div class="hc-section-card-header">
+              <h3 class="hc-section-title">Resumen global del sistema</h3>
+              <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="refreshResumen()">Actualizar</button>
+            </div>
+            <div class="hc-resumen-grid">
+              <div class="hc-resumen-item"><span class="hc-resumen-val">{{ resumen.totalPacientes }}</span><span class="hc-resumen-lbl">Pacientes</span></div>
+              <div class="hc-resumen-item"><span class="hc-resumen-val">{{ resumen.totalCitas }}</span><span class="hc-resumen-lbl">Citas</span></div>
+              <div class="hc-resumen-item"><span class="hc-resumen-val">{{ resumen.totalConsultas }}</span><span class="hc-resumen-lbl">Consultas</span></div>
+              <div class="hc-resumen-item"><span class="hc-resumen-val">{{ resumen.totalOrdenes }}</span><span class="hc-resumen-lbl">Órdenes</span></div>
+              <div class="hc-resumen-item"><span class="hc-resumen-val">{{ resumen.totalFacturas }}</span><span class="hc-resumen-lbl">Facturas</span></div>
+              <div class="hc-resumen-item hc-resumen-item--highlight"><span class="hc-resumen-val">$ {{ resumen.totalFacturado | number }}</span><span class="hc-resumen-lbl">Total facturado</span></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════ TAB: MAPA DE DOLOR ══════════════ -->
+    @if (activeTab() === 'dolores') {
+      <sesa-dolores-panel
+        [pacienteId]="selectedPatient()!.id"
+        [historiaClinicaId]="historiaClinica()?.id">
+      </sesa-dolores-panel>
+    }
+  }
+</section>
+
+<!-- ════════════════════ MODAL EDITAR HC ════════════════════ -->
+@if (editandoHC()) {
+  <div class="hc-modal-backdrop" (click)="cancelarEditarHC()" role="dialog" aria-modal="true">
+    <div class="hc-modal" (click)="$event.stopPropagation()">
+      <div class="hc-modal-header">
+        <div class="hc-modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="hc-modal-title">Actualizar Historia Clínica</h3>
+          <p class="hc-modal-subtitle">Antecedentes, hábitos y datos generales</p>
+        </div>
+        <button class="hc-modal-close" type="button" (click)="cancelarEditarHC()" aria-label="Cerrar">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
         </button>
       </div>
 
-      <!-- Acciones dentro de HC -->
-      <div class="sesa-hc-actions">
-        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="irVerDetalle()">
-          Ver detalle
-        </button>
-        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="irAgregarEvolucion()">
-          Agregar evolución a HC
-        </button>
-        @if (historiaClinica && historiaClinica.estado !== 'CERRADA') {
-        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="cerrarHC()">
-          Cerrar HC
-        </button>
-        }
-        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="imprimirExportar()">
-          Imprimir / Exportar
+      <div class="hc-modal-body">
+        <div class="hc-form-row hc-form-row--2">
+          <div class="hc-field">
+            <label class="hc-label">Grupo sanguíneo</label>
+            <select class="hc-select" [(ngModel)]="hcEditForm.grupoSanguineo">
+              <option value="">No registrado</option>
+              @for (g of gruposSanguineos; track g) { <option [value]="g">{{ g }}</option> }
+            </select>
+          </div>
+          <div class="hc-field">
+            <label class="hc-label">Alergias generales</label>
+            <input type="text" class="hc-input" [(ngModel)]="hcEditForm.alergiasGenerales"
+              placeholder="Penicilina, látex, mariscos..." />
+          </div>
+        </div>
+        <div class="hc-field">
+          <label class="hc-label">Antecedentes personales</label>
+          <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesPersonales"
+            placeholder="HTA, DM2, cirugías previas, hospitalizaciones..."></textarea>
+        </div>
+        <div class="hc-field">
+          <label class="hc-label">Antecedentes quirúrgicos</label>
+          <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesQuirurgicos"
+            placeholder="Cirugías realizadas, fecha aproximada..."></textarea>
+        </div>
+        <div class="hc-form-row hc-form-row--2">
+          <div class="hc-field">
+            <label class="hc-label">Antecedentes farmacológicos</label>
+            <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesFarmacologicos"
+              placeholder="Medicamentos de uso crónico..."></textarea>
+          </div>
+          <div class="hc-field">
+            <label class="hc-label">Antecedentes traumáticos</label>
+            <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesTraumaticos"
+              placeholder="Fracturas, TCE, accidentes..."></textarea>
+          </div>
+        </div>
+        <div class="hc-form-row hc-form-row--2">
+          <div class="hc-field">
+            <label class="hc-label">Antecedentes ginecoobstétricos</label>
+            <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesGinecoobstetricos"
+              placeholder="G_P_C_A_, FUM, MAC..."></textarea>
+          </div>
+          <div class="hc-field">
+            <label class="hc-label">Antecedentes familiares</label>
+            <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.antecedentesFamiliares"
+              placeholder="Padre: HTA, DM2 / Madre: cáncer..."></textarea>
+          </div>
+        </div>
+        <div class="hc-habitos">
+          <span class="hc-habitos-label">Hábitos y factores de riesgo</span>
+          <div class="hc-habitos-checks">
+            <label class="hc-check-item">
+              <input type="checkbox" [(ngModel)]="hcEditForm.habitosTabaco" />
+              <span>🚬 Tabaco</span>
+            </label>
+            <label class="hc-check-item">
+              <input type="checkbox" [(ngModel)]="hcEditForm.habitosAlcohol" />
+              <span>🍺 Alcohol</span>
+            </label>
+            <label class="hc-check-item">
+              <input type="checkbox" [(ngModel)]="hcEditForm.habitosSustancias" />
+              <span>⚗️ Sustancias psicoactivas</span>
+            </label>
+          </div>
+          @if (hcEditForm.habitosTabaco || hcEditForm.habitosAlcohol || hcEditForm.habitosSustancias) {
+            <div class="hc-field" style="margin-top:.75rem">
+              <label class="hc-label">Detalles de hábitos</label>
+              <textarea class="hc-textarea" rows="2" [(ngModel)]="hcEditForm.habitosDetalles"
+                placeholder="Frecuencia, cantidad, tiempo..."></textarea>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="hc-modal-footer">
+        <button class="hc-btn hc-btn--ghost" type="button" (click)="cancelarEditarHC()">Cancelar</button>
+        <button class="hc-btn hc-btn--primary" type="button" [disabled]="savingUpdateHC()" (click)="guardarHC()">
+          @if (savingUpdateHC()) { <span class="hc-btn-spinner"></span> Guardando... } @else {
+            Guardar cambios
+          }
         </button>
       </div>
     </div>
-  </sesa-card>
-
-  <!-- Contenido principal según pestaña -->
-  <div *ngIf="activeTab === 'historia'" class="sesa-card-grid">
-    @if (canStartNewHistoria) {
-    <sesa-card title="Historia clínica no creada">
-      <p class="sesa-muted">Este paciente aún no tiene un historia clínica. Crea una nueva para comenzar.</p>
-      <button type="button" class="sesa-btn sesa-btn-primary" (click)="iniciarNuevaHistoria()">
-        + Nueva Historia Clínica
-      </button>
-    </sesa-card>
-    } @else if (historiaClinica) {
-    <sesa-card title="Información General de Historia Clínica">
-      <div class="sesa-info-grid">
-        <div class="sesa-info-item">
-          <label>Abierta:</label>
-          <span>{{ historiaClinica.fechaApertura }}</span>
-        </div>
-        <div class="sesa-info-item">
-          <label>Estado:</label>
-          <span>{{ historiaClinica.estado }}</span>
-        </div>
-        <div class="sesa-info-item">
-          <label>Grupo Sanguíneo:</label>
-          <span>{{ historiaClinica.grupoSanguineo || '—' }}</span>
-        </div>
-      </div>
-    </sesa-card>
-    }
-
-    <sesa-card title="Resumen de consultas recientes">
-      <sesa-data-table [columns]="consultasTableColumns" [data]="consultasTableData"></sesa-data-table>
-    </sesa-card>
-
-    @if (historiaClinica) {
-    <sesa-card title="Alergias Generales">
-      <p>{{ historiaClinica.alergiasGenerales || 'No registradas' }}</p>
-    </sesa-card>
-
-    <sesa-card title="Antecedentes Personales">
-      <p>{{ historiaClinica.antecedentesPersonales || 'No registrados' }}</p>
-    </sesa-card>
-
-    <sesa-card title="Antecedentes Familiares">
-      <p>{{ historiaClinica.antecedentesFamiliares || 'No registrados' }}</p>
-    </sesa-card>
-    }
   </div>
-
-  <div *ngIf="activeTab === 'notas'" class="sesa-card-grid">
-    <sesa-card title="Crear consulta (autoselección Cita → Consulta)">
-      <div class="sesa-card-three-columns">
-        <sesa-form-field label="Cita relacionada">
-          <select [(ngModel)]="consultaForm.citaId" (ngModelChange)="onCitaChange($event)">
-            <option [ngValue]="null">Sin cita</option>
-            @for (c of citasPaciente; track c.id) {
-            <option [ngValue]="c.id">#{{ c.id }} - {{ c.servicio }} - {{ c.estado }}</option>
-            }
-          </select>
-        </sesa-form-field>
-        <sesa-form-field label="Profesional *">
-          <select [(ngModel)]="consultaForm.profesionalId">
-            <option [ngValue]="null">Seleccione...</option>
-            @for (p of profesionales; track p.id) {
-            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
-            }
-          </select>
-        </sesa-form-field>
-        <sesa-form-field label="Motivo de consulta *">
-          <input type="text" [(ngModel)]="consultaForm.motivoConsulta" />
-        </sesa-form-field>
-      </div>
-      <div class="sesa-card-three-columns">
-        <sesa-form-field label="Enfermedad actual">
-          <textarea rows="3" [(ngModel)]="consultaForm.enfermedadActual"></textarea>
-        </sesa-form-field>
-        <sesa-form-field label="Antecedentes personales">
-          <textarea rows="3" [(ngModel)]="consultaForm.antecedentesPersonales"></textarea>
-        </sesa-form-field>
-        <sesa-form-field label="Antecedentes familiares / alergias">
-          <textarea rows="3" [(ngModel)]="consultaForm.antecedentesFamiliares"></textarea>
-        </sesa-form-field>
-      </div>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearConsulta()">
-          Guardar consulta
-        </button>
-      </div>
-    </sesa-card>
-  </div>
-
-  <div *ngIf="activeTab === 'medicamentos'" class="sesa-card-grid">
-    @if (consultasPaciente.length === 0) {
-    <sesa-card title="Consultas necesarias">
-      <p class="sesa-muted">No hay consultas registradas para este paciente. Las órdenes (laboratorio, medicamentos,
-        etc.) se asocian a una consulta.</p>
-      <p class="sesa-muted">Cree primero una consulta en la pestaña <strong>Notas médicas</strong> y luego vuelva aquí
-        para crear la orden.</p>
-      <button type="button" class="sesa-btn sesa-btn-primary" (click)="setTab('notas')">
-        Ir a Notas médicas
-      </button>
-    </sesa-card>
-    }
-    <sesa-card title="Crear orden (autoselección Consulta → Orden)">
-      <div class="sesa-card-three-columns">
-        <sesa-form-field label="Consulta *">
-          <select [(ngModel)]="ordenForm.consultaId" (ngModelChange)="onConsultaChange($event)">
-            <option [ngValue]="null">Seleccione...</option>
-            @for (co of consultasPaciente; track co.id) {
-            <option [ngValue]="co.id">#{{ co.id }} - {{ co.motivoConsulta || 'Sin motivo' }}</option>
-            }
-          </select>
-          @if (consultasPaciente.length === 0) {
-          <span class="sesa-field-hint">Sin consultas. Cree una en Notas médicas.</span>
-          }
-        </sesa-form-field>
-        <sesa-form-field label="Tipo">
-          <select [(ngModel)]="ordenForm.tipo" (ngModelChange)="onTipoOrdenChange()">
-            <option value="LABORATORIO">Laboratorio</option>
-            <option value="MEDICAMENTO">Medicamento</option>
-            <option value="PROCEDIMIENTO">Procedimiento</option>
-            <option value="IMAGEN">Imagen diagnóstica</option>
-          </select>
-        </sesa-form-field>
-        <sesa-form-field label="Plantilla rápida">
-          @if (ordenForm.tipo === 'LABORATORIO') {
-          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-            <option value="">Seleccione laboratorio...</option>
-            @for (lab of catalogoLaboratorios; track lab) {
-            <option [value]="lab">{{ lab }}</option>
-            }
-          </select>
-          } @else if (ordenForm.tipo === 'MEDICAMENTO') {
-          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-            <option value="">Seleccione medicamento...</option>
-            @for (med of catalogoMedicamentos; track med) {
-            <option [value]="med">{{ med }}</option>
-            }
-          </select>
-          } @else {
-          <select [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-            <option value="">Seleccione especialidad...</option>
-            @for (esp of especialidades; track esp) {
-            <option [value]="'Interconsulta: ' + esp">{{ esp }}</option>
-            }
-          </select>
-          }
-        </sesa-form-field>
-      </div>
-      <div class="sesa-card-three-columns">
-        <sesa-form-field label="Detalle de la orden">
-          <textarea rows="2" [(ngModel)]="ordenForm.detalle"></textarea>
-        </sesa-form-field>
-        <sesa-form-field label="Valor estimado">
-          <input type="number" [(ngModel)]="ordenForm.valorEstimado" />
-        </sesa-form-field>
-      </div>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearOrden()">
-          Crear orden
-        </button>
-      </div>
-    </sesa-card>
-
-    <sesa-card title="Órdenes del paciente">
-      <sesa-data-table [columns]="ordenesTableColumns" [data]="ordenesTableData"></sesa-data-table>
-    </sesa-card>
-  </div>
-
-  <div *ngIf="activeTab === 'documentos'" class="sesa-card-grid">
-    <sesa-card title="Facturación (autoselección Orden → Factura)">
-      <div class="sesa-card-three-columns">
-        <sesa-form-field label="Orden">
-          <select [(ngModel)]="facturaForm.ordenId" (ngModelChange)="onOrdenChange($event)">
-            <option [ngValue]="null">Sin orden</option>
-            @for (o of ordenesPaciente; track o.id) {
-            <option [ngValue]="o.id">#{{ o.id }} - {{ o.tipo }}</option>
-            }
-          </select>
-        </sesa-form-field>
-        <sesa-form-field label="Valor total *">
-          <input type="number" [(ngModel)]="facturaForm.valorTotal" />
-        </sesa-form-field>
-        <sesa-form-field label="Descripción">
-          <input type="text" [(ngModel)]="facturaForm.descripcion" />
-        </sesa-form-field>
-      </div>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearFactura()">
-          Crear factura
-        </button>
-      </div>
-    </sesa-card>
-
-    <sesa-card title="Facturas del paciente">
-      <sesa-data-table [columns]="facturasTableColumns" [data]="facturasTableData"></sesa-data-table>
-    </sesa-card>
-
-    <sesa-card title="Reporte general">
-      @if (resumen) {
-      <div class="sesa-info-grid">
-        <div class="sesa-info-item"><label>Total pacientes</label><span>{{ resumen.totalPacientes }}</span></div>
-        <div class="sesa-info-item"><label>Total citas</label><span>{{ resumen.totalCitas }}</span></div>
-        <div class="sesa-info-item"><label>Total consultas</label><span>{{ resumen.totalConsultas }}</span></div>
-        <div class="sesa-info-item"><label>Total órdenes</label><span>{{ resumen.totalOrdenes }}</span></div>
-        <div class="sesa-info-item"><label>Total facturas</label><span>{{ resumen.totalFacturas }}</span></div>
-        <div class="sesa-info-item"><label>Total facturado</label><span>{{ resumen.totalFacturado }}</span></div>
-      </div>
-      } @else {
-      <p class="sesa-muted">No hay datos de reporte.</p>
-      }
-      <button type="button" class="sesa-btn sesa-btn-secondary" (click)="refreshResumen()">
-        Actualizar reporte
-      </button>
-    </sesa-card>
-  </div>
-
-  <div *ngIf="activeTab === 'dolores'">
-    <sesa-dolores-panel [pacienteId]="selectedPatient.id"
-      [historiaClinicaId]="historiaClinica?.id"></sesa-dolores-panel>
-  </div>
-  }
-</section>
+}

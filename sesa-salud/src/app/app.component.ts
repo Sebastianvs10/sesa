@@ -15,6 +15,8 @@ import {
   faPills,
   faFileInvoice,
   faCalendarDays,
+  faCalendarCheck,
+  faHeartPulse,
   faBuilding,
   faBuildingColumns,
   faShieldHalved,
@@ -32,6 +34,10 @@ import { NotificacionService, NotificacionDto } from './core/services/notificaci
 import { interval, Subscription, forkJoin } from 'rxjs';
 import { SesaBreadcrumbComponent } from './shared/components/sesa-breadcrumb/sesa-breadcrumb.component';
 import { OfflineStatusComponent } from './shared/components/offline-status/offline-status.component';
+import { SesaToastContainerComponent } from './shared/components/sesa-toast/sesa-toast.component';
+import { SesaLoadingOverlayComponent } from './shared/components/sesa-loading-overlay/sesa-loading-overlay.component';
+import { SesaConfirmDialogOutletComponent } from './shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
+import { SesaPerfilModalOutletComponent, SesaPerfilModalService } from './shared/components/sesa-perfil-modal/sesa-perfil-modal.component';
 
 @Component({
   selector: 'sesa-root',
@@ -44,6 +50,10 @@ import { OfflineStatusComponent } from './shared/components/offline-status/offli
     FontAwesomeModule,
     SesaBreadcrumbComponent,
     OfflineStatusComponent,
+    SesaToastContainerComponent,
+    SesaLoadingOverlayComponent,
+    SesaConfirmDialogOutletComponent,
+    SesaPerfilModalOutletComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
@@ -67,7 +77,9 @@ export class AppComponent implements OnInit, OnDestroy {
   faBed = faBed;
   faPills = faPills;
   faFileInvoice = faFileInvoice;
-  faCalendarDays = faCalendarDays;
+  faCalendarDays  = faCalendarDays;
+  faCalendarCheck = faCalendarCheck;
+  faHeartPulse    = faHeartPulse;
   faBuilding = faBuilding;
   faBuildingColumns = faBuildingColumns;
   faShieldHalved = faShieldHalved;
@@ -77,6 +89,7 @@ export class AppComponent implements OnInit, OnDestroy {
   faMoon = faMoon;
 
   authService = inject(AuthService);
+  perfilModal = inject(SesaPerfilModalService);
   themeService = inject(ThemeService);
   permissions = inject(PermissionsService);
   empresaCurrent = inject(EmpresaCurrentService);
@@ -144,7 +157,7 @@ export class AppComponent implements OnInit, OnDestroy {
   openNotification(notif: NotificacionDto): void {
     this.notificacionService.marcarLeida(notif.id).subscribe({
       next: () => this.loadNotifications(),
-      error: () => {},
+      error: () => { },
     });
     this.closeNotificationsMenu();
     this.router.navigate(['/notificaciones']);
@@ -168,6 +181,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleProfileMenu(): void {
     this.showProfileMenu = !this.showProfileMenu;
+  }
+
+  openPerfil(): void {
+    this.showProfileMenu = false;
+    this.perfilModal.open();
   }
 
   closeProfileAndLogout(): void {

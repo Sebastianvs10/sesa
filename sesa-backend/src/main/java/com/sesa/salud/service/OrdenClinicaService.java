@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface OrdenClinicaService {
     List<OrdenClinicaDto> findByPacienteId(Long pacienteId, Pageable pageable);
+    List<OrdenClinicaDto> findByTipo(String tipo, Pageable pageable);
     OrdenClinicaDto findById(Long id);
     OrdenClinicaDto create(OrdenClinicaRequestDto dto);
     OrdenClinicaDto update(Long id, OrdenClinicaRequestDto dto);

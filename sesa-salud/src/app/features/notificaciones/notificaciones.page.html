@@ -228,40 +228,132 @@
 
             <div class="sesa-notif-compose-right">
               <label class="sesa-label">Destinatarios *</label>
-              <div class="sesa-dest-toolbar">
-                <input
-                  class="sesa-input sesa-dest-search"
-                  [(ngModel)]="searchUsuarios"
-                  [ngModelOptions]="{ standalone: true }"
-                  placeholder="Buscar usuario..." />
-                <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
-                <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
-              </div>
-              <div class="sesa-dest-grid">
-                @for (u of filteredUsuarios(); track u.id) {
-                  <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
+
+              <!-- ADMIN: toggle "Enviar a todos" -->
+              @if (isAdmin && !isSuperAdmin) {
+                <label class="sesa-dest-broadcast-toggle">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="broadcastTodos"
+                    [ngModelOptions]="{ standalone: true }"
+                    (change)="onBroadcastTodosChange()" />
+                  <span>
+                    <fa-icon [icon]="faBullhorn"></fa-icon>
+                    Enviar a <strong>todos</strong> los usuarios de esta empresa
+                  </span>
+                </label>
+              }
+
+              <!-- Selector individual (oculto si broadcastTodos o si es SUPERADMIN usando broadcast-admins) -->
+              @if (!broadcastTodos && !isSuperAdmin) {
+                <div class="sesa-dest-toolbar">
+                  <input
+                    class="sesa-input sesa-dest-search"
+                    [(ngModel)]="searchDestinatarios"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Buscar destinatario…" />
+                  <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
+                  <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
+                </div>
+                <div class="sesa-dest-grid">
+                  @for (u of filteredDestinatarios(); track u.id) {
+                    <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
+                      <input
+                        type="checkbox"
+                        [checked]="isSelected(u.id)"
+                        (change)="toggleDestinatario(u.id)" />
+                      <div class="sesa-dest-option-info">
+                        <span class="sesa-dest-option-name">{{ u.nombre || u.email }}</span>
+                        <span class="sesa-dest-option-email">{{ u.email }}</span>
+                        @if (u.rol) {
+                          <span class="sesa-dest-option-rol">{{ u.rol }}</span>
+                        }
+                      </div>
+                    </label>
+                  }
+                  @if (filteredDestinatarios().length === 0) {
+                    <p class="sesa-dest-empty">No se encontraron usuarios.</p>
+                  }
+                </div>
+                <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+              }
+
+              @if (broadcastTodos) {
+                <p class="sesa-dest-broadcast-info">
+                  <fa-icon [icon]="faBullhorn"></fa-icon>
+                  Se enviará a <strong>todos los usuarios activos</strong> de esta empresa.
+                </p>
+              }
+
+              <!-- SUPERADMIN: panel broadcast a admins de todas las empresas -->
+              @if (isSuperAdmin) {
+                <div class="sesa-dest-superadmin">
+                  <p class="sesa-dest-superadmin-info">
+                    Como <strong>Super Administrador</strong> puede enviar esta notificación
+                    al usuario Administrador de <strong>cada empresa registrada</strong>.
+                  </p>
+                  <p class="sesa-dest-superadmin-note">
+                    Use el botón «Enviar a todos los administradores» en la parte inferior.
+                    <br/>También puede enviar individualmente a usuarios de su propio schema.
+                  </p>
+                  <div class="sesa-dest-toolbar">
                     <input
-                      type="checkbox"
-                      [checked]="isSelected(u.id)"
-                      (change)="toggleDestinatario(u.id)" />
-                    <div class="sesa-dest-option-info">
-                      <span class="sesa-dest-option-name">{{ u.nombreCompleto }}</span>
-                      <span class="sesa-dest-option-email">{{ u.email }}</span>
-                    </div>
-                  </label>
-                }
-              </div>
-              <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+                      class="sesa-input sesa-dest-search"
+                      [(ngModel)]="searchDestinatarios"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Buscar usuario en schema propio…" />
+                    <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
+                    <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
+                  </div>
+                  <div class="sesa-dest-grid">
+                    @for (u of filteredDestinatarios(); track u.id) {
+                      <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
+                        <input
+                          type="checkbox"
+                          [checked]="isSelected(u.id)"
+                          (change)="toggleDestinatario(u.id)" />
+                        <div class="sesa-dest-option-info">
+                          <span class="sesa-dest-option-name">{{ u.nombre || u.email }}</span>
+                          <span class="sesa-dest-option-email">{{ u.email }}</span>
+                        </div>
+                      </label>
+                    }
+                  </div>
+                  @if (selectedIds.size > 0) {
+                    <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+                  }
+                </div>
+              }
             </div>
 
             <div class="sesa-notif-compose-actions">
-              <button type="submit" class="sesa-btn sesa-btn--primary" [disabled]="loading()">
-                @if (loading()) {
-                  <span class="sesa-spinner-sm"></span> Enviando...
-                } @else {
-                  Enviar notificación
-                }
-              </button>
+              <!-- Envío estándar (todos los roles) -->
+              @if (!isSuperAdmin || selectedIds.size > 0) {
+                <button type="submit" class="sesa-btn sesa-btn--primary" [disabled]="loading()">
+                  @if (loading()) {
+                    <span class="sesa-spinner-sm"></span> Enviando…
+                  } @else {
+                    <fa-icon [icon]="faPaperPlane"></fa-icon>
+                    {{ broadcastTodos ? 'Enviar a todos' : 'Enviar notificación' }}
+                  }
+                </button>
+              }
+
+              <!-- Broadcast a admins (solo SUPERADMIN) -->
+              @if (isSuperAdmin) {
+                <button
+                  type="button"
+                  class="sesa-btn sesa-btn--broadcast"
+                  [disabled]="loading()"
+                  (click)="broadcastAdmins()">
+                  @if (loading()) {
+                    <span class="sesa-spinner-sm"></span> Enviando…
+                  } @else {
+                    <fa-icon [icon]="faBullhorn"></fa-icon>
+                    Enviar a todos los administradores
+                  }
+                </button>
+              }
             </div>
           </form>
         </div>

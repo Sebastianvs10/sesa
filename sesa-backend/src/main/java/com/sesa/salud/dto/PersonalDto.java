@@ -20,9 +20,6 @@ public class PersonalDto {
     private Long id;
     private String nombres;
     private String apellidos;
-    private String cargo;
-    private String servicio;
-    private String turno;
     private String identificacion;
     private String primerNombre;
     private String segundoNombre;
@@ -31,7 +28,6 @@ public class PersonalDto {
     private String celular;
     private String email;
     private String rol;
-    private String institucionPrestadora;
     private String fotoUrl;
     private String firmaUrl;
     private Boolean activo;

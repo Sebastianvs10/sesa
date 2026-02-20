@@ -25,6 +25,6 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     Page<Personal> findByActivoTrue(Pageable pageable);
 
-    Page<Personal> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCaseOrCargoContainingIgnoreCase(
-            String nombres, String apellidos, String cargo, Pageable pageable);
+    Page<Personal> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
+            String nombres, String apellidos, Pageable pageable);
 }

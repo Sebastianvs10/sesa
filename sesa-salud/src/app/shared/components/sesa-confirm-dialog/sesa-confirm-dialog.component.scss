@@ -1,0 +1,147 @@
+/* Confirm Dialog Premium — backdrop blur, scale animacion, variantes */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-cdialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: backdropFadeIn 0.2s ease-out;
+  padding: 1rem;
+}
+
+[data-theme='dark'] .sesa-cdialog-backdrop {
+  background: rgba(3, 7, 18, 0.65);
+}
+
+.sesa-cdialog-backdrop--leaving {
+  animation: backdropFadeOut 0.25s ease-in forwards;
+}
+
+/* Dialog card */
+.sesa-cdialog {
+  background: var(--sesa-surface);
+  border-radius: var(--sesa-radius-xl);
+  border: 1px solid var(--sesa-border);
+  box-shadow: var(--sesa-shadow-xl);
+  padding: 2rem 1.75rem 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  animation: dialogScaleIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sesa-cdialog--leaving {
+  animation: dialogScaleOut 0.22s ease-in forwards;
+}
+
+/* Icon wrapper */
+.sesa-cdialog-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sesa-cdialog--danger .sesa-cdialog-icon-wrap {
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+}
+
+.sesa-cdialog--warning .sesa-cdialog-icon-wrap {
+  background: var(--sesa-warning-bg);
+  color: var(--sesa-warning);
+}
+
+.sesa-cdialog--info .sesa-cdialog-icon-wrap {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--sesa-info);
+}
+
+.sesa-cdialog-icon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2;
+}
+
+/* Body */
+.sesa-cdialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sesa-cdialog-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.sesa-cdialog-message {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.55;
+}
+
+/* Actions */
+.sesa-cdialog-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.sesa-cdialog-cancel,
+.sesa-cdialog-confirm {
+  flex: 1;
+  max-width: 160px;
+}
+
+/* Animations */
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes backdropFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes dialogScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dialogScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+  }
+}

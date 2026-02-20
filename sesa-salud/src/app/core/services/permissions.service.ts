@@ -9,40 +9,71 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
-export type Modulo = 'DASHBOARD' | 'PACIENTES' | 'HISTORIA_CLINICA' | 'LABORATORIOS' | 'IMAGENES' | 'URGENCIAS' | 'HOSPITALIZACION' | 'FARMACIA' | 'FACTURACION' | 'CITAS' | 'USUARIOS' | 'PERSONAL' | 'EMPRESAS' | 'NOTIFICACIONES' | 'ROLES' | 'REPORTES';
+export type Modulo =
+  | 'DASHBOARD' | 'PACIENTES' | 'HISTORIA_CLINICA' | 'LABORATORIOS' | 'IMAGENES'
+  | 'URGENCIAS' | 'HOSPITALIZACION' | 'FARMACIA' | 'FACTURACION' | 'CITAS'
+  | 'USUARIOS' | 'PERSONAL' | 'EMPRESAS' | 'NOTIFICACIONES' | 'ROLES'
+  | 'REPORTES' | 'AGENDA' | 'EVOLUCION_ENFERMERIA';
 
 const MODULO_ROUTE: Record<string, string> = {
-  DASHBOARD: '/dashboard',
-  PACIENTES: '/pacientes',
-  HISTORIA_CLINICA: '/historia-clinica',
-  LABORATORIOS: '/laboratorios',
-  IMAGENES: '/imagenes-diagnosticas',
-  URGENCIAS: '/urgencias',
-  HOSPITALIZACION: '/hospitalizacion',
-  FARMACIA: '/farmacia',
-  FACTURACION: '/facturacion',
-  CITAS: '/citas',
-  USUARIOS: '/usuarios',
-  PERSONAL: '/personal',
-  EMPRESAS: '/empresas',
-  NOTIFICACIONES: '/notificaciones',
-  ROLES: '/roles',
-  REPORTES: '/reportes',
+  DASHBOARD:            '/dashboard',
+  PACIENTES:            '/pacientes',
+  HISTORIA_CLINICA:     '/historia-clinica',
+  LABORATORIOS:         '/laboratorios',
+  IMAGENES:             '/imagenes-diagnosticas',
+  URGENCIAS:            '/urgencias',
+  HOSPITALIZACION:      '/hospitalizacion',
+  FARMACIA:             '/farmacia',
+  FACTURACION:          '/facturacion',
+  CITAS:                '/citas',
+  USUARIOS:             '/usuarios',
+  PERSONAL:             '/personal',
+  EMPRESAS:             '/empresas',
+  NOTIFICACIONES:       '/notificaciones',
+  ROLES:                '/roles',
+  REPORTES:             '/reportes',
+  AGENDA:               '/agenda',
+  EVOLUCION_ENFERMERIA: '/evolucion-enfermeria',
 };
 
 /** Matriz rol -> módulos permitidos (sincronizada con backend PermissionService) */
 const ROLE_MODULOS: Record<string, Set<Modulo>> = {
-  SUPERADMINISTRADOR: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES', 'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS', 'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES', 'ROLES', 'REPORTES']),
-  ADMIN: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES', 'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS', 'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES', 'REPORTES']),
-  MEDICO: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES', 'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS']),
-  ODONTOLOGO: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES', 'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS']),
+  SUPERADMINISTRADOR: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
+    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS',
+    'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES', 'ROLES',
+    'REPORTES', 'AGENDA', 'EVOLUCION_ENFERMERIA',
+  ]),
+  ADMIN: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
+    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS',
+    'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES',
+    'REPORTES', 'AGENDA', 'EVOLUCION_ENFERMERIA',
+  ]),
+  MEDICO: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
+    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS',
+  ]),
+  ODONTOLOGO: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
+    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS',
+  ]),
   BACTERIOLOGO: new Set(['DASHBOARD', 'PACIENTES', 'LABORATORIOS']),
-  ENFERMERO: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION', 'CITAS']),
-  JEFE_ENFERMERIA: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION', 'CITAS']),
+  ENFERMERO: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION', 'CITAS',
+  ]),
+  JEFE_ENFERMERIA: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION',
+    'EVOLUCION_ENFERMERIA', 'AGENDA',
+  ]),
   AUXILIAR_ENFERMERIA: new Set(['DASHBOARD', 'PACIENTES', 'URGENCIAS', 'HOSPITALIZACION']),
   PSICOLOGO: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'CITAS']),
   REGENTE_FARMACIA: new Set(['DASHBOARD', 'FARMACIA', 'PACIENTES']),
   RECEPCIONISTA: new Set(['DASHBOARD', 'PACIENTES', 'CITAS', 'FACTURACION']),
+  COORDINADOR_MEDICO: new Set([
+    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS',
+    'REPORTES', 'CITAS', 'AGENDA',
+  ]),
 };
 
 @Injectable({ providedIn: 'root' })
@@ -100,10 +131,21 @@ export class PermissionsService {
     return false;
   }
 
-  /** Indica si el usuario puede crear historia clínica (MEDICO, ODONTOLOGO, ADMIN) */
+  /** Indica si el usuario puede crear historia clínica */
   canCrearHistoriaClinica(): boolean {
     const role = this.auth.currentUser()?.role;
-    return this.canAccess('HISTORIA_CLINICA') && ['MEDICO', 'ODONTOLOGO', 'ADMIN', 'SUPERADMINISTRADOR'].includes(role ?? '');
+    return this.canAccess('HISTORIA_CLINICA') &&
+      ['MEDICO', 'ODONTOLOGO', 'ADMIN', 'SUPERADMINISTRADOR', 'COORDINADOR_MEDICO'].includes(role ?? '');
+  }
+
+  /** Indica si el usuario puede acceder a evolución de enfermería */
+  canAccesEvolucionEnfermeria(): boolean {
+    return this.canAccess('EVOLUCION_ENFERMERIA');
+  }
+
+  /** Indica si el usuario puede acceder a la agenda */
+  canAccesAgenda(): boolean {
+    return this.canAccess('AGENDA');
   }
 
   /** Indica si el usuario puede gestionar roles (SUPERADMINISTRADOR) */

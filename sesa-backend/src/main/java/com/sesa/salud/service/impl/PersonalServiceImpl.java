@@ -58,8 +58,8 @@ public class PersonalServiceImpl implements PersonalService {
             return findAll(pageable);
         }
         String t = q.trim();
-        return personalRepository.findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCaseOrCargoContainingIgnoreCase(
-                t, t, t, pageable).map(this::toDto);
+        return personalRepository.findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
+                t, t, pageable).map(this::toDto);
     }
 
     @Override
@@ -110,9 +110,6 @@ public class PersonalServiceImpl implements PersonalService {
         Personal p = Personal.builder()
                 .nombres(dto.getNombres())
                 .apellidos(dto.getApellidos())
-                .cargo(dto.getCargo())
-                .servicio(dto.getServicio())
-                .turno(dto.getTurno())
                 .identificacion(dto.getIdentificacion())
                 .primerNombre(dto.getPrimerNombre())
                 .segundoNombre(dto.getSegundoNombre())
@@ -121,7 +118,6 @@ public class PersonalServiceImpl implements PersonalService {
                 .celular(dto.getCelular())
                 .email(email)
                 .rol(rol)
-                .institucionPrestadora(dto.getInstitucionPrestadora())
                 .activo(dto.getActivo() != null ? dto.getActivo() : true)
                 .usuario(usuario)
                 .build();
@@ -160,9 +156,6 @@ public class PersonalServiceImpl implements PersonalService {
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado: " + id));
         p.setNombres(dto.getNombres());
         p.setApellidos(dto.getApellidos());
-        p.setCargo(dto.getCargo());
-        p.setServicio(dto.getServicio());
-        p.setTurno(dto.getTurno());
         p.setIdentificacion(dto.getIdentificacion());
         p.setPrimerNombre(dto.getPrimerNombre());
         p.setSegundoNombre(dto.getSegundoNombre());
@@ -185,7 +178,6 @@ public class PersonalServiceImpl implements PersonalService {
                 usuarioRepository.save(p.getUsuario());
             }
         }
-        p.setInstitucionPrestadora(dto.getInstitucionPrestadora());
         p.setActivo(dto.getActivo());
         p = personalRepository.save(p);
         return toDto(p);
@@ -281,9 +273,6 @@ public class PersonalServiceImpl implements PersonalService {
                 .id(p.getId())
                 .nombres(p.getNombres())
                 .apellidos(p.getApellidos())
-                .cargo(p.getCargo())
-                .servicio(p.getServicio())
-                .turno(p.getTurno())
                 .identificacion(p.getIdentificacion())
                 .primerNombre(p.getPrimerNombre())
                 .segundoNombre(p.getSegundoNombre())
@@ -292,7 +281,6 @@ public class PersonalServiceImpl implements PersonalService {
                 .celular(p.getCelular())
                 .email(p.getEmail())
                 .rol(p.getRol())
-                .institucionPrestadora(p.getInstitucionPrestadora())
                 .fotoUrl(p.getFotoUrl())
                 .firmaUrl(p.getFirmaUrl())
                 .activo(p.getActivo())

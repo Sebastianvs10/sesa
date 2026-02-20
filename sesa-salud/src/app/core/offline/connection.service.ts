@@ -33,8 +33,12 @@ export class ConnectionService implements OnDestroy {
   readonly onReconnect$ = this.reconnected$.asObservable();
 
   private subs: Subscription[] = [];
-  /** Heartbeat apunta a /actuator/health (fuera de /api) */
-  private heartbeatUrl = environment.apiUrl.replace(/\/api\/?$/, '') + '/actuator/health';
+  /**
+   * Heartbeat apunta a /actuator/health dentro del context-path del backend.
+   * Como el backend usa server.servlet.context-path=/api, el endpoint real es
+   * <apiUrl>/actuator/health (p. ej. http://localhost:8081/api/actuator/health).
+   */
+  private heartbeatUrl = environment.apiUrl.replace(/\/?$/, '') + '/actuator/health';
   /** Intervalo entre comprobaciones (evita marcar inestable por un fallo puntual) */
   private heartbeatIntervalMs = 60_000;
   /** Cuando está "unstable", reintentar cada tantos ms para recuperar antes */
@@ -81,7 +85,7 @@ export class ConnectionService implements OnDestroy {
       .pipe(
         filter(() => navigator.onLine),
         switchMap(() =>
-          this.http.get(this.heartbeatUrl, { responseType: 'text', headers: { 'X-Heartbeat': 'true' } }).pipe(
+          this.http.get(this.heartbeatUrl, { responseType: 'text' }).pipe(
             timeout(this.heartbeatTimeoutMs),
             map(() => true),
             catchError(() => of(false))
@@ -125,7 +129,7 @@ export class ConnectionService implements OnDestroy {
   async checkNow(): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.get(this.heartbeatUrl, { responseType: 'text', headers: { 'X-Heartbeat': 'true' } }).pipe(
+        this.http.get(this.heartbeatUrl, { responseType: 'text' }).pipe(
           timeout(this.heartbeatTimeoutMs)
         )
       );

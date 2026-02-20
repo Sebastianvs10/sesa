@@ -18,10 +18,6 @@ public class PersonalRequestDto {
     @NotBlank(message = "Nombres son obligatorios")
     private String nombres;
     private String apellidos;
-    @NotBlank(message = "Cargo es obligatorio")
-    private String cargo;
-    private String servicio;
-    private String turno;
 
     private String identificacion;
     private String primerNombre;
@@ -35,7 +31,6 @@ public class PersonalRequestDto {
     private String password;
     /** Rol del profesional (ej. MEDICO, ENFERMERO). Obligatorio al crear. */
     private String rol;
-    private String institucionPrestadora;
 
     @NotNull
     private Boolean activo = true;

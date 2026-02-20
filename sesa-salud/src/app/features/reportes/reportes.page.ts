@@ -15,6 +15,7 @@ import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.c
 import { DashboardChartBarComponent } from '../../shared/components/dashboard-chart-bar/dashboard-chart-bar.component';
 import { DashboardChartDoughnutComponent } from '../../shared/components/dashboard-chart-doughnut/dashboard-chart-doughnut.component';
 import { ReporteService, DashboardStatsDto } from '../../core/services/reporte.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 const MESES_LABELS: Record<number, string> = {
   1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
@@ -42,6 +43,7 @@ const ESTADO_LABELS: Record<string, string> = {
 })
 export class ReportesPageComponent implements OnInit {
   private readonly reporteService = inject(ReporteService);
+  private readonly toast = inject(SesaToastService);
 
   loading = true;
   error = false;
@@ -63,7 +65,11 @@ export class ReportesPageComponent implements OnInit {
     this.error = false;
     this.reporteService
       .dashboardStats()
-      .pipe(catchError(() => { this.error = true; return of<DashboardStatsDto>({}); }))
+      .pipe(catchError(() => {
+        this.error = true;
+        this.toast.error('No se pudieron cargar los reportes. Intenta de nuevo.', 'Error de reportes');
+        return of<DashboardStatsDto>({});
+      }))
       .subscribe((r) => {
         const citasPorDia = r.citasPorDia ?? [];
         const consultasPorMes = r.consultasPorMes ?? [];

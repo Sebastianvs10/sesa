@@ -1,5 +1,9 @@
+/**
+ * Gestión de Personal — confirm dialog, toast CRUD, skeleton loading.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, Observable } from 'rxjs';
 import {
@@ -12,6 +16,8 @@ import {
 import { EmpresaService, EmpresaDto } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 
 @Component({
   standalone: true,
@@ -43,10 +49,14 @@ export class PersonalPageComponent implements OnInit {
   fotoFile: File | null = null;
   firmaFile: File | null = null;
   form: PersonalRequestDto = {
-    nombres: '', apellidos: '', cargo: '', servicio: '', turno: '',
+    nombres: '', apellidos: '',
     identificacion: '', primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
-    celular: '', email: '', password: '', rol: '', institucionPrestadora: '', activo: true,
+    celular: '', email: '', password: '',
+    rol: '', activo: true,
   };
+
+  private readonly toast = inject(SesaToastService);
+  private readonly confirmDialog = inject(SesaConfirmDialogService);
 
   constructor(
     private personalService: PersonalService,
@@ -130,9 +140,6 @@ export class PersonalPageComponent implements OnInit {
     return {
       nombres: '',
       apellidos: '',
-      cargo: '',
-      servicio: '',
-      turno: '',
       identificacion: '',
       primerNombre: '',
       segundoNombre: '',
@@ -142,7 +149,6 @@ export class PersonalPageComponent implements OnInit {
       email: '',
       password: '',
       rol: '',
-      institucionPrestadora: '',
       activo: true,
     };
   }
@@ -156,15 +162,13 @@ export class PersonalPageComponent implements OnInit {
     this.saveError = null;
   }
 
+
   openEdit(p: PersonalDto): void {
     this.editingId = p.id;
     this.showForm = true;
     this.form = {
       nombres: p.nombres,
       apellidos: p.apellidos ?? '',
-      cargo: p.cargo,
-      servicio: p.servicio ?? '',
-      turno: p.turno ?? '',
       identificacion: p.identificacion ?? '',
       primerNombre: p.primerNombre ?? '',
       segundoNombre: p.segundoNombre ?? '',
@@ -174,7 +178,6 @@ export class PersonalPageComponent implements OnInit {
       email: p.email ?? '',
       password: '',
       rol: p.rol ?? '',
-      institucionPrestadora: p.institucionPrestadora ?? '',
       activo: p.activo ?? true,
     };
     this.fotoFile = null;
@@ -203,11 +206,7 @@ export class PersonalPageComponent implements OnInit {
     const apellidos = [this.form.primerApellido, this.form.segundoApellido].filter(Boolean).join(' ').trim()
       || this.form.apellidos?.trim();
     if (!nombres || !this.form.primerApellido?.trim()) {
-      this.saveError = 'Primer nombre, primer apellido y cargo son obligatorios';
-      return;
-    }
-    if (!this.form.cargo?.trim()) {
-      this.saveError = 'Cargo es obligatorio';
+      this.saveError = 'Primer nombre y primer apellido son obligatorios';
       return;
     }
     if (!this.form.email?.trim()) {
@@ -231,9 +230,6 @@ export class PersonalPageComponent implements OnInit {
     const payload: PersonalRequestDto = {
       nombres,
       apellidos: apellidos || undefined,
-      cargo: this.form.cargo.trim(),
-      servicio: this.form.servicio?.trim() || undefined,
-      turno: this.form.turno?.trim() || undefined,
       identificacion: this.form.identificacion?.trim() || undefined,
       primerNombre: this.form.primerNombre?.trim() || undefined,
       segundoNombre: this.form.segundoNombre?.trim() || undefined,
@@ -243,7 +239,6 @@ export class PersonalPageComponent implements OnInit {
       email: this.form.email.trim(),
       password: this.form.password?.trim() || undefined,
       rol: this.form.rol.trim(),
-      institucionPrestadora: this.form.institucionPrestadora?.trim() || undefined,
       activo: this.form.activo ?? true,
     };
     const schema = this.isSuperAdmin ? this.selectedSchema : undefined;
@@ -266,6 +261,7 @@ export class PersonalPageComponent implements OnInit {
           this.saving = false;
           this.editingId = null;
           this.showForm = false;
+          this.toast.success(isCreate ? 'Personal creado.' : 'Personal actualizado.', 'Guardado');
           this.load();
           return;
         }
@@ -274,11 +270,13 @@ export class PersonalPageComponent implements OnInit {
             this.saving = false;
             this.editingId = null;
             this.showForm = false;
+            this.toast.success(isCreate ? 'Personal creado.' : 'Personal actualizado.', 'Guardado');
             this.load();
           },
           error: (err) => {
             this.saveError = err.error?.message || err.message || 'Error al subir foto/firma';
             this.saving = false;
+            this.toast.error(this.saveError!, 'Error');
           },
         });
       },
@@ -286,17 +284,29 @@ export class PersonalPageComponent implements OnInit {
         this.saveError =
           err.error?.message || err.error?.error || err.message || 'Error al guardar';
         this.saving = false;
+        this.toast.error(this.saveError!, 'Error');
       },
     });
   }
 
-  delete(p: PersonalDto): void {
+  async delete(p: PersonalDto): Promise<void> {
     const nombre = [p.nombres, p.apellidos].filter(Boolean).join(' ');
-    if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Eliminar personal',
+      message: `¿Estás seguro de eliminar a "${nombre}"? Esta acción no se puede deshacer.`,
+      type: 'danger',
+    });
+    if (!ok) return;
     const schema = this.isSuperAdmin ? this.selectedSchema : undefined;
     this.personalService.delete(p.id, schema).subscribe({
-      next: () => this.load(),
-      error: (e) => alert(e.error?.error || 'Error al eliminar'),
+      next: () => {
+        this.toast.success(`"${nombre}" eliminado correctamente.`, 'Eliminado');
+        this.load();
+      },
+      error: (e) => {
+        const msg = e.error?.error || 'Error al eliminar';
+        this.toast.error(msg, 'Error');
+      },
     });
   }
 
@@ -316,6 +326,45 @@ export class PersonalPageComponent implements OnInit {
 
   fullName(p: PersonalDto): string {
     return [p.nombres, p.apellidos].filter(Boolean).join(' ');
+  }
+
+  initials(p: PersonalDto): string {
+    const first = (p.nombres || '').trim().charAt(0).toUpperCase();
+    const last  = (p.apellidos || '').trim().charAt(0).toUpperCase();
+    return (first + last) || '?';
+  }
+
+  avatarStyle(name: string): Record<string, string> {
+    const palettes: [string, string][] = [
+      ['#1f6ae1', '#2bb0a6'],
+      ['#7c3aed', '#a855f7'],
+      ['#059669', '#10b981'],
+      ['#d97706', '#f59e0b'],
+      ['#dc2626', '#f87171'],
+      ['#0891b2', '#38bdf8'],
+      ['#db2777', '#f472b6'],
+    ];
+    const idx = (name.charCodeAt(0) || 0) % palettes.length;
+    const [from, to] = palettes[idx];
+    return { background: `linear-gradient(135deg, ${from}, ${to})` };
+  }
+
+  roleClass(rol: string | undefined): string {
+    const map: Record<string, string> = {
+      MEDICO: 'medico',
+      COORDINADOR_MEDICO: 'coordinador',
+      ODONTOLOGO: 'odontologo',
+      BACTERIOLOGO: 'bacteriologo',
+      ENFERMERO: 'enfermero',
+      JEFE_ENFERMERIA: 'jefe-enfermeria',
+      AUXILIAR_ENFERMERIA: 'auxiliar',
+      PSICOLOGO: 'psicologo',
+      REGENTE_FARMACIA: 'farmacia',
+      RECEPCIONISTA: 'recepcionista',
+      ADMIN: 'admin',
+      SUPERADMINISTRADOR: 'super',
+    };
+    return map[(rol ?? '').toUpperCase()] || 'default';
   }
 }
 

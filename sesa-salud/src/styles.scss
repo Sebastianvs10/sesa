@@ -285,6 +285,29 @@ sesa-root {
   flex-shrink: 0;
 }
 
+/* Spinner inline en botones */
+.sesa-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sesa-btn-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes sesa-btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Spinner de botones en variante secundaria/outline */
+.sesa-btn-secondary .sesa-btn-spinner,
+.sesa-btn-outline .sesa-btn-spinner {
+  border-color: rgba(31, 106, 225, 0.25);
+  border-top-color: var(--sesa-secondary);
+}
+
 /* ==============================================
    Global Premium Page Patterns
    ============================================== */

@@ -37,7 +37,7 @@ public class PersonalController {
     private final PersonalService personalService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR','JEFE_ENFERMERIA','COORDINADOR_MEDICO','ENFERMERO','AUXILIAR_ENFERMERIA','ODONTOLOGO','BACTERIOLOGO','PSICOLOGO','REGENTE_FARMACIA')")
     public Page<PersonalDto> list(
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "schema", required = false) String schema,
@@ -47,7 +47,7 @@ public class PersonalController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR','JEFE_ENFERMERIA','COORDINADOR_MEDICO','ENFERMERO','AUXILIAR_ENFERMERIA','ODONTOLOGO','BACTERIOLOGO','PSICOLOGO','REGENTE_FARMACIA')")
     public ResponseEntity<PersonalDto> get(
             @PathVariable("id") Long id,
             @RequestHeader(value = "X-Tenant-Schema", required = false) String schema) {

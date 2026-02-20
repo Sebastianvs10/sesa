@@ -37,6 +37,13 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<OrdenClinicaDto> findByTipo(String tipo, Pageable pageable) {
+        return ordenClinicaRepository.findByTipoOrderByCreatedAtDesc(tipo, pageable)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public OrdenClinicaDto findById(Long id) {
         return toDto(ordenClinicaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + id)));

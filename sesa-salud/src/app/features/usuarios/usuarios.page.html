@@ -1,92 +1,360 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <div>
-      <h1 class="sesa-page-title">Gestión de usuarios y roles</h1>
-      <p class="sesa-page-subtitle">Crear, editar y eliminar usuarios del sistema</p>
+<section class="up-page">
+
+  <!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
+  <header class="up-header">
+    <div class="up-header-left">
+      <div class="up-header-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="up-title">Usuarios del sistema</h1>
+        <p class="up-subtitle">Administre cuentas de acceso, roles y permisos</p>
+      </div>
     </div>
-    <button type="button" class="sesa-btn sesa-btn-primary" (click)="openCreate()">Nuevo usuario</button>
+    <button type="button" class="up-btn up-btn--primary" (click)="openCreate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo usuario
+    </button>
   </header>
 
-  @if (error) {
-    <p class="sesa-error">{{ error }}</p>
-  }
+  <!-- ═══ STATS ═════════════════════════════════════════════════════════════ -->
+  <div class="up-stats-row">
+    <div class="up-stat-card up-stat-card--purple">
+      <span class="up-stat-value">{{ totalElements }}</span>
+      <span class="up-stat-label">Total usuarios</span>
+    </div>
+    <div class="up-stat-card up-stat-card--blue">
+      <span class="up-stat-value">{{ list.length }}</span>
+      <span class="up-stat-label">En esta página</span>
+    </div>
+  </div>
 
+  <!-- ═══ FORM PANEL ════════════════════════════════════════════════════════ -->
   @if (showForm) {
-    <sesa-card title="{{ editingId == null ? 'Crear usuario' : 'Editar usuario' }}">
-      <div class="sesa-form-grid">
-        <div class="sesa-form-field">
-          <label>Email</label>
-          <input type="email" [(ngModel)]="form.email" />
+    <div class="up-form-panel">
+      <div class="up-form-panel-head">
+        <div class="up-form-panel-head-left">
+          <div class="up-form-panel-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="up-form-panel-title">{{ editingId == null ? 'Nuevo usuario' : 'Editar usuario' }}</h2>
+            <p class="up-form-panel-subtitle">Complete los datos del usuario</p>
+          </div>
         </div>
-        <div class="sesa-form-field">
-          <label>Nombre completo</label>
-          <input type="text" [(ngModel)]="form.nombreCompleto" />
-        </div>
-        <div class="sesa-form-field">
-          <label>Rol</label>
-          <select [(ngModel)]="selectedRol">
-            <option value="">Seleccione...</option>
-            @for (r of roles; track r.value) {
-              <option [value]="r.value">{{ r.label }}</option>
-            }
-          </select>
-        </div>
-        <div class="sesa-form-field">
-          <label>Contraseña {{ editingId == null ? '*' : '(opcional)' }}</label>
-          <input type="password" [(ngModel)]="form.password" />
-        </div>
-        <div class="sesa-form-field sesa-form-check">
-          <label><input type="checkbox" [(ngModel)]="form.activo" /> Activo</label>
-        </div>
-      </div>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancel()" [disabled]="saving">Cancelar</button>
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Guardando...' : 'Guardar' }}
+        <button type="button" class="up-close-btn" (click)="cancel()" title="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
-    </sesa-card>
+
+      @if (error) {
+        <div class="up-alert up-alert--error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ error }}
+        </div>
+      }
+
+      <!-- §1 Datos del usuario -->
+      <div class="up-form-section">
+        <div class="up-section-title">
+          <span class="up-section-dot up-dot--blue"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          Datos del usuario
+        </div>
+        <div class="up-fields up-fields--3">
+          <div class="up-field up-field--2">
+            <label class="up-label">Nombre completo <span class="up-required">*</span></label>
+            <div class="up-input-wrap">
+              <svg class="up-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              <input class="up-input up-input--icon" type="text" [(ngModel)]="form.nombreCompleto"
+                placeholder="Nombre completo del usuario" />
+            </div>
+          </div>
+          <div class="up-field">
+            <label class="up-label">Correo electrónico <span class="up-required">*</span></label>
+            <div class="up-input-wrap">
+              <svg class="up-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input class="up-input up-input--icon" type="email" [(ngModel)]="form.email"
+                placeholder="correo&#64;empresa.com" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- §2 Rol -->
+      <div class="up-form-section">
+        <div class="up-section-title">
+          <span class="up-section-dot up-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Rol y permisos
+        </div>
+        <div class="up-fields up-fields--1half">
+          <div class="up-field">
+            <label class="up-label">Rol de usuario <span class="up-required">*</span></label>
+            <select class="up-select" [(ngModel)]="selectedRol">
+              <option value="">Seleccione el rol…</option>
+              @for (r of roles; track r.value) {
+                <option [value]="r.value">{{ r.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- §3 Acceso -->
+      <div class="up-form-section">
+        <div class="up-section-title">
+          <span class="up-section-dot up-dot--purple"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Credenciales de acceso
+        </div>
+        <div class="up-fields up-fields--1half">
+          <div class="up-field">
+            <label class="up-label">
+              Contraseña
+              @if (editingId == null) {
+                <span class="up-required">*</span>
+              } @else {
+                <span class="up-optional">(dejar vacío para no cambiar)</span>
+              }
+            </label>
+            <div class="up-input-wrap">
+              <svg class="up-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input class="up-input up-input--icon" type="password" [(ngModel)]="form.password"
+                placeholder="{{ editingId == null ? 'Contraseña de acceso' : '•••••••• (sin cambios)' }}" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- §4 Estado -->
+      <div class="up-form-section up-form-section--row">
+        <div class="up-toggle-group">
+          <label class="up-toggle">
+            <input type="checkbox" [(ngModel)]="form.activo" />
+            <span class="up-toggle-track"></span>
+          </label>
+          <div class="up-toggle-info">
+            <span class="up-toggle-label">Usuario activo</span>
+            <span class="up-toggle-hint">Habilitado para iniciar sesión en el sistema</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="up-form-footer">
+        <button type="button" class="up-btn up-btn--ghost" (click)="cancel()" [disabled]="saving">
+          Cancelar
+        </button>
+        <button type="button" class="up-btn up-btn--primary" (click)="save()" [disabled]="saving">
+          @if (saving) {
+            <span class="up-spinner" aria-hidden="true"></span>
+            Guardando…
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            {{ editingId == null ? 'Crear usuario' : 'Actualizar usuario' }}
+          }
+        </button>
+      </div>
+    </div>
   }
 
-  <sesa-card title="Usuarios">
+  <!-- ═══ CARD DE LISTA ═══════════════════════════════════════════════════ -->
+  <div class="up-card">
+    <div class="up-card-head">
+      <span class="up-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Usuarios registrados
+      </span>
+    </div>
+
     @if (loading) {
-      <p class="sesa-loading">Cargando...</p>
-    } @else {
-      <table class="sesa-table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nombre</th>
-            <th>Rol</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (u of list; track u.id) {
+      <div class="up-table-wrap">
+        <table class="up-table">
+          <thead>
             <tr>
-              <td>{{ u.email }}</td>
-              <td>{{ u.nombreCompleto }}</td>
-              <td>{{ u.roles.join(', ') || '—' }}</td>
-              <td>{{ u.activo ? 'Activo' : 'Inactivo' }}</td>
-              <td>
-                <button type="button" class="sesa-link-inline" (click)="openEdit(u)">Editar</button>
-                <button type="button" class="sesa-link-inline sesa-link-danger" (click)="delete(u)">Eliminar</button>
-              </td>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th class="up-col-actions">Acciones</th>
             </tr>
-          } @empty {
-            <tr><td colspan="5">No hay usuarios registrados.</td></tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (sk of [1,2,3,4,5]; track sk) {
+              <tr>
+                <td>
+                  <div class="up-cell-person">
+                    <div class="up-skeleton up-skeleton--circle" style="width:38px;height:38px"></div>
+                    <div style="display:flex;flex-direction:column;gap:0.3rem">
+                      <div class="up-skeleton" style="width:130px;height:0.8rem;border-radius:4px"></div>
+                      <div class="up-skeleton" style="width:100px;height:0.65rem;border-radius:4px"></div>
+                    </div>
+                  </div>
+                </td>
+                <td><div class="up-skeleton" style="width:85px;height:1.3rem;border-radius:999px"></div></td>
+                <td><div class="up-skeleton" style="width:60px;height:1.2rem;border-radius:999px"></div></td>
+                <td class="up-col-actions">
+                  <div class="up-row-actions">
+                    <div class="up-skeleton up-skeleton--rounded" style="width:32px;height:32px"></div>
+                    <div class="up-skeleton up-skeleton--rounded" style="width:32px;height:32px"></div>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (error && !showForm) {
+      <div class="up-error-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </div>
+    } @else {
+      <div class="up-table-wrap">
+        <table class="up-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th class="up-col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of list; track u.id) {
+              <tr class="up-row">
+                <td class="up-cell-person-td">
+                  <div class="up-cell-person">
+                    <div class="up-avatar" [ngStyle]="avatarStyle(u.nombreCompleto || u.email)">
+                      {{ userInitials(u) }}
+                    </div>
+                    <div class="up-person-info">
+                      <span class="up-person-name">{{ u.nombreCompleto || '—' }}</span>
+                      <span class="up-person-email">{{ u.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="up-role-badge up-role--{{ roleClass(u.roles[0]) }}">
+                    {{ u.roles.join(', ') || '—' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="up-status" [class.up-status--active]="u.activo" [class.up-status--inactive]="!u.activo">
+                    {{ u.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="up-col-actions">
+                  <div class="up-row-actions">
+                    <button type="button" class="up-action-btn up-action-btn--edit" (click)="openEdit(u)" title="Editar usuario">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="up-action-btn up-action-btn--delete" (click)="delete(u)" title="Eliminar usuario">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">
+                  <div class="up-empty-state">
+                    <div class="up-empty-icon">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      </svg>
+                    </div>
+                    <p class="up-empty-title">Sin usuarios registrados</p>
+                    <p class="up-empty-msg">Use «Nuevo usuario» para crear el primero.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
       @if (totalElements > size) {
-        <div class="sesa-pagination">
-          <button type="button" class="sesa-btn sesa-btn-sm" (click)="prevPage()" [disabled]="page===0">Anterior</button>
-          <span>Página {{ page + 1 }}</span>
-          <button type="button" class="sesa-btn sesa-btn-sm" (click)="nextPage()" [disabled]="(page+1)*size>=totalElements">Siguiente</button>
+        <div class="up-pagination">
+          <button type="button" class="up-btn up-btn--ghost up-btn--sm" (click)="prevPage()" [disabled]="page === 0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Anterior
+          </button>
+          <span class="up-page-info">Página {{ page + 1 }} · {{ totalElements }} usuarios</span>
+          <button type="button" class="up-btn up-btn--ghost up-btn--sm" (click)="nextPage()"
+            [disabled]="(page + 1) * size >= totalElements">
+            Siguiente
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
         </div>
       }
     }
-  </sesa-card>
+  </div>
+
 </section>

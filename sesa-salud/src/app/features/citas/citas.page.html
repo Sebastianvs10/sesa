@@ -1,160 +1,629 @@
-<section class="sesa-page sesa-page-citas">
-  <header class="sesa-page-header sesa-page-header-premium">
-    <div class="sesa-page-header-left">
-      <div class="sesa-page-icon-wrap">
-        <fa-icon [icon]="faCalendarDays" class="sesa-page-icon" aria-hidden="true"></fa-icon>
+<section class="citas-page">
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="citas-header">
+    <div class="citas-header-left">
+      <div class="citas-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="3"/>
+          <path d="M16 2v4M8 2v4M3 10h18"/>
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" stroke-linecap="round" stroke-width="2.5"/>
+        </svg>
       </div>
       <div>
-        <h1 class="sesa-page-title">Citas</h1>
-        <p class="sesa-page-subtitle">
-          Programación y seguimiento de citas médicas · {{ fechaHoyFormateada }}
-        </p>
+        <h1 class="citas-title">Gestión de Citas</h1>
+        <p class="citas-subtitle">Agenda médica · Programa y administra citas clínicas</p>
+      </div>
+    </div>
+    <!-- Stats rápidas -->
+    <div class="citas-quick-stats">
+      <div class="citas-qstat citas-qstat--total">
+        <span class="citas-qstat-val">{{ totalCitas() }}</span>
+        <span class="citas-qstat-lbl">Hoy</span>
+      </div>
+      <div class="citas-qstat citas-qstat--pending">
+        <span class="citas-qstat-val">{{ citasPendientes() }}</span>
+        <span class="citas-qstat-lbl">Pendientes</span>
+      </div>
+      <div class="citas-qstat citas-qstat--done">
+        <span class="citas-qstat-val">{{ citasAtendidas() }}</span>
+        <span class="citas-qstat-lbl">Atendidas</span>
       </div>
     </div>
   </header>
 
-  <!-- Tarjetas de resumen -->
-  <div class="sesa-stats-row">
-    <div class="sesa-stat-card">
-      <span class="sesa-stat-value">{{ citasHoy.length }}</span>
-      <span class="sesa-stat-label">Citas hoy</span>
-    </div>
-    <div class="sesa-stat-card">
-      <span class="sesa-stat-value">{{ citasPendientes }}</span>
-      <span class="sesa-stat-label">Pendientes</span>
-    </div>
+  <!-- ═══════════ TABS ═══════════ -->
+  <div class="citas-tabs" role="tablist">
+    <button role="tab"
+      class="citas-tab"
+      [class.citas-tab--active]="activeTab() === 'nueva'"
+      (click)="setTab('nueva')">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
+      </svg>
+      Nueva Cita
+    </button>
+    <button role="tab"
+      class="citas-tab"
+      [class.citas-tab--active]="activeTab() === 'lista'"
+      (click)="setTab('lista')">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+      </svg>
+      Agenda
+    </button>
   </div>
 
-  <div class="sesa-citas-layout">
-    <!-- Panel izquierdo: formularios -->
-    <div class="sesa-citas-panel-form">
-      <sesa-card title="Nueva cita rápida">
-        @if (error) {
-          <p class="sesa-error">{{ error }}</p>
-        }
-        @if (exito) {
-          <p class="sesa-success">{{ exito }}</p>
-        }
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Paciente" [required]="true">
-            <select [(ngModel)]="form.pacienteId">
-              <option [ngValue]="null">Seleccione...</option>
-              @for (p of pacientes; track p.id) {
-                <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }} — {{ p.documento }}</option>
-              }
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Profesional" [required]="true">
-            <select [(ngModel)]="form.profesionalId">
-              <option [ngValue]="null">Seleccione...</option>
-              @for (per of profesionales; track per.id) {
-                <option [ngValue]="per.id">{{ per.nombres }} {{ per.apellidos || '' }}</option>
-              }
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Servicio" [required]="true">
-            <select [(ngModel)]="form.servicio">
-              <option value="">Seleccione...</option>
-              @for (esp of especialidades; track esp) {
-                <option [value]="esp">{{ esp }}</option>
-              }
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Fecha y hora" [required]="true">
-            <input type="datetime-local" [(ngModel)]="form.fechaHora" />
-          </sesa-form-field>
-        </div>
-        <div class="sesa-form-actions">
-          <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearCita()">Crear cita</button>
-          <button type="button" class="sesa-btn sesa-btn-secondary" (click)="abrirHistoriaDesdeCita()">
-            Continuar a historia clínica
-          </button>
-        </div>
-      </sesa-card>
+  <!-- ═══════════ PANEL NUEVA CITA (wizard) ═══════════ -->
+  @if (activeTab() === 'nueva') {
+    <div class="citas-wizard-layout">
 
-      <sesa-card title="Reprogramar cita">
-        <sesa-form-field label="Cita">
-          <select [(ngModel)]="reprogramar.citaId">
-            <option [ngValue]="null">Seleccione cita...</option>
-            @for (c of citasHoy; track c.id) {
-              <option [ngValue]="c.id">{{ formatHora(c.fechaHora) }} — {{ c.pacienteNombre }} ({{ c.estado }})</option>
+      <!-- Indicador de pasos -->
+      <div class="citas-steps">
+        <div class="citas-step" [class.citas-step--done]="!!selectedPatient()" [class.citas-step--active]="wizardStep() === 1">
+          <div class="citas-step-circle">
+            @if (selectedPatient()) {
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+            } @else {
+              <span>1</span>
             }
-          </select>
-        </sesa-form-field>
-        <sesa-form-field label="Nueva fecha y hora">
-          <input type="datetime-local" [(ngModel)]="reprogramar.nuevaFechaHora" />
-        </sesa-form-field>
-        <button type="button" class="sesa-btn sesa-btn-primary sesa-btn-block" (click)="reprogramarCita()">
-          Reprogramar
-        </button>
-      </sesa-card>
-    </div>
+          </div>
+          <span class="citas-step-label">Paciente</span>
+        </div>
+        <div class="citas-step-connector" [class.citas-step-connector--done]="!!selectedPatient()"></div>
 
-    <!-- Panel derecho: listado premium -->
-    <div class="sesa-citas-panel-list">
-      <sesa-card title="Citas programadas para hoy" [subtitle]="fechaHoyFormateada">
-        @if (cargando) {
-          <div class="sesa-loading-wrap">
-            <span class="sesa-spinner"></span>
-            <p class="sesa-loading">Cargando citas...</p>
+        <div class="citas-step" [class.citas-step--done]="!!selectedEspecialidad() && !!selectedProfesional()" [class.citas-step--active]="wizardStep() === 2">
+          <div class="citas-step-circle">
+            @if (selectedEspecialidad() && selectedProfesional()) {
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+            } @else {
+              <span>2</span>
+            }
           </div>
-        } @else if (citasHoy.length === 0) {
-          <div class="sesa-empty-state sesa-empty-state-citas">
-            <span class="sesa-empty-icon" aria-hidden="true">📅</span>
-            <p>No hay citas programadas para hoy.</p>
-            <p class="sesa-empty-hint">Crea una nueva cita usando el formulario de la izquierda.</p>
+          <span class="citas-step-label">Especialidad</span>
+        </div>
+        <div class="citas-step-connector" [class.citas-step-connector--done]="!!selectedEspecialidad() && !!selectedProfesional()"></div>
+
+        <div class="citas-step" [class.citas-step--done]="!!selectedDay() && !!selectedSlot()" [class.citas-step--active]="wizardStep() === 3">
+          <div class="citas-step-circle">
+            @if (selectedDay() && selectedSlot()) {
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+            } @else {
+              <span>3</span>
+            }
           </div>
-        } @else {
-          <div class="sesa-table-wrap sesa-table-wrap-premium">
-            <table class="sesa-table sesa-table-premium">
-              <thead>
-                <tr>
-                  <th class="sesa-col-hora">Hora</th>
-                  <th class="sesa-col-paciente">Paciente</th>
-                  <th class="sesa-col-servicio">Servicio</th>
-                  <th class="sesa-col-profesional">Profesional</th>
-                  <th class="sesa-col-estado">Estado</th>
-                  <th class="sesa-col-actions">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of citasHoy; track c.id) {
-                  <tr class="sesa-cita-row">
-                    <td class="sesa-cell-hora">
-                      <span class="sesa-cell-hora-valor">{{ formatHora(c.fechaHora) }}</span>
-                    </td>
-                    <td class="sesa-cell-paciente">
-                      <strong>{{ c.pacienteNombre }}</strong>
-                    </td>
-                    <td class="sesa-cell-servicio">{{ c.servicio || 'Sin servicio' }}</td>
-                    <td class="sesa-cell-profesional">{{ c.profesionalNombre || 'Sin asignar' }}</td>
-                    <td>
-                      <span class="sesa-badge sesa-badge-estado" [ngClass]="getEstadoClass(c.estado)">
-                        {{ c.estado || 'Pendiente' }}
+          <span class="citas-step-label">Fecha &amp; Hora</span>
+        </div>
+      </div>
+
+      <!-- ─── COLUMNA IZQUIERDA (pasos 1 y 2) ─── -->
+      <div class="citas-wizard-col citas-wizard-col--left">
+
+        <!-- PASO 1: Búsqueda de paciente -->
+        <div class="citas-section" [class.citas-section--collapsed]="wizardStep() > 1 && !!selectedPatient()">
+          <div class="citas-section-header" (click)="wizardStep.set(1)">
+            <div class="citas-section-num">1</div>
+            <h2 class="citas-section-title">Buscar paciente</h2>
+            @if (selectedPatient()) {
+              <button class="citas-section-edit" type="button">Cambiar</button>
+            }
+          </div>
+
+          @if (selectedPatient()) {
+            <div class="citas-patient-selected">
+              <div class="citas-patient-avatar">
+                {{ (selectedPatient()!.nombres || 'P')[0].toUpperCase() }}
+              </div>
+              <div class="citas-patient-info">
+                <span class="citas-patient-name">{{ selectedPatient()!.nombres }} {{ selectedPatient()!.apellidos ?? '' }}</span>
+                <span class="citas-patient-doc">
+                  <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2a2 2 0 012-2h8a2 2 0 012 2v12l-6-3-6 3V2z"/></svg>
+                  {{ selectedPatient()!.documento }}
+                </span>
+              </div>
+              <button class="citas-patient-clear" type="button" (click)="clearPatient()" title="Cambiar paciente">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+              </button>
+            </div>
+          } @else {
+            <div class="citas-patient-search">
+              <div class="citas-search-input-wrap">
+                <svg class="citas-search-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                </svg>
+                <input
+                  type="text"
+                  class="citas-search-input"
+                  placeholder="Buscar por nombre o número de documento..."
+                  [(ngModel)]="patientSearchQuery"
+                  (ngModelChange)="onPatientInput()"
+                  (focus)="onPatientFocus()"
+                  autocomplete="off"
+                  aria-label="Buscar paciente"
+                />
+                @if (searchingPatient()) {
+                  <span class="citas-search-spinner"></span>
+                }
+              </div>
+
+              @if (showPatientDropdown()) {
+                <div class="citas-patient-dropdown" role="listbox">
+                  @if (searchingPatient()) {
+                    <div class="citas-dropdown-item citas-dropdown-loading">
+                      <sesa-skeleton variant="text" width="60%" height="14px" />
+                      <sesa-skeleton variant="text" width="40%" height="12px" />
+                    </div>
+                    <div class="citas-dropdown-item citas-dropdown-loading">
+                      <sesa-skeleton variant="text" width="70%" height="14px" />
+                      <sesa-skeleton variant="text" width="35%" height="12px" />
+                    </div>
+                  } @else if (patientResults().length === 0) {
+                    <div class="citas-dropdown-empty">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path stroke-linecap="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"/>
+                      </svg>
+                      <span>
+                        @if (patientSearchQuery.trim()) {
+                          No se encontraron pacientes con "{{ patientSearchQuery }}"
+                        } @else {
+                          No hay pacientes registrados aún
+                        }
                       </span>
-                    </td>
-                    <td class="sesa-col-actions">
-                      <div class="sesa-actions-cell">
-                        @if (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA') {
-                          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-icon-only" (click)="confirmarCita(c)" title="Confirmar">
-                            <fa-icon [icon]="faCheck"></fa-icon>
-                          </button>
-                          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-icon-only" (click)="marcarAtendido(c)" title="Marcar atendido">
-                            <fa-icon [icon]="faCircleCheck"></fa-icon>
+                    </div>
+                  } @else {
+                    @for (p of patientResults(); track p.id) {
+                      <button class="citas-dropdown-item" type="button" role="option" (click)="selectPatient(p)">
+                        <div class="citas-di-avatar">{{ (p.nombres || 'P')[0].toUpperCase() }}</div>
+                        <div class="citas-di-info">
+                          <span class="citas-di-name">{{ p.nombres }} {{ p.apellidos ?? '' }}</span>
+                          <span class="citas-di-doc">{{ p.tipoDocumento ?? 'CC' }} {{ p.documento }}</span>
+                        </div>
+                        <svg class="citas-di-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+                        </svg>
+                      </button>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- PASO 2: Especialidad y profesional -->
+        <div class="citas-section" [class.citas-section--disabled]="!selectedPatient()">
+          <div class="citas-section-header" (click)="selectedPatient() && wizardStep.set(2)">
+            <div class="citas-section-num" [class.citas-section-num--done]="!!selectedEspecialidad() && !!selectedProfesional()">2</div>
+            <h2 class="citas-section-title">Especialidad y profesional</h2>
+          </div>
+
+          @if (selectedPatient()) {
+            <!-- Tarjetas de especialidad -->
+            <div class="citas-especialidades-grid">
+              @for (esp of especialidades; track esp.id) {
+                <button
+                  class="citas-esp-card"
+                  type="button"
+                  [class.citas-esp-card--selected]="selectedEspecialidad() === esp.id"
+                  [style.--esp-color]="esp.color"
+                  (click)="selectEspecialidad(esp.id)"
+                  [attr.aria-pressed]="selectedEspecialidad() === esp.id">
+                  <span class="citas-esp-icon">{{ esp.icon }}</span>
+                  <span class="citas-esp-label">{{ esp.label }}</span>
+                </button>
+              }
+            </div>
+
+            <!-- Profesionales filtrados -->
+            @if (selectedEspecialidad()) {
+              <div class="citas-prof-section">
+                <p class="citas-prof-label">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                  </svg>
+                  Profesionales disponibles
+                  <span class="citas-prof-count">{{ profesionalesFiltrados().length }}</span>
+                </p>
+
+                @if (loadingProfesionales()) {
+                  <div class="citas-prof-list">
+                    @for (s of [1,2,3]; track s) {
+                      <div class="citas-prof-skeleton">
+                        <sesa-skeleton variant="circle" width="36px" height="36px" />
+                        <div style="flex:1"><sesa-skeleton variant="text" width="60%" height="14px" /></div>
+                      </div>
+                    }
+                  </div>
+                } @else if (profesionalesFiltrados().length === 0) {
+                  <p class="citas-prof-empty">No hay profesionales registrados para esta especialidad.</p>
+                } @else {
+                  <div class="citas-prof-list">
+                    @for (p of profesionalesFiltrados(); track p.id) {
+                      <button
+                        class="citas-prof-card"
+                        type="button"
+                        [class.citas-prof-card--selected]="selectedProfesional()?.id === p.id"
+                        (click)="selectProfesional(p)">
+                        <div class="citas-prof-avatar">{{ (p.nombres || '?')[0].toUpperCase() }}</div>
+                        <div class="citas-prof-info">
+                          <span class="citas-prof-name">{{ patronNombre(p) }}</span>
+                          <span class="citas-prof-cargo">{{ p.rol || selectedEspecialidad() }}</span>
+                        </div>
+                        @if (selectedProfesional()?.id === p.id) {
+                          <svg class="citas-prof-check" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                          </svg>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- ─── COLUMNA DERECHA (paso 3: fecha + hora + confirmación) ─── -->
+      <div class="citas-wizard-col citas-wizard-col--right">
+        <div class="citas-section" [class.citas-section--disabled]="!selectedPatient() || !selectedEspecialidad() || !selectedProfesional()">
+          <div class="citas-section-header">
+            <div class="citas-section-num" [class.citas-section-num--done]="!!selectedDay() && !!selectedSlot()">3</div>
+            <h2 class="citas-section-title">Fecha y hora</h2>
+          </div>
+
+          @if (selectedProfesional()) {
+            <!-- Mini Calendario -->
+            <div class="citas-calendar">
+              <div class="citas-cal-nav">
+                <button class="citas-cal-btn" type="button" (click)="prevMonth()" aria-label="Mes anterior">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+                </button>
+                <span class="citas-cal-month">{{ calendarMonthLabel }}</span>
+                <button class="citas-cal-btn" type="button" (click)="nextMonth()" aria-label="Mes siguiente">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
+                </button>
+              </div>
+              <div class="citas-cal-weekdays">
+                @for (d of ['Lu','Ma','Mi','Ju','Vi','Sa','Do']; track d) {
+                  <span class="citas-cal-wd">{{ d }}</span>
+                }
+              </div>
+              <div class="citas-cal-grid">
+                @for (day of calendarDays(); track $index) {
+                  @if (day) {
+                    <button
+                      class="citas-cal-day"
+                      type="button"
+                      [class.citas-cal-day--today]="isDayToday(day)"
+                      [class.citas-cal-day--selected]="isDaySelected(day)"
+                      [class.citas-cal-day--past]="isPast(day)"
+                      [disabled]="isPast(day)"
+                      (click)="selectDay(day)"
+                      [attr.aria-label]="fechaCompleta(day)"
+                      [attr.aria-pressed]="isDaySelected(day)">
+                      {{ day.getDate() }}
+                    </button>
+                  } @else {
+                    <span class="citas-cal-day citas-cal-day--empty"></span>
+                  }
+                }
+              </div>
+            </div>
+
+            <!-- Slots de hora -->
+            @if (selectedDay()) {
+              <div class="citas-slots-section">
+                <p class="citas-slots-date-label">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+                  </svg>
+                  Horarios disponibles — {{ fechaCompleta(selectedDay()!) }}
+                </p>
+
+                @if (loadingSlots()) {
+                  <div class="citas-slots-loading">
+                    @for (s of [1,2,3,4,5,6]; track s) {
+                      <sesa-skeleton variant="rounded" width="72px" height="36px" borderRadius="8px" />
+                    }
+                  </div>
+                } @else {
+                  @for (group of slotGroups(); track group.label) {
+                    <div class="citas-slot-group">
+                      <span class="citas-slot-group-label">{{ group.label }}</span>
+                      <div class="citas-slots-grid">
+                        @for (slot of group.slots; track slot.time) {
+                          <button
+                            class="citas-slot"
+                            type="button"
+                            [class.citas-slot--selected]="selectedSlot() === slot.time"
+                            [class.citas-slot--unavailable]="!slot.available"
+                            [disabled]="!slot.available"
+                            (click)="selectSlot(slot)"
+                            [attr.aria-pressed]="selectedSlot() === slot.time"
+                            [title]="slot.available ? slot.display : 'Ocupado — ' + slot.display">
+                            {{ slot.display }}
                           </button>
                         }
-                        <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-outline sesa-btn-danger sesa-btn-icon-only" (click)="cancelarCita(c)" title="Cancelar">
-                          <fa-icon [icon]="faXmark"></fa-icon>
-                        </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  }
                 }
-              </tbody>
-            </table>
+              </div>
+            }
+          } @else {
+            <div class="citas-step-placeholder">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <rect x="6" y="8" width="36" height="36" rx="4"/>
+                <path d="M32 4v8M16 4v8M6 20h36" stroke-linecap="round"/>
+                <circle cx="24" cy="33" r="5"/>
+                <path d="M24 30v3l2 1" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p>Selecciona especialidad y profesional para ver horarios disponibles.</p>
+            </div>
+          }
+        </div>
+
+        <!-- Resumen + confirmar -->
+        @if (wizardComplete()) {
+          <div class="citas-summary">
+            <h3 class="citas-summary-title">Resumen de la cita</h3>
+            <div class="citas-summary-rows">
+              <div class="citas-summary-row">
+                <span class="citas-summary-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+                </span>
+                <div>
+                  <span class="citas-summary-lbl">Paciente</span>
+                  <span class="citas-summary-val">{{ selectedPatient()!.nombres }} {{ selectedPatient()!.apellidos ?? '' }}</span>
+                </div>
+              </div>
+              <div class="citas-summary-row">
+                <span class="citas-summary-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"/><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z"/></svg>
+                </span>
+                <div>
+                  <span class="citas-summary-lbl">Especialidad</span>
+                  <span class="citas-summary-val">{{ getEspecialidad(selectedEspecialidad())?.icon }} {{ selectedEspecialidad() }}</span>
+                </div>
+              </div>
+              <div class="citas-summary-row">
+                <span class="citas-summary-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                </span>
+                <div>
+                  <span class="citas-summary-lbl">Profesional</span>
+                  <span class="citas-summary-val">{{ patronNombre(selectedProfesional()!) }}</span>
+                </div>
+              </div>
+              <div class="citas-summary-row">
+                <span class="citas-summary-icon">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+                </span>
+                <div>
+                  <span class="citas-summary-lbl">Fecha y hora</span>
+                  <span class="citas-summary-val">{{ fechaCompleta(selectedDay()!) }} · {{ selectedSlot() }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nota -->
+            <div class="citas-summary-nota">
+              <label class="citas-nota-label" for="citaNota">Nota opcional</label>
+              <textarea id="citaNota" class="citas-nota-input" rows="2"
+                placeholder="Motivo de consulta, observaciones..."
+                [(ngModel)]="nota" maxlength="300"></textarea>
+            </div>
+
+            <button
+              type="button"
+              class="citas-btn-crear"
+              [disabled]="savingCita()"
+              (click)="crearCita()">
+              @if (savingCita()) {
+                <span class="citas-btn-spinner"></span>
+                Creando cita...
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                </svg>
+                Confirmar cita
+              }
+            </button>
           </div>
         }
-      </sesa-card>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════ PANEL LISTA / AGENDA ═══════════ -->
+  @if (activeTab() === 'lista') {
+    <div class="citas-lista-layout">
+
+      <!-- Toolbar de filtros -->
+      <div class="citas-lista-toolbar">
+        <div class="citas-lista-date-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+          </svg>
+          <input
+            #listDateInput
+            type="date"
+            class="citas-lista-date-input"
+            [value]="listDate()"
+            (change)="onListDateChange(listDateInput.value)"
+          />
+        </div>
+
+        <div class="citas-filter-chips">
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === ''"     (click)="filterEstado.set('')">Todas</button>
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'PENDIENTE'"    (click)="filterEstado.set('PENDIENTE')">Pendientes</button>
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'CONFIRMADA'"   (click)="filterEstado.set('CONFIRMADA')">Confirmadas</button>
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'ATENDIDO'"     (click)="filterEstado.set('ATENDIDO')">Atendidas</button>
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'CANCELADA'"    (click)="filterEstado.set('CANCELADA')">Canceladas</button>
+          <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'REPROGRAMADA'" (click)="filterEstado.set('REPROGRAMADA')">Reprogramadas</button>
+        </div>
+
+        <button class="citas-refresh-btn" type="button" (click)="cargarCitasFecha(listDate())" [disabled]="loadingCitas()" title="Recargar">
+          <svg viewBox="0 0 20 20" fill="currentColor" [class.spinning]="loadingCitas()" aria-hidden="true">
+            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tabla de citas -->
+      @if (loadingCitas()) {
+        <div class="citas-table-wrap">
+          <table class="citas-table">
+            <thead>
+              <tr>
+                <th>Hora</th><th>Paciente</th><th>Especialidad</th><th>Profesional</th><th>Estado</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of [1,2,3,4,5]; track s) {
+                <tr class="citas-row citas-row--skeleton">
+                  <td><sesa-skeleton variant="text" width="48px" height="14px" /></td>
+                  <td><sesa-skeleton variant="text" width="120px" height="14px" /></td>
+                  <td><sesa-skeleton variant="text" width="100px" height="14px" /></td>
+                  <td><sesa-skeleton variant="text" width="110px" height="14px" /></td>
+                  <td><sesa-skeleton variant="rounded" width="80px" height="22px" borderRadius="20px" /></td>
+                  <td><sesa-skeleton variant="rounded" width="96px" height="30px" borderRadius="8px" /></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (citasListaFiltradas().length === 0) {
+        <sesa-empty-state
+          icon="calendar"
+          title="Sin citas"
+          [message]="filterEstado() ? 'No hay citas con el estado seleccionado para esta fecha.' : 'No hay citas programadas para el día seleccionado.'"
+          actionLabel="Crear nueva cita"
+          (action)="setTab('nueva')">
+        </sesa-empty-state>
+      } @else {
+        <div class="citas-table-wrap">
+          <table class="citas-table" role="grid">
+            <thead>
+              <tr>
+                <th class="col-hora">Hora</th>
+                <th class="col-paciente">Paciente</th>
+                <th class="col-servicio">Especialidad</th>
+                <th class="col-prof">Profesional</th>
+                <th class="col-estado">Estado</th>
+                <th class="col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of citasListaFiltradas(); track c.id) {
+                <tr class="citas-row" [class.citas-row--actioning]="isActioning(c.id)">
+                  <td class="citas-cell-hora">
+                    <span class="citas-hora-chip">{{ formatHora(c.fechaHora) }}</span>
+                  </td>
+                  <td class="citas-cell-paciente">
+                    <div class="citas-row-paciente">
+                      <div class="citas-row-avatar">{{ (c.pacienteNombre || 'P')[0].toUpperCase() }}</div>
+                      <div>
+                        <span class="citas-row-nombre">{{ c.pacienteNombre }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="citas-cell-servicio">
+                    @if (getEspecialidad(c.servicio)) {
+                      <span class="citas-row-esp-icon">{{ getEspecialidad(c.servicio)?.icon }}</span>
+                    }
+                    {{ c.servicio || 'Sin especificar' }}
+                  </td>
+                  <td class="citas-cell-prof">{{ c.profesionalNombre || 'Sin asignar' }}</td>
+                  <td class="citas-cell-estado">
+                    <span class="citas-badge" [ngClass]="estadoClass(c.estado)">{{ estadoLabel(c.estado) }}</span>
+                  </td>
+                  <td class="citas-cell-actions">
+                    @if (isActioning(c.id)) {
+                      <span class="citas-row-spinner"></span>
+                    } @else {
+                      <div class="citas-row-actions">
+                        @if (c.estado === 'PENDIENTE') {
+                          <button class="citas-action-btn citas-action-btn--confirm" type="button" (click)="confirmarCita(c)" title="Confirmar cita">
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                            Confirmar
+                          </button>
+                        }
+                        @if (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA') {
+                          <button class="citas-action-btn citas-action-btn--attend" type="button" (click)="marcarAtendido(c)" title="Marcar como atendido">
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+                            Atendido
+                          </button>
+                          <button class="citas-action-btn citas-action-btn--reschedule" type="button" (click)="abrirReprogramar(c)" title="Reprogramar">
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/></svg>
+                          </button>
+                          <button class="citas-action-btn citas-action-btn--cancel" type="button" (click)="cancelarCita(c)" title="Cancelar cita">
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+                          </button>
+                        }
+                        <button class="citas-action-btn citas-action-btn--hc" type="button" (click)="irHistoriaClinica(c)" title="Abrir historia clínica">
+                          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+</section>
+
+<!-- ═══════════ MODAL REPROGRAMAR ═══════════ -->
+@if (showReprogramarModal()) {
+  <div class="citas-modal-backdrop" (click)="cerrarReprogramar()" role="dialog" aria-modal="true" aria-label="Reprogramar cita">
+    <div class="citas-modal citas-reprogramar-modal" (click)="$event.stopPropagation()">
+      <div class="citas-modal-header">
+        <div class="citas-modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="citas-modal-title">Reprogramar cita</h3>
+          <p class="citas-modal-subtitle">{{ reprogramarCitaTarget()?.pacienteNombre }}</p>
+        </div>
+        <button class="citas-modal-close" type="button" (click)="cerrarReprogramar()" aria-label="Cerrar">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+        </button>
+      </div>
+
+      <div class="citas-modal-body">
+        <div class="citas-reprogram-fields">
+          <div class="citas-reprogram-field">
+            <label class="citas-field-label">Nueva fecha</label>
+            <input type="date" class="citas-field-input" [(ngModel)]="reprogramarDate" [min]="today" />
+          </div>
+          <div class="citas-reprogram-field">
+            <label class="citas-field-label">Nueva hora</label>
+            <input type="time" class="citas-field-input" [(ngModel)]="reprogramarTime" step="1800" />
+          </div>
+        </div>
+      </div>
+
+      <div class="citas-modal-footer">
+        <button class="citas-modal-btn citas-modal-btn--cancel" type="button" (click)="cerrarReprogramar()">
+          Cancelar
+        </button>
+        <button class="citas-modal-btn citas-modal-btn--confirm" type="button"
+          [disabled]="savingReprogramar()" (click)="confirmarReprogramar()">
+          @if (savingReprogramar()) {
+            <span class="citas-btn-spinner"></span> Guardando...
+          } @else {
+            Reprogramar cita
+          }
+        </button>
+      </div>
     </div>
   </div>
-</section>
+}

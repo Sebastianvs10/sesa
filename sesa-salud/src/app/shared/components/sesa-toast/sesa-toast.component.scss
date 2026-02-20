@@ -1,0 +1,219 @@
+/* Toast Notification System - Premium Edition */
+/* Autor: Ing. J Sebastian Vargas S */
+
+/* Stack container */
+.sesa-toast-stack {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+  max-width: 420px;
+  width: calc(100% - 2.5rem);
+}
+
+.sesa-toast-stack--top-center {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+.sesa-toast-stack--bottom-right {
+  top: auto;
+  bottom: 1.25rem;
+  flex-direction: column-reverse;
+}
+
+.sesa-toast-stack--bottom-center {
+  top: auto;
+  bottom: 1.25rem;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  flex-direction: column-reverse;
+}
+
+/* Toast card */
+.sesa-toast {
+  pointer-events: auto;
+  min-width: 300px;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  border-radius: var(--sesa-radius-md);
+  box-shadow: var(--sesa-shadow-lg);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid transparent;
+  animation: toastSlideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: top right;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme='dark'] .sesa-toast {
+  background: rgba(26, 34, 53, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(110%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.sesa-toast--leaving {
+  animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes toastSlideOut {
+  to {
+    opacity: 0;
+    transform: translateX(110%) scale(0.9);
+  }
+}
+
+/* Variants */
+.sesa-toast--success { border-left-color: var(--sesa-success); }
+.sesa-toast--error   { border-left-color: var(--sesa-error); }
+.sesa-toast--warning { border-left-color: var(--sesa-warning); }
+.sesa-toast--info    { border-left-color: var(--sesa-info); }
+
+/* Icon */
+.sesa-toast-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.sesa-toast-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sesa-toast--success .sesa-toast-icon { color: var(--sesa-success); background: var(--sesa-success-bg); }
+.sesa-toast--error   .sesa-toast-icon { color: var(--sesa-error);   background: var(--sesa-error-bg); }
+.sesa-toast--warning .sesa-toast-icon { color: var(--sesa-warning); background: var(--sesa-warning-bg); }
+.sesa-toast--info    .sesa-toast-icon { color: var(--sesa-info);    background: rgba(14, 165, 233, 0.1); }
+
+/* Body */
+.sesa-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.sesa-toast-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sesa-toast-message {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.45;
+}
+
+/* Actions */
+.sesa-toast-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sesa-toast-action-btn {
+  background: var(--sesa-secondary);
+  color: #fff;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+  font-family: inherit;
+}
+
+.sesa-toast-action-btn:hover { filter: brightness(1.12); }
+
+.sesa-toast-cancel-btn {
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  border: 1px solid var(--sesa-border);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.sesa-toast-cancel-btn:hover { background: var(--sesa-surface-hover); }
+
+/* Close */
+.sesa-toast-close {
+  background: transparent;
+  border: none;
+  color: var(--sesa-text-muted);
+  cursor: pointer;
+  padding: 0.15rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.sesa-toast-close:hover {
+  color: var(--sesa-text-primary);
+  background: var(--sesa-surface-hover);
+}
+
+/* Progress bar — usa animación separada por key para evitar restart en re-renders */
+.sesa-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  transform-origin: left;
+  animation: toastProgress linear forwards;
+}
+
+.sesa-toast--success .sesa-toast-progress { background: var(--sesa-success); }
+.sesa-toast--error   .sesa-toast-progress { background: var(--sesa-error); }
+.sesa-toast--warning .sesa-toast-progress { background: var(--sesa-warning); }
+.sesa-toast--info    .sesa-toast-progress { background: var(--sesa-info); }
+
+@keyframes toastProgress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

@@ -374,42 +374,73 @@
   }
 }
 
-/* ── Empty states ── */
-.sesa-empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: var(--sesa-text-secondary);
-}
-
-.sesa-empty-state-citas {
+/* ── Skeleton stat cards ── */
+.sesa-stat-card-skeleton {
+  padding: 1.15rem 1.25rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
   display: flex;
-  flex-direction: column;
+  gap: 0.9rem;
   align-items: center;
-  gap: 1rem;
+  box-shadow: var(--sesa-shadow-sm);
 }
 
-.sesa-empty-icon {
-  font-size: 2.5rem;
-  opacity: 0.6;
-}
+.sesa-sk-stat-icon-skeleton {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--sesa-border-light);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
 
-/* ── Botón Reportes (solo ADMIN) ── */
-.sesa-btn-reportes {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--sesa-radius-md);
-  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  box-shadow: 0 2px 8px rgba(31, 106, 225, 0.25);
-  transition: box-shadow var(--sesa-transition), transform var(--sesa-transition);
-
-  &:hover {
-    box-shadow: 0 4px 16px rgba(31, 106, 225, 0.35);
-    transform: translateY(-1px);
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: sesa-shimmer 1.6s infinite;
   }
 }
+
+[data-theme='dark'] .sesa-sk-stat-icon-skeleton {
+  background: rgba(255,255,255,0.06);
+}
+
+@keyframes sesa-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.sesa-sk-stat-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ── Skeleton citas list ── */
+.sesa-citas-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sesa-cita-skeleton-item {
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 70px;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+}
+
+/* ── Error ── */
+.sesa-dashboard-error {
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+}
+

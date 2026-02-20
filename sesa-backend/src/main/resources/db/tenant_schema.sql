@@ -43,9 +43,6 @@ CREATE TABLE IF NOT EXISTS personal (
     id BIGSERIAL PRIMARY KEY,
     nombres VARCHAR(150) NOT NULL,
     apellidos VARCHAR(150),
-    cargo VARCHAR(100) NOT NULL,
-    servicio VARCHAR(100),
-    turno VARCHAR(50),
     identificacion VARCHAR(50),
     primer_nombre VARCHAR(80),
     segundo_nombre VARCHAR(80),
@@ -54,7 +51,6 @@ CREATE TABLE IF NOT EXISTS personal (
     celular VARCHAR(30),
     email VARCHAR(255),
     rol VARCHAR(50),
-    institucion_prestadora VARCHAR(255),
     foto_url VARCHAR(500),
     foto_data BYTEA,
     foto_content_type VARCHAR(100),
@@ -279,6 +275,10 @@ CREATE TABLE IF NOT EXISTS laboratorio_solicitudes (
     tipo_prueba VARCHAR(150) NOT NULL,
     estado VARCHAR(50) DEFAULT 'PENDIENTE',
     fecha_solicitud DATE NOT NULL,
+    resultado TEXT,
+    observaciones TEXT,
+    fecha_resultado TIMESTAMP,
+    bacteriologo_id BIGINT REFERENCES personal(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -345,6 +345,45 @@ CREATE TABLE IF NOT EXISTS farmacia_medicamentos (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ── Agenda de Turnos ─────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS programacion_mes (
+    id                  BIGSERIAL PRIMARY KEY,
+    anio                INTEGER NOT NULL,
+    mes                 INTEGER NOT NULL,
+    estado              VARCHAR(20) NOT NULL DEFAULT 'BORRADOR',
+    creado_por_id       BIGINT,
+    creado_por_nombre   VARCHAR(200),
+    aprobado_por_id     BIGINT,
+    aprobado_por_nombre VARCHAR(200),
+    fecha_aprobacion    TIMESTAMPTZ,
+    observaciones       TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ,
+    CONSTRAINT uk_programacion_anio_mes UNIQUE (anio, mes)
+);
+
+CREATE TABLE IF NOT EXISTS turnos (
+    id                  BIGSERIAL PRIMARY KEY,
+    personal_id         BIGINT NOT NULL REFERENCES personal(id),
+    programacion_mes_id BIGINT NOT NULL REFERENCES programacion_mes(id),
+    servicio            VARCHAR(30) NOT NULL,
+    tipo_turno          VARCHAR(20) NOT NULL,
+    fecha_inicio        TIMESTAMP NOT NULL,
+    fecha_fin           TIMESTAMP NOT NULL,
+    duracion_horas      INTEGER NOT NULL,
+    estado              VARCHAR(15) NOT NULL DEFAULT 'BORRADOR',
+    es_festivo          BOOLEAN NOT NULL DEFAULT FALSE,
+    notas               TEXT,
+    modificado_por_id   BIGINT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_turno_personal         ON turnos(personal_id);
+CREATE INDEX IF NOT EXISTS idx_turno_programacion_mes ON turnos(programacion_mes_id);
+CREATE INDEX IF NOT EXISTS idx_turno_fecha_inicio     ON turnos(fecha_inicio);
+
+-- ── Sync ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS sync_deduplication (
     id BIGSERIAL PRIMARY KEY,
     client_id VARCHAR(64) NOT NULL UNIQUE,
@@ -374,6 +413,9 @@ CREATE TABLE IF NOT EXISTS notificacion_destinatarios (
     leido BOOLEAN NOT NULL DEFAULT false,
     fecha_lectura TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_nd_usuario_id      ON notificacion_destinatarios(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_nd_notificacion_id ON notificacion_destinatarios(notificacion_id);
 
 CREATE TABLE IF NOT EXISTS notificacion_adjuntos (
     id BIGSERIAL PRIMARY KEY,

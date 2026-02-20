@@ -6,6 +6,7 @@
 
 package com.sesa.salud.service.impl;
 
+import com.sesa.salud.entity.master.Role;
 import com.sesa.salud.entity.master.RoleModuloPermiso;
 import com.sesa.salud.repository.master.RoleModuloPermisoRepository;
 import com.sesa.salud.repository.master.RoleRepository;
@@ -31,11 +32,34 @@ public class PermissionServiceImpl implements PermissionService {
     /** Matriz rol -> módulo -> acciones permitidas (en memoria, sincronizada con BD) */
     private final Map<String, Map<RoleConstants.Modulo, Set<RoleConstants.Accion>>> matrix = new HashMap<>();
 
+    /** Nombres por defecto de roles del sistema (código → nombre) */
+    private static final Map<String, String> ROL_NOMBRES = Map.ofEntries(
+        Map.entry(RoleConstants.SUPERADMINISTRADOR,  "Super Usuario"),
+        Map.entry(RoleConstants.ADMIN,               "Administrador del Sistema"),
+        Map.entry(RoleConstants.MEDICO,              "Médico"),
+        Map.entry(RoleConstants.ODONTOLOGO,          "Odontólogo/a"),
+        Map.entry(RoleConstants.BACTERIOLOGO,        "Bacteriólogo"),
+        Map.entry(RoleConstants.ENFERMERO,           "Enfermero/a"),
+        Map.entry(RoleConstants.JEFE_ENFERMERIA,     "Jefe de Enfermería"),
+        Map.entry(RoleConstants.AUXILIAR_ENFERMERIA, "Auxiliar de Enfermería"),
+        Map.entry(RoleConstants.PSICOLOGO,           "Psicólogo"),
+        Map.entry(RoleConstants.REGENTE_FARMACIA,    "Regente de Farmacia"),
+        Map.entry(RoleConstants.RECEPCIONISTA,       "Recepcionista"),
+        Map.entry(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico")
+    );
+
     @PostConstruct
+    @Transactional
     public void init() {
         try {
+            // 1. Asegurar que todos los roles del sistema existen en la tabla `roles`
+            ensureSystemRolesExist();
+
+            // 2. Cargar o inicializar la matriz de permisos
             if (roleModuloPermisoRepository.count() > 0) {
                 loadFromDb();
+                // 3. Seedear permisos de roles nuevos que aún no tienen entradas en BD
+                seedMissingRolePermissions();
             } else {
                 initMatrix();
                 seedToDb();
@@ -43,6 +67,36 @@ public class PermissionServiceImpl implements PermissionService {
         } catch (Exception e) {
             log.warn("No se pudo cargar permisos desde BD, usando matriz por defecto: {}", e.getMessage());
             initMatrix();
+        }
+    }
+
+    /** Inserta en la tabla `roles` cualquier rol del sistema que aún no exista. */
+    private void ensureSystemRolesExist() {
+        ROL_NOMBRES.forEach((codigo, nombre) -> {
+            if (!roleRepository.existsByCodigo(codigo)) {
+                roleRepository.save(Role.builder().codigo(codigo).nombre(nombre).build());
+                log.info("Rol '{}' creado automáticamente en BD.", codigo);
+            }
+        });
+    }
+
+    /**
+     * Tras cargar desde BD, comprueba si hay roles en la matriz por defecto que
+     * no tienen entradas en `role_modulo_permiso`. Si los encuentra, los seedea.
+     */
+    private void seedMissingRolePermissions() {
+        Map<String, Map<RoleConstants.Modulo, Set<RoleConstants.Accion>>> defaults = buildDefaultMatrix();
+        for (Map.Entry<String, Map<RoleConstants.Modulo, Set<RoleConstants.Accion>>> entry : defaults.entrySet()) {
+            String rol = entry.getKey();
+            if (!matrix.containsKey(rol)) {
+                Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> perms = entry.getValue();
+                for (RoleConstants.Modulo mod : perms.keySet()) {
+                    roleModuloPermisoRepository.save(
+                        RoleModuloPermiso.builder().rol(rol).modulo(mod.name()).build());
+                }
+                matrix.put(rol, new HashMap<>(perms));
+                log.info("Permisos inicializados para nuevo rol '{}': {} módulos.", rol, perms.size());
+            }
         }
     }
 
@@ -139,15 +193,27 @@ public class PermissionServiceImpl implements PermissionService {
                 RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER)
         )));
 
-        // JEFE_ENFERMERIA: todo lo de enfermería + más
-        m.put(RoleConstants.JEFE_ENFERMERIA, new HashMap<>(Map.of(
-                RoleConstants.Modulo.PACIENTES, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.URGENCIAS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.HOSPITALIZACION, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.ELIMINAR),
-                RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.DASHBOARD, Set.of(RoleConstants.Accion.VER)
-        )));
+        // JEFE_ENFERMERIA: supervisión de enfermería + agenda
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> jefeEnf = new HashMap<>();
+        jefeEnf.put(RoleConstants.Modulo.DASHBOARD,              Set.of(RoleConstants.Accion.VER));
+        jefeEnf.put(RoleConstants.Modulo.PACIENTES,              Set.of(RoleConstants.Accion.VER));
+        jefeEnf.put(RoleConstants.Modulo.HISTORIA_CLINICA,       Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        jefeEnf.put(RoleConstants.Modulo.URGENCIAS,              Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        jefeEnf.put(RoleConstants.Modulo.HOSPITALIZACION,        Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.ELIMINAR));
+        jefeEnf.put(RoleConstants.Modulo.EVOLUCION_ENFERMERIA,   Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        jefeEnf.put(RoleConstants.Modulo.AGENDA,                 Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        m.put(RoleConstants.JEFE_ENFERMERIA, jefeEnf);
+
+        // COORDINADOR_MEDICO: supervisión clínica + reportes + agenda
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> coordMed = new HashMap<>();
+        coordMed.put(RoleConstants.Modulo.DASHBOARD,       Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.PACIENTES,       Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.HISTORIA_CLINICA,Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.LABORATORIOS,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        coordMed.put(RoleConstants.Modulo.REPORTES,        Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.CITAS,           Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.AGENDA,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        m.put(RoleConstants.COORDINADOR_MEDICO, coordMed);
 
         // AUXILIAR_ENFERMERIA
         m.put(RoleConstants.AUXILIAR_ENFERMERIA, new HashMap<>(Map.of(

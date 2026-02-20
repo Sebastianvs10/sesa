@@ -1,14 +1,21 @@
+/**
+ * Lista de Empresas — confirm dialog, toast CRUD, skeleton loading.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EmpresaService, EmpresaDto, PageResponse } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-empresas-list-page',
-  imports: [CommonModule, RouterLink, SesaCardComponent],
+  imports: [CommonModule, RouterLink, SesaCardComponent, SesaSkeletonComponent],
   templateUrl: './empresas-list.page.html',
   styleUrl: './empresas-list.page.scss',
 })
@@ -19,6 +26,9 @@ export class EmpresasListPageComponent implements OnInit {
   size = 20;
   loading = false;
   error: string | null = null;
+
+  private readonly toast = inject(SesaToastService);
+  private readonly confirmDialog = inject(SesaConfirmDialogService);
 
   constructor(
     private empresaService: EmpresaService,
@@ -50,11 +60,22 @@ export class EmpresasListPageComponent implements OnInit {
     });
   }
 
-  delete(id: number, razonSocial: string): void {
-    if (!confirm(`¿Eliminar la empresa "${razonSocial}"?`)) return;
+  async delete(id: number, razonSocial: string): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Eliminar empresa',
+      message: `¿Estás seguro de eliminar la empresa "${razonSocial}"? Esta acción es irreversible.`,
+      type: 'danger',
+    });
+    if (!ok) return;
     this.empresaService.delete(id).subscribe({
-      next: () => this.load(),
-      error: (e) => alert(e.error?.error || 'Error al eliminar'),
+      next: () => {
+        this.toast.success(`Empresa "${razonSocial}" eliminada.`, 'Eliminada');
+        this.load();
+      },
+      error: (e) => {
+        const msg = e.error?.error || 'Error al eliminar la empresa';
+        this.toast.error(msg, 'Error');
+      },
     });
   }
 

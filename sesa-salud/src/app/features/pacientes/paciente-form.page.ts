@@ -1,16 +1,22 @@
+/**
+ * Formulario de Paciente — skeleton modo editar, spinner guardar, toast CRUD.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { PacienteService, PacienteRequestDto } from '../../core/services/paciente.service';
 import { EpsService, EpsDto } from '../../core/services/eps.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
+import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-paciente-form-page',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SesaCardComponent, SesaFormFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, SesaCardComponent, SesaFormFieldComponent, SesaSkeletonComponent],
   templateUrl: './paciente-form.page.html',
   styleUrl: './paciente-form.page.scss',
 })
@@ -20,12 +26,14 @@ export class PacienteFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly pacienteService = inject(PacienteService);
   private readonly epsService = inject(EpsService);
+  private readonly toast = inject(SesaToastService);
 
   form!: FormGroup;
   epsList: EpsDto[] = [];
   isEdit = false;
   id: number | null = null;
-  loading = false;
+  loadingPatient = signal(false);
+  saving = signal(false);
   error: string | null = null;
 
   ngOnInit(): void {
@@ -50,6 +58,7 @@ export class PacienteFormPageComponent implements OnInit {
     if (idParam && idParam !== 'nuevo') {
       this.isEdit = true;
       this.id = +idParam;
+      this.loadingPatient.set(true);
       this.pacienteService.get(this.id).subscribe({
         next: (p) => {
           this.form.patchValue({
@@ -66,8 +75,13 @@ export class PacienteFormPageComponent implements OnInit {
             epsId: p.epsId ?? null,
             activo: p.activo ?? true,
           });
+          this.loadingPatient.set(false);
         },
-        error: () => this.router.navigate(['/pacientes']),
+        error: () => {
+          this.loadingPatient.set(false);
+          this.toast.error('No se pudo cargar la información del paciente.', 'Error');
+          this.router.navigate(['/pacientes']);
+        },
       });
     }
   }
@@ -79,7 +93,7 @@ export class PacienteFormPageComponent implements OnInit {
       return;
     }
     this.error = null;
-    this.loading = true;
+    this.saving.set(true);
     const val = this.form.getRawValue();
     const dto: PacienteRequestDto = {
       documento: val.documento,
@@ -100,12 +114,17 @@ export class PacienteFormPageComponent implements OnInit {
       : this.pacienteService.create(dto);
     obs.subscribe({
       next: () => {
-        this.loading = false;
+        this.saving.set(false);
+        this.toast.success(
+          this.isEdit ? 'Paciente actualizado correctamente.' : 'Paciente creado correctamente.',
+          this.isEdit ? 'Actualizado' : 'Creado'
+        );
         this.router.navigate(['/pacientes']);
       },
       error: (e) => {
-        this.loading = false;
+        this.saving.set(false);
         this.error = e.error?.error || e.error?.message || e.message || 'Error al guardar';
+        this.toast.error(this.error!, 'Error al guardar');
       },
     });
   }

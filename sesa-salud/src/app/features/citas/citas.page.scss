@@ -1,336 +1,1613 @@
-/* Citas - Vista premium */
+/* Gestión de Citas Premium — Wizard, Calendario visual, Slots de hora, Agenda */
 /* Autor: Ing. J Sebastian Vargas S */
 
-.sesa-page-citas {
+/* ═══════════════════════════════════════════════════════
+   ANIMACIONES
+═══════════════════════════════════════════════════════ */
+@keyframes citas-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes citas-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes citas-scale-in {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes citas-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes citas-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes spinning {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PÁGINA
+═══════════════════════════════════════════════════════ */
+.citas-page {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+  animation: citas-fade-in 0.35s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+.citas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1.25rem;
 }
 
-.sesa-page-header-premium {
+.citas-header-left {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.sesa-page-header-left {
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
 }
 
-.sesa-page-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+.citas-header-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
   background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.25);
+  box-shadow: 0 6px 20px rgba(31, 106, 225, 0.3);
+
+  svg {
+    width: 26px;
+    height: 26px;
+    color: #fff;
+    stroke: #fff;
+  }
 }
 
-.sesa-page-icon {
+.citas-title {
+  margin: 0 0 0.2rem;
   font-size: 1.5rem;
-  color: #fff;
-  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--sesa-text-primary);
+  line-height: 1.2;
 }
 
-/* Tarjetas de resumen */
-.sesa-stats-row {
+.citas-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  font-weight: 400;
+}
+
+/* ── Quick stats ── */
+.citas-quick-stats {
   display: flex;
-  gap: 0.85rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.sesa-stat-card {
-  min-width: 140px;
-  padding: 1rem 1.25rem;
+.citas-qstat {
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 72px;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover { transform: translateY(-2px); box-shadow: var(--sesa-shadow-md); }
+}
+
+.citas-qstat-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--sesa-text-primary);
+}
+
+.citas-qstat-lbl {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.citas-qstat--pending .citas-qstat-val { color: var(--sesa-warning); }
+.citas-qstat--done    .citas-qstat-val { color: var(--sesa-success); }
+
+/* ═══════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════ */
+.citas-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--sesa-border);
+  padding-bottom: 0;
+}
+
+.citas-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    color: var(--sesa-text-primary);
+    background: var(--sesa-surface);
+  }
+
+  &.citas-tab--active {
+    color: var(--sesa-secondary);
+    border-bottom-color: var(--sesa-secondary);
+    font-weight: 600;
+    background: transparent;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   WIZARD — LAYOUT
+═══════════════════════════════════════════════════════ */
+.citas-wizard-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 1.25rem;
+  animation: citas-fade-in 0.3s ease both;
+}
+
+.citas-steps {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 0.25rem;
+}
+
+.citas-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.citas-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--sesa-text-secondary);
+  transition: all 0.25s ease;
+
+  svg { width: 16px; height: 16px; }
+}
+
+.citas-step-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.citas-step--active .citas-step-circle {
+  border-color: var(--sesa-secondary);
+  background: rgba(31, 106, 225, 0.08);
+  color: var(--sesa-secondary);
+}
+.citas-step--active .citas-step-label { color: var(--sesa-secondary); font-weight: 600; }
+
+.citas-step--done .citas-step-circle {
+  border-color: var(--sesa-success);
+  background: var(--sesa-success);
+  color: #fff;
+}
+.citas-step--done .citas-step-label { color: var(--sesa-success); }
+
+.citas-step-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--sesa-border);
+  margin: 0 0.5rem;
+  margin-bottom: 1rem;
+  transition: background 0.3s;
+
+  &.citas-step-connector--done {
+    background: var(--sesa-success);
+  }
+}
+
+.citas-wizard-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  animation: citas-fade-in 0.3s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECCIONES DEL WIZARD
+═══════════════════════════════════════════════════════ */
+.citas-section {
   background: var(--sesa-surface);
   border: 1px solid var(--sesa-border);
   border-radius: var(--sesa-radius-lg);
+  padding: 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+  /* No usar animation aquí para evitar crear stacking context que corte el dropdown */
+  position: relative;
+  z-index: 1;
+
+  &.citas-section--disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    filter: grayscale(0.4);
+    z-index: 0;
+  }
+
+  &.citas-section--collapsed {
+    padding-bottom: 1rem;
+  }
+}
+
+/* La primera sección (búsqueda de paciente) queda siempre encima */
+.citas-wizard-col--left .citas-section:first-child {
+  z-index: 10;
+}
+
+.citas-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.citas-section-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(31, 106, 225, 0.1);
+  color: var(--sesa-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+
+  &.citas-section-num--done {
+    background: var(--sesa-success);
+    color: #fff;
+  }
+}
+
+.citas-section-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  flex: 1;
+}
+
+.citas-section-edit {
+  font-size: 0.78rem;
+  color: var(--sesa-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+
+  &:hover { background: rgba(31, 106, 225, 0.08); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   BÚSQUEDA DE PACIENTE
+═══════════════════════════════════════════════════════ */
+.citas-patient-search {
+  position: relative;
+  z-index: 100;
+}
+
+.citas-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.citas-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 18px;
+  height: 18px;
+  color: var(--sesa-text-secondary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.citas-search-input {
+  width: 100%;
+  padding: 0.75rem 0.9rem 0.75rem 2.7rem;
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--sesa-input-placeholder); }
+
+  &:focus {
+    outline: none;
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.12);
+  }
+}
+
+.citas-search-spinner {
+  position: absolute;
+  right: 0.85rem;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--sesa-border);
+  border-top-color: var(--sesa-secondary);
+  border-radius: 50%;
+  animation: citas-spin 0.7s linear infinite;
+}
+
+/* Dropdown */
+.citas-patient-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  z-index: 9999;
+  overflow: hidden;
+  animation: citas-slide-down 0.18s ease both;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.citas-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--sesa-border-light);
+
+  &:last-child { border-bottom: none; }
+
+  &:hover { background: rgba(31, 106, 225, 0.05); }
+}
+
+.citas-dropdown-loading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.citas-dropdown-empty {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem;
+  color: var(--sesa-text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+
+  svg { width: 36px; height: 36px; opacity: 0.5; }
+}
+
+.citas-di-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.citas-di-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.citas-di-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.citas-di-doc {
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+}
+
+.citas-di-arrow {
+  width: 16px;
+  height: 16px;
+  color: var(--sesa-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Paciente seleccionado */
+.citas-patient-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(31, 106, 225, 0.06);
+  border: 1.5px solid rgba(31, 106, 225, 0.25);
+  border-radius: var(--sesa-radius-md);
+  animation: citas-slide-down 0.2s ease both;
+}
+
+.citas-patient-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.citas-patient-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.citas-patient-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--sesa-text-primary);
+}
+
+.citas-patient-doc {
+  display: flex;
+  align-items: center;
   gap: 0.3rem;
-  box-shadow: var(--sesa-shadow-sm);
-  transition:
-    box-shadow var(--sesa-transition-smooth),
-    transform var(--sesa-transition-smooth),
-    border-color var(--sesa-transition-smooth);
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+
+  svg { width: 12px; height: 12px; }
+}
+
+.citas-patient-clear {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--sesa-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: var(--sesa-error-bg);
+    color: var(--sesa-error);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ESPECIALIDADES
+═══════════════════════════════════════════════════════ */
+.citas-especialidades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.citas-esp-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem 0.5rem;
+  border: 1.5px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--esp-color, var(--sesa-secondary));
+    background: color-mix(in srgb, var(--esp-color, var(--sesa-secondary)) 6%, var(--sesa-surface));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  &.citas-esp-card--selected {
+    border-color: var(--esp-color, var(--sesa-secondary));
+    background: color-mix(in srgb, var(--esp-color, var(--sesa-secondary)) 10%, var(--sesa-surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--esp-color, var(--sesa-secondary)) 15%, transparent);
+  }
+}
+
+.citas-esp-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.citas-esp-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  line-height: 1.2;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFESIONALES
+═══════════════════════════════════════════════════════ */
+.citas-prof-section {
+  animation: citas-slide-down 0.2s ease both;
+}
+
+.citas-prof-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem;
+
+  svg { width: 14px; height: 14px; }
+}
+
+.citas-prof-count {
+  background: rgba(31, 106, 225, 0.12);
+  color: var(--sesa-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 20px;
+}
+
+.citas-prof-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: var(--sesa-border); border-radius: 4px; }
+}
+
+.citas-prof-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem;
+}
+
+.citas-prof-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+
+  &:hover {
+    border-color: rgba(31, 106, 225, 0.4);
+    background: rgba(31, 106, 225, 0.04);
+  }
+
+  &.citas-prof-card--selected {
+    border-color: var(--sesa-secondary);
+    background: rgba(31, 106, 225, 0.07);
+  }
+}
+
+.citas-prof-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.citas-prof-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.citas-prof-name {
+  font-weight: 600;
+  font-size: 0.87rem;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.citas-prof-cargo {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.citas-prof-check {
+  width: 18px;
+  height: 18px;
+  color: var(--sesa-secondary);
+  flex-shrink: 0;
+}
+
+.citas-prof-empty {
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  text-align: center;
+  padding: 0.75rem;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALENDARIO
+═══════════════════════════════════════════════════════ */
+.citas-calendar {
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.citas-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.citas-cal-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sesa-text-secondary);
+  transition: all 0.15s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    background: rgba(31, 106, 225, 0.06);
+  }
+}
+
+.citas-cal-month {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+}
+
+.citas-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.citas-cal-wd {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.25rem 0;
+}
+
+.citas-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.citas-cal-day {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--sesa-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
   position: relative;
+
+  &:hover:not(:disabled):not(.citas-cal-day--selected) {
+    background: rgba(31, 106, 225, 0.1);
+    color: var(--sesa-secondary);
+  }
+
+  &.citas-cal-day--today {
+    font-weight: 800;
+    color: var(--sesa-secondary);
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--sesa-secondary);
+    }
+  }
+
+  &.citas-cal-day--selected {
+    background: var(--sesa-secondary);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(31, 106, 225, 0.35);
+
+    &::after { display: none; }
+  }
+
+  &.citas-cal-day--past {
+    color: var(--sesa-text-secondary);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.citas-cal-day--empty {
+    pointer-events: none;
+    background: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SLOTS DE HORA
+═══════════════════════════════════════════════════════ */
+.citas-slots-section {
+  animation: citas-slide-down 0.22s ease both;
+}
+
+.citas-slots-date-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: capitalize;
+  margin: 0 0 0.75rem;
+
+  svg { width: 14px; height: 14px; }
+}
+
+.citas-slots-loading {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.citas-slot-group {
+  margin-bottom: 0.85rem;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.citas-slot-group-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+.citas-slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.citas-slot {
+  padding: 0.38rem 0.7rem;
+  border: 1.5px solid var(--sesa-border);
+  border-radius: 8px;
+  background: var(--sesa-surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--sesa-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled):not(.citas-slot--selected) {
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    background: rgba(31, 106, 225, 0.06);
+    transform: translateY(-1px);
+  }
+
+  &.citas-slot--selected {
+    border-color: var(--sesa-secondary);
+    background: var(--sesa-secondary);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(31, 106, 225, 0.3);
+  }
+
+  &.citas-slot--unavailable {
+    opacity: 0.35;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    border-style: dashed;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP PLACEHOLDER
+═══════════════════════════════════════════════════════ */
+.citas-step-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+  opacity: 0.7;
+
+  svg {
+    width: 56px;
+    height: 56px;
+    stroke: var(--sesa-text-secondary);
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    max-width: 240px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESUMEN Y CONFIRMACIÓN
+═══════════════════════════════════════════════════════ */
+.citas-summary {
+  background: var(--sesa-surface);
+  border: 1.5px solid rgba(31, 106, 225, 0.25);
+  border-radius: var(--sesa-radius-lg);
+  padding: 1.25rem;
+  animation: citas-scale-in 0.25s ease both;
+}
+
+.citas-summary-title {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.citas-summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.citas-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.citas-summary-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(31, 106, 225, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 15px;
+    height: 15px;
+    color: var(--sesa-secondary);
+  }
+}
+
+.citas-summary-lbl {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.citas-summary-val {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  text-transform: capitalize;
+}
+
+.citas-summary-nota {
+  margin-bottom: 1rem;
+}
+
+.citas-nota-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.citas-nota-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder { color: var(--sesa-input-placeholder); }
+
+  &:focus {
+    outline: none;
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.12);
+  }
+}
+
+.citas-btn-crear {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: var(--sesa-radius-md);
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.35);
+
+  svg { width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(31, 106, 225, 0.45);
+  }
+
+  &:active:not(:disabled) { transform: translateY(0); }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LISTA / AGENDA
+═══════════════════════════════════════════════════════ */
+.citas-lista-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: citas-fade-in 0.3s ease both;
+}
+
+.citas-lista-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+}
+
+.citas-lista-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-right: 1px solid var(--sesa-border);
+  padding-right: 0.75rem;
+  margin-right: 0.25rem;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--sesa-text-secondary);
+    flex-shrink: 0;
+  }
+}
+
+.citas-lista-date-input {
+  border: none;
+  background: none;
+  color: var(--sesa-text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus { outline: none; }
+}
+
+.citas-filter-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.citas-filter-chip {
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid var(--sesa-border);
+  border-radius: 20px;
+  background: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+
+  &:hover {
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+  }
+
+  &.citas-filter-chip--active {
+    border-color: var(--sesa-secondary);
+    background: rgba(31, 106, 225, 0.1);
+    color: var(--sesa-secondary);
+    font-weight: 600;
+  }
+}
+
+.citas-refresh-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sesa-text-secondary);
+  flex-shrink: 0;
+  transition: all 0.15s;
+  margin-left: auto;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover:not(:disabled) {
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+  }
+
+  .spinning { animation: spinning 0.8s linear infinite; }
+}
+
+/* Tabla */
+.citas-table-wrap {
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+  overflow: hidden;
+  background: var(--sesa-surface);
+  overflow-x: auto;
+}
+
+.citas-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    background: var(--sesa-bg);
+    color: var(--sesa-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--sesa-border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--sesa-border-light);
+    color: var(--sesa-text-primary);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+.col-hora     { width: 80px; }
+.col-estado   { width: 110px; }
+.col-actions  { width: 200px; white-space: nowrap; }
+
+.citas-row {
+  transition: background 0.15s;
+
+  &:hover { background: rgba(31, 106, 225, 0.03); }
+
+  &.citas-row--actioning {
+    background: rgba(31, 106, 225, 0.04);
+    opacity: 0.8;
+  }
+
+  &.citas-row--skeleton td { padding: 0.7rem 1rem; }
+}
+
+.citas-hora-chip {
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  background: rgba(31, 106, 225, 0.08);
+  color: var(--sesa-secondary);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.citas-row-paciente {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.citas-row-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.citas-row-nombre {
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+}
+
+.citas-row-esp-icon {
+  margin-right: 0.25rem;
+}
+
+/* Badges de estado */
+.citas-badge {
+  display: inline-block;
+  padding: 0.22rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &.badge--warning   { background: var(--sesa-warning-bg);          color: var(--sesa-warning); }
+  &.badge--info      { background: rgba(14, 165, 233, 0.12);        color: var(--sesa-info); }
+  &.badge--success   { background: var(--sesa-success-bg);          color: var(--sesa-success); }
+  &.badge--danger    { background: var(--sesa-error-bg);            color: var(--sesa-error); }
+  &.badge--secondary { background: var(--sesa-border-light, #eee);  color: var(--sesa-text-secondary); }
+}
+
+/* Acciones de fila */
+.citas-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.citas-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border: 1.5px solid transparent;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  svg { width: 14px; height: 14px; }
+
+  &--confirm {
+    background: rgba(22, 163, 74, 0.1);
+    color: var(--sesa-success);
+    border-color: rgba(22, 163, 74, 0.25);
+    &:hover { background: var(--sesa-success); color: #fff; }
+  }
+
+  &--attend {
+    background: rgba(31, 106, 225, 0.1);
+    color: var(--sesa-secondary);
+    border-color: rgba(31, 106, 225, 0.25);
+    &:hover { background: var(--sesa-secondary); color: #fff; }
+  }
+
+  &--reschedule {
+    background: rgba(217, 119, 6, 0.1);
+    color: var(--sesa-warning);
+    border-color: rgba(217, 119, 6, 0.25);
+    padding: 0.3rem 0.5rem;
+    &:hover { background: var(--sesa-warning); color: #fff; }
+  }
+
+  &--cancel {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--sesa-error);
+    border-color: rgba(220, 38, 38, 0.2);
+    padding: 0.3rem 0.5rem;
+    &:hover { background: var(--sesa-error); color: #fff; }
+  }
+
+  &--hc {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-secondary);
+    border-color: var(--sesa-border);
+    padding: 0.3rem 0.5rem;
+    &:hover { border-color: var(--sesa-secondary); color: var(--sesa-secondary); }
+  }
+}
+
+.citas-row-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--sesa-border);
+  border-top-color: var(--sesa-secondary);
+  border-radius: 50%;
+  animation: citas-spin 0.65s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL REPROGRAMAR
+═══════════════════════════════════════════════════════ */
+.citas-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+  animation: citas-backdrop-in 0.2s ease;
+}
+
+.citas-modal {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-xl, 16px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 440px;
+  animation: citas-scale-in 0.25s ease both;
   overflow: hidden;
 }
 
-.sesa-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
-  opacity: 0;
-  transition: opacity var(--sesa-transition-smooth);
+.citas-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--sesa-border);
 }
 
-.sesa-stat-card:hover {
-  box-shadow: var(--sesa-shadow-md);
-  transform: translateY(-2px);
-  border-color: rgba(31, 106, 225, 0.12);
+.citas-modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(31, 106, 225, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 20px; height: 20px; stroke: var(--sesa-secondary); }
 }
 
-.sesa-stat-card:hover::before {
-  opacity: 1;
-}
-
-.sesa-stat-value {
-  font-size: 1.6rem;
-  font-weight: 800;
+.citas-modal-title {
+  margin: 0 0 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--sesa-text-primary);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
 }
 
-.sesa-stat-label {
-  font-size: 0.78rem;
+.citas-modal-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
   color: var(--sesa-text-secondary);
-  font-weight: 500;
 }
 
-/* Layout dos columnas: formularios | listado */
-.sesa-citas-layout {
+.citas-modal-close {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--sesa-text-secondary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover { background: var(--sesa-error-bg); color: var(--sesa-error); }
+}
+
+.citas-modal-body {
+  padding: 1.25rem;
+}
+
+.citas-reprogram-fields {
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 1.5rem;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-@media (max-width: 960px) {
-  .sesa-citas-layout {
+.citas-reprogram-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.citas-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.citas-field-input {
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.12);
+  }
+}
+
+.citas-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+}
+
+.citas-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.2rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--sesa-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &--cancel {
+    border-color: var(--sesa-border);
+    background: none;
+    color: var(--sesa-text-secondary);
+
+    &:hover { border-color: var(--sesa-text-secondary); color: var(--sesa-text-primary); }
+  }
+
+  &--confirm {
+    background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(31, 106, 225, 0.3);
+
+    &:hover:not(:disabled) { box-shadow: 0 5px 16px rgba(31, 106, 225, 0.4); transform: translateY(-1px); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SPINNER EN BOTONES
+═══════════════════════════════════════════════════════ */
+.citas-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: citas-spin 0.65s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .citas-wizard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .citas-steps {
+    display: none;
+  }
+
+  .citas-reprogram-fields {
     grid-template-columns: 1fr;
   }
 }
 
-.sesa-citas-panel-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.sesa-citas-panel-list {
-  min-width: 0;
-}
-
-/* Formulario */
-.sesa-form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.sesa-form-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
-
-.sesa-citas-panel-form .sesa-btn-block {
-  margin-top: 0.5rem;
-}
-
-/* Tabla premium */
-.sesa-table-wrap-premium {
-  border-radius: var(--sesa-radius-md);
-  border: 1px solid var(--sesa-border);
-  overflow: hidden;
-  box-shadow: var(--sesa-shadow-sm);
-}
-
-.sesa-table-premium {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-  background: var(--sesa-surface);
-
-  th,
-  td {
-    padding: 0.85rem 1rem;
-    text-align: left;
-    border-bottom: 1px solid var(--sesa-border-light);
-    color: var(--sesa-text-primary);
-  }
-
-  thead th {
-    background: var(--sesa-bg);
-    color: var(--sesa-text-secondary);
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  tbody tr {
-    transition: background-color var(--sesa-transition-fast);
-  }
-
-  tbody tr:hover {
-    background: rgba(31, 106, 225, 0.03);
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
-}
-
-.sesa-col-hora { width: 80px; min-width: 80px; }
-.sesa-col-paciente { min-width: 140px; }
-.sesa-col-servicio { min-width: 140px; }
-.sesa-col-profesional { min-width: 140px; }
-.sesa-col-estado { width: 120px; min-width: 120px; }
-.sesa-col-actions { width: 140px; min-width: 140px; white-space: nowrap; }
-
-.sesa-cell-hora-valor {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--sesa-secondary);
-}
-
-.sesa-cell-paciente strong {
-  color: var(--sesa-text-primary);
-  font-weight: 600;
-}
-
-/* Badges de estado */
-.sesa-badge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--sesa-radius-sm);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.sesa-badge-estado {
-  white-space: nowrap;
-}
-
-.sesa-badge-warning {
-  background: var(--sesa-warning-bg);
-  color: var(--sesa-warning);
-}
-
-.sesa-badge-info {
-  background: rgba(14, 165, 233, 0.12);
-  color: var(--sesa-info);
-}
-
-.sesa-badge-success {
-  background: var(--sesa-success-bg);
-  color: var(--sesa-success);
-}
-
-.sesa-badge-danger {
-  background: var(--sesa-error-bg);
-  color: var(--sesa-error);
-}
-
-.sesa-badge-secondary {
-  background: var(--sesa-border-light);
-  color: var(--sesa-text-secondary);
-}
-
-/* Acciones en fila */
-.sesa-actions-cell {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.sesa-actions-cell .sesa-btn-icon-only {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  padding: 0;
-  font-size: 0.85rem;
-}
-
-/* Estado vacío */
-.sesa-loading-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 2.5rem;
-}
-
-.sesa-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--sesa-border);
-  border-top-color: var(--sesa-secondary);
-  border-radius: 50%;
-  animation: sesa-spin 0.7s linear infinite;
-}
-
-@keyframes sesa-spin {
-  to { transform: rotate(360deg); }
-}
-
-.sesa-loading {
-  margin: 0;
-  color: var(--sesa-text-muted);
-  font-size: 0.9rem;
-}
-
-.sesa-empty-state-citas {
-  padding: 3rem 1.5rem;
-  text-align: center;
-  color: var(--sesa-text-secondary);
-}
-
-.sesa-empty-icon {
-  font-size: 3rem;
-  display: block;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.sesa-empty-state-citas p {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-}
-
-.sesa-empty-hint {
-  font-size: 0.85rem !important;
-  color: var(--sesa-text-muted) !important;
-}
-
-.sesa-error {
-  color: var(--sesa-error);
-  background-color: var(--sesa-error-bg);
-  padding: 1rem 1.25rem;
-  border-radius: var(--sesa-radius-md);
-  border-left: 3px solid var(--sesa-error);
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.sesa-success {
-  color: var(--sesa-success);
-  background-color: var(--sesa-success-bg);
-  padding: 1rem 1.25rem;
-  border-radius: var(--sesa-radius-md);
-  border-left: 3px solid var(--sesa-success);
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
+@media (max-width: 640px) {
+  .citas-header { flex-direction: column; align-items: flex-start; }
+  .citas-quick-stats { width: 100%; }
+  .citas-qstat { flex: 1; }
+  .citas-tabs { overflow-x: auto; }
+  .citas-especialidades-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+  .citas-filter-chips { order: 2; }
+  .citas-lista-date-wrap { order: 1; }
+  .citas-refresh-btn { margin-left: 0; order: 3; }
 }

@@ -199,6 +199,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'agenda',
+    canActivate: [authGuard, roleGuard('AGENDA')],
+    loadComponent: () =>
+      import('./features/agenda/agenda.page').then(
+        (m) => m.AgendaPageComponent,
+      ),
+  },
+  {
     path: 'notificaciones',
     canActivate: [authGuard, roleGuard('NOTIFICACIONES')],
     loadComponent: () =>

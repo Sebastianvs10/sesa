@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permite tráfico HTTP (sin SSL) hacia el servidor SESA local.
+  En producción reemplazar con HTTPS y eliminar esta excepción.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Emulador Android (host de la máquina de desarrollo) -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- IP local de la máquina de desarrollo -->
+        <domain includeSubdomains="false">192.168.18.132</domain>
+        <!-- localhost para pruebas -->
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

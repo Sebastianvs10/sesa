@@ -9,9 +9,6 @@ export interface PersonalDto {
   id: number;
   nombres: string;
   apellidos?: string;
-  cargo: string;
-  servicio?: string;
-  turno?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
@@ -20,7 +17,6 @@ export interface PersonalDto {
   celular?: string;
   email?: string;
   rol?: string;
-  institucionPrestadora?: string;
   fotoUrl?: string;
   firmaUrl?: string;
   activo: boolean;
@@ -30,9 +26,6 @@ export interface PersonalDto {
 export interface PersonalRequestDto {
   nombres: string;
   apellidos?: string;
-  cargo: string;
-  servicio?: string;
-  turno?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
@@ -42,7 +35,6 @@ export interface PersonalRequestDto {
   email?: string;
   password?: string;
   rol?: string;
-  institucionPrestadora?: string;
   activo: boolean;
 }
 
@@ -51,6 +43,7 @@ export const ROLES_PERSONAL: { value: string; label: string; disabled?: boolean 
   { value: 'SUPERADMINISTRADOR', label: 'Super Administrador', disabled: true },
   { value: 'ADMIN', label: 'Administrador del Sistema', disabled: true },
   { value: 'MEDICO', label: 'Médico' },
+  { value: 'COORDINADOR_MEDICO', label: 'Coordinador Médico' },
   { value: 'ODONTOLOGO', label: 'Odontólogo/a' },
   { value: 'BACTERIOLOGO', label: 'Bacteriólogo' },
   { value: 'ENFERMERO', label: 'Enfermero/a' },

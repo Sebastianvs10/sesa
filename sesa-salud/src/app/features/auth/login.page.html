@@ -124,8 +124,14 @@
           <button
             type="submit"
             class="sesa-btn sesa-btn-primary sesa-btn-block"
-            [disabled]="loading">
-            {{ loading ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+            [disabled]="loading()"
+            >
+            @if (loading()) {
+              <span class="sesa-btn-spinner" aria-hidden="true"></span>
+              Iniciando sesión…
+            } @else {
+              Iniciar sesión
+            }
           </button>
         </div>
 

@@ -1,16 +1,45 @@
-<article class="sesa-card">
-  <header class="sesa-card-header" [ngClass]="{ 'sesa-card-header--start': alignHeader === 'start' }">
-    <div>
-      <div class="sesa-card-title" *ngIf="title">{{ title }}</div>
-      <div class="sesa-card-subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+<article
+  class="sesa-card"
+  [class.sesa-card--elevated]="variant === 'elevated'"
+  [class.sesa-card--outlined]="variant === 'outlined'"
+  [class.sesa-card--flat]="variant === 'flat'"
+  [class.sesa-card--loading]="loading"
+>
+  <header
+    class="sesa-card-header"
+    [class.sesa-card-header--start]="alignHeader === 'start'"
+    [class.sesa-card-header--hidden]="!title && !subtitle"
+  >
+    <div class="sesa-card-heading">
+      @if (loading) {
+        <sesa-skeleton width="140px" height="1rem" />
+        <sesa-skeleton width="90px" height="0.75rem" style="margin-top: 0.4rem" />
+      } @else {
+        @if (title) { <div class="sesa-card-title">{{ title }}</div> }
+        @if (subtitle) { <div class="sesa-card-subtitle">{{ subtitle }}</div> }
+      }
     </div>
-    <div class="sesa-card-header-extra">
-      <ng-content select="[card-header-extra]"></ng-content>
-    </div>
+    @if (!loading) {
+      <div class="sesa-card-header-extra">
+        <ng-content select="[card-header-extra]"></ng-content>
+      </div>
+    }
   </header>
 
   <section class="sesa-card-content">
-    <ng-content></ng-content>
+    @if (loading) {
+      <div class="sesa-card-skeleton-body">
+        @for (line of skeletonLinesArray; track $index) {
+          <sesa-skeleton
+            [width]="$index === skeletonLines - 1 ? '65%' : '100%'"
+            height="0.85rem"
+          />
+        }
+      </div>
+    } @else {
+      <ng-content></ng-content>
+    }
   </section>
-</article>
 
+  <ng-content select="[card-footer]"></ng-content>
+</article>

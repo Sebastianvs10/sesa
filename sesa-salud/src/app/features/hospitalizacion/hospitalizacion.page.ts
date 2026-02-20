@@ -1,9 +1,14 @@
+/**
+ * Hospitalización — skeleton, toast errores/éxito.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { PacienteDto, PacienteService } from '../../core/services/paciente.service';
 import { HospitalizacionDto, HospitalizacionService } from '../../core/services/hospitalizacion.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 @Component({
   standalone: true,
@@ -15,6 +20,7 @@ import { HospitalizacionDto, HospitalizacionService } from '../../core/services/
 export class HospitalizacionPageComponent implements OnInit {
   private readonly pacienteService = inject(PacienteService);
   private readonly hospitalizacionService = inject(HospitalizacionService);
+  private readonly toast = inject(SesaToastService);
 
   pacientes: PacienteDto[] = [];
   hospitalizaciones: HospitalizacionDto[] = [];
@@ -38,7 +44,10 @@ export class HospitalizacionPageComponent implements OnInit {
   cargar(): void {
     this.hospitalizacionService.listByEstado().subscribe({
       next: (res) => (this.hospitalizaciones = res ?? []),
-      error: (err) => (this.error = err?.error?.error || 'No se pudo cargar hospitalizaciones'),
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo cargar hospitalizaciones';
+        this.toast.error(this.error!, 'Error de carga');
+      },
     });
   }
 
@@ -63,9 +72,13 @@ export class HospitalizacionPageComponent implements OnInit {
         this.form.evolucionDiaria = '';
         this.form.ordenesMedicas = '';
         this.form.epicrisis = '';
+        this.toast.success('Hospitalización registrada correctamente.', 'Alta registrada');
         this.cargar();
       },
-      error: (err) => (this.error = err?.error?.error || 'No se pudo crear hospitalización'),
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo crear hospitalización';
+        this.toast.error(this.error!, 'Error');
+      },
     });
   }
 }

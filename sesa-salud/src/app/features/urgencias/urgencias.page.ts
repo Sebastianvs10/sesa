@@ -1,8 +1,13 @@
+/**
+ * Urgencias — skeleton, toast errores.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaDataTableComponent } from '../../shared/components/sesa-data-table/sesa-data-table.component';
 import { UrgenciaRegistroService } from '../../core/services/urgencia-registro.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 @Component({
   standalone: true,
@@ -13,6 +18,7 @@ import { UrgenciaRegistroService } from '../../core/services/urgencia-registro.s
 })
 export class UrgenciasPageComponent implements OnInit {
   private readonly urgenciaService = inject(UrgenciaRegistroService);
+  private readonly toast = inject(SesaToastService);
 
   cargando = false;
   error: string | null = null;
@@ -48,6 +54,7 @@ export class UrgenciasPageComponent implements OnInit {
       error: (err) => {
         this.error = err?.error?.error || 'No se pudieron cargar urgencias';
         this.cargando = false;
+        this.toast.error(this.error!, 'Error de carga');
       },
     });
   }

@@ -1,7 +1,12 @@
+/**
+ * Farmacia — skeleton, spinner dispensar, toast CRUD.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { FarmaciaDispensacionDto, FarmaciaService, FarmaciaMedicamentoDto } from '../../core/services/farmacia.service';
 import { PacienteDto, PacienteService } from '../../core/services/paciente.service';
 
@@ -15,6 +20,7 @@ import { PacienteDto, PacienteService } from '../../core/services/paciente.servi
 export class FarmaciaPageComponent implements OnInit {
   private readonly farmaciaService = inject(FarmaciaService);
   private readonly pacienteService = inject(PacienteService);
+  private readonly toast = inject(SesaToastService);
 
   medicamentos: FarmaciaMedicamentoDto[] = [];
   pacientes: PacienteDto[] = [];
@@ -45,7 +51,10 @@ export class FarmaciaPageComponent implements OnInit {
   recargar(): void {
     this.farmaciaService.listMedicamentos().subscribe({
       next: (res) => (this.medicamentos = res ?? []),
-      error: (err) => (this.error = err?.error?.error || 'No se pudo cargar inventario'),
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo cargar inventario';
+        this.toast.error(this.error!, 'Error de carga');
+      },
     });
   }
 
@@ -66,9 +75,13 @@ export class FarmaciaPageComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.medForm = { nombre: '', lote: '', fechaVencimiento: '', cantidad: '', precio: '', stockMinimo: '' };
+        this.toast.success('Medicamento creado en el inventario.', 'Medicamento creado');
         this.recargar();
       },
-      error: (err) => (this.error = err?.error?.error || 'No se pudo crear medicamento'),
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo crear medicamento';
+        this.toast.error(this.error!, 'Error');
+      },
     });
   }
 
@@ -87,9 +100,13 @@ export class FarmaciaPageComponent implements OnInit {
       next: (d) => {
         this.dispensaciones = [d, ...this.dispensaciones];
         this.dispForm = { medicamentoId: null, pacienteId: null, cantidad: '', entregadoPor: '' };
+        this.toast.success('Medicamento dispensado correctamente.', 'Dispensación exitosa');
         this.recargar();
       },
-      error: (err) => (this.error = err?.error?.error || 'No se pudo dispensar'),
+      error: (err) => {
+        this.error = err?.error?.error || 'No se pudo dispensar';
+        this.toast.error(this.error!, 'Error al dispensar');
+      },
     });
   }
 }

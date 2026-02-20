@@ -4,6 +4,7 @@
 
 package com.sesa.salud.service.impl;
 
+import com.sesa.salud.config.TenantSchemaInitializer;
 import com.sesa.salud.dto.EmpresaCreateRequest;
 import com.sesa.salud.entity.Usuario;
 import com.sesa.salud.repository.UsuarioRepository;
@@ -30,6 +31,7 @@ public class TenantSetupServiceImpl implements TenantSetupService {
     private final EntityManager entityManager;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantSchemaInitializer tenantSchemaInitializer;
 
     @Override
     @Transactional
@@ -49,6 +51,15 @@ public class TenantSetupServiceImpl implements TenantSetupService {
                 throw new RuntimeException("Error creando tablas del tenant: " + e.getMessage());
             }
         });
+
+        // Aplicar DDL adicional (tablas creadas después del script base)
+        try {
+            tenantSchemaInitializer.applyDdlToSchema(schemaName);
+            log.info("DDL adicional aplicado al schema '{}'", schemaName);
+        } catch (Exception ex) {
+            log.warn("No se pudo aplicar DDL adicional al schema '{}': {}", schemaName, ex.getMessage());
+        }
+
         String nombreCompleto = buildNombreCompleto(request.getAdminUser());
         Usuario admin = Usuario.builder()
                 .email(request.getAdminUser().getCorreo().trim())

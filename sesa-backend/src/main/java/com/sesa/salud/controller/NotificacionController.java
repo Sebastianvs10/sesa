@@ -4,6 +4,8 @@
 
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.DestinatarioDisponibleDto;
+import com.sesa.salud.dto.NotificacionBroadcastResult;
 import com.sesa.salud.dto.NotificacionCreateRequest;
 import com.sesa.salud.dto.NotificacionDto;
 import com.sesa.salud.entity.NotificacionAdjunto;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/notificaciones")
@@ -40,7 +43,7 @@ public class NotificacionController {
     private final UsuarioRepository usuarioRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<NotificacionDto> create(
             @Valid @RequestBody NotificacionCreateRequest request,
             Authentication authentication) {
@@ -53,7 +56,7 @@ public class NotificacionController {
     }
 
     @PostMapping("/{id}/adjuntos")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> uploadAdjunto(
             @PathVariable("id") Long id,
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -66,13 +69,13 @@ public class NotificacionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<NotificacionDto> getById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(notificacionService.getById(id));
     }
 
     @GetMapping("/enviadas")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public Page<NotificacionDto> listEnviadas(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
@@ -84,7 +87,7 @@ public class NotificacionController {
     }
 
     @GetMapping("/recibidas")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public Page<NotificacionDto> listRecibidas(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
@@ -96,14 +99,14 @@ public class NotificacionController {
     }
 
     @GetMapping("/recibidas/count")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Long> countNoLeidas(Authentication authentication) {
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         return ResponseEntity.ok(notificacionService.countNoLeidas(principal.userId()));
     }
 
     @PutMapping("/{id}/leer")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> marcarLeida(
             @PathVariable("id") Long id,
             Authentication authentication) {
@@ -112,8 +115,42 @@ public class NotificacionController {
         return ResponseEntity.ok().build();
     }
 
+    // ── Destinatarios disponibles ──────────────────────────────────────────────
+
+    /**
+     * Devuelve los usuarios activos del schema actual que pueden recibir notificaciones.
+     * Cualquier usuario autenticado puede consultarlo para seleccionar destinatarios.
+     */
+    @GetMapping("/destinatarios-disponibles")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<DestinatarioDisponibleDto>> getDestinatariosDisponibles() {
+        return ResponseEntity.ok(notificacionService.getDestinatariosDisponibles());
+    }
+
+    // ── Broadcast SUPERADMINISTRADOR ──────────────────────────────────────────
+
+    /**
+     * Envía una notificación al usuario ADMIN de cada empresa/schema activo.
+     * Solo accesible para SUPERADMINISTRADOR.
+     */
+    @PostMapping("/broadcast-admins")
+    @PreAuthorize("hasRole('SUPERADMINISTRADOR')")
+    public ResponseEntity<NotificacionBroadcastResult> broadcastToAdmins(
+            @Valid @RequestBody NotificacionCreateRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        String nombre = usuarioRepository.findById(principal.userId())
+                .map(Usuario::getNombreCompleto)
+                .orElse(principal.username());
+        NotificacionBroadcastResult result =
+                notificacionService.broadcastToAdmins(request, principal.userId(), nombre);
+        return ResponseEntity.ok(result);
+    }
+
+    // ── Adjunto: descarga ─────────────────────────────────────────────────────
+
     @GetMapping("/{notificacionId}/adjuntos/{adjuntoId}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> downloadAdjunto(
             @PathVariable("notificacionId") Long notificacionId,
             @PathVariable("adjuntoId") Long adjuntoId) {
