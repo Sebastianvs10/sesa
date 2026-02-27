@@ -11,6 +11,7 @@ import { faEye, faEyeSlash, faSun, faMoon, faEnvelope, faIdCard } from '@fortawe
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
+import { PermissionsService } from '../../core/services/permissions.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
@@ -48,7 +49,8 @@ export class LoginPageComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
-    private empresaCurrent: EmpresaCurrentService
+    private empresaCurrent: EmpresaCurrentService,
+    private permissionsService: PermissionsService
   ) {
     this.loginForm = this.fb.group({
       /** Acepta correo electrónico o número de identificación según loginMode */
@@ -83,6 +85,8 @@ export class LoginPageComponent implements OnInit {
       next: () => {
         this.loading.set(false);
         this.empresaCurrent.load();
+        // Cargar módulos del rol activo (rol primario al iniciar sesión)
+        this.permissionsService.load(this.authService.rolActivo());
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

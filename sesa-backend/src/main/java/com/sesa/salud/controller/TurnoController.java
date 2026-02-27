@@ -8,6 +8,7 @@ import com.sesa.salud.dto.ProgramacionMesDto;
 import com.sesa.salud.dto.ResumenProfesionalDto;
 import com.sesa.salud.dto.TurnoDto;
 import com.sesa.salud.dto.TurnoRequestDto;
+import com.sesa.salud.dto.TurnoResponseDto;
 import com.sesa.salud.entity.enums.ServicioClinico;
 import com.sesa.salud.entity.enums.TipoTurno;
 import com.sesa.salud.repository.UsuarioRepository;
@@ -145,7 +146,7 @@ public class TurnoController {
      */
     @PostMapping("/turnos")
     @PreAuthorize(ROL_AGENDA)
-    public ResponseEntity<TurnoDto> crear(
+    public ResponseEntity<TurnoResponseDto> crear(
             @Valid @RequestBody TurnoRequestDto request,
             Authentication auth) {
         JwtPrincipal p = principal(auth);
@@ -159,7 +160,7 @@ public class TurnoController {
      */
     @PutMapping("/turnos/{id}")
     @PreAuthorize(ROL_AGENDA)
-    public ResponseEntity<TurnoDto> actualizar(
+    public ResponseEntity<TurnoResponseDto> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody TurnoRequestDto request,
             Authentication auth) {

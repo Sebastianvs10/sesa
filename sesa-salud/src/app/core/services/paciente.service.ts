@@ -19,6 +19,18 @@ export interface PacienteDto {
   epsNombre?: string;
   activo: boolean;
   createdAt?: string;
+  // Campos normativos Res. 3374/2000 (RIPS)
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  zonaResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  contactoEmergenciaNombre?: string;
+  contactoEmergenciaTelefono?: string;
+  estadoCivil?: string;
+  escolaridad?: string;
+  ocupacion?: string;
+  pertenenciaEtnica?: string;
 }
 
 export interface PacienteRequestDto {
@@ -34,6 +46,18 @@ export interface PacienteRequestDto {
   direccion?: string;
   epsId?: number;
   activo: boolean;
+  // Campos normativos Res. 3374/2000 (RIPS)
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  zonaResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  contactoEmergenciaNombre?: string;
+  contactoEmergenciaTelefono?: string;
+  estadoCivil?: string;
+  escolaridad?: string;
+  ocupacion?: string;
+  pertenenciaEtnica?: string;
 }
 
 export interface PageResponse<T> {

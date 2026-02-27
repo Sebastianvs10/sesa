@@ -23,5 +23,7 @@ public interface UrgenciaRegistroService {
 
     UrgenciaRegistroDto update(Long id, UrgenciaRegistroRequestDto dto);
 
+    UrgenciaRegistroDto cambiarEstado(Long id, String nuevoEstado);
+
     void deleteById(Long id);
 }

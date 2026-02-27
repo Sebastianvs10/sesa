@@ -84,6 +84,17 @@ public class PacienteServiceImpl implements PacienteService {
             p.setEps(null);
         }
         p.setActivo(dto.getActivo());
+        p.setMunicipioResidencia(dto.getMunicipioResidencia());
+        p.setDepartamentoResidencia(dto.getDepartamentoResidencia());
+        p.setZonaResidencia(dto.getZonaResidencia());
+        p.setRegimenAfiliacion(dto.getRegimenAfiliacion());
+        p.setTipoUsuario(dto.getTipoUsuario());
+        p.setContactoEmergenciaNombre(dto.getContactoEmergenciaNombre());
+        p.setContactoEmergenciaTelefono(dto.getContactoEmergenciaTelefono());
+        p.setEstadoCivil(dto.getEstadoCivil());
+        p.setEscolaridad(dto.getEscolaridad());
+        p.setOcupacion(dto.getOcupacion());
+        p.setPertenenciaEtnica(dto.getPertenenciaEtnica());
         p = pacienteRepository.save(p);
         return toDto(p);
     }
@@ -114,6 +125,17 @@ public class PacienteServiceImpl implements PacienteService {
                 .epsNombre(p.getEps() != null ? p.getEps().getNombre() : null)
                 .activo(p.getActivo())
                 .createdAt(p.getCreatedAt())
+                .municipioResidencia(p.getMunicipioResidencia())
+                .departamentoResidencia(p.getDepartamentoResidencia())
+                .zonaResidencia(p.getZonaResidencia())
+                .regimenAfiliacion(p.getRegimenAfiliacion())
+                .tipoUsuario(p.getTipoUsuario())
+                .contactoEmergenciaNombre(p.getContactoEmergenciaNombre())
+                .contactoEmergenciaTelefono(p.getContactoEmergenciaTelefono())
+                .estadoCivil(p.getEstadoCivil())
+                .escolaridad(p.getEscolaridad())
+                .ocupacion(p.getOcupacion())
+                .pertenenciaEtnica(p.getPertenenciaEtnica())
                 .build();
     }
 
@@ -130,6 +152,17 @@ public class PacienteServiceImpl implements PacienteService {
                 .email(dto.getEmail())
                 .direccion(dto.getDireccion())
                 .activo(dto.getActivo() != null ? dto.getActivo() : true)
+                .municipioResidencia(dto.getMunicipioResidencia())
+                .departamentoResidencia(dto.getDepartamentoResidencia())
+                .zonaResidencia(dto.getZonaResidencia())
+                .regimenAfiliacion(dto.getRegimenAfiliacion())
+                .tipoUsuario(dto.getTipoUsuario())
+                .contactoEmergenciaNombre(dto.getContactoEmergenciaNombre())
+                .contactoEmergenciaTelefono(dto.getContactoEmergenciaTelefono())
+                .estadoCivil(dto.getEstadoCivil())
+                .escolaridad(dto.getEscolaridad())
+                .ocupacion(dto.getOcupacion())
+                .pertenenciaEtnica(dto.getPertenenciaEtnica())
                 .build();
     }
 }

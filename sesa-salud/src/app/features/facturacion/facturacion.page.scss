@@ -1,16 +1,662 @@
-/* Facturación */
+/* Módulo de Facturación — Cuentas médicas Colombia */
 /* Autor: Ing. J Sebastian Vargas S */
 
-.sesa-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
-.sesa-form-field { display: flex; flex-direction: column; gap: 0.35rem; }
-.sesa-form-field input, .sesa-form-field select, textarea {
+/* ══════════════════════════════════════════════════════
+   PAGE LAYOUT
+══════════════════════════════════════════════════════ */
+.fac-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ══════════════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════════════ */
+.fac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.fac-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+}
+
+.fac-subtitle {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  margin: 0.2rem 0 0;
+}
+
+.fac-header-actions {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-shrink: 0;
+
+  .sesa-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   KPI GRID
+══════════════════════════════════════════════════════ */
+.fac-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.fac-kpi-card {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-lg);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--sesa-shadow-sm);
+  transition: box-shadow var(--sesa-transition), transform var(--sesa-transition);
+
+  &:hover {
+    box-shadow: var(--sesa-shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.fac-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--sesa-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.fac-kpi-card--blue .fac-kpi-icon {
+  background: rgba(31, 106, 225, 0.1);
+  color: var(--sesa-secondary);
+}
+
+.fac-kpi-card--warning .fac-kpi-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--sesa-warning);
+}
+
+.fac-kpi-card--success .fac-kpi-icon {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--sesa-success);
+}
+
+.fac-kpi-card--danger .fac-kpi-icon {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--sesa-error);
+}
+
+.fac-kpi-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fac-kpi-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fac-kpi-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  line-height: 1.2;
+  margin-top: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fac-kpi-sub {
+  font-size: 0.75rem;
+  color: var(--sesa-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ══════════════════════════════════════════════════════
+   FILTROS
+══════════════════════════════════════════════════════ */
+.fac-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.fac-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.fac-filter-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fac-filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+
+  .sesa-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   INPUT GLOBAL
+══════════════════════════════════════════════════════ */
+.fac-input {
   border: 1px solid var(--sesa-input-border);
   background: var(--sesa-input-bg);
   color: var(--sesa-text-primary);
-  border-radius: 8px;
-  padding: 0.5rem 0.65rem;
+  border-radius: var(--sesa-radius-md);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--sesa-transition), box-shadow var(--sesa-transition);
+  appearance: auto;
+
+  &::placeholder {
+    color: var(--sesa-input-placeholder);
+  }
+
+  &:focus {
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.15);
+  }
 }
-.sesa-table { width: 100%; border-collapse: collapse; }
-.sesa-table th, .sesa-table td { border-bottom: 1px solid var(--sesa-border); padding: 0.5rem; text-align: left; }
-.sesa-error { color: #b91c1c; }
-@media (max-width: 960px) { .sesa-form-grid { grid-template-columns: 1fr; } }
+
+.fac-textarea {
+  resize: vertical;
+  min-height: 70px;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════
+   TABLA
+══════════════════════════════════════════════════════ */
+.fac-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.fac-table-count {
+  font-size: 0.8rem;
+  color: var(--sesa-text-muted);
+}
+
+.fac-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+}
+
+.fac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--sesa-border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.8rem 0.9rem;
+    color: var(--sesa-text-primary);
+    border-bottom: 1px solid var(--sesa-border-light);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background var(--sesa-transition-fast);
+
+    &:hover td {
+      background: var(--sesa-surface-hover);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  tbody tr.fac-row--anulada td {
+    opacity: 0.5;
+    text-decoration: line-through;
+  }
+}
+
+/* Columnas específicas */
+.fac-td-numero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fac-num {
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: var(--sesa-secondary);
+}
+
+.fac-orden-tag {
+  font-size: 0.7rem;
+  color: var(--sesa-text-muted);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.fac-paciente-nombre {
+  font-weight: 500;
+}
+
+.fac-doc-eps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.fac-doc {
+  font-size: 0.8rem;
+  color: var(--sesa-text-primary);
+}
+
+.fac-eps {
+  font-size: 0.75rem;
+  color: var(--sesa-text-muted);
+}
+
+.fac-td-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fac-td-fecha {
+  font-size: 0.82rem;
+  color: var(--sesa-text-secondary);
+  white-space: nowrap;
+}
+
+.fac-td-actions {
+  white-space: nowrap;
+}
+
+/* ── Estado badges ───────────────────────────────── */
+.fac-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badge-warning {
+  background: var(--sesa-warning-bg);
+  color: var(--sesa-warning);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-info {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--sesa-info);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.badge-success {
+  background: var(--sesa-success-bg);
+  color: var(--sesa-success);
+  border: 1px solid var(--sesa-success-border);
+}
+
+.badge-danger {
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+  border: 1px solid var(--sesa-error-border);
+}
+
+.badge-muted {
+  background: var(--sesa-bg);
+  color: var(--sesa-text-muted);
+  border: 1px solid var(--sesa-border);
+}
+
+/* ── Acciones de fila ────────────────────────────── */
+.fac-actions-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+
+  .sesa-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+.fac-anulada-tag {
+  font-size: 0.72rem;
+  color: var(--sesa-text-muted);
+  font-style: italic;
+}
+
+/* ── Empty state ─────────────────────────────────── */
+.fac-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--sesa-text-muted);
+
+  svg {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PAGINACIÓN
+══════════════════════════════════════════════════════ */
+.fac-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.fac-page-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  border-radius: var(--sesa-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--sesa-transition), border-color var(--sesa-transition), color var(--sesa-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--sesa-surface-hover);
+    border-color: var(--sesa-secondary);
+  }
+
+  &--active {
+    background: var(--sesa-secondary);
+    border-color: var(--sesa-secondary);
+    color: #fff;
+
+    &:hover {
+      background: var(--sesa-secondary) !important;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PANEL LATERAL (SLIDE-OVER)
+══════════════════════════════════════════════════════ */
+.fac-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  animation: fac-fade-in 0.2s ease;
+}
+
+.fac-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: 420px;
+  max-width: 95vw;
+  background: var(--sesa-surface);
+  border-left: 1px solid var(--sesa-border);
+  box-shadow: var(--sesa-shadow-xl);
+  z-index: 901;
+  display: flex;
+  flex-direction: column;
+  animation: fac-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.fac-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--sesa-border);
+  flex-shrink: 0;
+}
+
+.fac-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+}
+
+.fac-panel-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fac-panel-footer {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  margin-top: auto;
+}
+
+/* ── Form fields (dentro del panel) ─────────────── */
+.fac-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.fac-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-required {
+  color: var(--sesa-error);
+  margin-left: 0.1rem;
+}
+
+.fac-optional {
+  color: var(--sesa-text-muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+/* ── RIPS info panel ─────────────────────────────── */
+.fac-rips-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(14, 165, 233, 0.07);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: var(--sesa-radius-md);
+  color: var(--sesa-text-secondary);
+}
+
+.fac-rips-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--sesa-info);
+  margin-top: 0.1rem;
+}
+
+.fac-rips-desc {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   ANIMACIONES
+══════════════════════════════════════════════════════ */
+@keyframes fac-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fac-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .fac-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fac-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fac-filter-actions {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .fac-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .fac-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fac-kpi-value {
+    font-size: 1.1rem;
+  }
+
+  .fac-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .fac-filter-actions {
+    grid-column: span 1;
+  }
+
+  .fac-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fac-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .fac-panel {
+    width: 100vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .fac-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fac-kpi-card {
+    flex-direction: row;
+    align-items: center;
+  }
+}

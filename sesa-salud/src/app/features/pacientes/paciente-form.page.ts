@@ -36,6 +36,27 @@ export class PacienteFormPageComponent implements OnInit {
   saving = signal(false);
   error: string | null = null;
 
+  // Datos de municipios/departamentos (DIVIPOLA simplificado - principales)
+  readonly departamentos = [
+    { codigo: '05', nombre: 'Antioquia' }, { codigo: '08', nombre: 'Atlántico' },
+    { codigo: '11', nombre: 'Bogotá D.C.' }, { codigo: '13', nombre: 'Bolívar' },
+    { codigo: '15', nombre: 'Boyacá' }, { codigo: '17', nombre: 'Caldas' },
+    { codigo: '18', nombre: 'Caquetá' }, { codigo: '19', nombre: 'Cauca' },
+    { codigo: '20', nombre: 'Cesar' }, { codigo: '23', nombre: 'Córdoba' },
+    { codigo: '25', nombre: 'Cundinamarca' }, { codigo: '27', nombre: 'Chocó' },
+    { codigo: '41', nombre: 'Huila' }, { codigo: '44', nombre: 'La Guajira' },
+    { codigo: '47', nombre: 'Magdalena' }, { codigo: '50', nombre: 'Meta' },
+    { codigo: '52', nombre: 'Nariño' }, { codigo: '54', nombre: 'Norte de Santander' },
+    { codigo: '63', nombre: 'Quindío' }, { codigo: '66', nombre: 'Risaralda' },
+    { codigo: '68', nombre: 'Santander' }, { codigo: '70', nombre: 'Sucre' },
+    { codigo: '73', nombre: 'Tolima' }, { codigo: '76', nombre: 'Valle del Cauca' },
+    { codigo: '81', nombre: 'Arauca' }, { codigo: '85', nombre: 'Casanare' },
+    { codigo: '86', nombre: 'Putumayo' }, { codigo: '88', nombre: 'San Andrés y Providencia' },
+    { codigo: '91', nombre: 'Amazonas' }, { codigo: '94', nombre: 'Guainía' },
+    { codigo: '95', nombre: 'Guaviare' }, { codigo: '97', nombre: 'Vaupés' },
+    { codigo: '99', nombre: 'Vichada' },
+  ];
+
   ngOnInit(): void {
     this.form = this.fb.group({
       tipoDocumento: ['CC'],
@@ -50,6 +71,18 @@ export class PacienteFormPageComponent implements OnInit {
       direccion: [''],
       epsId: [null],
       activo: [true],
+      // Campos normativos RIPS
+      departamentoResidencia: [''],
+      municipioResidencia: [''],
+      zonaResidencia: ['URBANA'],
+      regimenAfiliacion: [''],
+      tipoUsuario: [''],
+      contactoEmergenciaNombre: [''],
+      contactoEmergenciaTelefono: [''],
+      estadoCivil: [''],
+      escolaridad: [''],
+      ocupacion: [''],
+      pertenenciaEtnica: [''],
     });
 
     this.epsService.list().subscribe({ next: (list) => (this.epsList = list) });
@@ -74,6 +107,17 @@ export class PacienteFormPageComponent implements OnInit {
             direccion: p.direccion ?? '',
             epsId: p.epsId ?? null,
             activo: p.activo ?? true,
+            departamentoResidencia: p.departamentoResidencia ?? '',
+            municipioResidencia: p.municipioResidencia ?? '',
+            zonaResidencia: p.zonaResidencia ?? 'URBANA',
+            regimenAfiliacion: p.regimenAfiliacion ?? '',
+            tipoUsuario: p.tipoUsuario ?? '',
+            contactoEmergenciaNombre: p.contactoEmergenciaNombre ?? '',
+            contactoEmergenciaTelefono: p.contactoEmergenciaTelefono ?? '',
+            estadoCivil: p.estadoCivil ?? '',
+            escolaridad: p.escolaridad ?? '',
+            ocupacion: p.ocupacion ?? '',
+            pertenenciaEtnica: p.pertenenciaEtnica ?? '',
           });
           this.loadingPatient.set(false);
         },
@@ -108,6 +152,17 @@ export class PacienteFormPageComponent implements OnInit {
       email: val.email || undefined,
       direccion: val.direccion || undefined,
       epsId: val.epsId || undefined,
+      departamentoResidencia: val.departamentoResidencia || undefined,
+      municipioResidencia: val.municipioResidencia || undefined,
+      zonaResidencia: val.zonaResidencia || undefined,
+      regimenAfiliacion: val.regimenAfiliacion || undefined,
+      tipoUsuario: val.tipoUsuario || undefined,
+      contactoEmergenciaNombre: val.contactoEmergenciaNombre || undefined,
+      contactoEmergenciaTelefono: val.contactoEmergenciaTelefono || undefined,
+      estadoCivil: val.estadoCivil || undefined,
+      escolaridad: val.escolaridad || undefined,
+      ocupacion: val.ocupacion || undefined,
+      pertenenciaEtnica: val.pertenenciaEtnica || undefined,
     };
     const obs = this.isEdit && this.id
       ? this.pacienteService.update(this.id, dto)

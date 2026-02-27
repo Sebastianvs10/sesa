@@ -829,6 +829,15 @@
     &:disabled { opacity:.6; cursor:not-allowed; }
   }
 
+  &--pdf {
+    border-color: rgba(220,38,38,.3);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(220,38,38,.25);
+    &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(220,38,38,.4); }
+    &:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
+  }
+
   &--sm   { padding: .35rem .75rem; font-size: .8rem; }
   &--large { padding: .85rem 1.5rem; font-size: .95rem; width: 100%; justify-content: center; }
 }
@@ -990,4 +999,10 @@
 @media (max-width: 480px) {
   .hc-patient-avatar   { width: 56px; height: 56px; font-size: 1.1rem; }
   .hc-patient-name     { font-size: 1.1rem; }
+}
+
+/* ── Wrapper del tab de consentimiento ─────────────────────── */
+.hc-consentimiento-wrap {
+  padding: 16px;
+  animation: hc-fade-in 0.2s ease;
 }

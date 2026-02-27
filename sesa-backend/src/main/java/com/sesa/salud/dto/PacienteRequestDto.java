@@ -32,4 +32,16 @@ public class PacienteRequestDto {
     private Long epsId;
     @NotNull
     private Boolean activo = true;
+    // Campos normativos Res. 3374/2000 (RIPS)
+    private String municipioResidencia;
+    private String departamentoResidencia;
+    private String zonaResidencia;
+    private String regimenAfiliacion;
+    private String tipoUsuario;
+    private String contactoEmergenciaNombre;
+    private String contactoEmergenciaTelefono;
+    private String estadoCivil;
+    private String escolaridad;
+    private String ocupacion;
+    private String pertenenciaEtnica;
 }

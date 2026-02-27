@@ -215,6 +215,22 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'consulta-medica',
+    canActivate: [authGuard, roleGuard('CONSULTA_MEDICA')],
+    loadComponent: () =>
+      import('./features/consulta-medica/consulta-medica.page').then(
+        (m) => m.ConsultaMedicaPageComponent,
+      ),
+  },
+  {
+    path: 'odontologia',
+    canActivate: [authGuard, roleGuard('ODONTOLOGIA')],
+    loadComponent: () =>
+      import('./features/odontologia/odontologia.page').then(
+        (m) => m.OdontologiaPageComponent,
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'dashboard',
   },

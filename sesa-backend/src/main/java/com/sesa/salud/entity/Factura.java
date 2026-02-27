@@ -23,6 +23,9 @@ public class Factura {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "numero_factura", length = 50)
+    private String numeroFactura;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
@@ -46,6 +49,28 @@ public class Factura {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    // Campos normativos Decreto 4747/2007 + Res. 3047/2008 y RIPS Res. 3374/2000
+    @Column(name = "codigo_cups", length = 20)
+    private String codigoCups;
+
+    @Column(name = "descripcion_cups", length = 500)
+    private String descripcionCups;
+
+    @Column(name = "tipo_servicio", length = 40)
+    private String tipoServicio;
+
+    @Column(name = "responsable_pago", length = 30)
+    private String responsablePago;
+
+    @Column(name = "cuota_moderadora", precision = 14, scale = 2)
+    private BigDecimal cuotaModeradora;
+
+    @Column(name = "numero_autorizacion_eps", length = 60)
+    private String numeroAutorizacionEps;
+
+    @Column(name = "consecutive_counter")
+    private Long consecutiveCounter;
 
     @PrePersist
     protected void onCreate() {

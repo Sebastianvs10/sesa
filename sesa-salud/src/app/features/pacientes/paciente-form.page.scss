@@ -1,4 +1,50 @@
-/* Formulario de paciente - Premium Edition */
+/* Formulario de paciente — Ajuste normativo Res. 3374/2000, Res. 1995/1999 */
 /* Autor: Ing. J Sebastian Vargas S */
 
-/* (note: .sesa-form-grid, .sesa-form-actions, .sesa-error-banner are now in global styles.scss) */
+.pf-section {
+  margin-bottom: 2rem;
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pf-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--sesa-primary, #2563eb);
+  }
+
+  h2 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+    margin: 0;
+  }
+}
+
+.pf-norm-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sesa-primary, #2563eb) 12%, transparent);
+  color: var(--sesa-primary, #2563eb);
+  white-space: nowrap;
+}
+
+.sesa-form-grid {
+  padding: 1.25rem;
+  gap: 1rem;
+}
+
+/* (note: .sesa-form-grid, .sesa-form-actions, .sesa-error-banner are in global styles.scss) */

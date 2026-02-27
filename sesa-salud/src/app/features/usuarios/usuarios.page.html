@@ -108,7 +108,7 @@
         </div>
       </div>
 
-      <!-- §2 Rol -->
+      <!-- §2 Roles (multi-chip selector) -->
       <div class="up-form-section">
         <div class="up-section-title">
           <span class="up-section-dot up-dot--amber"></span>
@@ -116,19 +116,52 @@
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          Rol y permisos
+          Roles y permisos
+          <span class="up-section-hint">Seleccione uno o más roles</span>
         </div>
-        <div class="up-fields up-fields--1half">
-          <div class="up-field">
-            <label class="up-label">Rol de usuario <span class="up-required">*</span></label>
-            <select class="up-select" [(ngModel)]="selectedRol">
-              <option value="">Seleccione el rol…</option>
-              @for (r of roles; track r.value) {
-                <option [value]="r.value">{{ r.label }}</option>
-              }
-            </select>
+
+        <!-- Chips de roles -->
+        <div class="up-role-chips-grid">
+          @for (r of roles; track r.value) {
+            <button
+              type="button"
+              class="up-role-chip up-role-chip--{{ roleClass(r.value) }}"
+              [class.up-role-chip--selected]="isRoleSelected(r.value)"
+              (click)="toggleRole(r.value)"
+              [attr.aria-pressed]="isRoleSelected(r.value)"
+              [title]="r.label"
+            >
+              <span class="up-role-chip-check" aria-hidden="true">
+                @if (isRoleSelected(r.value)) {
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                } @else {
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+                    <circle cx="12" cy="12" r="9"/>
+                  </svg>
+                }
+              </span>
+              <span class="up-role-chip-label">{{ r.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Resumen de roles seleccionados -->
+        @if (selectedRoles().length > 0) {
+          <div class="up-roles-summary">
+            <span class="up-roles-summary-label">Roles asignados:</span>
+            @for (r of selectedRoles(); track r) {
+              <span class="up-role-badge up-role--{{ roleClass(r) }}">
+                {{ rolLabel(r) }}
+              </span>
+            }
           </div>
-        </div>
+        } @else {
+          <p class="up-roles-empty-hint">Seleccione al menos un rol para continuar.</p>
+        }
       </div>
 
       <!-- §3 Acceso -->
@@ -220,7 +253,7 @@
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Rol</th>
+              <th>Roles</th>
               <th>Estado</th>
               <th class="up-col-actions">Acciones</th>
             </tr>
@@ -237,7 +270,12 @@
                     </div>
                   </div>
                 </td>
-                <td><div class="up-skeleton" style="width:85px;height:1.3rem;border-radius:999px"></div></td>
+                <td>
+                  <div style="display:flex;gap:0.3rem">
+                    <div class="up-skeleton" style="width:72px;height:1.3rem;border-radius:999px"></div>
+                    <div class="up-skeleton" style="width:58px;height:1.3rem;border-radius:999px"></div>
+                  </div>
+                </td>
                 <td><div class="up-skeleton" style="width:60px;height:1.2rem;border-radius:999px"></div></td>
                 <td class="up-col-actions">
                   <div class="up-row-actions">
@@ -265,7 +303,7 @@
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Rol</th>
+              <th>Roles</th>
               <th>Estado</th>
               <th class="up-col-actions">Acciones</th>
             </tr>
@@ -284,10 +322,17 @@
                     </div>
                   </div>
                 </td>
+                <!-- Cada rol como badge independiente -->
                 <td>
-                  <span class="up-role-badge up-role--{{ roleClass(u.roles[0]) }}">
-                    {{ u.roles.join(', ') || '—' }}
-                  </span>
+                  <div class="up-roles-badges">
+                    @for (r of u.roles; track r) {
+                      <span class="up-role-badge up-role--{{ roleClass(r) }}">
+                        {{ rolLabel(r) }}
+                      </span>
+                    } @empty {
+                      <span class="up-text-muted">—</span>
+                    }
+                  </div>
                 </td>
                 <td>
                   <span class="up-status" [class.up-status--active]="u.activo" [class.up-status--inactive]="!u.activo">

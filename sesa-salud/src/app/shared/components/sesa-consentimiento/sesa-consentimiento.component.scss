@@ -1,0 +1,389 @@
+/* Componente Consentimiento Informado — Ley 23/1981 */
+/* Autor: Ing. J Sebastian Vargas S */
+
+@keyframes consent-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes consent-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Panel principal ──────────────────────────────────────────────── */
+.consent-panel {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 14px;
+  overflow: hidden;
+  animation: consent-fade-in 0.25s ease;
+
+  &--compact {
+    border-radius: 10px;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.consent-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  flex-wrap: wrap;
+}
+
+.consent-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.consent-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 20px; height: 20px; color: #1d4ed8; }
+
+  [data-theme='dark'] & {
+    background: rgba(29, 78, 216, 0.2);
+    svg { color: #93c5fd; }
+  }
+}
+
+.consent-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+}
+
+.consent-subtitle {
+  font-size: 11px;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+}
+
+.consent-stats {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.consent-stat {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+
+  &--pending {
+    background: #fef9c3;
+    color: #854d0e;
+    [data-theme='dark'] & { background: rgba(133,77,14,0.2); color: #fde68a; }
+  }
+  &--ok {
+    background: #dcfce7;
+    color: #166534;
+    [data-theme='dark'] & { background: rgba(22,101,52,0.2); color: #86efac; }
+  }
+}
+
+/* ── Botón agregar ─────────────────────────────────────────────────── */
+.consent-btn-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover { background: #1d4ed8; }
+}
+
+/* ── Formulario ────────────────────────────────────────────────────── */
+.consent-form-wrap {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  animation: consent-fade-in 0.2s ease;
+}
+
+.consent-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 14px;
+}
+
+.consent-tipos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.consent-tipo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border: 1.5px solid var(--sesa-border);
+  border-radius: 10px;
+  background: var(--sesa-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: #93c5fd; background: var(--sesa-bg); }
+
+  &--active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    [data-theme='dark'] & { background: rgba(37,99,235,0.15); }
+  }
+}
+
+.consent-tipo-icon { font-size: 20px; }
+.consent-tipo-label { font-size: 11px; font-weight: 600; color: var(--sesa-text-primary); text-align: center; }
+
+.consent-field {
+  margin-bottom: 12px;
+}
+
+.consent-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-bottom: 5px;
+}
+
+.consent-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: 8px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  box-sizing: border-box;
+
+  &:focus { border-color: #2563eb; }
+}
+
+.consent-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.consent-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &--ghost {
+    background: transparent;
+    border: 1px solid var(--sesa-border);
+    color: var(--sesa-text-primary);
+    &:hover { background: var(--sesa-bg); }
+  }
+
+  &--primary {
+    background: #2563eb;
+    color: #fff;
+    &:hover { background: #1d4ed8; }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+}
+
+/* ── Loading ───────────────────────────────────────────────────────── */
+.consent-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 20px;
+  font-size: 13px;
+  color: var(--sesa-text-secondary);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.consent-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 20px;
+  text-align: center;
+
+  svg { width: 40px; height: 40px; color: var(--sesa-text-secondary); opacity: 0.4; }
+  p { font-size: 13.5px; font-weight: 600; color: var(--sesa-text-primary); margin: 0; }
+  span { font-size: 11.5px; color: var(--sesa-text-secondary); max-width: 320px; }
+}
+
+/* ── Lista de consentimientos ────────────────────────────────────────── */
+.consent-list {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.consent-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  background: var(--sesa-surface);
+  transition: border-color 0.15s;
+  animation: consent-fade-in 0.2s ease;
+
+  &--firmado { border-color: #bbf7d0; [data-theme='dark'] & { border-color: rgba(22,163,74,0.3); } }
+  &--rechazado { border-color: #fecaca; [data-theme='dark'] & { border-color: rgba(220,38,38,0.3); } }
+}
+
+.consent-item-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.consent-item-info { flex: 1; min-width: 0; }
+
+.consent-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.consent-item-tipo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.consent-item-proc {
+  font-size: 12px;
+  color: var(--sesa-text-secondary);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.consent-item-meta {
+  font-size: 11px;
+  color: var(--sesa-text-secondary);
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Badges estado ─────────────────────────────────────────────────── */
+.consent-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+
+  &--pending   { background: #fef9c3; color: #854d0e; [data-theme='dark'] & { background: rgba(133,77,14,0.2); color: #fde68a; } }
+  &--ok        { background: #dcfce7; color: #166534; [data-theme='dark'] & { background: rgba(22,101,52,0.2); color: #86efac; } }
+  &--danger    { background: #fee2e2; color: #991b1b; [data-theme='dark'] & { background: rgba(153,27,27,0.2); color: #fca5a5; } }
+  &--secondary { background: #f1f5f9; color: #475569; [data-theme='dark'] & { background: rgba(71,85,105,0.2); color: #94a3b8; } }
+}
+
+/* ── Acciones por item ─────────────────────────────────────────────── */
+.consent-item-actions {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.consent-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: all 0.15s;
+
+  svg { width: 14px; height: 14px; }
+
+  &--ok {
+    background: #dcfce7;
+    color: #166534;
+    &:hover { background: #bbf7d0; }
+    [data-theme='dark'] & { background: rgba(22,101,52,0.2); color: #86efac; &:hover { background: rgba(22,101,52,0.35); } }
+  }
+
+  &--danger {
+    background: #fee2e2;
+    color: #991b1b;
+    &:hover { background: #fecaca; }
+    [data-theme='dark'] & { background: rgba(153,27,27,0.2); color: #fca5a5; &:hover { background: rgba(153,27,27,0.35); } }
+  }
+
+  &--delete {
+    background: transparent;
+    color: var(--sesa-text-secondary);
+    border: 1px solid var(--sesa-border);
+    padding: 5px;
+    &:hover { color: #dc2626; border-color: #dc2626; }
+  }
+}
+
+/* ── Spinner ───────────────────────────────────────────────────────── */
+.consent-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: consent-spin 0.65s linear infinite;
+  flex-shrink: 0;
+
+  &--primary {
+    border-color: var(--sesa-border);
+    border-top-color: #2563eb;
+  }
+}

@@ -1,136 +1,525 @@
-/* Mi empresa - logo y datos de la organización */
+/* Mi empresa — diseño premium */
 /* Autor: Ing. J Sebastian Vargas S */
 
-.sesa-mi-empresa {
+// ── Variables locales ────────────────────────────────────────────────────────
+$hero-h: 220px;
+$radius-card: 18px;
+$radius-inner: 14px;
+$drop-radius: 16px;
+
+// ── Contenedor principal ─────────────────────────────────────────────────────
+.emp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+// ── HERO ─────────────────────────────────────────────────────────────────────
+.emp-hero {
+  position: relative;
+  height: $hero-h;
+  border-radius: $radius-card $radius-card 0 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.emp-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--sesa-primary) 0%, #1a4a7a 55%, var(--sesa-secondary) 100%);
+
+  // Ondas decorativas con pseudo-elementos
+  &::before {
+    content: '';
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 70%);
+    top: -140px;
+    right: -80px;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(43,176,166,.18) 0%, transparent 70%);
+    bottom: -60px;
+    left: -40px;
+    pointer-events: none;
+  }
+}
+
+.emp-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 1.75rem 2rem;
+  width: 100%;
+}
+
+// Logo en el hero
+.emp-hero-logo-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.emp-hero-logo-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: $radius-inner;
+  background: rgba(255,255,255,.12);
+  border: 2px solid rgba(255,255,255,.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,.25), 0 0 0 4px rgba(255,255,255,.08);
+  backdrop-filter: blur(4px);
+  transition: transform var(--sesa-transition), box-shadow var(--sesa-transition);
+
+  &--local {
+    // Indica que es preview del archivo local (aún no subido)
+    box-shadow: 0 8px 32px rgba(43,176,166,.4), 0 0 0 4px rgba(43,176,166,.25);
+  }
+}
+
+.emp-hero-logo-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: $radius-inner;
+  background: rgba(255,255,255,.1);
+  border: 2px dashed rgba(255,255,255,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.7);
+
+  svg {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.emp-hero-badge {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sesa-accent);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(43,176,166,.4);
+}
+
+.emp-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.emp-hero-name {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+
+.emp-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.9);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,.18);
+  width: fit-content;
+}
+
+.emp-hero-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74,222,128,.3);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(74,222,128,.3); }
+  50%       { box-shadow: 0 0 0 5px rgba(74,222,128,.1); }
+}
+
+// ── SECCIÓN ───────────────────────────────────────────────────────────────────
+.emp-section {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-top: none;
+  border-radius: 0 0 $radius-card $radius-card;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  box-shadow: var(--sesa-shadow-md);
 }
 
-.sesa-page-header {
-  margin-bottom: 0.25rem;
+.emp-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.sesa-page-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.5rem;
+.emp-section-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(31,106,225,.1), rgba(43,176,166,.08));
+  border: 1px solid rgba(31,106,225,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--sesa-secondary);
+
+  svg { width: 20px; height: 20px; }
+}
+
+.emp-section-title {
+  margin: 0 0 0.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: var(--sesa-text-primary);
 }
 
-.sesa-page-subtitle {
+.emp-section-sub {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--sesa-text-secondary);
 }
 
-.sesa-mi-empresa-content {
+// ── FIELD ─────────────────────────────────────────────────────────────────────
+.emp-field {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.5rem;
 }
 
-.sesa-mi-empresa-preview {
+.emp-field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.emp-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.emp-select-icon {
+  position: absolute;
+  left: 0.875rem;
+  width: 16px;
+  height: 16px;
+  color: var(--sesa-text-secondary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.emp-select {
+  width: 100%;
+  max-width: 440px;
+  padding: 0.6875rem 0.875rem 0.6875rem 2.5rem;
+  border-radius: $radius-inner;
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.9375rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--sesa-transition), box-shadow var(--sesa-transition);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.25rem;
+
+  &:focus {
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 3px rgba(31,106,225,.12);
+  }
+}
+
+// ── DROP ZONE ─────────────────────────────────────────────────────────────────
+.emp-dropzone {
+  position: relative;
+  border: 2px dashed var(--sesa-border);
+  border-radius: $drop-radius;
+  background: var(--sesa-bg);
+  cursor: pointer;
+  transition:
+    border-color var(--sesa-transition),
+    background var(--sesa-transition),
+    box-shadow var(--sesa-transition);
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--sesa-secondary);
+    background: color-mix(in srgb, var(--sesa-secondary) 3%, var(--sesa-bg));
+
+    .emp-dropzone-link { text-decoration: underline; }
+    .emp-dropzone-icon { transform: translateY(-3px); }
+  }
+
+  &--over {
+    border-color: var(--sesa-accent);
+    background: color-mix(in srgb, var(--sesa-accent) 6%, var(--sesa-bg));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--sesa-accent) 15%, transparent);
+
+    .emp-dropzone-icon { transform: translateY(-6px) scale(1.1); }
+  }
+
+  &--filled {
+    border-style: solid;
+    border-color: var(--sesa-secondary);
+    background: color-mix(in srgb, var(--sesa-secondary) 4%, var(--sesa-bg));
+    cursor: default;
+  }
+}
+
+.emp-dropzone-input {
+  display: none;
+}
+
+.emp-dropzone-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  gap: 0.375rem;
+  text-align: center;
+}
+
+.emp-dropzone-icon {
+  color: var(--sesa-text-muted);
+  transition: transform var(--sesa-transition);
+  svg { width: 48px; height: 48px; }
+
+  &--over { color: var(--sesa-accent); }
+}
+
+.emp-dropzone-title {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.emp-dropzone-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+
+.emp-dropzone-link {
+  color: var(--sesa-secondary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.emp-dropzone-formats {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sesa-text-muted);
+  letter-spacing: 0.02em;
+}
+
+// Estado con archivo seleccionado
+.emp-dropzone-selected {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  background: var(--sesa-bg);
-  border-radius: 12px;
-  border: 1px solid var(--sesa-border);
+  padding: 1.125rem 1.25rem;
 }
 
-.sesa-mi-empresa-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: var(--sesa-surface);
-}
-
-.sesa-mi-empresa-logo-placeholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  background: var(--sesa-border);
+.emp-dropzone-file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sesa-secondary) 12%, var(--sesa-surface));
+  border: 1px solid color-mix(in srgb, var(--sesa-secondary) 20%, var(--sesa-border));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  color: var(--sesa-text-secondary);
+  flex-shrink: 0;
+  color: var(--sesa-secondary);
+
+  svg { width: 20px; height: 20px; }
 }
 
-.sesa-mi-empresa-nombre {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--sesa-text-primary);
-}
-
-.sesa-mi-empresa-upload {
+.emp-dropzone-file-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.2rem;
 }
 
-.sesa-mi-empresa-label {
+.emp-dropzone-filename {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--sesa-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sesa-mi-empresa-hint {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--sesa-text-secondary);
-}
-
-.sesa-mi-empresa-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.sesa-mi-empresa-input {
-  font-size: 0.875rem;
-  color: var(--sesa-text-primary);
-}
-
-.sesa-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  background: var(--sesa-secondary);
-  color: #fff;
-}
-
-.sesa-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.sesa-btn-primary {
-  background: var(--sesa-secondary);
-}
-
-.sesa-mi-empresa-filename {
-  margin: 0;
+.emp-dropzone-filesize {
   font-size: 0.8125rem;
   color: var(--sesa-text-secondary);
 }
 
-.sesa-mi-empresa-error {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--sesa-error);
+.emp-dropzone-clear {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--sesa-transition), color var(--sesa-transition);
+  flex-shrink: 0;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover {
+    background: var(--sesa-error-bg);
+    color: var(--sesa-error);
+    border-color: var(--sesa-error);
+  }
 }
 
-.sesa-mi-empresa-success {
-  margin: 0;
+// ── FEEDBACK ──────────────────────────────────────────────────────────────────
+.emp-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border-radius: $radius-inner;
   font-size: 0.875rem;
-  color: var(--sesa-success);
+  font-weight: 500;
+
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  &--error {
+    background: var(--sesa-error-bg);
+    color: var(--sesa-error);
+    border: 1px solid var(--sesa-error-border);
+  }
+
+  &--success {
+    background: var(--sesa-success-bg);
+    color: var(--sesa-success);
+    border: 1px solid var(--sesa-success-border);
+  }
+}
+
+// ── ACCIONES ─────────────────────────────────────────────────────────────────
+.emp-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.emp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6875rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--sesa-secondary), #1558c9);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(31,106,225,.35);
+  transition:
+    box-shadow var(--sesa-transition),
+    transform var(--sesa-transition-fast),
+    opacity var(--sesa-transition);
+
+  svg { width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(31,106,225,.45);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(31,106,225,.3);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+// Spinner de carga
+.emp-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── SOLO LECTURA ─────────────────────────────────────────────────────────────
+.emp-readonly-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: $radius-inner;
+  background: color-mix(in srgb, var(--sesa-border) 30%, var(--sesa-bg));
+  border: 1px solid var(--sesa-border);
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+
+  svg { width: 18px; height: 18px; flex-shrink: 0; }
 }

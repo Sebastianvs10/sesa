@@ -29,17 +29,18 @@ export interface PageResponse<T> {
 }
 
 export const ROLES_USUARIO = [
-  { value: 'SUPERADMINISTRADOR', label: 'Super Usuario' },
-  { value: 'ADMIN', label: 'Administrador del Sistema' },
-  { value: 'MEDICO', label: 'Médico' },
-  { value: 'ODONTOLOGO', label: 'Odontólogo/a' },
-  { value: 'BACTERIOLOGO', label: 'Bacteriólogo' },
-  { value: 'ENFERMERO', label: 'Enfermero/a' },
-  { value: 'JEFE_ENFERMERIA', label: 'Jefe de Enfermería' },
+  { value: 'SUPERADMINISTRADOR',  label: 'Super Usuario' },
+  { value: 'ADMIN',               label: 'Administrador del Sistema' },
+  { value: 'MEDICO',              label: 'Médico' },
+  { value: 'COORDINADOR_MEDICO',  label: 'Coordinador Médico' },
+  { value: 'ODONTOLOGO',          label: 'Odontólogo/a' },
+  { value: 'BACTERIOLOGO',        label: 'Bacteriólogo' },
+  { value: 'ENFERMERO',           label: 'Enfermero/a' },
+  { value: 'JEFE_ENFERMERIA',     label: 'Jefe de Enfermería' },
   { value: 'AUXILIAR_ENFERMERIA', label: 'Auxiliar de Enfermería' },
-  { value: 'PSICOLOGO', label: 'Psicólogo' },
-  { value: 'REGENTE_FARMACIA', label: 'Regente de Farmacia' },
-  { value: 'RECEPCIONISTA', label: 'Recepcionista' },
+  { value: 'PSICOLOGO',           label: 'Psicólogo' },
+  { value: 'REGENTE_FARMACIA',    label: 'Regente de Farmacia' },
+  { value: 'RECEPCIONISTA',       label: 'Recepcionista' },
 ] as const;
 
 @Injectable({ providedIn: 'root' })

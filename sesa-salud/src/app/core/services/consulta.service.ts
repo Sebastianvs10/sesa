@@ -9,6 +9,7 @@ export interface ConsultaDto {
   pacienteNombre: string;
   profesionalId?: number;
   profesionalNombre?: string;
+  profesionalTarjetaProfesional?: string;
   citaId?: number;
   motivoConsulta?: string;
   enfermedadActual?: string;
@@ -16,6 +17,27 @@ export interface ConsultaDto {
   antecedentesFamiliares?: string;
   alergias?: string;
   fechaConsulta?: string;
+  // Campos normativos
+  tipoConsulta?: string;
+  codigoCie10?: string;
+  codigoCie10Secundario?: string;
+  dolorEva?: string;
+  perimetroAbdominal?: string;
+  perimetroCefalico?: string;
+  saturacionO2?: string;
+  presionArterial?: string;
+  frecuenciaCardiaca?: string;
+  frecuenciaRespiratoria?: string;
+  temperatura?: string;
+  peso?: string;
+  talla?: string;
+  imc?: string;
+  hallazgosExamen?: string;
+  diagnostico?: string;
+  planTratamiento?: string;
+  tratamientoFarmacologico?: string;
+  observacionesClincias?: string;
+  recomendaciones?: string;
 }
 
 export interface ConsultaRequestDto {
@@ -27,6 +49,27 @@ export interface ConsultaRequestDto {
   antecedentesPersonales?: string;
   antecedentesFamiliares?: string;
   alergias?: string;
+  // Campos normativos
+  tipoConsulta?: string;
+  codigoCie10?: string;
+  codigoCie10Secundario?: string;
+  dolorEva?: string;
+  perimetroAbdominal?: string;
+  perimetroCefalico?: string;
+  saturacionO2?: string;
+  presionArterial?: string;
+  frecuenciaCardiaca?: string;
+  frecuenciaRespiratoria?: string;
+  temperatura?: string;
+  peso?: string;
+  talla?: string;
+  imc?: string;
+  hallazgosExamen?: string;
+  diagnostico?: string;
+  planTratamiento?: string;
+  tratamientoFarmacologico?: string;
+  observacionesClincias?: string;
+  recomendaciones?: string;
 }
 
 @Injectable({ providedIn: 'root' })

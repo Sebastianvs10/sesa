@@ -127,18 +127,53 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "CREATE INDEX IF NOT EXISTS idx_nd_notificacion_id      ON notificacion_destinatarios(notificacion_id)"
     );
 
+    // ── Multi-rol Personal ────────────────────────────────────────────────────
+    private static final String DDL_PERSONAL_ROLES = """
+            CREATE TABLE IF NOT EXISTS personal_roles (
+                personal_id BIGINT NOT NULL,
+                rol         VARCHAR(50) NOT NULL,
+                PRIMARY KEY (personal_id, rol),
+                CONSTRAINT fk_personal_roles_personal FOREIGN KEY (personal_id) REFERENCES personal(id) ON DELETE CASCADE
+            )
+            """;
+
+    // ── Migraciones de columnas (ALTER TABLE idempotentes) ───────────────────
+    // Columnas normativas del módulo Personal (Res. 2003/2014, Ley 23/1981, Res. 1449/2016)
+    private static final List<String> DDL_PERSONAL_MIGRATIONS = List.of(
+            // existentes
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS tarjeta_profesional VARCHAR(30)",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS especialidad_formal VARCHAR(150)",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS numero_rethus VARCHAR(30)",
+            // nuevas — tipo de documento (Res. 3374/2000 RIPS)
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS tipo_documento VARCHAR(10)",
+            // nuevas — datos demográficos (RIPS / SISPRO)
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS sexo VARCHAR(10)",
+            // nuevas — lugar de práctica (Res. 2003/2014 habilitación)
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS municipio VARCHAR(10)",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS departamento VARCHAR(10)",
+            // nuevas — vínculo laboral (Circular 047/2007 Min. Protección Social)
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS tipo_vinculacion VARCHAR(30)",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS fecha_ingreso DATE",
+            "ALTER TABLE personal ADD COLUMN IF NOT EXISTS fecha_retiro DATE"
+    );
+
     @Override
     public void run(String... args) {
+        // Aplicar también en schema public (usuarios superadmin)
+        try {
+            applyDdlToSchema(TenantContextHolder.PUBLIC);
+            log.info("TenantSchemaInitializer: schema 'public' verificado/actualizado");
+        } catch (Exception ex) {
+            log.error("TenantSchemaInitializer: error al aplicar DDL en schema 'public': {}", ex.getMessage());
+        }
+
         List<String> schemas = empresaRepository.findAll()
                 .stream()
                 .filter(e -> Boolean.TRUE.equals(e.getActivo()))
                 .map(e -> e.getSchemaName())
+                .filter(s -> !TenantContextHolder.PUBLIC.equalsIgnoreCase(s))
                 .toList();
-
-        if (schemas.isEmpty()) {
-            log.info("TenantSchemaInitializer: no hay empresas activas, omitiendo");
-            return;
-        }
 
         for (String schema : schemas) {
             try {
@@ -168,6 +203,12 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 // índices
                 for (String idx : DDL_INDEXES) {
                     stmt.execute(idx);
+                }
+                // multi-rol personal
+                stmt.execute(DDL_PERSONAL_ROLES);
+                // migraciones de columnas faltantes en tablas existentes
+                for (String migration : DDL_PERSONAL_MIGRATIONS) {
+                    stmt.execute(migration);
                 }
                 conn.commit();
             } catch (SQLException e) {

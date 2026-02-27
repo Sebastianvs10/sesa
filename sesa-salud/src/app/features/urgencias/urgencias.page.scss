@@ -1,25 +1,916 @@
-/* Urgencias - página y cabecera */
+/* Urgencias — Workbench Clínico Multi-Rol */
 /* Autor: Ing. J Sebastian Vargas S */
 
-.sesa-page {
+// ── Variables locales de triage (Manchester) ────────────────────────────────
+$triage-i:   #e53935; // Rojo — Resucitación
+$triage-ii:  #fb8c00; // Naranja — Emergencia
+$triage-iii: #f9a825; // Amarillo — Urgente
+$triage-iv:  #43a047; // Verde — Menos urgente
+$triage-v:   #1e88e5; // Azul — No urgente
+
+// ── Layout base ─────────────────────────────────────────────────────────────
+.urg-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--sesa-bg);
+  color: var(--sesa-text-primary);
+  overflow: hidden;
+}
+
+// ── Header ──────────────────────────────────────────────────────────────────
+.urg-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #c62828 0%, #ef5350 60%, #ff7043 100%);
+  color: #fff;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 180px;
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    p {
+      font-size: 0.78rem;
+      margin: 0;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  &__icon {
+    width: 42px;
+    height: 42px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    svg { width: 22px; height: 22px; }
+  }
+
+  &__stats {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+}
+
+.urg-stat {
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  text-align: center;
+  min-width: 60px;
+
+  &__num {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  &__label {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    opacity: 0.85;
+    letter-spacing: 0.04em;
+  }
+  &--espera  { background: rgba(255,193,7,0.3); }
+  &--atencion { background: rgba(76,175,80,0.3); }
+  &--critico { background: rgba(244,67,54,0.4); }
+}
+
+// ── Botones generales ────────────────────────────────────────────────────────
+.urg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+
+  svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &--primary {
+    background: #fff;
+    color: #c62828;
+    &:hover:not(:disabled) { background: #ffeaea; transform: translateY(-1px); }
+  }
+  &--refresh {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+    &.active { background: rgba(255,255,255,0.35); }
+    &:hover:not(:disabled) { background: rgba(255,255,255,0.28); }
+  }
+  &--ghost {
+    background: transparent;
+    color: var(--sesa-text-secondary);
+    border: 1px solid var(--sesa-border);
+    &:hover { background: var(--sesa-surface); }
+  }
+  &--enfermeria {
+    background: #7b1fa2;
+    color: #fff;
+    &:hover:not(:disabled) { background: #9c27b0; }
+  }
+}
+
+// ── Toolbar filtros ──────────────────────────────────────────────────────────
+.urg-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-thumb { background: var(--sesa-border); border-radius: 2px; }
+}
+
+.urg-triage-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.urg-triage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--sesa-bg);
+  color: var(--sesa-text-secondary);
+  transition: all 0.15s;
+
+  .urg-triage-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--todos.active  { background: var(--sesa-text-primary); color: var(--sesa-bg); }
+  &--i   { &.active { background: $triage-i;   color: #fff; border-color: $triage-i;   } &:hover { border-color: $triage-i;   } .urg-triage-dot { background: $triage-i;   } }
+  &--ii  { &.active { background: $triage-ii;  color: #fff; border-color: $triage-ii;  } &:hover { border-color: $triage-ii;  } .urg-triage-dot { background: $triage-ii;  } }
+  &--iii { &.active { background: $triage-iii; color: #333; border-color: $triage-iii; } &:hover { border-color: $triage-iii; } .urg-triage-dot { background: $triage-iii; } }
+  &--iv  { &.active { background: $triage-iv;  color: #fff; border-color: $triage-iv;  } &:hover { border-color: $triage-iv;  } .urg-triage-dot { background: $triage-iv;  } }
+  &--v   { &.active { background: $triage-v;   color: #fff; border-color: $triage-v;   } &:hover { border-color: $triage-v;   } .urg-triage-dot { background: $triage-v;   } }
+}
+
+.urg-estado-chips {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.urg-chip {
+  padding: 0.28rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-secondary);
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &.active, &:hover {
+    background: var(--sesa-text-primary);
+    color: var(--sesa-bg);
+    border-color: var(--sesa-text-primary);
+  }
+}
+
+.urg-search {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--sesa-input-bg);
+  border: 1px solid var(--sesa-input-border);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+
+  svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--sesa-text-secondary); }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.82rem;
+    color: var(--sesa-text-primary);
+    &::placeholder { color: var(--sesa-input-placeholder); }
+  }
+}
+
+// ── Workbench (split panel) ──────────────────────────────────────────────────
+.urg-workbench {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// ── Lista izquierda ──────────────────────────────────────────────────────────
+.urg-list {
+  width: 380px;
+  min-width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: var(--sesa-border); border-radius: 2px; }
+}
+
+.urg-loading, .urg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: var(--sesa-text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+  svg { width: 36px; height: 36px; opacity: 0.4; }
+}
+
+// ── Tarjeta de urgencia ──────────────────────────────────────────────────────
+.urg-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--sesa-bg);
+  transition: all 0.15s;
+
+  &:hover { border-color: var(--sesa-border); transform: translateX(2px); }
+  &.selected { border-color: #c62828; background: rgba(198,40,40,0.06); }
+
+  &__avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    color: #fff;
+  }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  &__nombre {
+    font-weight: 600;
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__sub {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.2rem;
+  }
+
+  &__doc { font-size: 0.74rem; color: var(--sesa-text-secondary); }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+  }
+
+  &__ingreso { font-size: 0.7rem; color: var(--sesa-text-secondary); }
+}
+
+// ── Badges triage ────────────────────────────────────────────────────────────
+.urg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--lg { padding: 0.3rem 0.75rem; font-size: 0.78rem; border-radius: 8px; }
+}
+
+.triage-i   { background: $triage-i;   }
+.triage-ii  { background: $triage-ii;  }
+.triage-iii { background: $triage-iii; color: #333 !important; }
+.triage-iv  { background: $triage-iv;  }
+.triage-v   { background: $triage-v;   }
+
+// Triage I: glow animation
+.triage-i.urg-badge {
+  animation: triage-glow 1.5s ease-in-out infinite alternate;
+}
+@keyframes triage-glow {
+  from { box-shadow: 0 0 4px rgba(229,57,53,0.5); }
+  to   { box-shadow: 0 0 12px rgba(229,57,53,0.9), 0 0 20px rgba(229,57,53,0.4); }
+}
+
+// Badges de estado
+.urg-badge--estado { border-radius: 20px; }
+.estado-espera      { background: #607d8b; }
+.estado-atencion    { background: #1976d2; }
+.estado-observacion { background: #7b1fa2; }
+.estado-alta        { background: #2e7d32; }
+.estado-hospitalizado { background: #e65100; }
+.estado-referido    { background: #795548; }
+
+// ── Tiempo de espera ─────────────────────────────────────────────────────────
+.urg-tiempo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+
+  svg { width: 10px; height: 10px; }
+
+  &.tiempo-ok     { color: $triage-iv; }
+  &.tiempo-alerta { color: $triage-ii; }
+  &.tiempo-critico { color: $triage-i; animation: pulse 1s infinite; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// ── Panel derecho ────────────────────────────────────────────────────────────
+.urg-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--sesa-bg);
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: var(--sesa-border); border-radius: 2px; }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+    color: var(--sesa-text-secondary);
+    text-align: center;
+    padding: 2rem;
+
+    svg { width: 56px; height: 56px; opacity: 0.25; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 0; }
+    p  { font-size: 0.85rem; max-width: 280px; margin: 0; }
+  }
+
+  &__content { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+}
+
+.urg-patient-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--sesa-surface);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--sesa-border);
+  flex-wrap: wrap;
+}
+
+.urg-patient-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.urg-patient-info {
+  flex: 1;
+  min-width: 150px;
+  h2 { font-size: 1rem; font-weight: 700; margin: 0 0 0.25rem; }
+  p  { font-size: 0.8rem; color: var(--sesa-text-secondary); margin: 0.1rem 0; }
+  .obs { font-style: italic; }
+}
+
+.urg-patient-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+
+// ── Secciones ────────────────────────────────────────────────────────────────
+.urg-section {
+  background: var(--sesa-surface);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--sesa-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &--info { padding: 0; border: none; background: transparent; }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    margin: 0;
+    svg { width: 15px; height: 15px; color: #c62828; }
+  }
+}
+
+// ── Botones de estado ────────────────────────────────────────────────────────
+.urg-estado-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.urg-estado-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.65;
+  transition: all 0.15s;
+  color: #fff;
+
+  &.active { opacity: 1; transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  &:hover:not(:disabled):not(.active) { opacity: 0.9; transform: scale(1.02); }
+  &:disabled { cursor: not-allowed; }
+
+  &.estado-espera      { background: #607d8b; border-color: #607d8b; }
+  &.estado-atencion    { background: #1976d2; border-color: #1976d2; }
+  &.estado-observacion { background: #7b1fa2; border-color: #7b1fa2; }
+  &.estado-alta        { background: #2e7d32; border-color: #2e7d32; }
+  &.estado-hospitalizado { background: #e65100; border-color: #e65100; }
+  &.estado-referido    { background: #795548; border-color: #795548; }
+}
+
+// ── Tabs médico / enfermería ─────────────────────────────────────────────────
+.urg-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--sesa-border);
+  flex-shrink: 0;
+}
+
+.urg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+  svg { width: 14px; height: 14px; }
+
+  &.active {
+    color: #c62828;
+    border-bottom-color: #c62828;
+  }
+  &:hover:not(.active) { color: var(--sesa-text-primary); }
+}
+
+.urg-tab-content {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.sesa-page-header {
-  margin-bottom: 0.5rem;
-}
-
-.sesa-page-title {
-  margin: 0 0 0.25rem;
-  font-size: 1.35rem;
-  font-weight: 600;
+// ── No atención aviso ────────────────────────────────────────────────────────
+.urg-no-atencion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.4);
+  border-radius: 10px;
   color: var(--sesa-text-primary);
+
+  svg { width: 22px; height: 22px; flex-shrink: 0; color: #fb8c00; margin-top: 1px; }
+  p  { font-size: 0.82rem; margin: 0; line-height: 1.5; }
 }
 
-.sesa-page-subtitle {
-  margin: 0;
-  font-size: 0.9rem;
+// ── Formularios ──────────────────────────────────────────────────────────────
+.urg-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--sesa-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input, textarea {
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1.5px solid var(--sesa-input-border);
+    background: var(--sesa-input-bg);
+    color: var(--sesa-text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.15s;
+    &:focus { outline: none; border-color: #c62828; }
+    &::placeholder { color: var(--sesa-input-placeholder); }
+  }
+}
+
+// ── Timeline ─────────────────────────────────────────────────────────────────
+.urg-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 0.5rem;
+}
+
+.urg-timeline-item {
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  position: relative;
+
+  &:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 14px;
+    bottom: 0;
+    width: 2px;
+    background: var(--sesa-border);
+  }
+}
+
+.urg-timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px var(--sesa-border);
+
+  &--medico    { background: #1976d2; box-shadow: 0 0 0 2px #1976d2; }
+  &--enfermeria { background: #7b1fa2; box-shadow: 0 0 0 2px #7b1fa2; }
+}
+
+.urg-timeline-body {
+  flex: 1;
+  background: var(--sesa-bg);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--sesa-border);
+}
+
+.urg-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.urg-timeline-profesional {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.urg-timeline-fecha {
+  font-size: 0.72rem;
   color: var(--sesa-text-secondary);
+}
+
+.urg-timeline-nota {
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+// ── Spinners ─────────────────────────────────────────────────────────────────
+.urg-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--sesa-border);
+  border-top-color: #c62828;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.urg-spinner-sm {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Slide-over (nuevo ingreso) ───────────────────────────────────────────────
+.urg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+}
+
+.urg-slideover {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 100vw;
+  background: var(--sesa-bg);
+  border-left: 1px solid var(--sesa-border);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.2);
+  animation: slideIn 0.25s ease;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    flex-shrink: 0;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+      svg { width: 18px; height: 18px; color: #c62828; }
+    }
+  }
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: var(--sesa-border); border-radius: 2px; }
+  }
+
+  &__footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    flex-shrink: 0;
+  }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.urg-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  color: var(--sesa-text-secondary);
+  transition: all 0.15s;
+  svg { width: 18px; height: 18px; display: block; }
+  &:hover { background: var(--sesa-bg); color: var(--sesa-text-primary); }
+}
+
+// ── Búsqueda de pacientes ─────────────────────────────────────────────────────
+.urg-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--sesa-input-bg);
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.85rem;
+    color: var(--sesa-text-primary);
+    &::placeholder { color: var(--sesa-input-placeholder); }
+  }
+}
+
+.urg-paciente-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
+
+  li {
+    cursor: pointer;
+    transition: background 0.12s;
+    &:hover { background: var(--sesa-bg); }
+    & + li { border-top: 1px solid var(--sesa-border); }
+  }
+}
+
+.urg-paciente-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+
+  strong { display: block; font-size: 0.82rem; font-weight: 600; }
+  span   { display: block; font-size: 0.74rem; color: var(--sesa-text-secondary); }
+}
+
+.urg-mini-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #c62828;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.urg-paciente-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(46,125,50,0.1);
+  border: 1px solid rgba(46,125,50,0.4);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #2e7d32;
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+}
+
+// ── Selector triage (cards) ──────────────────────────────────────────────────
+.urg-triage-selector {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.urg-triage-card {
+  flex: 1;
+  min-width: 60px;
+  padding: 0.6rem 0.4rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  opacity: 0.55;
+  transition: all 0.15s;
+  color: #fff;
+
+  &.selected { opacity: 1; transform: scale(1.05); box-shadow: 0 3px 12px rgba(0,0,0,0.2); }
+  &:hover:not(.selected) { opacity: 0.8; }
+
+  &__num   { font-size: 1rem; font-weight: 700; }
+  &__label { font-size: 0.65rem; text-align: center; }
+
+  &.triage-i   { background: $triage-i;   border-color: $triage-i;   }
+  &.triage-ii  { background: $triage-ii;  border-color: $triage-ii;  }
+  &.triage-iii { background: $triage-iii; border-color: $triage-iii; color: #333; }
+  &.triage-iv  { background: $triage-iv;  border-color: $triage-iv;  }
+  &.triage-v   { background: $triage-v;   border-color: $triage-v;   }
+}
+
+// ── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .urg-workbench { flex-direction: column; }
+  .urg-list { width: 100%; height: 240px; border-right: none; border-bottom: 1px solid var(--sesa-border); }
+  .urg-panel { min-height: 300px; }
+  .urg-slideover { width: 100%; }
+  .urg-header { gap: 0.75rem; }
+  .urg-header__stats { display: none; }
 }

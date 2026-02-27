@@ -39,6 +39,17 @@ sesa:
   upload:
     path: ./uploads
 
+  # ── Interoperabilidad IHCE — Resolución 1888 de 2025 ──────────────────────
+  fhir:
+    ministerio:
+      # URL del servidor FHIR del Ministerio de Salud (IHCE)
+      base-url: https://fhir.minsalud.gov.co
+      # API Key asignada por el Ministerio (configurar antes de activar)
+      api-key: ${MINSALUD_FHIR_API_KEY:}
+      # false = modo desarrollo (no envía al Ministerio)
+      # true  = envío real (requiere api-key válida y habilitación del Ministerio)
+      habilitado: false
+
 logging:
   level:
     root: INFO

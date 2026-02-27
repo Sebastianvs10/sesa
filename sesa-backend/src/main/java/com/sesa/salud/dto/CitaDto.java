@@ -28,4 +28,10 @@ public class CitaDto {
     private String estado;
     private String notas;
     private Instant createdAt;
+    // Campos normativos Res. 2953/2014
+    private String tipoCita;
+    private String numeroAutorizacionEps;
+    private Integer duracionEstimadaMin;
+    private Long diasEspera;
+    private Boolean alertaOportunidad;
 }

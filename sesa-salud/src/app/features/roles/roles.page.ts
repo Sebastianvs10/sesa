@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RolesService, RolDto } from '../../core/services/roles.service';
+import { PermissionsService } from '../../core/services/permissions.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 
 export interface ModuloGrupo {
@@ -24,6 +25,7 @@ export const MODULOS_GRUPOS: ModuloGrupo[] = [
       { codigo: 'DASHBOARD',            label: 'Dashboard',               icon: '📊' },
       { codigo: 'PACIENTES',            label: 'Pacientes',               icon: '👥' },
       { codigo: 'HISTORIA_CLINICA',     label: 'Historia clínica',        icon: '📋' },
+      { codigo: 'ODONTOLOGIA',          label: 'Odontología',             icon: '🦷' },
       { codigo: 'EVOLUCION_ENFERMERIA', label: 'Evolución de Enfermería', icon: '💉' },
       { codigo: 'URGENCIAS',            label: 'Urgencias',               icon: '🚑' },
       { codigo: 'HOSPITALIZACION',      label: 'Hospitalización',         icon: '🛏️' },
@@ -42,8 +44,9 @@ export const MODULOS_GRUPOS: ModuloGrupo[] = [
     grupo: 'Programación y agenda',
     icon: '📅',
     items: [
-      { codigo: 'CITAS',   label: 'Citas',   icon: '🗓️' },
-      { codigo: 'AGENDA',  label: 'Agenda',  icon: '✅' },
+      { codigo: 'CITAS',           label: 'Citas',            icon: '🗓️' },
+      { codigo: 'AGENDA',          label: 'Agenda',            icon: '✅' },
+      { codigo: 'CONSULTA_MEDICA', label: 'Consulta Médica',   icon: '🩺' },
     ],
   },
   {
@@ -95,6 +98,7 @@ export const ROL_META: Record<string, RolMeta> = {
 })
 export class RolesPageComponent implements OnInit {
   private readonly rolesService = inject(RolesService);
+  private readonly permissionsService = inject(PermissionsService);
 
   roles: RolDto[] = [];
   modulosDisponibles = MODULOS_DISPONIBLES;
@@ -192,6 +196,8 @@ export class RolesPageComponent implements OnInit {
         this.load();
         this.cancelEdit();
         this.saving = false;
+        // Refrescar permisos del sidebar para reflejar los cambios en tiempo real
+        this.permissionsService.load();
       },
       error: (err) => {
         this.error = err?.error?.error || 'No se pudo guardar';

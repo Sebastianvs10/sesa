@@ -12,7 +12,7 @@
         <h1 class="ag-title">Agenda de Turnos</h1>
         <p class="ag-subtitle">
           @if (esCoordinador && !esJefeEnfermeria) { Programación mensual — Personal médico }
-          @else if (esJefeEnfermeria && !esCoordinador) { Programación mensual — Enfermería }
+          @else if (esJefeEnfermeria && !esCoordinador) { Programación mensual — Aux. de enfermería }
           @else { Programación mensual — Todo el personal }
           &nbsp;·&nbsp; IPS Nivel II
         </p>
@@ -155,7 +155,7 @@
     <aside class="ag-sidebar">
       <h3 class="ag-sidebar-title">
         @if (esCoordinador && !esJefeEnfermeria) { 🩺 Personal médico }
-        @else if (esJefeEnfermeria && !esCoordinador) { 💉 Enfermería }
+        @else if (esJefeEnfermeria && !esCoordinador) { 🩹 Aux. de enfermería }
         @else { 👥 Todo el personal }
       </h3>
 
@@ -171,7 +171,10 @@
             <span class="ag-prof-tipo">
               @if (r.profesional.tipo === 'MEDICO') { 🩺 Médico }
               @else if (r.profesional.tipo === 'ENFERMERO') { 💉 Enfermero/a }
-              @else { 🩹 Auxiliar }
+              @else if (r.profesional.tipo === 'AUXILIAR_ENFERMERIA') { 🩹 Aux. de enfermería }
+              @else if (r.profesional.tipo === 'ODONTOLOGO') { 🦷 Odontólogo }
+              @else if (r.profesional.tipo === 'RECEPCIONISTA') { 📋 Recepcionista }
+              @else { 👤 Otro }
             </span>
             <div class="ag-horas-bar-wrap">
               <div class="ag-horas-bar">
@@ -340,7 +343,7 @@
             <select class="ag-input" [ngModel]="formTurno.profesionalId" (ngModelChange)="setFormField('profesionalId', +$event)">
               @for (p of profVisibles(); track p.id) {
                 <option [value]="p.id">
-                  {{ p.nombre }} {{ p.apellido }} — {{ p.tipo === 'MEDICO' ? '🩺' : p.tipo === 'ENFERMERO' ? '💉' : '🩹' }}
+                  {{ p.nombre }} {{ p.apellido }} — {{ labelRol(p.tipo) }}
                 </option>
               }
             </select>

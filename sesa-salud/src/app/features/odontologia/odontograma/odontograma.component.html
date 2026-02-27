@@ -1,0 +1,522 @@
+<!-- Odontograma SVG interactivo — diseño clínico premium FDI -->
+<!-- Autor: Ing. J Sebastian Vargas S -->
+
+<div class="odontograma-wrapper">
+
+  <!-- ── Toolbar de acciones (tratamiento a aplicar) ─────────────────── -->
+  <div class="odontograma-toolbar">
+    <app-toolbar-acciones />
+  </div>
+
+  <!-- ── Controles: modo + vista + CPOD ───────────────────────────────── -->
+  <div class="odontograma-controls">
+    <div class="modo-toggle">
+      <button class="btn-modo" [class.active]="modo() === 'adulto'"     (click)="cambiarModo('adulto')">🦷 Adulto (Permanente)</button>
+      <button class="btn-modo" [class.active]="modo() === 'pediatrico'" (click)="cambiarModo('pediatrico')">🍼 Pediátrico (Temporal)</button>
+    </div>
+    <div class="vista-zoom-row">
+      <app-vista-selector />
+      @if (odontogramaSvc.vista() === 'oclusal') {
+        <div class="zoom-controls">
+          <button type="button" class="btn-zoom" (click)="odontogramaSvc.setZoomOclusal(odontogramaSvc.zoomOclusal() - 0.15)" title="Alejar">−</button>
+          <span class="zoom-value">{{ (odontogramaSvc.zoomOclusal() * 100) | number:'1.0-0' }}%</span>
+          <button type="button" class="btn-zoom" (click)="odontogramaSvc.setZoomOclusal(odontogramaSvc.zoomOclusal() + 0.15)" title="Acercar">+</button>
+        </div>
+      }
+    </div>
+    <div class="cpod-row">
+      <span class="cpod-item cpod-c" title="Cariados">C: {{ cpodCalculado().c }}</span>
+      <span class="cpod-item cpod-p" title="Perdidos">P: {{ cpodCalculado().p }}</span>
+      <span class="cpod-item cpod-o" title="Obturados">O: {{ cpodCalculado().o }}</span>
+      <span class="cpod-total" title="Índice CPOD">CPOD: {{ cpodCalculado().total }}</span>
+    </div>
+    <button class="btn-leyenda" (click)="mostrarLeyenda.set(!mostrarLeyenda())">
+      {{ mostrarLeyenda() ? '▲ Ocultar leyenda' : '▼ Ver leyenda' }}
+    </button>
+    <div class="odontograma-acciones-extra">
+      <button type="button" class="btn-accion" (click)="useGridLayout.set(!useGridLayout())" [title]="useGridLayout() ? 'Usar círculo FDI' : 'Usar grid cruz'">
+        {{ useGridLayout() ? '⊞ Grid' : '○ Círculo' }}
+      </button>
+      <button type="button" class="btn-accion" (click)="takeSnapshot()">Snapshot</button>
+      <button type="button" class="btn-accion" (click)="exportJson()">Exportar JSON</button>
+      <label class="btn-accion">
+        Importar JSON
+        <input type="file" accept=".json" (change)="onFileImport($event)" class="input-file-hidden"/>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Leyenda ────────────────────────────────────────────────────── -->
+  @if (mostrarLeyenda()) {
+  <div class="odontograma-leyenda">
+    @for (estado of estadosLista; track estado) {
+    <div class="leyenda-item">
+      <span class="leyenda-dot"
+        [style.background]="estadoColor[estado] === 'transparent' ? 'var(--sesa-border)' : estadoColor[estado]">
+      </span>
+      {{ estadoLabel[estado] }}
+    </div>
+    }
+  </div>
+  }
+
+  <!-- ── SVG Odontograma (zoom en vista oclusal) ────────────────────── -->
+  <div class="odontograma-svg-container"
+       [class.odontograma-tratamiento-activo]="odontogramaSvc.tieneTratamientoSeleccionado()"
+       [style.transform]="odontogramaSvc.vista() === 'oclusal' ? 'scale(' + odontogramaSvc.zoomOclusal() + ')' : 'none'"
+       [style.transformOrigin]="'center center'">
+    <svg class="odontograma-svg" viewBox="0 0 1054 430" xmlns="http://www.w3.org/2000/svg" overflow="visible" aria-label="Odontograma clínico sistema FDI">
+
+      <text x="527" y="32" class="odontograma-titulo-svg">ODONTOGRAMA CLÍNICO — SISTEMA FDI</text>
+
+      <defs>
+        <!-- ╔══════════════════════════════════════════════════════════╗ -->
+        <!-- ║  FILTROS                                                 ║ -->
+        <!-- ╚══════════════════════════════════════════════════════════╝ -->
+
+        <!-- Sombra suave por diente (modo claro) -->
+        <filter id="od-f-tooth-l" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#8B8070" flood-opacity="0.25"/>
+        </filter>
+        <!-- Sombra suave por diente (modo oscuro) -->
+        <filter id="od-f-tooth-d" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.5"/>
+        </filter>
+        <!-- Brillo al hacer hover -->
+        <filter id="od-f-hover" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#6366f1" flood-opacity="0.55"/>
+        </filter>
+        <!-- Inner shadow para borde de pieza (modo claro) -->
+        <filter id="od-f-inner-l" x="-10%" y="-10%" width="120%" height="120%">
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.7"/>
+          </feComponentTransfer>
+        </filter>
+        <!-- Brillo esmalte (highlight sutil) -->
+        <filter id="od-f-enamel" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="1" result="blur"/>
+          <feOffset in="blur" dx="0" dy="-0.8" result="offset"/>
+          <feComposite in="SourceGraphic" in2="offset" operator="over"/>
+          <feSpecularLighting in="blur" surfaceScale="2" specularConstant="1.2" specularExponent="25" result="spec" lighting-color="#fffef8">
+            <fePointLight x="40" y="-60" z="120"/>
+          </feSpecularLighting>
+          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMask"/>
+          <feComposite in="SourceGraphic" in2="specMask" operator="arithmetic" k1="0" k2="1" k3="0.4" k4="0"/>
+        </filter>
+        <!-- Corona: brillo cerámico -->
+        <filter id="od-f-crown-shine" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" result="cblur"/>
+          <feSpecularLighting in="cblur" surfaceScale="3" specularConstant="1.5" specularExponent="40" result="cspec" lighting-color="#faf8f0">
+            <fePointLight x="25" y="-40" z="80"/>
+          </feSpecularLighting>
+          <feComposite in="cspec" in2="SourceAlpha" operator="in"/>
+          <feComposite in2="SourceGraphic" operator="over"/>
+        </filter>
+
+        <!-- ╔══════════════════════════════════════════════════════════╗ -->
+        <!-- ║  GRADIENTES MODO CLARO — marfil / esmalte               ║ -->
+        <!-- ╚══════════════════════════════════════════════════════════╝ -->
+
+        <!-- Cuerpo del diente (silueta anatómica): esmalte cálido claro → base -->
+        <linearGradient id="od-body-enamel-l" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#FAF8F2"/>
+          <stop offset="35%"  stop-color="#F2EDE2"/>
+          <stop offset="100%" stop-color="#E5DDCC"/>
+        </linearGradient>
+        <!-- Corona: brillo cerámico (claridad arriba-izq) -->
+        <linearGradient id="od-corona-l" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#e5e4e1"/>
+          <stop offset="30%"  stop-color="#9ca3af"/>
+          <stop offset="100%" stop-color="#6b7280"/>
+        </linearGradient>
+
+        <!-- Oclusal: radial — fosa oscura en centro, cúspides claras en borde -->
+        <radialGradient id="od-o-l" cx="50%" cy="50%" r="62%" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#BFB498"/>   <!-- fosa central profunda -->
+          <stop offset="45%"  stop-color="#D4C9AE"/>   <!-- transición -->
+          <stop offset="100%" stop-color="#EDE5CE"/>   <!-- cúspides periféricas -->
+        </radialGradient>
+
+        <!-- Vestibular Superior (exterior hacia arriba): claro arriba → oscuro abajo -->
+        <linearGradient id="od-v-s-l" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#FAF7F0"/>
+          <stop offset="100%" stop-color="#E8DFCA"/>
+        </linearGradient>
+
+        <!-- Vestibular Inferior (exterior hacia abajo): claro abajo → oscuro arriba -->
+        <linearGradient id="od-v-i-l" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#FAF7F0"/>
+          <stop offset="100%" stop-color="#E8DFCA"/>
+        </linearGradient>
+
+        <!-- Lingual Superior (interior hacia abajo): ligeramente más oscuro -->
+        <linearGradient id="od-l-s-l" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#F0EAD8"/>
+          <stop offset="100%" stop-color="#DDD4BC"/>
+        </linearGradient>
+
+        <!-- Lingual Inferior (interior hacia arriba) -->
+        <linearGradient id="od-l-i-l" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#F0EAD8"/>
+          <stop offset="100%" stop-color="#DDD4BC"/>
+        </linearGradient>
+
+        <!-- Mesial: más claro en borde externo -->
+        <linearGradient id="od-m-l" x1="0" y1="0.5" x2="1" y2="0.5" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#F4EFE3"/>
+          <stop offset="100%" stop-color="#E2D9C4"/>
+        </linearGradient>
+
+        <!-- Distal: más claro en borde externo -->
+        <linearGradient id="od-di-l" x1="1" y1="0.5" x2="0" y2="0.5" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#F4EFE3"/>
+          <stop offset="100%" stop-color="#E2D9C4"/>
+        </linearGradient>
+
+        <!-- ╔══════════════════════════════════════════════════════════╗ -->
+        <!-- ║  GRADIENTES MODO OSCURO — ébano/ámbar                   ║ -->
+        <!-- ╚══════════════════════════════════════════════════════════╝ -->
+
+        <!-- Cuerpo del diente (modo oscuro) -->
+        <linearGradient id="od-body-enamel-d" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#3a362e"/>
+          <stop offset="35%"  stop-color="#2e2b24"/>
+          <stop offset="100%" stop-color="#22201a"/>
+        </linearGradient>
+        <linearGradient id="od-corona-d" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#4b5563"/>
+          <stop offset="100%" stop-color="#374151"/>
+        </linearGradient>
+
+        <!-- Oclusal oscuro -->
+        <radialGradient id="od-o-d" cx="50%" cy="50%" r="62%" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#16140D"/>
+          <stop offset="45%"  stop-color="#211F16"/>
+          <stop offset="100%" stop-color="#2E2B20"/>
+        </radialGradient>
+
+        <linearGradient id="od-v-s-d" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#3C3830"/>
+          <stop offset="100%" stop-color="#28261C"/>
+        </linearGradient>
+        <linearGradient id="od-v-i-d" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#3C3830"/>
+          <stop offset="100%" stop-color="#28261C"/>
+        </linearGradient>
+        <linearGradient id="od-l-s-d" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#342F26"/>
+          <stop offset="100%" stop-color="#22201A"/>
+        </linearGradient>
+        <linearGradient id="od-l-i-d" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#342F26"/>
+          <stop offset="100%" stop-color="#22201A"/>
+        </linearGradient>
+        <linearGradient id="od-m-d" x1="0" y1="0.5" x2="1" y2="0.5" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#363229"/>
+          <stop offset="100%" stop-color="#24221C"/>
+        </linearGradient>
+        <linearGradient id="od-di-d" x1="1" y1="0.5" x2="0" y2="0.5" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stop-color="#363229"/>
+          <stop offset="100%" stop-color="#24221C"/>
+        </linearGradient>
+      </defs>
+
+      <!-- ── Fondos de arcada ──────────────────────────────────────── -->
+      <rect x="30" y="130" width="994" height="75" rx="12" class="arcada-bg arcada-sup"/>
+      <rect x="30" y="283" width="994" height="75" rx="12" class="arcada-bg arcada-inf"/>
+
+      <!-- ── Etiquetas de cuadrante (estilo premium 01–04) ───────────── -->
+      <text x="270" y="18" class="quad-label quad-num">02</text>
+      <text x="270" y="26" class="quad-label quad-desc">Superior Izq.</text>
+      <text x="784" y="18" class="quad-label quad-num">01</text>
+      <text x="784" y="26" class="quad-label quad-desc">Superior Der.</text>
+      <text x="270" y="416" class="quad-label quad-num">03</text>
+      <text x="270" y="424" class="quad-label quad-desc">Inferior Izq.</text>
+      <text x="784" y="416" class="quad-label quad-num">04</text>
+      <text x="784" y="424" class="quad-label quad-desc">Inferior Der.</text>
+
+      <!-- Etiquetas de arcada -->
+      <text x="22" y="172" class="arcada-label">S</text>
+      <text x="22" y="321" class="arcada-label">I</text>
+
+      <!-- Líneas de referencia (punteadas suaves) -->
+      <line x1="527" y1="28" x2="527" y2="400" class="linea-central"/>
+      <line x1="30" y1="241" x2="1024" y2="241" class="linea-oclusion"/>
+
+      <!-- ── Piezas dentales: plantilla clínica FDI (rect + círculo superficies + cruz) ── -->
+      @for (pieza of piezasVisibles(); track pieza.fdi) {
+      @let w = getToothRectWidth(pieza);
+      @let h = getToothRectHeight(pieza);
+      @let rSurf = getSurfaceCircleR(pieza);
+
+      <g
+        class="pieza-group odontograma-fdi odontograma-vista-anim"
+        [class.pieza-ausente]="isAusente(pieza.fdi)"
+        [class.pieza-resaltada]="isPiezaResaltada(pieza.fdi)"
+        [attr.transform]="'translate(' + pieza.x + ',' + pieza.y + ')'"
+        [attr.data-fdi]="pieza.fdi"
+        (mouseenter)="setPiezaResaltada(pieza.fdi)"
+        (mouseleave)="setPiezaResaltada(null)"
+      >
+
+        <!-- 1. Cuerpo del diente: silueta anatómica (corona + raíz) con esmalte/estado -->
+        <path [attr.d]="getToothAnatomicPathDisplay(pieza)"
+              [attr.fill]="getToothBodyFill(pieza)"
+              [attr.filter]="!isAusente(pieza.fdi) ? 'url(#' + getToothShadowFilterId() + ')' : null"
+              [ngClass]="getToothBodyClass(pieza)"
+              class="od-tooth-shape"/>
+        @if (isAusente(pieza.fdi)) {
+          <line [attr.x1]="-w/2" [attr.y1]="-h/2" [attr.x2]="w/2" [attr.y2]="h/2" class="od-missing-x"/>
+          <line [attr.x1]="w/2" [attr.y1]="-h/2" [attr.x2]="-w/2" [attr.y2]="h/2" class="od-missing-x"/>
+        }
+
+        <!-- 2. Superficies: grid 3×3 (cruz) o círculo FDI -->
+        @if (!isAusente(pieza.fdi) && !tieneImplante(pieza.fdi)) {
+          @if (useGridLayout()) {
+            <!-- Layout cruz tipo React: top | left center right | bottom -->
+            @for (g of gridSurfaces; track g.key) {
+              @let r = getGridSurfaceRect(pieza, g.sup);
+              <rect class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, g.sup)"
+                    [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.width" [attr.height]="r.height"
+                    [attr.fill]="getColor(pieza.fdi, g.sup)"
+                    (click)="onSuperficieClick($event, pieza.fdi, g.sup)"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, g.sup)"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, g.sup)"/>
+            }
+          } @else {
+            <!-- Círculo de superficies (FDI) -->
+            @for (sup of superficiesRueda; track sup) {
+              @let seg = getSurfaceSegmentFor(pieza, sup);
+              @if (!seg.isCenter) {
+                <path class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, sup)"
+                      [attr.d]="seg.path" [attr.fill]="getColor(pieza.fdi, sup)"
+                      (click)="onSuperficieClick($event, pieza.fdi, sup)"
+                      (dblclick)="onSuperficieDblClick($event, pieza.fdi, sup)"
+                      (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, sup)"/>
+              }
+            }
+            <circle class="od-surface-segment od-surface-o" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'OCLUSAL')"
+                    r="rSurf * 0.38" [attr.fill]="getColor(pieza.fdi, 'OCLUSAL')"
+                    (click)="onSuperficieClick($event, pieza.fdi, 'OCLUSAL')"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'OCLUSAL')"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'OCLUSAL')"/>
+            <line x1="-rSurf" y1="0" x2="rSurf" y2="0" class="od-surface-line"/>
+            <line x1="0" y1="-rSurf" x2="0" y2="rSurf" class="od-surface-line"/>
+            <circle cx="0" cy="0" [attr.r]="rSurf" class="od-surface-circle"/>
+          }
+        }
+
+        <!-- 3. Endodoncia: línea verde a través del diente (estilo SVG referencia) -->
+        @if (tieneEndodoncia(pieza.fdi) && !isAusente(pieza.fdi)) {
+          <line [attr.x1]="0" [attr.y1]="-h/2 + 5" [attr.x2]="0" [attr.y2]="h/2 - 5" class="od-endo"/>
+        }
+
+        <!-- 4. Número FDI debajo del rect -->
+        <text class="od-number" x="0" [attr.y]="h/2 + 18">{{ pieza.label }}</text>
+
+        <!-- 5. Overlay selección -->
+        @if (isPiezaResaltada(pieza.fdi)) {
+          <rect [attr.x]="-w/2 - 4" [attr.y]="-h/2 - 4"
+                [attr.width]="w + 8" [attr.height]="h + 32"
+                rx="14" class="pieza-overlay-resaltada" style="pointer-events:none"/>
+        }
+      </g>
+      }
+    </svg>
+
+    <!-- ── Popup selector de estado ──────────────────────────────── -->
+    @if (popupVisible()) {
+    <div class="estado-popup" [style.left.px]="popupX()" [style.top.px]="popupY()"
+         (click)="$event.stopPropagation()">
+
+      <div class="popup-header">
+        <div class="popup-title">
+          <span class="popup-fdi">Pieza {{ popupFdi() }}</span>
+          <span class="popup-sup-badge">{{ supNombre(popupSuperficie()) }}</span>
+        </div>
+        <button class="popup-close" (click)="cerrarPopup()">✕</button>
+      </div>
+
+      <div class="popup-current">
+        <span class="popup-cl">Estado actual:</span>
+        <span class="popup-cv">
+          <span class="popup-dot"
+            [style.background]="getColor(popupFdi()!, popupSuperficie()!).startsWith('url') ? '#d4c9ae' : getColor(popupFdi()!, popupSuperficie()!)">
+          </span>
+          {{ estadoLabel[getSup(popupFdi()!, popupSuperficie()!)] }}
+        </span>
+      </div>
+
+      <div class="popup-estados">
+        @for (estado of estadosLista; track estado) {
+        <button class="popup-estado-btn" [class.activo]="getSup(popupFdi()!, popupSuperficie()!) === estado"
+                (click)="aplicarEstado(estado)">
+          <span class="popup-color"
+            [style.background]="estadoColor[estado] === 'transparent' ? 'var(--sesa-surface)' : estadoColor[estado]"
+            [style.border]="estadoColor[estado] === 'transparent' ? '2px solid var(--sesa-border)' : 'none'">
+          </span>
+          <span class="popup-estado-label">{{ estadoLabel[estado] }}</span>
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- ── Menú contextual (click derecho) ─────────────────────────── -->
+    @if (contextVisible()) {
+    <div class="context-menu"
+         [style.left.px]="contextX()"
+         [style.top.px]="contextY()"
+         (click)="$event.stopPropagation()">
+      <div class="context-header">
+        <span>Pieza {{ contextFdi() }} — {{ supNombre(contextSuperficie()) }}</span>
+        <button type="button" class="context-close" (click)="cerrarContextMenu()">✕</button>
+      </div>
+      <div class="context-estados">
+        @for (estado of estadosLista; track estado) {
+        <button type="button" class="context-estado-btn"
+                [class.activo]="contextFdi() !== null && contextSuperficie() !== null && getSup(contextFdi()!, contextSuperficie()!) === estado"
+                (click)="contextFdi() != null && contextSuperficie() != null && aplicarEstado(estado, contextFdi()!, contextSuperficie()!)">
+          <span class="context-color" [style.background]="estadoColor[estado] === 'transparent' ? 'var(--sesa-border)' : estadoColor[estado]"></span>
+          {{ estadoLabel[estado] }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- ── Modal historial clínico (doble click) ─────────────────────── -->
+    @if (historialVisible()) {
+    <div class="historial-overlay" (click)="cerrarHistorial()">
+      <div class="historial-modal" (click)="$event.stopPropagation()">
+        <div class="historial-header">
+          <h3>Historial — Pieza {{ historialFdi() }} {{ supNombre(historialSuperficie()) }}</h3>
+          <button type="button" class="historial-close" (click)="cerrarHistorial()">✕</button>
+        </div>
+        <div class="historial-body">
+          @if (getHistorialParaModal().length === 0) {
+            <p class="historial-empty">Sin registros en esta superficie.</p>
+          } @else {
+            <ul class="historial-list">
+              @for (t of getHistorialParaModal(); track t.fecha) {
+              <li class="historial-item">
+                <span class="historial-tipo" [style.background]="estadoColor[t.tipo]">{{ estadoLabel[t.tipo] }}</span>
+                <span class="historial-fecha">{{ t.fecha | date:'short' }}</span>
+                <span class="historial-prof">{{ t.profesional }}</span>
+                @if (t.observacion) { <span class="historial-obs">{{ t.observacion }}</span> }
+              </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- ── Resumen de hallazgos ──────────────────────────────────────── -->
+  @if ((resumenEstados() | keyvalue).length > 0) {
+  <div class="odontograma-resumen">
+    <span class="resumen-titulo">Hallazgos:</span>
+    @for (item of resumenEstados() | keyvalue; track item.key) {
+    <span class="resumen-badge"
+      [style.background]="getEstadoColor(item.key) === 'transparent' ? 'var(--sesa-border)' : getEstadoColor(item.key)">
+      {{ getEstadoLabel(item.key) }}: {{ item.value }}
+    </span>
+    }
+  </div>
+  }
+
+  <!-- ── Panel Detalle diente + Presupuesto (tipo React) ─────────────── -->
+  <div class="odontograma-paneles grid-paneles">
+    <!-- Detalle del diente seleccionado -->
+    <div class="panel panel-detalle">
+      <h3 class="panel-titulo">Detalle del diente</h3>
+      @if (!piezaResaltadaFdi()) {
+        <p class="panel-vacio">Selecciona un diente para ver o editar detalles.</p>
+      } @else {
+        <div class="detalle-cuerpo">
+          <div class="detalle-header">
+            <span class="detalle-fdi">Diente {{ piezaResaltadaFdi() }}</span>
+            <div class="detalle-btns">
+              <button type="button" class="btn-panel" (click)="limpiarPieza(piezaResaltadaFdi()!)">Limpiar diente</button>
+              <button type="button" class="btn-panel" (click)="setPiezaResaltada(null)">Cerrar</button>
+            </div>
+          </div>
+          <div class="detalle-notas">
+            <label class="detalle-label">Notas</label>
+            <textarea
+              class="detalle-textarea"
+              rows="3"
+              [value]="getObservacion(piezaResaltadaFdi()!)"
+              (input)="setObservacion(piezaResaltadaFdi()!, $any($event.target).value)"
+              placeholder="Observaciones clínicas (movilidad, sangrado, etc.)"
+            ></textarea>
+          </div>
+          <p class="detalle-hint">Aplica una condición en la paleta y haz clic en una superficie (S) o en el diente (D).</p>
+        </div>
+      }
+    </div>
+
+    <!-- Presupuesto / Resumen procedimientos -->
+    <div class="panel panel-presupuesto">
+      <h3 class="panel-titulo">Generar presupuesto <span class="panel-sub">(sin precios)</span></h3>
+      @if (resumenPresupuesto().length === 0) {
+        <p class="panel-vacio">No hay procedimientos seleccionados.</p>
+      } @else {
+        <div class="presupuesto-tabla-wrap">
+          <table class="presupuesto-tabla">
+            <thead>
+              <tr>
+                <th>Procedimiento</th>
+                <th>Dientes</th>
+                <th>Superficies</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of resumenPresupuesto(); track row.estado) {
+              <tr>
+                <td>
+                  <span class="presupuesto-dot" [style.background]="getEstadoColor(row.estado)"></span>
+                  {{ row.label }}
+                </td>
+                <td>{{ row.dientes.join(', ') }}</td>
+                <td>{{ row.superficies }}</td>
+                <td>{{ row.cantidad }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="presupuesto-hint">Exporta este resumen para crear una proforma en Facturación.</p>
+      }
+    </div>
+  </div>
+
+  <!-- ── Snapshots (evolución del caso) ──────────────────────────────── -->
+  <div class="panel panel-snapshots">
+    <div class="snapshots-header">
+      <h3 class="panel-titulo">Snapshots (evolución del caso)</h3>
+      @if (snapshots().length > 0) {
+        <button type="button" class="btn-link" (click)="clearSnapshots()">Limpiar snapshots</button>
+      }
+    </div>
+    @if (snapshots().length === 0) {
+      <p class="panel-vacio">Aún no has tomado snapshots.</p>
+    } @else {
+      <div class="snapshots-grid">
+        @for (s of snapshots(); track s.id) {
+        <div class="snapshot-card">
+          <div class="snapshot-modo">{{ s.modo === 'pediatrico' ? 'Pediátrico' : 'Permanente' }}</div>
+          <div class="snapshot-fecha">{{ s.fecha | date:'short' }}</div>
+          <div class="snapshot-acciones">
+            <button type="button" class="btn-panel btn-sm" (click)="restoreSnapshot(s)">Restaurar</button>
+            <button type="button" class="btn-panel btn-sm" (click)="downloadSnapshot(s)">Descargar</button>
+          </div>
+        </div>
+        }
+      </div>
+    }
+  </div>
+</div>

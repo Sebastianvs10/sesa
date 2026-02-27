@@ -1,10 +1,12 @@
 /**
- * Servicio de permisos RBAC (control de acceso por roles).
- * Matriz de permisos sincronizada con backend.
+ * Servicio de permisos RBAC — totalmente dinámico.
+ * Los módulos se cargan EXCLUSIVAMENTE desde el backend (/roles/usuario-actual).
+ * No existe ninguna matriz estática de permisos en el frontend:
+ * el superadministrador controla todo desde la página de roles.
  * Autor: Ing. J Sebastian Vargas S
  */
 
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -13,8 +15,9 @@ export type Modulo =
   | 'DASHBOARD' | 'PACIENTES' | 'HISTORIA_CLINICA' | 'LABORATORIOS' | 'IMAGENES'
   | 'URGENCIAS' | 'HOSPITALIZACION' | 'FARMACIA' | 'FACTURACION' | 'CITAS'
   | 'USUARIOS' | 'PERSONAL' | 'EMPRESAS' | 'NOTIFICACIONES' | 'ROLES'
-  | 'REPORTES' | 'AGENDA' | 'EVOLUCION_ENFERMERIA';
+  | 'REPORTES' | 'AGENDA' | 'EVOLUCION_ENFERMERIA' | 'CONSULTA_MEDICA' | 'ODONTOLOGIA';
 
+/** Mapa módulo → ruta (para guards de navegación). */
 const MODULO_ROUTE: Record<string, string> = {
   DASHBOARD:            '/dashboard',
   PACIENTES:            '/pacientes',
@@ -34,46 +37,8 @@ const MODULO_ROUTE: Record<string, string> = {
   REPORTES:             '/reportes',
   AGENDA:               '/agenda',
   EVOLUCION_ENFERMERIA: '/evolucion-enfermeria',
-};
-
-/** Matriz rol -> módulos permitidos (sincronizada con backend PermissionService) */
-const ROLE_MODULOS: Record<string, Set<Modulo>> = {
-  SUPERADMINISTRADOR: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
-    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS',
-    'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES', 'ROLES',
-    'REPORTES', 'AGENDA', 'EVOLUCION_ENFERMERIA',
-  ]),
-  ADMIN: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
-    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'FACTURACION', 'CITAS',
-    'USUARIOS', 'PERSONAL', 'EMPRESAS', 'NOTIFICACIONES',
-    'REPORTES', 'AGENDA', 'EVOLUCION_ENFERMERIA',
-  ]),
-  MEDICO: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
-    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS',
-  ]),
-  ODONTOLOGO: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS', 'IMAGENES',
-    'URGENCIAS', 'HOSPITALIZACION', 'FARMACIA', 'CITAS',
-  ]),
-  BACTERIOLOGO: new Set(['DASHBOARD', 'PACIENTES', 'LABORATORIOS']),
-  ENFERMERO: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION', 'CITAS',
-  ]),
-  JEFE_ENFERMERIA: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'URGENCIAS', 'HOSPITALIZACION',
-    'EVOLUCION_ENFERMERIA', 'AGENDA',
-  ]),
-  AUXILIAR_ENFERMERIA: new Set(['DASHBOARD', 'PACIENTES', 'URGENCIAS', 'HOSPITALIZACION']),
-  PSICOLOGO: new Set(['DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'CITAS']),
-  REGENTE_FARMACIA: new Set(['DASHBOARD', 'FARMACIA', 'PACIENTES']),
-  RECEPCIONISTA: new Set(['DASHBOARD', 'PACIENTES', 'CITAS', 'FACTURACION']),
-  COORDINADOR_MEDICO: new Set([
-    'DASHBOARD', 'PACIENTES', 'HISTORIA_CLINICA', 'LABORATORIOS',
-    'REPORTES', 'CITAS', 'AGENDA',
-  ]),
+  CONSULTA_MEDICA:      '/consulta-medica',
+  ODONTOLOGIA:          '/odontologia',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -82,46 +47,79 @@ export class PermissionsService {
   private readonly auth = inject(AuthService);
   private readonly apiUrl = environment.apiUrl;
 
-  private modulosSignal = signal<Set<string>>(new Set());
-  private loadedSignal = signal(false);
+  private readonly _modulos = signal<Set<string>>(new Set());
+  private readonly _loaded = signal(false);
 
-  get modulos() {
-    return this.modulosSignal();
-  }
-  get loaded() {
-    return this.loadedSignal();
-  }
+  /** Módulos activos del usuario actual (provenientes de la BD). */
+  readonly modulos = this._modulos.asReadonly();
 
-  /** Carga los módulos permitidos desde API (para página de roles) */
-  load(): void {
+  /** true cuando los módulos ya fueron cargados desde el backend. */
+  readonly loaded = this._loaded.asReadonly();
+
+  /**
+   * true mientras el frontend espera la respuesta del backend.
+   * El sidebar muestra un esqueleto durante este estado.
+   */
+  readonly isLoading = computed(
+    () => this.auth.isAuthenticated() && !this.auth.isSuperAdmin() && !this._loaded()
+  );
+
+  /**
+   * Carga los módulos permitidos del usuario actual desde el backend.
+   * Se llama al iniciar la app, al hacer login y al cambiar de rol activo.
+   *
+   * @param rolActivo Rol cuyo catálogo de módulos se quiere mostrar.
+   *                  Si se omite, el frontend usa el `rolActivo` guardado en AuthService.
+   *                  Si el backend recibe el parámetro, devuelve solo los módulos de ese rol.
+   */
+  load(rolActivo?: string): void {
     if (!this.auth.isAuthenticated()) {
-      this.modulosSignal.set(new Set());
-      this.loadedSignal.set(true);
+      this._modulos.set(new Set());
+      this._loaded.set(false);
       return;
     }
-    this.http.get<{ modulos: string[] }>(`${this.apiUrl}/roles/usuario-actual`).subscribe({
+    // SUPERADMINISTRADOR no necesita cargar: tiene acceso total
+    if (this.auth.isSuperAdmin()) {
+      this._loaded.set(true);
+      return;
+    }
+    // Determinar qué rol enviar: el parámetro explícito o el guardado en AuthService
+    const rol = rolActivo ?? this.auth.rolActivo();
+    const params = rol ? `?rol=${encodeURIComponent(rol)}` : '';
+
+    this._loaded.set(false); // resetear para mostrar skeleton durante la recarga
+    this.http.get<{ modulos: string[]; rolActivo?: string }>(`${this.apiUrl}/roles/usuario-actual${params}`).subscribe({
       next: (res) => {
-        this.modulosSignal.set(new Set(res.modulos ?? []));
-        this.loadedSignal.set(true);
+        this._modulos.set(new Set(res.modulos ?? []));
+        this._loaded.set(true);
       },
       error: () => {
-        this.modulosSignal.set(new Set());
-        this.loadedSignal.set(true);
+        this._modulos.set(new Set());
+        this._loaded.set(true);
       },
     });
   }
 
-  /** Indica si el usuario puede acceder al módulo (por código). Usa matriz local. */
-  canAccess(modulo: Modulo | string): boolean {
-    if (!this.auth.isAuthenticated()) return false;
-    const role = this.auth.currentUser()?.role?.toUpperCase();
-    if (!role) return false;
-    if (role === 'SUPERADMINISTRADOR') return true;
-    const modulos = ROLE_MODULOS[role];
-    return modulos?.has(modulo as Modulo) ?? false;
+  /** Limpia los módulos al cerrar sesión. */
+  clear(): void {
+    this._modulos.set(new Set());
+    this._loaded.set(false);
   }
 
-  /** Indica si el usuario puede acceder a la ruta (por path) */
+  /**
+   * Indica si el usuario puede acceder al módulo (por código).
+   * — SUPERADMINISTRADOR: acceso total inmediato (sin consultar señal).
+   * — Otros roles: basado exclusivamente en lo que devuelve el backend.
+   * — Mientras carga (isLoading): devuelve false (sidebar muestra skeleton).
+   */
+  canAccess(modulo: Modulo | string): boolean {
+    if (!this.auth.isAuthenticated()) return false;
+    if (this.auth.isSuperAdmin()) return true;
+    if (!this._loaded()) return false;
+    return this._modulos().has(modulo);
+  }
+
+  /** Indica si el usuario puede acceder a la ruta (por path). */
   canAccessRoute(path: string): boolean {
     if (!this.auth.isAuthenticated()) return false;
     if (this.auth.isSuperAdmin()) return true;
@@ -131,35 +129,28 @@ export class PermissionsService {
     return false;
   }
 
-  /** Indica si el usuario puede crear historia clínica */
+  /**
+   * Solo roles con capacidad clínica pueden crear historias clínicas.
+   * Con multi-rol, basta que UNO de los roles del usuario esté en la lista.
+   */
   canCrearHistoriaClinica(): boolean {
-    const role = this.auth.currentUser()?.role;
+    const allowedRoles = ['MEDICO', 'ADMIN', 'SUPERADMINISTRADOR'];
+    const userRoles = this.auth.currentRoles();
     return this.canAccess('HISTORIA_CLINICA') &&
-      ['MEDICO', 'ODONTOLOGO', 'ADMIN', 'SUPERADMINISTRADOR', 'COORDINADOR_MEDICO'].includes(role ?? '');
+      userRoles.some(r => allowedRoles.includes(r));
   }
 
-  /** Indica si el usuario puede acceder a evolución de enfermería */
-  canAccesEvolucionEnfermeria(): boolean {
-    return this.canAccess('EVOLUCION_ENFERMERIA');
-  }
+  canGestionarRoles(): boolean        { return this.auth.isSuperAdmin(); }
+  canAccesEvolucionEnfermeria(): boolean { return this.canAccess('EVOLUCION_ENFERMERIA'); }
+  canAccesAgenda(): boolean             { return this.canAccess('AGENDA'); }
+  canAccesConsultaMedica(): boolean     { return this.canAccess('CONSULTA_MEDICA'); }
+  canAccesOdontologia(): boolean        { return this.canAccess('ODONTOLOGIA'); }
+  canVerFacturacion(): boolean          { return this.canAccess('FACTURACION'); }
+  canAccesReportes(): boolean           { return this.canAccess('REPORTES'); }
+  canGestionarUsuarios(): boolean       { return this.canAccess('USUARIOS') || this.auth.isSuperAdmin(); }
 
-  /** Indica si el usuario puede acceder a la agenda */
-  canAccesAgenda(): boolean {
-    return this.canAccess('AGENDA');
-  }
-
-  /** Indica si el usuario puede gestionar roles (SUPERADMINISTRADOR) */
-  canGestionarRoles(): boolean {
-    return this.auth.isSuperAdmin();
-  }
-
-  /** Indica si el usuario puede ver facturación */
-  canVerFacturacion(): boolean {
-    return this.canAccess('FACTURACION');
-  }
-
-  /** Indica si el usuario puede ver usuarios (crear/editar) */
-  canGestionarUsuarios(): boolean {
-    return this.canAccess('USUARIOS') || this.auth.isSuperAdmin();
+  isAdminOrSuperAdmin(): boolean {
+    const role = this.auth.currentUser()?.role?.toUpperCase();
+    return role === 'ADMIN' || role === 'SUPERADMINISTRADOR';
   }
 }

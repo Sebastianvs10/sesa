@@ -9,6 +9,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { HistoriaClinicaService, HistoriaClinicaDto } from '../../core/services/historia-clinica.service';
+import { PdfService } from '../../core/services/pdf.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CitaDto, CitaService } from '../../core/services/cita.service';
 import { ConsultaDto, ConsultaService } from '../../core/services/consulta.service';
@@ -21,8 +22,10 @@ import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.
 import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
 import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-state/sesa-empty-state.component';
+import { SesaRdaPanelComponent } from '../../shared/components/sesa-rda-panel/sesa-rda-panel.component';
+import { SesaConsentimientoComponent } from '../../shared/components/sesa-consentimiento/sesa-consentimiento.component';
 
-export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores';
+export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores' | 'consentimiento';
 export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGEN';
 
 @Component({
@@ -35,6 +38,8 @@ export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGE
     DoloresPanelComponent,
     SesaSkeletonComponent,
     SesaEmptyStateComponent,
+    SesaRdaPanelComponent,
+    SesaConsentimientoComponent,
   ],
   templateUrl: './historia-clinica.page.html',
   styleUrl: './historia-clinica.page.scss',
@@ -44,7 +49,7 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private readonly router         = inject(Router);
   private readonly pacienteService   = inject(PacienteService);
   private readonly historiaService   = inject(HistoriaClinicaService);
-  private readonly authService       = inject(AuthService);
+  readonly authService               = inject(AuthService);
   private readonly citaService       = inject(CitaService);
   private readonly consultaService   = inject(ConsultaService);
   private readonly ordenService      = inject(OrdenClinicaService);
@@ -53,6 +58,9 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private readonly personalService   = inject(PersonalService);
   private readonly toast             = inject(SesaToastService);
   private readonly confirmDialog     = inject(SesaConfirmDialogService);
+  private readonly pdfService        = inject(PdfService);
+
+  descargandoPdf = signal(false);
 
   /* ── Estado global ─────────────────────────────────────────────────── */
   loadingPatient  = signal(false);
@@ -99,7 +107,7 @@ export class HistoriaClinicaPageComponent implements OnInit {
     alergias:             '',
   };
 
-  /* Sección O — Objetivo (Signos Vitales — se combinan en el texto) */
+  /* Sección O — Objetivo (Signos Vitales) */
   soapO = {
     presionArterial:       '',
     frecuenciaCardiaca:    '',
@@ -109,14 +117,19 @@ export class HistoriaClinicaPageComponent implements OnInit {
     peso:                  '',
     talla:                 '',
     imc:                   '',
+    dolorEva:              '',
+    perimetroAbdominal:    '',
+    perimetroCefalico:     '',
     hallazgosExamen:       '',
   };
 
   /* Sección A — Análisis */
   soapA = {
-    diagnostico:   '',
-    codigoCie10:   '',
-    observaciones: '',
+    tipoConsulta:           '',
+    diagnostico:            '',
+    codigoCie10:            '',
+    codigoCie10Secundario:  '',
+    observaciones:          '',
   };
 
   /* Sección P — Plan */
@@ -269,8 +282,8 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private loadFlujoClinico(pacienteId: number): void {
     this.loadingFlujo.set(true);
     this.citaService.list().subscribe({
-      next: (citas) => {
-        this.citasPaciente = (citas ?? []).filter((c) => c.pacienteId === pacienteId);
+      next: (citas: CitaDto[]) => {
+        this.citasPaciente = (citas ?? []).filter((c: CitaDto) => c.pacienteId === pacienteId);
         this.consultaService.listByPaciente(pacienteId, 0, 100).subscribe({
           next: (consultas) => {
             this.consultasPaciente = Array.isArray(consultas) ? consultas : [];
@@ -286,16 +299,16 @@ export class HistoriaClinicaPageComponent implements OnInit {
                     this.loadingFlujo.set(false);
                     this.loadingPatient.set(false);
                   },
-                  error: (err) => this._setLoadError(err, 'Error al cargar facturas'),
+                  error: (err: unknown) => this._setLoadError(err, 'Error al cargar facturas'),
                 });
               },
-              error: (err) => this._setLoadError(err, 'Error al cargar órdenes'),
+              error: (err: unknown) => this._setLoadError(err, 'Error al cargar órdenes'),
             });
           },
-          error: (err) => this._setLoadError(err, 'Error al cargar consultas'),
+          error: (err: unknown) => this._setLoadError(err, 'Error al cargar consultas'),
         });
       },
-      error: (err) => this._setLoadError(err, 'Error al cargar citas'),
+      error: (err: unknown) => this._setLoadError(err, 'Error al cargar citas'),
     });
   }
 
@@ -360,13 +373,33 @@ export class HistoriaClinicaPageComponent implements OnInit {
     this.savingConsulta.set(true);
     this.consultaService.create({
       pacienteId:             this.selectedPatient()!.id,
-      profesionalId:          this.soapS.profesionalId,
+      profesionalId:          this.soapS.profesionalId ?? undefined,
       citaId:                 this.soapS.citaId || undefined,
       motivoConsulta:         this.soapS.motivoConsulta.trim(),
       enfermedadActual:       enfermedadCompleta.trim() || undefined,
       antecedentesPersonales: this.soapS.antecedentesPersonales.trim() || undefined,
       antecedentesFamiliares: this.soapS.antecedentesFamiliares.trim() || undefined,
       alergias:               this.soapS.alergias.trim() || undefined,
+      tipoConsulta:           this.soapA.tipoConsulta || undefined,
+      codigoCie10:            this.soapA.codigoCie10.trim() || undefined,
+      codigoCie10Secundario:  this.soapA.codigoCie10Secundario.trim() || undefined,
+      diagnostico:            this.soapA.diagnostico.trim() || undefined,
+      observacionesClincias:  this.soapA.observaciones.trim() || undefined,
+      dolorEva:               this.soapO.dolorEva || undefined,
+      perimetroAbdominal:     this.soapO.perimetroAbdominal || undefined,
+      perimetroCefalico:      this.soapO.perimetroCefalico || undefined,
+      saturacionO2:           this.soapO.saturacionO2 ? String(this.soapO.saturacionO2) : undefined,
+      presionArterial:        this.soapO.presionArterial || undefined,
+      frecuenciaCardiaca:     this.soapO.frecuenciaCardiaca ? String(this.soapO.frecuenciaCardiaca) : undefined,
+      frecuenciaRespiratoria: this.soapO.frecuenciaRespiratoria ? String(this.soapO.frecuenciaRespiratoria) : undefined,
+      temperatura:            this.soapO.temperatura ? String(this.soapO.temperatura) : undefined,
+      peso:                   this.soapO.peso ? String(this.soapO.peso) : undefined,
+      talla:                  this.soapO.talla ? String(this.soapO.talla) : undefined,
+      imc:                    this.soapO.imc || undefined,
+      hallazgosExamen:        this.soapO.hallazgosExamen.trim() || undefined,
+      planTratamiento:        this.soapP.planTratamiento.trim() || undefined,
+      tratamientoFarmacologico: this.soapP.tratamientoFarmacologico.trim() || undefined,
+      recomendaciones:        this.soapP.recomendaciones.trim() || undefined,
     }).subscribe({
       next: (consulta) => {
         this.savingConsulta.set(false);
@@ -393,6 +426,9 @@ export class HistoriaClinicaPageComponent implements OnInit {
     if (sv.peso)                   partes.push(`Peso: ${sv.peso} kg`);
     if (sv.talla)                  partes.push(`Talla: ${sv.talla} cm`);
     if (sv.imc)                    partes.push(`IMC: ${sv.imc}`);
+    if (sv.dolorEva)               partes.push(`Dolor EVA: ${sv.dolorEva}/10`);
+    if (sv.perimetroAbdominal)     partes.push(`Perímetro abd.: ${sv.perimetroAbdominal} cm`);
+    if (sv.perimetroCefalico)      partes.push(`Perímetro cef.: ${sv.perimetroCefalico} cm`);
     return partes.length > 0 ? `Signos vitales — ${partes.join(' · ')}` : '';
   }
 
@@ -405,9 +441,10 @@ export class HistoriaClinicaPageComponent implements OnInit {
     this.soapS.alergias = '';
     Object.assign(this.soapO, {
       presionArterial:'', frecuenciaCardiaca:'', frecuenciaRespiratoria:'',
-      temperatura:'', saturacionO2:'', peso:'', talla:'', imc:'', hallazgosExamen:'',
+      temperatura:'', saturacionO2:'', peso:'', talla:'', imc:'',
+      dolorEva:'', perimetroAbdominal:'', perimetroCefalico:'', hallazgosExamen:'',
     });
-    Object.assign(this.soapA, { diagnostico:'', codigoCie10:'', observaciones:'' });
+    Object.assign(this.soapA, { tipoConsulta:'', diagnostico:'', codigoCie10:'', codigoCie10Secundario:'', observaciones:'' });
     Object.assign(this.soapP, { planTratamiento:'', tratamientoFarmacologico:'', recomendaciones:'' });
     this.soapSectionOpen.set('S');
   }
@@ -611,6 +648,17 @@ export class HistoriaClinicaPageComponent implements OnInit {
     return f.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
+  formatAnio(fecha?: string): string {
+    if (!fecha) return new Date().getFullYear().toString();
+    const f = new Date(fecha);
+    if (isNaN(f.getTime())) return new Date().getFullYear().toString();
+    return f.getFullYear().toString();
+  }
+
+  padId(id?: number): string {
+    return String(id ?? 0).padStart(6, '0');
+  }
+
   formatFechaLarga(fecha?: string): string {
     if (!fecha) return '—';
     const f = new Date(fecha);
@@ -654,5 +702,29 @@ export class HistoriaClinicaPageComponent implements OnInit {
     return [...this.consultasPaciente].sort((a, b) =>
       (b.fechaConsulta ?? '').localeCompare(a.fechaConsulta ?? '')
     );
+  }
+
+  /** Descarga el PDF premium de la historia clínica del paciente actual. */
+  descargarPdf(): void {
+    const pacienteId = this.selectedPatient()?.id;
+    if (!pacienteId) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    this.descargandoPdf.set(true);
+    this.pdfService.descargarHistoriaClinicaPorPaciente(pacienteId).subscribe({
+      next: (blob) => {
+        const nombre = this.selectedPatient()?.nombres ?? 'paciente';
+        this.pdfService.triggerDownload(blob, `historia-clinica-${nombre.replace(/\s+/g, '-')}.pdf`);
+        this.toast.success('Historia clínica descargada en PDF.', 'PDF generado');
+        this.descargandoPdf.set(false);
+      },
+      error: (err: unknown) => {
+        const msg = (err as { error?: { message?: string } })?.error?.message
+            ?? 'No se pudo generar el PDF.';
+        this.toast.error(msg, 'Error PDF');
+        this.descargandoPdf.set(false);
+      },
+    });
   }
 }

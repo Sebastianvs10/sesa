@@ -9,23 +9,45 @@ export interface PersonalDto {
   id: number;
   nombres: string;
   apellidos?: string;
+  /** Tipo de documento (CC, CE, PA, PEP, TI, RC — Res. 3374/2000). */
+  tipoDocumento?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
   primerApellido?: string;
   segundoApellido?: string;
   celular?: string;
+  /** Correo profesional para documentos clínicos. */
   email?: string;
+  /** Rol primario (compatibilidad). */
   rol?: string;
+  /** Todos los roles profesionales asignados (multi-rol). */
+  roles?: string[];
   fotoUrl?: string;
   firmaUrl?: string;
   activo: boolean;
   createdAt?: string;
+  // ── Normativos Res. 2003/2014, Ley 23/1981, Res. 1449/2016 ──
+  tarjetaProfesional?: string;
+  especialidadFormal?: string;
+  numeroRethus?: string;
+  // ── Demográficos RIPS Res. 3374/2000 ──
+  fechaNacimiento?: string;
+  sexo?: string;
+  // ── Lugar de práctica Res. 2003/2014 ──
+  municipio?: string;
+  departamento?: string;
+  // ── Vínculo laboral Circular 047/2007 ──
+  tipoVinculacion?: string;
+  fechaIngreso?: string;
+  fechaRetiro?: string;
 }
 
 export interface PersonalRequestDto {
   nombres: string;
   apellidos?: string;
+  /** Tipo de documento (CC, CE, PA, PEP, TI, RC). */
+  tipoDocumento?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
@@ -34,8 +56,25 @@ export interface PersonalRequestDto {
   celular?: string;
   email?: string;
   password?: string;
+  /** Rol primario (compatibilidad con campo simple). */
   rol?: string;
+  /** Multi-rol: lista de roles profesionales asignados. Tiene prioridad sobre `rol`. */
+  roles?: string[];
   activo: boolean;
+  // ── Normativos ──
+  tarjetaProfesional?: string;
+  especialidadFormal?: string;
+  numeroRethus?: string;
+  // ── Demográficos ──
+  fechaNacimiento?: string;
+  sexo?: string;
+  // ── Lugar de práctica ──
+  municipio?: string;
+  departamento?: string;
+  // ── Vínculo laboral ──
+  tipoVinculacion?: string;
+  fechaIngreso?: string;
+  fechaRetiro?: string;
 }
 
 /** Roles para profesionales de la salud. Super Administrador y Administrador deshabilitados en gestión de personal. */

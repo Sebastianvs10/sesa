@@ -89,13 +89,14 @@ public class PersonalServiceImpl implements PersonalService {
             throw new IllegalArgumentException("La contraseña es obligatoria para el acceso del profesional");
         }
         String nombreCompleto = buildNombreCompleto(dto);
-        String rol = dto.getRol() != null && !dto.getRol().isBlank() ? dto.getRol().trim() : "USER";
+        Set<String> rolesSet = resolveRoles(dto);
+        String rolPrimario = rolesSet.iterator().hasNext() ? rolesSet.iterator().next() : "USER";
         Usuario usuario = Usuario.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
                 .nombreCompleto(nombreCompleto)
                 .activo(true)
-                .roles(Set.of(rol))
+                .roles(new java.util.HashSet<>(rolesSet))
                 .build();
         usuario = usuarioRepository.save(usuario);
         TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
@@ -110,6 +111,7 @@ public class PersonalServiceImpl implements PersonalService {
         Personal p = Personal.builder()
                 .nombres(dto.getNombres())
                 .apellidos(dto.getApellidos())
+                .tipoDocumento(dto.getTipoDocumento())
                 .identificacion(dto.getIdentificacion())
                 .primerNombre(dto.getPrimerNombre())
                 .segundoNombre(dto.getSegundoNombre())
@@ -117,12 +119,32 @@ public class PersonalServiceImpl implements PersonalService {
                 .segundoApellido(dto.getSegundoApellido())
                 .celular(dto.getCelular())
                 .email(email)
-                .rol(rol)
+                .rol(rolPrimario)
+                .roles(new java.util.HashSet<>(rolesSet))
                 .activo(dto.getActivo() != null ? dto.getActivo() : true)
+                .tarjetaProfesional(dto.getTarjetaProfesional())
+                .especialidadFormal(dto.getEspecialidadFormal())
+                .numeroRethus(dto.getNumeroRethus())
+                .fechaNacimiento(dto.getFechaNacimiento())
+                .sexo(dto.getSexo())
+                .municipio(dto.getMunicipio())
+                .departamento(dto.getDepartamento())
+                .tipoVinculacion(dto.getTipoVinculacion())
+                .fechaIngreso(dto.getFechaIngreso())
+                .fechaRetiro(dto.getFechaRetiro())
                 .usuario(usuario)
                 .build();
         p = personalRepository.save(p);
         return toDto(p);
+    }
+
+    /** Resuelve el conjunto de roles a partir del dto (roles[] tiene prioridad sobre rol). */
+    private static Set<String> resolveRoles(PersonalRequestDto dto) {
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            return dto.getRoles();
+        }
+        String rol = dto.getRol() != null && !dto.getRol().isBlank() ? dto.getRol().trim() : "USER";
+        return Set.of(rol);
     }
 
     private static String buildNombreCompleto(PersonalRequestDto dto) {
@@ -156,6 +178,7 @@ public class PersonalServiceImpl implements PersonalService {
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado: " + id));
         p.setNombres(dto.getNombres());
         p.setApellidos(dto.getApellidos());
+        p.setTipoDocumento(dto.getTipoDocumento());
         p.setIdentificacion(dto.getIdentificacion());
         p.setPrimerNombre(dto.getPrimerNombre());
         p.setSegundoNombre(dto.getSegundoNombre());
@@ -170,15 +193,30 @@ public class PersonalServiceImpl implements PersonalService {
                 usuarioRepository.save(p.getUsuario());
             }
         }
-        if (dto.getRol() != null && !dto.getRol().isBlank()) {
-            p.setRol(dto.getRol().trim());
+        // Sincronizar multi-rol con Usuario.roles
+        Set<String> rolesSet = resolveRoles(dto);
+        if (!rolesSet.isEmpty()) {
+            String rolPrimario = rolesSet.iterator().next();
+            p.setRol(rolPrimario);
+            p.getRoles().clear();
+            p.getRoles().addAll(rolesSet);
             if (p.getUsuario() != null) {
                 p.getUsuario().getRoles().clear();
-                p.getUsuario().getRoles().add(dto.getRol().trim());
+                p.getUsuario().getRoles().addAll(rolesSet);
                 usuarioRepository.save(p.getUsuario());
             }
         }
         p.setActivo(dto.getActivo());
+        if (dto.getTarjetaProfesional() != null) p.setTarjetaProfesional(dto.getTarjetaProfesional());
+        if (dto.getEspecialidadFormal() != null) p.setEspecialidadFormal(dto.getEspecialidadFormal());
+        if (dto.getNumeroRethus() != null) p.setNumeroRethus(dto.getNumeroRethus());
+        if (dto.getFechaNacimiento() != null) p.setFechaNacimiento(dto.getFechaNacimiento());
+        if (dto.getSexo() != null) p.setSexo(dto.getSexo());
+        if (dto.getMunicipio() != null) p.setMunicipio(dto.getMunicipio());
+        if (dto.getDepartamento() != null) p.setDepartamento(dto.getDepartamento());
+        if (dto.getTipoVinculacion() != null) p.setTipoVinculacion(dto.getTipoVinculacion());
+        if (dto.getFechaIngreso() != null) p.setFechaIngreso(dto.getFechaIngreso());
+        p.setFechaRetiro(dto.getFechaRetiro());
         p = personalRepository.save(p);
         return toDto(p);
     }
@@ -273,6 +311,7 @@ public class PersonalServiceImpl implements PersonalService {
                 .id(p.getId())
                 .nombres(p.getNombres())
                 .apellidos(p.getApellidos())
+                .tipoDocumento(p.getTipoDocumento())
                 .identificacion(p.getIdentificacion())
                 .primerNombre(p.getPrimerNombre())
                 .segundoNombre(p.getSegundoNombre())
@@ -281,10 +320,21 @@ public class PersonalServiceImpl implements PersonalService {
                 .celular(p.getCelular())
                 .email(p.getEmail())
                 .rol(p.getRol())
+                .roles(p.getRoles() != null ? new java.util.HashSet<>(p.getRoles()) : new java.util.HashSet<>())
                 .fotoUrl(p.getFotoUrl())
                 .firmaUrl(p.getFirmaUrl())
                 .activo(p.getActivo())
                 .createdAt(p.getCreatedAt())
+                .tarjetaProfesional(p.getTarjetaProfesional())
+                .especialidadFormal(p.getEspecialidadFormal())
+                .numeroRethus(p.getNumeroRethus())
+                .fechaNacimiento(p.getFechaNacimiento())
+                .sexo(p.getSexo())
+                .municipio(p.getMunicipio())
+                .departamento(p.getDepartamento())
+                .tipoVinculacion(p.getTipoVinculacion())
+                .fechaIngreso(p.getFechaIngreso())
+                .fechaRetiro(p.getFechaRetiro())
                 .build();
     }
 }

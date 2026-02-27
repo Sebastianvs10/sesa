@@ -136,6 +136,11 @@ export class CitasPageComponent implements OnInit, OnDestroy {
   /* ── Nota (opcional) ───────────────────────────────────────────────── */
   nota = '';
 
+  /* ── Campos normativos Res. 2953/2014 ───────────────────────────────── */
+  tipoCita         = signal<string>('PRIMERA_VEZ');
+  numeroAutorizacion = '';
+  duracionMin      = signal<number>(20);
+
   /* ── Estado de creación ─────────────────────────────────────────────── */
   savingCita    = signal(false);
 
@@ -433,12 +438,15 @@ export class CitasPageComponent implements OnInit, OnDestroy {
 
     this.savingCita.set(true);
     this.citaService.create({
-      pacienteId:    this.selectedPatient()!.id,
-      profesionalId: this.selectedProfesional()!.id,
-      servicio:      this.selectedEspecialidad(),
+      pacienteId:          this.selectedPatient()!.id,
+      profesionalId:       this.selectedProfesional()!.id,
+      servicio:            this.selectedEspecialidad(),
       fechaHora,
-      estado:        'PENDIENTE',
-      notas:         this.nota || undefined,
+      estado:              'PENDIENTE',
+      notas:               this.nota || undefined,
+      tipoCita:            this.tipoCita(),
+      numeroAutorizacionEps: this.numeroAutorizacion || undefined,
+      duracionEstimadaMin: this.duracionMin(),
     }).subscribe({
       next: () => {
         this.savingCita.set(false);
@@ -462,6 +470,9 @@ export class CitasPageComponent implements OnInit, OnDestroy {
     this.selectedDay.set(null);
     this.selectedSlot.set('');
     this.nota = '';
+    this.tipoCita.set('PRIMERA_VEZ');
+    this.numeroAutorizacion = '';
+    this.duracionMin.set(20);
     this.allSlots.set([]);
     this.wizardStep.set(1);
   }
@@ -656,5 +667,29 @@ export class CitasPageComponent implements OnInit, OnDestroy {
       { label: 'Tarde',   slots: all.filter(s => parseInt(s.time) >= 12 && parseInt(s.time) < 18) },
       { label: 'Noche',   slots: all.filter(s => parseInt(s.time) >= 18) },
     ].filter(g => g.slots.length > 0);
+  }
+
+  // ── Indicador de oportunidad Res. 2953/2014 ────────────────────────
+  oportunidadClass(cita: CitaDto): string {
+    if (cita.alertaOportunidad === true)  return 'oportunidad--alerta';
+    if (cita.alertaOportunidad === false) return 'oportunidad--ok';
+    return '';
+  }
+
+  oportunidadLabel(cita: CitaDto): string {
+    if (cita.diasEspera == null) return '';
+    const limite = cita.tipoCita === 'PRIMERA_VEZ' ? 3 : 15;
+    const tipo   = cita.tipoCita === 'PRIMERA_VEZ' ? 'Primera vez' : 'Control/esp.';
+    return `${tipo}: ${cita.diasEspera}d / límite ${limite}d`;
+  }
+
+  tipoCitaLabel(tipo?: string): string {
+    const map: Record<string, string> = {
+      PRIMERA_VEZ:  'Primera vez',
+      CONTROL:      'Control',
+      ESPECIALISTA: 'Especialista',
+      URGENTE:      'Urgente',
+    };
+    return map[tipo ?? ''] ?? (tipo ?? '');
   }
 }

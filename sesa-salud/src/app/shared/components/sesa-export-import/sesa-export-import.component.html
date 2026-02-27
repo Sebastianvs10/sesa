@@ -1,0 +1,158 @@
+<div class="sesa-ei">
+
+  <!-- ══════════════════ TABS ══════════════════ -->
+  <div class="sesa-ei-tabs">
+    <button class="sesa-ei-tab" [class.sesa-ei-tab--active]="activeTab === 'export'"
+            type="button" (click)="activeTab = 'export'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Exportar Excel
+    </button>
+    <button class="sesa-ei-tab" [class.sesa-ei-tab--active]="activeTab === 'import'"
+            type="button" (click)="activeTab = 'import'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Importar Excel
+    </button>
+  </div>
+
+  <!-- ══════════════════ EXPORT ══════════════════ -->
+  @if (activeTab === 'export') {
+    <div class="sesa-ei-body">
+      <p class="sesa-ei-desc">Descarga los datos en formato <strong>Excel (.xlsx)</strong> para análisis o respaldo.</p>
+
+      <!-- Selector de entidad -->
+      @if (configs.length > 1) {
+        <div class="sesa-ei-field">
+          <label class="sesa-ei-label">¿Qué deseas exportar?</label>
+          <div class="sesa-ei-radio-group">
+            @for (cfg of configs; track cfg.tipo) {
+              <label class="sesa-ei-radio" [class.sesa-ei-radio--active]="selectedConfig?.tipo === cfg.tipo">
+                <input type="radio" [value]="cfg" [(ngModel)]="selectedConfig" name="exportTipo" />
+                {{ cfg.label }}
+              </label>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Filtro de fechas (si aplica) -->
+      @if (selectedConfig?.conFiltroFechas) {
+        <div class="sesa-ei-dates">
+          <div class="sesa-ei-field">
+            <label class="sesa-ei-label">Desde</label>
+            <input class="sesa-ei-input" type="date" [(ngModel)]="exportDesde" />
+          </div>
+          <div class="sesa-ei-field">
+            <label class="sesa-ei-label">Hasta</label>
+            <input class="sesa-ei-input" type="date" [(ngModel)]="exportHasta" />
+          </div>
+        </div>
+      }
+
+      <button class="sesa-btn sesa-btn-primary sesa-ei-export-btn" type="button"
+              [disabled]="exporting()" (click)="exportar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        @if (exporting()) { Generando Excel... } @else { Descargar Excel }
+      </button>
+    </div>
+  }
+
+  <!-- ══════════════════ IMPORT ══════════════════ -->
+  @if (activeTab === 'import') {
+    <div class="sesa-ei-body">
+      <p class="sesa-ei-desc">Carga registros masivamente desde un archivo <strong>Excel (.xlsx)</strong>. Descarga la plantilla para ver el formato esperado.</p>
+
+      <!-- Selector de entidad -->
+      @if (configs.length > 1) {
+        <div class="sesa-ei-field">
+          <label class="sesa-ei-label">¿Qué deseas importar?</label>
+          <div class="sesa-ei-radio-group">
+            @for (cfg of configs; track cfg.tipo) {
+              <label class="sesa-ei-radio" [class.sesa-ei-radio--active]="selectedImportConfig?.tipo === cfg.tipo">
+                <input type="radio" [value]="cfg" [(ngModel)]="selectedImportConfig" name="importTipo" />
+                {{ cfg.label }}
+              </label>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Zona drag & drop -->
+      <div class="sesa-ei-dropzone"
+           [class.sesa-ei-dropzone--active]="dragOver()"
+           [class.sesa-ei-dropzone--has-file]="selectedFile !== null"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave()"
+           (drop)="onDrop($event)"
+           (click)="fileInput.click()">
+        <input #fileInput type="file" accept=".xlsx,.xls" style="display:none"
+               (change)="onFileSelected($event)" />
+        @if (selectedFile) {
+          <div class="sesa-ei-file-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sesa-ei-file-icon" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div>
+              <div class="sesa-ei-file-name">{{ selectedFile.name }}</div>
+              <div class="sesa-ei-file-size">{{ (selectedFile.size / 1024).toFixed(1) }} KB</div>
+            </div>
+            <button class="sesa-ei-remove-btn" type="button" (click)="$event.stopPropagation(); removeFile()" aria-label="Quitar archivo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        } @else {
+          <div class="sesa-ei-drop-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sesa-ei-drop-icon" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <p>Arrastra el archivo aquí o <span class="sesa-ei-browse">haz clic para buscar</span></p>
+            <p class="sesa-ei-drop-fmt">Formatos aceptados: .xlsx, .xls</p>
+          </div>
+        }
+      </div>
+
+      <!-- Acciones -->
+      <div class="sesa-ei-import-actions">
+        <button class="sesa-btn sesa-btn-outline" type="button"
+                (click)="descargarPlantilla()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar plantilla
+        </button>
+        <button class="sesa-btn sesa-btn-primary" type="button"
+                [disabled]="importing() || !selectedFile"
+                (click)="importar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          @if (importing()) { Importando... } @else { Importar datos }
+        </button>
+      </div>
+
+      <!-- Resultado de importación -->
+      @if (importResult(); as result) {
+        <div class="sesa-ei-result"
+             [class.sesa-ei-result--success]="result.importados > 0"
+             [class.sesa-ei-result--warning]="result.importados === 0">
+          <div class="sesa-ei-result-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @if (result.importados > 0) {
+                <polyline points="20 6 9 17 4 12"/>
+              } @else {
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/>
+              }
+            </svg>
+            <span>{{ result.mensaje }}</span>
+          </div>
+          <div class="sesa-ei-result-stats">
+            <span class="sesa-ei-stat sesa-ei-stat--ok">✓ {{ result.importados }} importados</span>
+            <span class="sesa-ei-stat sesa-ei-stat--skip">⊘ {{ result.omitidos }} omitidos</span>
+          </div>
+          @if (result.errores && result.errores.length > 0) {
+            <details class="sesa-ei-errors">
+              <summary>Ver {{ result.errores.length }} advertencia{{ result.errores.length !== 1 ? 's' : '' }}</summary>
+              <ul>
+                @for (e of result.errores; track $index) {
+                  <li>{{ e }}</li>
+                }
+              </ul>
+            </details>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>

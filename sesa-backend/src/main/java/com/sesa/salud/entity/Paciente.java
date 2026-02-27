@@ -63,6 +63,42 @@ public class Paciente {
     @Builder.Default
     private Boolean activo = true;
 
+    // Campos normativos Res. 3374/2000 (RIPS - Archivo CT)
+    @Column(name = "municipio_residencia", length = 10)
+    private String municipioResidencia;
+
+    @Column(name = "departamento_residencia", length = 10)
+    private String departamentoResidencia;
+
+    @Column(name = "zona_residencia", length = 10)
+    private String zonaResidencia;
+
+    @Column(name = "regimen_afiliacion", length = 20)
+    private String regimenAfiliacion;
+
+    @Column(name = "tipo_usuario", length = 30)
+    private String tipoUsuario;
+
+    // Contacto de emergencia / acudiente
+    @Column(name = "contacto_emergencia_nombre", length = 150)
+    private String contactoEmergenciaNombre;
+
+    @Column(name = "contacto_emergencia_telefono", length = 30)
+    private String contactoEmergenciaTelefono;
+
+    // Datos sociodemográficos para SISPRO
+    @Column(name = "estado_civil", length = 20)
+    private String estadoCivil;
+
+    @Column(length = 50)
+    private String escolaridad;
+
+    @Column(length = 100)
+    private String ocupacion;
+
+    @Column(name = "pertenencia_etnica", length = 50)
+    private String pertenenciaEtnica;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

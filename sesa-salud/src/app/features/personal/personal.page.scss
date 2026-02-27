@@ -972,3 +972,220 @@
   .pp-table th:nth-child(2),
   .pp-table td:nth-child(2) { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CAMPOS NORMATIVOS RETHUS / TP
+═══════════════════════════════════════════════════════════════════════ */
+
+.pp-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pp-section-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  [data-theme='dark'] & {
+    background: rgba(29, 78, 216, 0.2);
+    color: #93c5fd;
+  }
+}
+
+.pp-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--sesa-text-primary);
+}
+
+.pp-form-grid {
+  display: grid;
+  gap: 12px;
+  &.pp-form-grid--3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 768px) {
+    &.pp-form-grid--3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    &.pp-form-grid--3 { grid-template-columns: 1fr; }
+  }
+}
+
+.pp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pp-field-hint {
+  font-size: 10.5px;
+  color: var(--sesa-text-secondary);
+}
+
+/* Tags TP/RETHUS en la lista */
+.pp-person-tp,
+.pp-person-rethus {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-top: 2px;
+}
+
+.pp-person-tp {
+  background: #dbeafe;
+  color: #1e40af;
+  [data-theme='dark'] & { background: rgba(30,64,175,0.2); color: #93c5fd; }
+}
+
+.pp-person-rethus {
+  background: #d1fae5;
+  color: #065f46;
+  margin-left: 4px;
+  [data-theme='dark'] & { background: rgba(6,95,70,0.2); color: #6ee7b7; }
+}
+
+/* ── Multi-rol: checkbox grid en formulario ─────────────────────────── */
+
+.pp-section-hint {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  margin: -0.5rem 0 0.75rem;
+}
+
+.pp-normative-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  margin-left: 0.5rem;
+  [data-theme='dark'] & {
+    background: rgba(29, 78, 216, 0.18);
+    color: #93c5fd;
+  }
+}
+
+.pp-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.6rem;
+}
+
+.pp-role-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  user-select: none;
+
+  input[type='checkbox'] { display: none; }
+
+  &:hover {
+    border-color: var(--sesa-secondary);
+    background: color-mix(in srgb, var(--sesa-secondary) 6%, var(--sesa-surface));
+  }
+
+  &--selected {
+    border-color: var(--sesa-secondary);
+    background: color-mix(in srgb, var(--sesa-secondary) 10%, var(--sesa-surface));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sesa-secondary) 20%, transparent);
+  }
+}
+
+.pp-role-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pp-role-chip-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--sesa-text-primary);
+  flex: 1;
+}
+
+.pp-role-primary-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: var(--sesa-secondary);
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+
+.pp-selected-roles-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sesa-secondary) 6%, var(--sesa-surface));
+  border: 1px solid var(--sesa-border);
+}
+
+.pp-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-right: 0.25rem;
+}
+
+/* Multi-rol en tabla */
+.pp-roles-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Colores dot en chips (reutiliza las mismas clases de pp-role-badge) */
+.pp-role-chip-dot.pp-role--medico         { background: #3b82f6; }
+.pp-role-chip-dot.pp-role--coordinador    { background: #8b5cf6; }
+.pp-role-chip-dot.pp-role--odontologo     { background: #06b6d4; }
+.pp-role-chip-dot.pp-role--bacteriologo   { background: #10b981; }
+.pp-role-chip-dot.pp-role--enfermero      { background: #14b8a6; }
+.pp-role-chip-dot.pp-role--jefe-enfermeria { background: #0d9488; }
+.pp-role-chip-dot.pp-role--auxiliar       { background: #22d3ee; }
+.pp-role-chip-dot.pp-role--psicologo      { background: #a78bfa; }
+.pp-role-chip-dot.pp-role--farmacia       { background: #f59e0b; }
+.pp-role-chip-dot.pp-role--recepcionista  { background: #64748b; }
+.pp-role-chip-dot.pp-role--admin          { background: #ef4444; }
+.pp-role-chip-dot.pp-role--super          { background: #dc2626; }
+.pp-role-chip-dot.pp-role--default        { background: #94a3b8; }
+
+/* Campos de 4 columnas (para la fila de nombres) */
+.pp-fields--4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+/* Campos de 3 columnas */
+.pp-fields--3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}

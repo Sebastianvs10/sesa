@@ -12,6 +12,7 @@ import com.sesa.salud.repository.master.RoleRepository;
 import com.sesa.salud.security.JwtPrincipal;
 import com.sesa.salud.security.RoleConstants;
 import com.sesa.salud.service.PermissionService;
+import com.sesa.salud.tenant.TenantContextHolder;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,6 +40,7 @@ public class RolController {
     @GetMapping
     @PreAuthorize("hasRole('SUPERADMINISTRADOR')")
     public ResponseEntity<List<Map<String, Object>>> listRoles() {
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         List<Role> allRoles = roleRepository.findAll();
         List<Map<String, Object>> result = allRoles.stream()
                 .map(r -> {
@@ -59,6 +61,7 @@ public class RolController {
     @PostMapping
     @PreAuthorize("hasRole('SUPERADMINISTRADOR')")
     public ResponseEntity<Map<String, Object>> createRole(@RequestBody @Valid RolCreateRequest request) {
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         String codigo = request.getCodigo().trim().toUpperCase().replace(" ", "_");
         if (roleRepository.existsByCodigo(codigo)) {
             return ResponseEntity.badRequest()
@@ -92,6 +95,7 @@ public class RolController {
     public ResponseEntity<Void> updateModulos(
             @PathVariable String rol,
             @RequestBody @Valid RolModulosRequest request) {
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         Set<RoleConstants.Modulo> modulos = request.getModulos().stream()
                 .map(String::toUpperCase)
                 .map(RoleConstants.Modulo::valueOf)
@@ -100,20 +104,52 @@ public class RolController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Devuelve los módulos permitidos del usuario autenticado.
+     *
+     * <p>Si se pasa el parámetro {@code rol}, se calculan los módulos
+     * exclusivamente para ese rol (modo "vista de un solo rol"). El frontend
+     * lo usa al iniciar sesión y al cambiar de rol activo, de modo que el
+     * sidebar muestre únicamente los módulos de ese rol.</p>
+     *
+     * <p>Sin parámetro devuelve la unión de todos los roles (comportamiento
+     * anterior, mantenido por retrocompatibilidad).</p>
+     */
     @GetMapping("/usuario-actual")
-    public ResponseEntity<Map<String, Object>> permisosUsuarioActual(@AuthenticationPrincipal JwtPrincipal principal) {
+    public ResponseEntity<Map<String, Object>> permisosUsuarioActual(
+            @AuthenticationPrincipal JwtPrincipal principal,
+            @RequestParam(value = "rol", required = false) String rolActivo) {
+
         if (principal == null) {
             return ResponseEntity.ok(Map.of("roles", List.of(), "modulos", List.of()));
         }
-        String role = principal.role();
-        Set<String> roles = role != null ? Set.of(role) : Set.of();
-        Set<String> modulos = permissionService.getAccessibleModules(roles).stream()
-                .map(Enum::name)
-                .collect(Collectors.toSet());
-        return ResponseEntity.ok(Map.of(
-                "roles", roles,
-                "modulos", modulos
-        ));
+        String previousSchema = TenantContextHolder.getTenantSchema();
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
+        try {
+            Set<String> todosRoles = principal.roles().isEmpty()
+                    ? (principal.role() != null ? Set.of(principal.role()) : Set.of())
+                    : principal.roles();
+
+            // Si se indica un rolActivo y el usuario realmente lo tiene, filtrar solo por ese rol.
+            Set<String> rolesParaModulos;
+            if (rolActivo != null && !rolActivo.isBlank() && todosRoles.contains(rolActivo.toUpperCase())) {
+                rolesParaModulos = Set.of(rolActivo.toUpperCase());
+            } else {
+                rolesParaModulos = todosRoles;
+            }
+
+            Set<String> modulos = permissionService.getAccessibleModules(rolesParaModulos).stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toSet());
+
+            return ResponseEntity.ok(Map.of(
+                    "roles",     todosRoles,
+                    "rolActivo", rolesParaModulos.iterator().next(),
+                    "modulos",   modulos
+            ));
+        } finally {
+            TenantContextHolder.setTenantSchema(previousSchema);
+        }
     }
 
     private static String nombreRol(String codigo) {

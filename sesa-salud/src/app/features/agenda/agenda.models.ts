@@ -23,7 +23,13 @@ export type ServicioClinico =
 
 export type EstadoTurno         = 'BORRADOR' | 'APROBADO' | 'CERRADO';
 export type EstadoProgramacion  = 'BORRADOR' | 'EN_REVISION' | 'APROBADO' | 'CERRADO';
-export type TipoPersonal        = 'MEDICO' | 'ENFERMERO' | 'AUXILIAR_ENFERMERIA';
+export type TipoPersonal        =
+  | 'MEDICO'
+  | 'ENFERMERO'
+  | 'AUXILIAR_ENFERMERIA'
+  | 'ODONTOLOGO'
+  | 'RECEPCIONISTA'
+  | 'OTRO';  // BACTERIOLOGO, PSICOLOGO, REGENTE_FARMACIA, USER, ADMIN, etc.
 export type AlertaTipo          = 'CONFLICTO' | 'ADVERTENCIA' | 'OK';
 
 /* ── Entidades principales ───────────────────────────────────────── */

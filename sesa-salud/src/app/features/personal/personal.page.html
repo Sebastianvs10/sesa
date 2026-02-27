@@ -83,9 +83,21 @@
           </svg>
           Datos de identificación
         </div>
-        <div class="pp-fields pp-fields--5">
-          <div class="pp-field pp-field--full">
-            <label class="pp-label">Identificación <span class="pp-required">*</span></label>
+        <div class="pp-fields pp-fields--2">
+          <div class="pp-field">
+            <label class="pp-label">Tipo de documento</label>
+            <select class="pp-select" id="tipoDocumento" [(ngModel)]="form.tipoDocumento">
+              <option value="">Seleccione…</option>
+              <option value="CC">CC — Cédula de Ciudadanía</option>
+              <option value="CE">CE — Cédula de Extranjería</option>
+              <option value="PA">PA — Pasaporte</option>
+              <option value="PEP">PEP — Permiso Especial de Permanencia</option>
+              <option value="TI">TI — Tarjeta de Identidad</option>
+              <option value="RC">RC — Registro Civil</option>
+            </select>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Número de documento</label>
             <div class="pp-input-wrap">
               <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -96,6 +108,8 @@
                 [(ngModel)]="form.identificacion" placeholder="Número de documento" />
             </div>
           </div>
+        </div>
+        <div class="pp-fields pp-fields--4" style="margin-top:0.75rem">
           <div class="pp-field">
             <label class="pp-label">Primer nombre <span class="pp-required">*</span></label>
             <input class="pp-input" id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
@@ -183,7 +197,7 @@
         </div>
       }
 
-      <!-- §4 Rol -->
+      <!-- §4 Roles y permisos (multi-rol) -->
       <div class="pp-form-section">
         <div class="pp-section-title">
           <span class="pp-section-dot pp-dot--amber"></span>
@@ -191,19 +205,34 @@
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          Rol y permisos
+          Roles y permisos <span class="pp-required">*</span>
         </div>
-        <div class="pp-fields pp-fields--1half">
-          <div class="pp-field">
-            <label class="pp-label">Rol de usuario <span class="pp-required">*</span></label>
-            <select class="pp-select" id="rol" [(ngModel)]="form.rol">
-              <option value="">Seleccione el rol…</option>
-              @for (r of rolesPersonal; track r.value) {
-                <option [value]="r.value" [disabled]="r.disabled">{{ r.label }}</option>
-              }
-            </select>
+        <p class="pp-section-hint">Seleccione uno o más roles. El primer rol marcado es el rol principal de acceso.</p>
+        <div class="pp-roles-grid">
+          @for (r of rolesPersonal; track r.value) {
+            @if (!r.disabled) {
+              <label class="pp-role-chip" [class.pp-role-chip--selected]="isRolSelected(r.value)">
+                <input type="checkbox"
+                  [checked]="isRolSelected(r.value)"
+                  (change)="toggleRol(r.value)"
+                  [disabled]="r.disabled ?? false" />
+                <span class="pp-role-chip-dot pp-role--{{ roleClass(r.value) }}"></span>
+                <span class="pp-role-chip-label">{{ r.label }}</span>
+                @if (selectedRoles.indexOf(r.value) === 0) {
+                  <span class="pp-role-primary-badge">Principal</span>
+                }
+              </label>
+            }
+          }
+        </div>
+        @if (selectedRoles.length > 0) {
+          <div class="pp-selected-roles-summary">
+            <span class="pp-summary-label">Roles seleccionados:</span>
+            @for (r of selectedRoles; track r) {
+              <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
+            }
           </div>
-        </div>
+        }
       </div>
 
       <!-- §5 Archivos -->
@@ -258,7 +287,131 @@
         </div>
       </div>
 
-      <!-- §6 Estado -->
+      <!-- §6 Habilitación profesional (Res. 1449/2016 RETHUS / Ley 23/1981) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--indigo"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Habilitación profesional
+          <span class="pp-normative-tag">Res. 1449/2016 · RETHUS</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="tarjetaProfesional">Tarjeta Profesional / Ocupacional</label>
+            <input id="tarjetaProfesional" type="text" class="pp-input"
+              placeholder="Ej. TP-12345-2015"
+              [(ngModel)]="form.tarjetaProfesional" maxlength="30" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="especialidadFormal">Especialidad formal</label>
+            <input id="especialidadFormal" type="text" class="pp-input"
+              placeholder="Ej. Medicina General, Odontología…"
+              [(ngModel)]="form.especialidadFormal" maxlength="150" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="numeroRethus">Número RETHUS</label>
+            <input id="numeroRethus" type="text" class="pp-input"
+              placeholder="Ej. 123456789"
+              [(ngModel)]="form.numeroRethus" maxlength="30" />
+            <small class="pp-field-hint">Registro Único Nacional del Talento Humano en Salud</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- §7 Datos demográficos (RIPS Res. 3374/2000 / SISPRO) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--teal"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Datos demográficos
+          <span class="pp-normative-tag">Res. 3374/2000 · SISPRO</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="fechaNacimiento">Fecha de nacimiento</label>
+            <input id="fechaNacimiento" type="date" class="pp-input" [(ngModel)]="form.fechaNacimiento" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="sexo">Sexo biológico</label>
+            <select id="sexo" class="pp-select" [(ngModel)]="form.sexo">
+              <option value="">Seleccione…</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- §8 Lugar de práctica (Res. 2003/2014) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--green"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Lugar de práctica
+          <span class="pp-normative-tag">Res. 2003/2014</span>
+        </div>
+        <div class="pp-fields pp-fields--2">
+          <div class="pp-field">
+            <label class="pp-label" for="municipio">Código municipio DIVIPOLA</label>
+            <input id="municipio" type="text" class="pp-input"
+              placeholder="Ej. 11001 (Bogotá)" [(ngModel)]="form.municipio" maxlength="10" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="departamento">Código departamento DIVIPOLA</label>
+            <input id="departamento" type="text" class="pp-input"
+              placeholder="Ej. 11 (Cundinamarca)" [(ngModel)]="form.departamento" maxlength="10" />
+          </div>
+        </div>
+      </div>
+
+      <!-- §9 Vínculo laboral (Circular 047/2007 Min. Protección Social) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          Vínculo laboral
+          <span class="pp-normative-tag">Circular 047/2007</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="tipoVinculacion">Tipo de vinculación</label>
+            <select id="tipoVinculacion" class="pp-select" [(ngModel)]="form.tipoVinculacion">
+              <option value="">Seleccione…</option>
+              <option value="PLANTA">Planta</option>
+              <option value="CONTRATO">Contrato</option>
+              <option value="PRESTADOR">Prestador de servicios</option>
+              <option value="CONVENIO">Convenio / Rotatorio</option>
+            </select>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaIngreso">Fecha de ingreso</label>
+            <input id="fechaIngreso" type="date" class="pp-input" [(ngModel)]="form.fechaIngreso" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaRetiro">Fecha de retiro</label>
+            <input id="fechaRetiro" type="date" class="pp-input" [(ngModel)]="form.fechaRetiro" />
+            <small class="pp-field-hint">Dejar vacío si el profesional continúa activo.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- §10 Estado -->
       <div class="pp-form-section pp-form-section--row">
         <div class="pp-toggle-group">
           <label class="pp-toggle">
@@ -442,11 +595,25 @@
                     <div class="pp-person-info">
                       <span class="pp-person-name">{{ fullName(p) }}</span>
                       <span class="pp-person-email">{{ p.email || '—' }}</span>
+                      @if (p.tarjetaProfesional) {
+                        <span class="pp-person-tp">TP: {{ p.tarjetaProfesional }}</span>
+                      }
+                      @if (p.numeroRethus) {
+                        <span class="pp-person-rethus">RETHUS: {{ p.numeroRethus }}</span>
+                      }
                     </div>
                   </div>
                 </td>
                 <td>
-                  <span class="pp-role-badge pp-role--{{ roleClass(p.rol) }}">{{ p.rol || '—' }}</span>
+                  @if (p.roles && p.roles.length > 0) {
+                    <div class="pp-roles-cell">
+                      @for (r of p.roles; track r) {
+                        <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="pp-role-badge pp-role--{{ roleClass(p.rol) }}">{{ p.rol || '—' }}</span>
+                  }
                 </td>
                 <td>
                   <span class="pp-status" [class.pp-status--active]="p.activo" [class.pp-status--inactive]="!p.activo">

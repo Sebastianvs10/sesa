@@ -1,0 +1,483 @@
+<div class="cm-page">
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       ALERTA DE CITAS PRÓXIMAS (≤ 15 min)
+  ════════════════════════════════════════════════════════════════════════ -->
+  @if (citasProximas().length > 0) {
+    <div class="cm-alert-proximas" role="alert">
+      <fa-icon [icon]="faBell" class="cm-alert-proximas__icon"></fa-icon>
+      <span>
+        <strong>{{ citasProximas().length }} cita{{ citasProximas().length > 1 ? 's' : '' }}</strong>
+        próxima{{ citasProximas().length > 1 ? 's' : '' }} en los siguientes 15 minutos:
+        @for (c of citasProximas(); track c.id) {
+          <span class="cm-alert-proximas__nombre">{{ c.pacienteNombreCompleto }} ({{ formatHora(c.fechaHora) }})</span>
+        }
+      </span>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       LAYOUT PRINCIPAL: izquierda (calendario + filtros) | derecha (citas)
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="cm-layout">
+
+    <!-- ─── PANEL IZQUIERDO ─────────────────────────────────────────── -->
+    <aside class="cm-sidebar">
+
+      <!-- Reloj del día -->
+      <div class="cm-clock">
+        <span class="cm-clock__time">{{ horaActual() }}</span>
+        <span class="cm-clock__date">{{ formatFechaDisplay() }}</span>
+        @if (!esHoy()) {
+          <button class="cm-btn cm-btn--ghost cm-btn--sm" (click)="irHoy()">
+            Volver a hoy
+          </button>
+        }
+      </div>
+
+      <!-- Mini calendario -->
+      <div class="cm-calendar-wrap">
+        <sesa-calendar
+          [selectedDate]="selectedDateStr()"
+          (dateSelected)="onDateSelected($event)"
+        />
+      </div>
+
+      <!-- Filtro por profesional (solo ADMIN / SUPERADMIN) -->
+      @if (isAdmin()) {
+        <div class="cm-prof-filter">
+          <div class="cm-prof-filter__title">
+            <fa-icon [icon]="faFilter"></fa-icon>
+            Filtrar por profesional
+          </div>
+          <div class="cm-prof-chips">
+            <button
+              class="cm-chip"
+              [class.cm-chip--active]="selectedProfesionalId() === null"
+              (click)="seleccionarProfesional(null)"
+            >Todos</button>
+            @for (p of profesionales(); track p.id) {
+              <button
+                class="cm-chip"
+                [class.cm-chip--active]="selectedProfesionalId() === p.id"
+                (click)="seleccionarProfesional(p.id)"
+                [title]="nombreRol(p.rol)"
+              >
+                {{ p.nombre }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Filtro por estado -->
+      <div class="cm-estado-filter">
+        <div class="cm-prof-filter__title">
+          <fa-icon [icon]="faFilter"></fa-icon>
+          Estado
+        </div>
+        <div class="cm-prof-chips">
+          <button class="cm-chip" [class.cm-chip--active]="selectedEstadoFiltro() === ''" (click)="selectedEstadoFiltro.set('')">Todos</button>
+          <button class="cm-chip cm-chip--agendada" [class.cm-chip--active]="selectedEstadoFiltro() === 'AGENDADA'" (click)="selectedEstadoFiltro.set('AGENDADA')">Agendadas</button>
+          <button class="cm-chip cm-chip--atendida" [class.cm-chip--active]="selectedEstadoFiltro() === 'ATENDIDA'" (click)="selectedEstadoFiltro.set('ATENDIDA')">Atendidas</button>
+          <button class="cm-chip cm-chip--cancelada" [class.cm-chip--active]="selectedEstadoFiltro() === 'CANCELADA'" (click)="selectedEstadoFiltro.set('CANCELADA')">Canceladas</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ─── PANEL DERECHO ─────────────────────────────────────────────── -->
+    <section class="cm-main">
+
+      <!-- ENCABEZADO con buscador y acciones -->
+      <div class="cm-header">
+        <div class="cm-header__left">
+          <h1 class="cm-header__title">
+            <fa-icon [icon]="faStethoscope"></fa-icon>
+            Consulta Médica
+          </h1>
+          <span class="cm-header__sub">{{ formatFechaDisplay() }}</span>
+        </div>
+        <div class="cm-header__right">
+          <div class="cm-search">
+            <fa-icon [icon]="faSearch" class="cm-search__icon"></fa-icon>
+            <input
+              class="cm-search__input"
+              type="text"
+              placeholder="Buscar paciente, documento, servicio…"
+              [value]="searchQuery()"
+              (input)="searchQuery.set($any($event.target).value)"
+              aria-label="Buscar en consultas"
+            />
+          </div>
+          <button class="cm-btn cm-btn--ghost" (click)="cargarCitas()" title="Recargar">
+            <fa-icon [icon]="faRotateRight"></fa-icon>
+          </button>
+          <button class="cm-btn cm-btn--ghost" (click)="imprimirListado()" title="Imprimir">
+            <fa-icon [icon]="faPrint"></fa-icon>
+          </button>
+          <button class="cm-btn cm-btn--ghost" (click)="exportarExcel()" title="Exportar Excel">
+            <fa-icon [icon]="faFileExcel"></fa-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE MÉTRICAS -->
+      <div class="cm-stats">
+        <div class="cm-stat-card">
+          <span class="cm-stat-card__val">{{ totalCitas() }}</span>
+          <span class="cm-stat-card__lbl">Total del día</span>
+        </div>
+        <div class="cm-stat-card cm-stat-card--agendada">
+          <span class="cm-stat-card__val">{{ agendadas() }}</span>
+          <span class="cm-stat-card__lbl">Pendientes</span>
+        </div>
+        <div class="cm-stat-card cm-stat-card--atendida">
+          <span class="cm-stat-card__val">{{ atendidas() }}</span>
+          <span class="cm-stat-card__lbl">Atendidas</span>
+        </div>
+        <div class="cm-stat-card cm-stat-card--pct">
+          <span class="cm-stat-card__val">{{ pctAsistencia() }}%</span>
+          <span class="cm-stat-card__lbl">Asistencia</span>
+          <div class="cm-stat-card__bar">
+            <div class="cm-stat-card__bar-fill" [style.width.%]="pctAsistencia()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTADO DE CARGA -->
+      @if (loading()) {
+        <div class="cm-loading">
+          <div class="cm-spinner"></div>
+          <span>Cargando consultas…</span>
+        </div>
+      }
+
+      <!-- ESTADO VACÍO -->
+      @if (!loading() && citasFiltradas().length === 0) {
+        <div class="cm-empty">
+          <fa-icon [icon]="faCalendarDays" class="cm-empty__icon"></fa-icon>
+          <p class="cm-empty__title">
+            @if (searchQuery() || selectedEstadoFiltro()) {
+              Sin resultados para el filtro aplicado
+            } @else {
+              No hay consultas agendadas para este día
+            }
+          </p>
+          <p class="cm-empty__sub">Selecciona otra fecha en el calendario</p>
+        </div>
+      }
+
+      <!-- LISTADO DE CITAS -->
+      @if (!loading() && citasFiltradas().length > 0) {
+        <div class="cm-list" role="list">
+          @for (cita of citasFiltradas(); track cita.id; let i = $index) {
+            <article
+              class="cm-card"
+              [class.cm-card--proxima]="esProxima(cita)"
+              role="listitem"
+            >
+              <!-- Acento lateral de color según estado -->
+              <div class="cm-card__accent" [ngClass]="getCardAccentClass(cita.estado)"></div>
+
+              <!-- CABECERA DE LA TARJETA: hora + nombre + badge estado -->
+              <div class="cm-card__head">
+                <div class="cm-card__hora-wrap">
+                  <fa-icon [icon]="faClock" class="cm-card__hora-icon"></fa-icon>
+                  <span class="cm-card__hora">{{ formatHora(cita.fechaHora) }}</span>
+                  @if (esProxima(cita)) {
+                    <span class="cm-card__proxima-badge">
+                      <fa-icon [icon]="faBell"></fa-icon>
+                      Próxima
+                    </span>
+                  }
+                </div>
+                <div class="cm-card__nombre-wrap">
+                  <h2 class="cm-card__nombre">{{ cita.pacienteNombreCompleto }}</h2>
+                  <span class="cm-card__servicio">{{ cita.servicio }}</span>
+                </div>
+                <span class="cm-badge" [ngClass]="getEstadoBadgeClass(cita.estado)">
+                  {{ cita.estado }}
+                </span>
+              </div>
+
+              <!-- CUERPO: info del paciente -->
+              <div class="cm-card__body">
+
+                <div class="cm-card__info-grid">
+                  <!-- Documento -->
+                  <div class="cm-card__info-item">
+                    <fa-icon [icon]="faIdCard" class="cm-card__info-icon"></fa-icon>
+                    <span>{{ tipoDocLabel(cita.pacienteTipoDocumento) }} {{ cita.pacienteDocumento }}</span>
+                  </div>
+
+                  <!-- Edad y Sexo -->
+                  @if (cita.pacienteEdad || cita.pacienteSexo) {
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faUser" class="cm-card__info-icon"></fa-icon>
+                      <span>
+                        @if (cita.pacienteEdad) { {{ cita.pacienteEdad }} años }
+                        @if (cita.pacienteEdad && cita.pacienteSexo) { · }
+                        @if (cita.pacienteSexo) { {{ cita.pacienteSexo }} }
+                        @if (cita.pacienteGrupoSanguineo) { · {{ cita.pacienteGrupoSanguineo }} }
+                      </span>
+                    </div>
+                  }
+
+                  <!-- Teléfono -->
+                  @if (cita.pacienteTelefono) {
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faPhone" class="cm-card__info-icon"></fa-icon>
+                      <span>{{ cita.pacienteTelefono }}</span>
+                    </div>
+                  }
+
+                  <!-- EPS -->
+                  @if (cita.pacienteEps) {
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faHospital" class="cm-card__info-icon"></fa-icon>
+                      <span>{{ cita.pacienteEps }}</span>
+                    </div>
+                  }
+
+                  <!-- Última atención -->
+                  @if (cita.ultimaAtencion) {
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faFileMedical" class="cm-card__info-icon"></fa-icon>
+                      <span>Última atención: {{ formatFechaCorta(cita.ultimaAtencion) }}</span>
+                    </div>
+                  }
+
+                  <!-- Profesional (solo admin) -->
+                  @if (isAdmin() && selectedProfesionalId() === null) {
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faStethoscope" class="cm-card__info-icon"></fa-icon>
+                      <span>{{ cita.profesionalNombre }} · {{ nombreRol(cita.profesionalRol) }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- ALERTAS / INDICADORES CLÍNICOS -->
+                <div class="cm-card__alerts">
+                  @if (!cita.tieneHistoriaClinica) {
+                    <span class="cm-card__alert cm-card__alert--warn" title="Sin Historia Clínica registrada">
+                      <fa-icon [icon]="faExclamationTriangle"></fa-icon>
+                      Sin HC
+                    </span>
+                  } @else {
+                    <span class="cm-card__alert cm-card__alert--ok" title="Tiene Historia Clínica">
+                      <fa-icon [icon]="faCheckCircle"></fa-icon>
+                      HC
+                    </span>
+                  }
+                  @if (cita.tieneFacturasPendientes) {
+                    <span class="cm-card__alert cm-card__alert--danger" title="Tiene facturas pendientes de pago">
+                      <fa-icon [icon]="faMoneyBillWave"></fa-icon>
+                      Fac. pendiente
+                    </span>
+                  }
+                </div>
+
+                <!-- Nota de cancelación si aplica -->
+                @if (cita.estado === 'CANCELADA' && cita.motivoCancelacion) {
+                  <div class="cm-card__cancel-note">
+                    <fa-icon [icon]="faTimesCircle"></fa-icon>
+                    Motivo: {{ cita.motivoCancelacion }}
+                  </div>
+                }
+              </div>
+
+              <!-- PIE DE LA TARJETA: acciones -->
+              <div class="cm-card__actions">
+                <button
+                  class="cm-btn cm-btn--primary cm-btn--sm"
+                  (click)="irAHistoriaClinica(cita)"
+                  title="Abrir Historia Clínica del paciente"
+                >
+                  <fa-icon [icon]="faFileAlt"></fa-icon>
+                  Historia Clínica
+                </button>
+
+                @if (cita.estado === 'AGENDADA') {
+                  <button
+                    class="cm-btn cm-btn--success cm-btn--sm"
+                    (click)="marcarAtendida(cita)"
+                    title="Marcar como atendida"
+                  >
+                    <fa-icon [icon]="faCheckCircle"></fa-icon>
+                    Atendida
+                  </button>
+
+                  <button
+                    class="cm-btn cm-btn--danger cm-btn--sm"
+                    (click)="abrirCancelModal(cita)"
+                    title="Cancelar cita"
+                  >
+                    <fa-icon [icon]="faTimesCircle"></fa-icon>
+                    Cancelar
+                  </button>
+                }
+
+                <button
+                  class="cm-btn cm-btn--ghost cm-btn--sm"
+                  (click)="verDetalle(cita)"
+                  title="Ver detalles del paciente"
+                >
+                  <fa-icon [icon]="faCircleInfo"></fa-icon>
+                  Detalles
+                </button>
+
+                <button
+                  class="cm-btn cm-btn--ghost cm-btn--sm"
+                  (click)="generarFactura(cita)"
+                  title="Generar factura"
+                >
+                  <fa-icon [icon]="faNotesMedical"></fa-icon>
+                  Factura
+                </button>
+              </div>
+
+            </article>
+          }
+        </div>
+      }
+
+    </section>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: CANCELAR CITA
+══════════════════════════════════════════════════════════════════════ -->
+@if (showCancelModal()) {
+  <div class="cm-modal-backdrop" (click)="cerrarCancelModal()" role="presentation">
+    <div class="cm-modal" role="dialog" aria-modal="true" aria-labelledby="modal-cancel-title" (click)="$event.stopPropagation()">
+      <div class="cm-modal__head">
+        <h3 id="modal-cancel-title" class="cm-modal__title">
+          <fa-icon [icon]="faTimesCircle"></fa-icon>
+          Cancelar cita
+        </h3>
+        <button class="cm-modal__close" (click)="cerrarCancelModal()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="cm-modal__body">
+        <label class="cm-modal__label" for="motivo">Motivo de cancelación <span class="cm-modal__required">*</span></label>
+        <textarea
+          id="motivo"
+          class="cm-modal__textarea"
+          rows="3"
+          placeholder="Ej: Paciente no se presentó, reagendada, etc."
+          [(ngModel)]="motivoCancelacion"
+          maxlength="300"
+        ></textarea>
+        <span class="cm-modal__counter">{{ motivoCancelacion.length }}/300</span>
+      </div>
+      <div class="cm-modal__foot">
+        <button class="cm-btn cm-btn--ghost" (click)="cerrarCancelModal()">Cancelar</button>
+        <button
+          class="cm-btn cm-btn--danger"
+          (click)="confirmarCancelacion()"
+          [disabled]="!motivoCancelacion.trim()"
+        >Confirmar cancelación</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODAL: DETALLE DEL PACIENTE
+══════════════════════════════════════════════════════════════════════ -->
+@if (showDetalleModal() && citaDetalle(); as c) {
+  <div class="cm-modal-backdrop" (click)="cerrarDetalle()" role="presentation">
+    <div class="cm-modal cm-modal--lg" role="dialog" aria-modal="true" aria-labelledby="modal-detalle-title" (click)="$event.stopPropagation()">
+      <div class="cm-modal__head">
+        <h3 id="modal-detalle-title" class="cm-modal__title">
+          <fa-icon [icon]="faUser"></fa-icon>
+          {{ c.pacienteNombreCompleto }}
+        </h3>
+        <button class="cm-modal__close" (click)="cerrarDetalle()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="cm-modal__body cm-detalle-body">
+        <div class="cm-detalle-section">
+          <h4 class="cm-detalle-section__title">Información del paciente</h4>
+          <div class="cm-detalle-grid">
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Documento</span>
+              <span class="cm-detalle-item__val">{{ tipoDocLabel(c.pacienteTipoDocumento) }} {{ c.pacienteDocumento }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Edad</span>
+              <span class="cm-detalle-item__val">{{ c.pacienteEdad ? c.pacienteEdad + ' años' : '—' }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Sexo</span>
+              <span class="cm-detalle-item__val">{{ c.pacienteSexo ?? '—' }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Grupo sanguíneo</span>
+              <span class="cm-detalle-item__val">{{ c.pacienteGrupoSanguineo ?? '—' }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Teléfono</span>
+              <span class="cm-detalle-item__val">{{ c.pacienteTelefono ?? '—' }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">EPS</span>
+              <span class="cm-detalle-item__val">{{ c.pacienteEps ?? '—' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cm-detalle-section">
+          <h4 class="cm-detalle-section__title">Información de la cita</h4>
+          <div class="cm-detalle-grid">
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Hora</span>
+              <span class="cm-detalle-item__val">{{ formatHora(c.fechaHora) }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Servicio</span>
+              <span class="cm-detalle-item__val">{{ c.servicio }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Estado</span>
+              <span class="cm-badge" [ngClass]="getEstadoBadgeClass(c.estado)">{{ c.estado }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Profesional</span>
+              <span class="cm-detalle-item__val">{{ c.profesionalNombre }} · {{ nombreRol(c.profesionalRol) }}</span>
+            </div>
+            <div class="cm-detalle-item">
+              <span class="cm-detalle-item__lbl">Última atención</span>
+              <span class="cm-detalle-item__val">{{ formatFechaCorta(c.ultimaAtencion) }}</span>
+            </div>
+          </div>
+        </div>
+        @if (c.notas) {
+          <div class="cm-detalle-section">
+            <h4 class="cm-detalle-section__title">Notas de la cita</h4>
+            <p class="cm-detalle-notas">{{ c.notas }}</p>
+          </div>
+        }
+        <div class="cm-detalle-alerts">
+          <div class="cm-detalle-alert-item" [class.cm-detalle-alert-item--ok]="c.tieneHistoriaClinica" [class.cm-detalle-alert-item--warn]="!c.tieneHistoriaClinica">
+            <fa-icon [icon]="c.tieneHistoriaClinica ? faCheckCircle : faExclamationTriangle"></fa-icon>
+            {{ c.tieneHistoriaClinica ? 'Tiene Historia Clínica registrada' : 'No tiene Historia Clínica' }}
+          </div>
+          @if (c.tieneFacturasPendientes) {
+            <div class="cm-detalle-alert-item cm-detalle-alert-item--danger">
+              <fa-icon [icon]="faMoneyBillWave"></fa-icon>
+              Tiene facturas pendientes de pago
+            </div>
+          }
+        </div>
+      </div>
+      <div class="cm-modal__foot">
+        <button class="cm-btn cm-btn--ghost" (click)="cerrarDetalle()">Cerrar</button>
+        <button class="cm-btn cm-btn--primary" (click)="irAHistoriaClinica(c); cerrarDetalle()">
+          <fa-icon [icon]="faFileAlt"></fa-icon>
+          Ver Historia Clínica
+        </button>
+      </div>
+    </div>
+  </div>
+}

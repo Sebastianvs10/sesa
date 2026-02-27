@@ -1611,3 +1611,118 @@
   .citas-lista-date-wrap { order: 1; }
   .citas-refresh-btn { margin-left: 0; order: 3; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   CAMPOS NORMATIVOS RES. 2953/2014
+═══════════════════════════════════════════════════════ */
+.citas-norm-section {
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--sesa-surface);
+}
+
+.citas-norm-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.citas-norm-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  [data-theme='dark'] & {
+    background: rgba(29, 78, 216, 0.25);
+    color: #93c5fd;
+  }
+}
+
+.citas-norm-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.citas-norm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.citas-norm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.citas-field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  .req { color: #ef4444; margin-left: 2px; }
+}
+
+.citas-field-select,
+.citas-field-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: 7px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  &:focus { border-color: #2563eb; }
+}
+
+.citas-field-select { cursor: pointer; }
+
+/* ── Tipo de cita badge en la hora de la lista ── */
+.citas-tipo-badge {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--sesa-text-secondary);
+}
+
+/* ── Indicador de oportunidad ── */
+.citas-oportunidad-chip {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+  border-radius: 20px;
+  padding: 1px 7px;
+  width: fit-content;
+
+  &.oportunidad--ok {
+    background: #dcfce7;
+    color: #15803d;
+    [data-theme='dark'] & {
+      background: rgba(21, 128, 61, 0.2);
+      color: #86efac;
+    }
+  }
+
+  &.oportunidad--alerta {
+    background: #fee2e2;
+    color: #dc2626;
+    [data-theme='dark'] & {
+      background: rgba(220, 38, 38, 0.2);
+      color: #fca5a5;
+    }
+  }
+}

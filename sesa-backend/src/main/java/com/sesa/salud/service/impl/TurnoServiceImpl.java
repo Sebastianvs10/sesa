@@ -8,6 +8,7 @@ import com.sesa.salud.dto.ProgramacionMesDto;
 import com.sesa.salud.dto.ResumenProfesionalDto;
 import com.sesa.salud.dto.TurnoDto;
 import com.sesa.salud.dto.TurnoRequestDto;
+import com.sesa.salud.dto.TurnoResponseDto;
 import com.sesa.salud.entity.Personal;
 import com.sesa.salud.entity.ProgramacionMes;
 import com.sesa.salud.entity.Turno;
@@ -28,6 +29,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -155,7 +157,7 @@ public class TurnoServiceImpl implements TurnoService {
 
     @Override
     @Transactional
-    public TurnoDto crear(TurnoRequestDto req, Long usuarioId) {
+    public TurnoResponseDto crear(TurnoRequestDto req, Long usuarioId) {
         Personal personal = getPersonal(req.getPersonalId());
 
         LocalDate fecha = req.getFecha();
@@ -167,8 +169,7 @@ public class TurnoServiceImpl implements TurnoService {
         LocalDateTime fechaInicio = LocalDateTime.of(fecha, java.time.LocalTime.of(req.getTipoTurno().horaInicio, 0));
         LocalDateTime fechaFin    = fechaInicio.plusHours(req.getTipoTurno().duracionHoras);
 
-        // Placeholder ID largo para la validación de solapamiento en entidad nueva
-        validarReglasLaborales(req.getPersonalId(), -1L, fechaInicio, fechaFin, req.getTipoTurno());
+        List<String> advertencias = validarReglasLaborales(req.getPersonalId(), -1L, fechaInicio, fechaFin, req.getTipoTurno());
 
         Turno turno = Turno.builder()
                 .personal(personal)
@@ -184,12 +185,13 @@ public class TurnoServiceImpl implements TurnoService {
                 .modificadoPorId(usuarioId)
                 .build();
 
-        return toDto(turnoRepo.save(turno));
+        Turno guardado = turnoRepo.save(turno);
+        return new TurnoResponseDto(toDto(guardado), advertencias);
     }
 
     @Override
     @Transactional
-    public TurnoDto actualizar(Long turnoId, TurnoRequestDto req, Long usuarioId) {
+    public TurnoResponseDto actualizar(Long turnoId, TurnoRequestDto req, Long usuarioId) {
         Turno turno = getTurno(turnoId);
         validarEstadoEditable(turno.getProgramacionMes(), "editar turno");
 
@@ -197,7 +199,7 @@ public class TurnoServiceImpl implements TurnoService {
         LocalDateTime inicio   = LocalDateTime.of(fecha, java.time.LocalTime.of(req.getTipoTurno().horaInicio, 0));
         LocalDateTime fin      = inicio.plusHours(req.getTipoTurno().duracionHoras);
 
-        validarReglasLaborales(req.getPersonalId(), turnoId, inicio, fin, req.getTipoTurno());
+        List<String> advertencias = validarReglasLaborales(req.getPersonalId(), turnoId, inicio, fin, req.getTipoTurno());
 
         Personal personal = getPersonal(req.getPersonalId());
 
@@ -212,7 +214,8 @@ public class TurnoServiceImpl implements TurnoService {
         turno.setModificadoPorId(usuarioId);
         if (req.getEstado() != null) turno.setEstado(req.getEstado());
 
-        return toDto(turnoRepo.save(turno));
+        Turno guardado = turnoRepo.save(turno);
+        return new TurnoResponseDto(toDto(guardado), advertencias);
     }
 
     @Override
@@ -268,30 +271,14 @@ public class TurnoServiceImpl implements TurnoService {
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * Aplica todas las validaciones del CST para un turno nuevo o modificado.
-     *
-     * @param personalId  ID del profesional.
-     * @param excludeId   ID del turno a excluir (usar -1 para nuevos).
-     * @param inicio      Fecha/hora de inicio del turno a validar.
-     * @param fin         Fecha/hora de fin del turno a validar.
-     * @param tipo        Tipo de turno a validar.
-     * @throws IllegalArgumentException si se incumple alguna regla.
+     * Evalúa las reglas laborales del CST y devuelve advertencias (no bloquea).
+     * El turno se permite siempre; las advertencias se muestran en el frontend.
      */
-    private void validarReglasLaborales(Long personalId, Long excludeId,
-                                        LocalDateTime inicio, LocalDateTime fin, TipoTurno tipo) {
-        // 1 — Solapamiento
-        List<Turno> solapados = turnoRepo.findSolapados(personalId, excludeId, inicio, fin);
-        if (!solapados.isEmpty()) {
-            Turno conflicto = solapados.get(0);
-            throw new IllegalArgumentException(
-                "Cruce de turnos: ya existe un turno '%s' del %s al %s para este profesional."
-                    .formatted(
-                        conflicto.getTipoTurno().etiqueta,
-                        conflicto.getFechaInicio(),
-                        conflicto.getFechaFin()));
-        }
+    private List<String> validarReglasLaborales(Long personalId, Long excludeId,
+                                                LocalDateTime inicio, LocalDateTime fin, TipoTurno tipo) {
+        List<String> advertencias = new ArrayList<>();
 
-        // 2 — Descanso obligatorio post-turno extendido
+        // 2 — Descanso: solo advertencia (no bloquea)
         LocalDateTime desde = inicio.minusHours(DESCANSO_MIN_24H_H);
         LocalDateTime hasta = fin.plusHours(DESCANSO_MIN_24H_H);
         List<Turno> adyacentes = turnoRepo.findByPersonalEnRango(personalId, excludeId, desde, hasta);
@@ -301,55 +288,48 @@ public class TurnoServiceImpl implements TurnoService {
                 int descansoMinimo = (prev.getTipoTurno() == TipoTurno.TURNO_24H)
                         ? DESCANSO_MIN_24H_H
                         : DESCANSO_MIN_NOCTURNO_H;
-
-                // Descanso antes del nuevo turno (nuevo turno empieza después del anterior)
                 if (!inicio.isBefore(prev.getFechaFin())) {
                     long gapHoras = java.time.Duration.between(prev.getFechaFin(), inicio).toHours();
                     if (gapHoras < descansoMinimo) {
-                        throw new IllegalArgumentException(
-                            "Descanso insuficiente tras turno '%s': quedan %d h y el mínimo es %d h."
+                        advertencias.add("Descanso insuficiente tras turno '%s': quedan %d h y el mínimo es %d h."
                                 .formatted(prev.getTipoTurno().etiqueta, gapHoras, descansoMinimo));
                     }
                 }
-                // Descanso después del nuevo turno (nuevo turno termina antes del siguiente)
                 if (!prev.getFechaInicio().isBefore(fin)) {
                     long gapHoras = java.time.Duration.between(fin, prev.getFechaInicio()).toHours();
                     if (gapHoras < descansoMinimo) {
-                        throw new IllegalArgumentException(
-                            "El siguiente turno '%s' no respeta el descanso mínimo de %d h tras este turno."
+                        advertencias.add("El siguiente turno '%s' no respeta el descanso mínimo de %d h tras este turno."
                                 .formatted(prev.getTipoTurno().etiqueta, descansoMinimo));
                     }
                 }
             } else {
-                // Descanso mínimo ordinario (8 h)
                 if (!inicio.isBefore(prev.getFechaFin())) {
                     long gapHoras = java.time.Duration.between(prev.getFechaFin(), inicio).toHours();
                     if (gapHoras < DESCANSO_MIN_ORDINARIO_H) {
-                        throw new IllegalArgumentException(
-                            "Descanso insuficiente entre turnos: quedan %d h y el mínimo es %d h."
+                        advertencias.add("Descanso insuficiente entre turnos: quedan %d h y el mínimo es %d h."
                                 .formatted(gapHoras, DESCANSO_MIN_ORDINARIO_H));
                     }
                 }
             }
         }
 
-        // 3 — Horas semanales
-        LocalDateTime lunesSemana  = inicio.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                                           .toLocalDate().atStartOfDay();
-        LocalDateTime finSemana    = lunesSemana.plusDays(7);
-
+        // 3 — Horas semanales: advertencia si supera el límite (no bloquea)
+        LocalDateTime lunesSemana = inicio.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .toLocalDate().atStartOfDay();
+        LocalDateTime finSemana = lunesSemana.plusDays(7);
         List<Turno> enSemana = turnoRepo.findByPersonalEnRango(personalId, excludeId, lunesSemana, finSemana);
         int horasSemana = enSemana.stream().mapToInt(Turno::getDuracionHoras).sum() + tipo.duracionHoras;
 
         if (horasSemana > MAX_HORAS_SEMANALES) {
-            throw new IllegalArgumentException(
-                "El turno supera el límite de %d h semanales (acumulado: %d h)."
+            advertencias.add("Se ha excedido el límite de %d h semanales para este profesional (acumulado: %d h)."
                     .formatted(MAX_HORAS_SEMANALES, horasSemana));
-        }
-        if (horasSemana > ALERTA_HORAS_SEMANALES) {
+            log.warn("Profesional id={} supera {} h semanales (acumulado: {} h)", personalId, MAX_HORAS_SEMANALES, horasSemana);
+        } else if (horasSemana > ALERTA_HORAS_SEMANALES) {
             log.warn("Profesional id={} supera las {} h semanales de alerta (acumulado: {} h)",
-                     personalId, ALERTA_HORAS_SEMANALES, horasSemana);
+                    personalId, ALERTA_HORAS_SEMANALES, horasSemana);
         }
+
+        return advertencias;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -429,41 +409,41 @@ public class TurnoServiceImpl implements TurnoService {
 
     private TurnoDto toDto(Turno t) {
         Personal p = t.getPersonal();
-        return TurnoDto.builder()
-                .id(t.getId())
-                .personalId(p.getId())
-                .personalNombres(p.getNombres())
-                .personalApellidos(p.getApellidos())
-                .programacionMesId(t.getProgramacionMes().getId())
-                .servicio(t.getServicio())
-                .servicioEtiqueta(t.getServicio().etiqueta)
-                .tipoTurno(t.getTipoTurno())
-                .tipoTurnoEtiqueta(t.getTipoTurno().etiqueta)
-                .duracionHoras(t.getDuracionHoras())
-                .fechaInicio(t.getFechaInicio())
-                .fechaFin(t.getFechaFin())
-                .estado(t.getEstado())
-                .esFestivo(t.getEsFestivo())
-                .notas(t.getNotas())
-                .createdAt(t.getCreatedAt())
-                .updatedAt(t.getUpdatedAt())
-                .build();
+        return new TurnoDto(
+                t.getId(),
+                p.getId(),
+                p.getNombres(),
+                p.getApellidos(),
+                t.getProgramacionMes().getId(),
+                t.getServicio(),
+                t.getServicio().etiqueta,
+                t.getTipoTurno(),
+                t.getTipoTurno().etiqueta,
+                t.getDuracionHoras(),
+                t.getFechaInicio(),
+                t.getFechaFin(),
+                t.getEstado(),
+                t.getEsFestivo(),
+                t.getNotas(),
+                t.getCreatedAt(),
+                t.getUpdatedAt()
+        );
     }
 
     private ProgramacionMesDto toProgramacionDto(ProgramacionMes p) {
-        return ProgramacionMesDto.builder()
-                .id(p.getId())
-                .anio(p.getAnio())
-                .mes(p.getMes())
-                .estado(p.getEstado())
-                .creadoPorId(p.getCreadoPorId())
-                .creadoPorNombre(p.getCreadoPorNombre())
-                .aprobadoPorId(p.getAprobadoPorId())
-                .aprobadoPorNombre(p.getAprobadoPorNombre())
-                .fechaAprobacion(p.getFechaAprobacion())
-                .observaciones(p.getObservaciones())
-                .createdAt(p.getCreatedAt())
-                .updatedAt(p.getUpdatedAt())
-                .build();
+        return new ProgramacionMesDto(
+                p.getId(),
+                p.getAnio(),
+                p.getMes(),
+                p.getEstado(),
+                p.getCreadoPorId(),
+                p.getCreadoPorNombre(),
+                p.getAprobadoPorId(),
+                p.getAprobadoPorNombre(),
+                p.getFechaAprobacion(),
+                p.getObservaciones(),
+                p.getCreatedAt(),
+                p.getUpdatedAt()
+        );
     }
 }

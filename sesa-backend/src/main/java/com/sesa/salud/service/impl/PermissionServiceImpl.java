@@ -12,6 +12,7 @@ import com.sesa.salud.repository.master.RoleModuloPermisoRepository;
 import com.sesa.salud.repository.master.RoleRepository;
 import com.sesa.salud.security.RoleConstants;
 import com.sesa.salud.service.PermissionService;
+import com.sesa.salud.tenant.TenantContextHolder;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +51,10 @@ public class PermissionServiceImpl implements PermissionService {
     @PostConstruct
     @Transactional
     public void init() {
+        // Las tablas de permisos (roles, role_modulo_permiso) están en el schema "public".
+        // Forzamos ese schema antes de cualquier operación, ya que en este punto
+        // TenantContextHolder puede estar vacío o apuntando a otro schema.
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         try {
             // 1. Asegurar que todos los roles del sistema existen en la tabla `roles`
             ensureSystemRolesExist();
@@ -152,30 +156,34 @@ public class PermissionServiceImpl implements PermissionService {
         m.put(RoleConstants.ADMIN, admin);
 
         // MEDICO: según especificación
-        m.put(RoleConstants.MEDICO, new HashMap<>(Map.of(
-                RoleConstants.Modulo.DASHBOARD, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.PACIENTES, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.LABORATORIOS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR),
-                RoleConstants.Modulo.IMAGENES, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR),
-                RoleConstants.Modulo.URGENCIAS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.HOSPITALIZACION, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.FARMACIA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.PRESCRIBIR),
-                RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER)
-        )));
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> medico = new HashMap<>();
+        medico.put(RoleConstants.Modulo.DASHBOARD,         Set.of(RoleConstants.Accion.VER));
+        medico.put(RoleConstants.Modulo.PACIENTES,         Set.of(RoleConstants.Accion.VER));
+        medico.put(RoleConstants.Modulo.HISTORIA_CLINICA,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        medico.put(RoleConstants.Modulo.LABORATORIOS,      Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        medico.put(RoleConstants.Modulo.IMAGENES,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        medico.put(RoleConstants.Modulo.URGENCIAS,         Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        medico.put(RoleConstants.Modulo.HOSPITALIZACION,   Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        medico.put(RoleConstants.Modulo.FARMACIA,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.PRESCRIBIR));
+        medico.put(RoleConstants.Modulo.CITAS,             Set.of(RoleConstants.Accion.VER));
+        medico.put(RoleConstants.Modulo.CONSULTA_MEDICA,   Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        medico.put(RoleConstants.Modulo.REPORTES,          Set.of(RoleConstants.Accion.VER));
+        m.put(RoleConstants.MEDICO, medico);
 
         // ODONTOLOGO: similar a médico para su ámbito
-        m.put(RoleConstants.ODONTOLOGO, new HashMap<>(Map.of(
-                RoleConstants.Modulo.DASHBOARD, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.PACIENTES, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.LABORATORIOS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR),
-                RoleConstants.Modulo.IMAGENES, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR),
-                RoleConstants.Modulo.URGENCIAS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.HOSPITALIZACION, Set.of(RoleConstants.Accion.VER),
-                RoleConstants.Modulo.FARMACIA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.PRESCRIBIR),
-                RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER)
-        )));
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> odontologo = new HashMap<>();
+        odontologo.put(RoleConstants.Modulo.DASHBOARD,        Set.of(RoleConstants.Accion.VER));
+        odontologo.put(RoleConstants.Modulo.PACIENTES,        Set.of(RoleConstants.Accion.VER));
+        odontologo.put(RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        odontologo.put(RoleConstants.Modulo.LABORATORIOS,     Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        odontologo.put(RoleConstants.Modulo.IMAGENES,         Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        odontologo.put(RoleConstants.Modulo.URGENCIAS,        Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        odontologo.put(RoleConstants.Modulo.HOSPITALIZACION,  Set.of(RoleConstants.Accion.VER));
+        odontologo.put(RoleConstants.Modulo.FARMACIA,         Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.PRESCRIBIR));
+        odontologo.put(RoleConstants.Modulo.CITAS,            Set.of(RoleConstants.Accion.VER));
+        odontologo.put(RoleConstants.Modulo.CONSULTA_MEDICA,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        odontologo.put(RoleConstants.Modulo.ODONTOLOGIA,      Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        m.put(RoleConstants.ODONTOLOGO, odontologo);
 
         // BACTERIOLOGO
         m.put(RoleConstants.BACTERIOLOGO, new HashMap<>(Map.of(
@@ -193,7 +201,7 @@ public class PermissionServiceImpl implements PermissionService {
                 RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER)
         )));
 
-        // JEFE_ENFERMERIA: supervisión de enfermería + agenda
+        // JEFE_ENFERMERIA: supervisión de enfermería + agenda + consulta médica
         Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> jefeEnf = new HashMap<>();
         jefeEnf.put(RoleConstants.Modulo.DASHBOARD,              Set.of(RoleConstants.Accion.VER));
         jefeEnf.put(RoleConstants.Modulo.PACIENTES,              Set.of(RoleConstants.Accion.VER));
@@ -202,17 +210,20 @@ public class PermissionServiceImpl implements PermissionService {
         jefeEnf.put(RoleConstants.Modulo.HOSPITALIZACION,        Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.ELIMINAR));
         jefeEnf.put(RoleConstants.Modulo.EVOLUCION_ENFERMERIA,   Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
         jefeEnf.put(RoleConstants.Modulo.AGENDA,                 Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        jefeEnf.put(RoleConstants.Modulo.CONSULTA_MEDICA,        Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
         m.put(RoleConstants.JEFE_ENFERMERIA, jefeEnf);
 
-        // COORDINADOR_MEDICO: supervisión clínica + reportes + agenda
+        // COORDINADOR_MEDICO: supervisión clínica + reportes + agenda + consulta médica
         Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> coordMed = new HashMap<>();
-        coordMed.put(RoleConstants.Modulo.DASHBOARD,       Set.of(RoleConstants.Accion.VER));
-        coordMed.put(RoleConstants.Modulo.PACIENTES,       Set.of(RoleConstants.Accion.VER));
-        coordMed.put(RoleConstants.Modulo.HISTORIA_CLINICA,Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
-        coordMed.put(RoleConstants.Modulo.LABORATORIOS,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
-        coordMed.put(RoleConstants.Modulo.REPORTES,        Set.of(RoleConstants.Accion.VER));
-        coordMed.put(RoleConstants.Modulo.CITAS,           Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
-        coordMed.put(RoleConstants.Modulo.AGENDA,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.DASHBOARD,        Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.PACIENTES,        Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.LABORATORIOS,     Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.ORDENAR));
+        coordMed.put(RoleConstants.Modulo.REPORTES,         Set.of(RoleConstants.Accion.VER));
+        coordMed.put(RoleConstants.Modulo.CITAS,            Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.AGENDA,           Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.CONSULTA_MEDICA,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordMed.put(RoleConstants.Modulo.ODONTOLOGIA,      Set.of(RoleConstants.Accion.VER));
         m.put(RoleConstants.COORDINADOR_MEDICO, coordMed);
 
         // AUXILIAR_ENFERMERIA
@@ -235,13 +246,14 @@ public class PermissionServiceImpl implements PermissionService {
                 RoleConstants.Modulo.PACIENTES, Set.of(RoleConstants.Accion.VER)
         )));
 
-        // RECEPCIONISTA
-        m.put(RoleConstants.RECEPCIONISTA, new HashMap<>(Map.of(
-                RoleConstants.Modulo.PACIENTES, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR),
-                RoleConstants.Modulo.CITAS, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.ELIMINAR),
-                RoleConstants.Modulo.FACTURACION, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.FACTURAR),
-                RoleConstants.Modulo.DASHBOARD, Set.of(RoleConstants.Accion.VER)
-        )));
+        // RECEPCIONISTA: incluye URGENCIAS porque UrgenciaRegistroController lo permite (GET/POST)
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> recepcionista = new HashMap<>();
+        recepcionista.put(RoleConstants.Modulo.DASHBOARD,    Set.of(RoleConstants.Accion.VER));
+        recepcionista.put(RoleConstants.Modulo.PACIENTES,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        recepcionista.put(RoleConstants.Modulo.CITAS,        Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.ELIMINAR));
+        recepcionista.put(RoleConstants.Modulo.FACTURACION,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.FACTURAR));
+        recepcionista.put(RoleConstants.Modulo.URGENCIAS,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR));
+        m.put(RoleConstants.RECEPCIONISTA, recepcionista);
     }
 
     private static Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> allPermissions() {
@@ -288,6 +300,8 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     public void updateModulosForRole(String rol, Set<RoleConstants.Modulo> modulos) {
         if (rol == null) return;
+        // Los permisos se guardan en public; asegurar schema correcto antes de escribir
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         String rolUpper = rol.toUpperCase();
         if (!RoleConstants.ALL_ROLES.contains(rolUpper) && !roleRepository.existsByCodigo(rolUpper)) {
             throw new IllegalArgumentException("Rol no válido: " + rol);

@@ -15,7 +15,7 @@ import {
   Profesional, Turno, DiaCalendario, ResumenProfesional,
   TipoTurno, ServicioClinico, EstadoProgramacion, AlertaTipo,
   TURNO_CONFIG, SERVICIO_CONFIG, FESTIVOS_CO, DIAS_SEMANA, MESES_ES,
-  LIMITES_LABORALES,
+  LIMITES_LABORALES, TipoPersonal,
 } from './agenda.models';
 
 @Component({
@@ -94,7 +94,7 @@ export class AgendaPageComponent implements OnInit {
       return todos.filter((p) => p.tipo === 'MEDICO');
     }
     if (this.esJefeEnfermeria && !this.esCoordinador) {
-      return todos.filter((p) => p.tipo !== 'MEDICO');
+      return todos.filter((p) => p.tipo === 'AUXILIAR_ENFERMERIA');
     }
     return todos; // ADMIN / SUPER
   });
@@ -288,7 +288,8 @@ export class AgendaPageComponent implements OnInit {
       : this.agendaSvc.actualizarTurno(ft.id!, payload);
 
     obs.subscribe({
-      next: (saved) => {
+      next: (res) => {
+        const saved = res.turno;
         const prev = this.turnos().filter((t) => t.id !== saved.id);
         let nuevo  = [...prev, saved];
         nuevo = this.validar.revalidarProfesional(saved.profesionalId, nuevo);
@@ -299,6 +300,13 @@ export class AgendaPageComponent implements OnInit {
           this.modalEsNuevo() ? 'Turno creado correctamente.' : 'Turno actualizado.',
           '¡Listo!'
         );
+        if (res.advertencias?.length) {
+          this.toast.warning(
+            res.advertencias.join('\n'),
+            'Aviso — Exceso de horas o descanso',
+            8000
+          );
+        }
       },
       error: (err) => {
         this.guardandoModal.set(false);
@@ -408,6 +416,19 @@ export class AgendaPageComponent implements OnInit {
 
   nombreCorto(p: Profesional): string {
     return `${p.nombre.split(' ')[0]} ${p.apellido.split(' ')[0]}`;
+  }
+
+  /** Etiqueta de rol para mostrar en lista y modal (evita mostrar "Médico" a recepcionistas/odontólogos). */
+  labelRol(tipo: TipoPersonal): string {
+    const map: Record<TipoPersonal, string> = {
+      MEDICO:              '🩺 Médico',
+      ENFERMERO:           '💉 Enfermero/a',
+      AUXILIAR_ENFERMERIA: '🩹 Aux. de enfermería',
+      ODONTOLOGO:          '🦷 Odontólogo',
+      RECEPCIONISTA:       '📋 Recepcionista',
+      OTRO:                '👤 Otro',
+    };
+    return map[tipo] ?? '👤 Otro';
   }
 
   alertaClase(a: AlertaTipo): string {

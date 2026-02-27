@@ -45,6 +45,12 @@ interface ProfesionalBackend {
   activo:    boolean;
 }
 
+/** Respuesta al crear/actualizar turno: turno + advertencias (exceso horas, descanso) sin bloquear. */
+export interface TurnoResponseBackend {
+  turno:         TurnoDtoBackend;
+  advertencias?: string[];
+}
+
 /* ── Colores por índice para distinción visual ───────────────────── */
 const COLORES = [
   '#3b82f6','#8b5cf6','#f59e0b','#10b981',
@@ -57,10 +63,14 @@ function colorPorIndice(i: number): string {
 }
 
 function rolATipo(rol: string): Profesional['tipo'] {
-  const r = (rol ?? '').toUpperCase();
+  const raw = (rol ?? '').trim();
+  const r = raw.toUpperCase().replace(/^ROLE_/, ''); // por si el backend envía ROLE_MEDICO
+  if (r === 'MEDICO' || r === 'COORDINADOR_MEDICO') return 'MEDICO';
   if (r === 'ENFERMERO' || r === 'JEFE_ENFERMERIA') return 'ENFERMERO';
   if (r === 'AUXILIAR_ENFERMERIA')                  return 'AUXILIAR_ENFERMERIA';
-  return 'MEDICO'; // MEDICO, COORDINADOR_MEDICO, ODONTOLOGO, etc.
+  if (r === 'ODONTOLOGO')                           return 'ODONTOLOGO';
+  if (r === 'RECEPCIONISTA')                        return 'RECEPCIONISTA';
+  return 'OTRO'; // BACTERIOLOGO, PSICOLOGO, REGENTE_FARMACIA, USER, ADMIN, etc.
 }
 
 /* ── Mapeo backend → frontend ────────────────────────────────────── */
@@ -138,9 +148,12 @@ export class AgendaService {
     fecha:      string;           // yyyy-MM-dd
     estado?:    Turno['estado'];
     notas?:     string;
-  }): Observable<Turno> {
-    return this.http.post<TurnoDtoBackend>(`${this.base}/turnos`, req).pipe(
-      map(mapTurno),
+  }): Observable<{ turno: Turno; advertencias: string[] }> {
+    return this.http.post<TurnoResponseBackend>(`${this.base}/turnos`, req).pipe(
+      map((res) => ({
+        turno: mapTurno(res.turno),
+        advertencias: res.advertencias ?? [],
+      })),
     );
   }
 
@@ -151,9 +164,12 @@ export class AgendaService {
     fecha:      string;
     estado?:    Turno['estado'];
     notas?:     string;
-  }): Observable<Turno> {
-    return this.http.put<TurnoDtoBackend>(`${this.base}/turnos/${id}`, req).pipe(
-      map(mapTurno),
+  }): Observable<{ turno: Turno; advertencias: string[] }> {
+    return this.http.put<TurnoResponseBackend>(`${this.base}/turnos/${id}`, req).pipe(
+      map((res) => ({
+        turno: mapTurno(res.turno),
+        advertencias: res.advertencias ?? [],
+      })),
     );
   }
 

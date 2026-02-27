@@ -207,6 +207,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  padding-top: 0.75rem;
 }
 
 [data-theme='dark'] .sesa-login-panel-inner {
@@ -287,9 +288,9 @@
 /* ── Logo ── */
 .sesa-login-logo-full {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 .sesa-login-logo-full--centered {
@@ -299,16 +300,21 @@
 }
 
 .sesa-login-logo-img {
-  width: 4rem;
-  height: 4rem;
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  max-height: 12rem;
   flex-shrink: 0;
   object-fit: contain;
-  margin-top: 0.05rem;
-  transition: filter 0.3s ease;
+  transition: filter 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.03);
+  }
 }
 
 [data-theme='dark'] .sesa-login-logo-img {
-  filter: drop-shadow(0 0 12px rgba(43, 176, 166, 0.3));
+  filter: drop-shadow(0 0 16px rgba(43, 176, 166, 0.45));
 }
 
 .sesa-login-logo-text {
@@ -456,8 +462,11 @@
 
 /* ── Inputs premium ── */
 .sesa-input-icon {
+  position: relative;
   display: flex;
   align-items: center;
+  flex: 1;           /* llena todo el ancho de .sesa-field-control */
+  min-width: 0;
   height: 54px;
   border: 2px solid #e2e8f0;
   border-radius: 16px;
@@ -505,11 +514,14 @@
 }
 
 .sesa-input-icon-symbol {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  flex-shrink: 0;
+  pointer-events: none;
   color: #94a3b8;
   transition: color 0.25s ease;
 }
@@ -521,31 +533,71 @@
 
 .sesa-input-icon:focus-within .sesa-input-icon-symbol {
   color: var(--sesa-secondary);
+  transform: translateY(-50%); /* mantiene el centrado vertical al cambiar color */
 }
 
 [data-theme='dark'] .sesa-input-icon:focus-within .sesa-input-icon-symbol {
   color: var(--sesa-accent);
+  transform: translateY(-50%);
+}
+
+/* Sobrescribe variables de tema dentro del formulario de login */
+.sesa-login-form {
+  --sesa-input-bg:          transparent;
+  --sesa-input-bg-hover:    transparent;
+  --sesa-input-bg-focus:    transparent;
+  --sesa-input-bg-readonly: transparent;
+  --sesa-input-bg-disabled: transparent;
+}
+
+/* Override global (::ng-deep) para ganar sobre los estilos del sesa-form-field */
+:host ::ng-deep .sesa-login-form .sesa-input-icon input {
+  width: 100% !important;
+  padding: 0 1rem 0 2.75rem !important;
+  text-align: left !important;
+  border: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+}
+
+:host ::ng-deep .sesa-login-form .sesa-input-icon input:hover,
+:host ::ng-deep .sesa-login-form .sesa-input-icon input:focus,
+:host ::ng-deep .sesa-login-form .sesa-input-icon input:focus-visible {
+  border: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
 }
 
 .sesa-input-icon input {
   flex: 1;
   min-width: 0;
   border: none;
-  padding: 0 1rem 0 0;
+  padding: 0 1rem 0 2.75rem;
   font-size: 0.9375rem;
   font-weight: 500;
   color: #0f172a;
   background: transparent;
   outline: none;
   font-family: inherit;
+  height: 100%;
+  text-align: left;
 }
 
+/* Sin icono izquierdo: solo reserva espacio para el toggle derecho */
 .sesa-input-icon--toggle-only input {
-  padding-left: 1rem;
+  padding-left: 2.75rem;
 }
 
+/* Contraseña: el toggle (botón derecho) ya está en el flujo, no hay que ajustar */
 .sesa-input-icon--password input {
-  padding-right: 0.5rem;
+  padding-right: 3rem;
 }
 
 [data-theme='dark'] .sesa-input-icon input {
@@ -559,6 +611,12 @@
 
 [data-theme='dark'] .sesa-input-icon input::placeholder {
   color: rgba(148, 163, 184, 0.5);
+}
+
+/* ── Centra labels del sesa-form-field dentro del formulario de login ── */
+:host ::ng-deep .sesa-login-form .sesa-field-label {
+  justify-content: center;
+  text-align: center;
 }
 
 /* ── Botón ver/ocultar contraseña ── */

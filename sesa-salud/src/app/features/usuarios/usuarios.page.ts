@@ -1,5 +1,5 @@
 /**
- * Gestión de Usuarios — confirm dialog, toast CRUD, skeleton loading.
+ * Gestión de Usuarios — soporte multi-rol, confirm dialog, toast CRUD, skeleton loading.
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule } from '@angular/common';
@@ -40,7 +40,10 @@ export class UsuariosPageComponent implements OnInit {
 
   showForm = false;
   editingId: number | null = null;
-  selectedRol = '';
+
+  /** Roles seleccionados en el formulario (multi-rol). */
+  selectedRoles = signal<string[]>([]);
+
   form: UsuarioRequestDto = {
     email: '',
     nombreCompleto: '',
@@ -73,20 +76,20 @@ export class UsuariosPageComponent implements OnInit {
   openCreate(): void {
     this.showForm = true;
     this.editingId = null;
-    this.selectedRol = '';
+    this.selectedRoles.set([]);
     this.form = { email: '', nombreCompleto: '', password: '', activo: true, roles: [] };
   }
 
   openEdit(u: UsuarioDto): void {
     this.showForm = true;
     this.editingId = u.id;
-    this.selectedRol = u.roles?.[0] || '';
+    this.selectedRoles.set([...(u.roles || [])]);
     this.form = {
       email: u.email,
       nombreCompleto: u.nombreCompleto,
       password: '',
       activo: u.activo,
-      roles: u.roles || [],
+      roles: [...(u.roles || [])],
     };
   }
 
@@ -95,9 +98,24 @@ export class UsuariosPageComponent implements OnInit {
     this.editingId = null;
   }
 
+  /** Alterna la selección de un rol en el formulario. */
+  toggleRole(rolValue: string): void {
+    const current = this.selectedRoles();
+    if (current.includes(rolValue)) {
+      this.selectedRoles.set(current.filter(r => r !== rolValue));
+    } else {
+      this.selectedRoles.set([...current, rolValue]);
+    }
+  }
+
+  isRoleSelected(rolValue: string): boolean {
+    return this.selectedRoles().includes(rolValue);
+  }
+
   save(): void {
-    if (!this.form.email || !this.form.nombreCompleto || !this.selectedRol) {
-      this.error = 'Email, nombre y rol son obligatorios';
+    const rolesSeleccionados = this.selectedRoles();
+    if (!this.form.email || !this.form.nombreCompleto || rolesSeleccionados.length === 0) {
+      this.error = 'Email, nombre y al menos un rol son obligatorios';
       return;
     }
     if (this.editingId == null && !this.form.password) {
@@ -107,11 +125,11 @@ export class UsuariosPageComponent implements OnInit {
     this.saving = true;
     this.error = null;
     const payload: UsuarioRequestDto = {
-      email: this.form.email.trim(),
+      email:         this.form.email.trim(),
       nombreCompleto: this.form.nombreCompleto.trim(),
-      password: this.form.password?.trim() || undefined,
-      activo: this.form.activo ?? true,
-      roles: [this.selectedRol],
+      password:      this.form.password?.trim() || undefined,
+      activo:        this.form.activo ?? true,
+      roles:         rolesSeleccionados,
     };
     const req = this.editingId == null
       ? this.usuarioService.create(payload)
@@ -122,7 +140,10 @@ export class UsuariosPageComponent implements OnInit {
         this.saving = false;
         this.showForm = false;
         this.editingId = null;
-        this.toast.success(this.editingId != null ? 'Usuario actualizado.' : 'Usuario creado.', 'Guardado');
+        this.toast.success(
+          this.editingId != null ? 'Usuario actualizado.' : 'Usuario creado.',
+          'Guardado'
+        );
         this.load();
       },
       error: (err) => {
@@ -153,17 +174,11 @@ export class UsuariosPageComponent implements OnInit {
   }
 
   nextPage(): void {
-    if ((this.page + 1) * this.size < this.totalElements) {
-      this.page++;
-      this.load();
-    }
+    if ((this.page + 1) * this.size < this.totalElements) { this.page++; this.load(); }
   }
 
   prevPage(): void {
-    if (this.page > 0) {
-      this.page--;
-      this.load();
-    }
+    if (this.page > 0) { this.page--; this.load(); }
   }
 
   userInitials(u: UsuarioDto): string {
@@ -188,20 +203,25 @@ export class UsuariosPageComponent implements OnInit {
     return { background: `linear-gradient(135deg, ${from}, ${to})` };
   }
 
+  /** Devuelve la etiqueta legible de un rol por su valor. */
+  rolLabel(value: string): string {
+    return this.roles.find(r => r.value === value)?.label ?? value;
+  }
+
   roleClass(rol: string | undefined): string {
     const map: Record<string, string> = {
-      MEDICO: 'medico',
-      COORDINADOR_MEDICO: 'coordinador',
-      ODONTOLOGO: 'odontologo',
-      BACTERIOLOGO: 'bacteriologo',
-      ENFERMERO: 'enfermero',
-      JEFE_ENFERMERIA: 'jefe-enfermeria',
+      MEDICO:              'medico',
+      COORDINADOR_MEDICO:  'coordinador',
+      ODONTOLOGO:          'odontologo',
+      BACTERIOLOGO:        'bacteriologo',
+      ENFERMERO:           'enfermero',
+      JEFE_ENFERMERIA:     'jefe-enfermeria',
       AUXILIAR_ENFERMERIA: 'auxiliar',
-      PSICOLOGO: 'psicologo',
-      REGENTE_FARMACIA: 'farmacia',
-      RECEPCIONISTA: 'recepcionista',
-      ADMIN: 'admin',
-      SUPERADMINISTRADOR: 'super',
+      PSICOLOGO:           'psicologo',
+      REGENTE_FARMACIA:    'farmacia',
+      RECEPCIONISTA:       'recepcionista',
+      ADMIN:               'admin',
+      SUPERADMINISTRADOR:  'super',
     };
     return map[(rol ?? '').toUpperCase()] || 'default';
   }

@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/urgencias")
 @RequiredArgsConstructor
@@ -24,10 +26,10 @@ public class UrgenciaRegistroController {
     private final UrgenciaRegistroService urgenciaRegistroService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO','AUXILIAR_ENFERMERIA','RECEPCIONISTA')")
     public Object list(
             @RequestParam(value = "estado", required = false) String estado,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 50) Pageable pageable) {
         if (estado != null && !estado.isBlank()) {
             return urgenciaRegistroService.findByEstado(estado, pageable);
         }
@@ -35,21 +37,35 @@ public class UrgenciaRegistroController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO','AUXILIAR_ENFERMERIA','RECEPCIONISTA')")
     public ResponseEntity<UrgenciaRegistroDto> get(@PathVariable("id") Long id) {
         return ResponseEntity.ok(urgenciaRegistroService.findById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO','AUXILIAR_ENFERMERIA','RECEPCIONISTA')")
     public ResponseEntity<UrgenciaRegistroDto> create(@Valid @RequestBody UrgenciaRegistroRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(urgenciaRegistroService.create(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','SUPERADMINISTRADOR')")
-    public ResponseEntity<UrgenciaRegistroDto> update(@PathVariable("id") Long id, @Valid @RequestBody UrgenciaRegistroRequestDto dto) {
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
+    public ResponseEntity<UrgenciaRegistroDto> update(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UrgenciaRegistroRequestDto dto) {
         return ResponseEntity.ok(urgenciaRegistroService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
+    public ResponseEntity<UrgenciaRegistroDto> cambiarEstado(
+            @PathVariable("id") Long id,
+            @RequestBody Map<String, String> body) {
+        String nuevoEstado = body.get("estado");
+        if (nuevoEstado == null || nuevoEstado.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(urgenciaRegistroService.cambiarEstado(id, nuevoEstado));
     }
 
     @DeleteMapping("/{id}")

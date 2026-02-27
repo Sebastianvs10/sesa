@@ -28,8 +28,11 @@ public interface EmpresaService {
 
     void deleteById(Long id);
 
-    /** Guarda el logo de la empresa del tenant actual y actualiza imagenUrl. */
-    void saveLogo(String schemaName, MultipartFile file);
+    /** Guarda el logo de la empresa del tenant actual y retorna el UUID asignado. */
+    String saveLogo(String schemaName, MultipartFile file);
+
+    /** Guarda el logo de la empresa por ID (SUPERADMINISTRADOR) y retorna el UUID asignado. */
+    String saveLogoById(Long empresaId, MultipartFile file);
 
     /** Devuelve el recurso del logo (bytes + contentType) de la empresa, o vacío si no hay logo. */
     Optional<LogoResourceDto> getLogoResource(String schemaName);

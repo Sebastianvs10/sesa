@@ -1,0 +1,1258 @@
+<!-- Módulo Odontología — Dashboard + Ficha de paciente -->
+<!-- Autor: Ing. J Sebastian Vargas S -->
+
+<div class="odont-page">
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA DASHBOARD (lista de citas del día)
+  ═══════════════════════════════════════════════════ -->
+  @if (tabPrincipal() === 'dashboard') {
+
+  <!-- Header dashboard -->
+  <header class="odont-header">
+    <div class="header-left">
+      <fa-icon [icon]="faTooth" class="header-icon"></fa-icon>
+      <div>
+        <h1 class="header-title">Odontología</h1>
+        <p class="header-sub">Dr. {{ profesionalNombre }}</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="fecha-nav">
+        <button class="btn-fecha" (click)="cambiarFecha(-1)">
+          <fa-icon [icon]="faChevronLeft"></fa-icon>
+        </button>
+        <span class="fecha-label">{{ fechaStr(fechaActual()) }}</span>
+        <button class="btn-fecha" (click)="cambiarFecha(1)">
+          <fa-icon [icon]="faChevronRight"></fa-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="stats-grid">
+    <div class="stat-card stat-primary">
+      <fa-icon [icon]="faCalendarCheck" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().citasHoy }}</span>
+        <span class="stat-label">Citas del día</span>
+      </div>
+    </div>
+    <div class="stat-card stat-success">
+      <fa-icon [icon]="faCircleCheck" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().atendidos }}</span>
+        <span class="stat-label">Atendidos</span>
+      </div>
+    </div>
+    <div class="stat-card stat-warning">
+      <fa-icon [icon]="faStethoscope" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().pendientes }}</span>
+        <span class="stat-label">Pendientes</span>
+      </div>
+    </div>
+    <div class="stat-card stat-danger">
+      <fa-icon [icon]="faCircleXmark" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().cancelados }}</span>
+        <span class="stat-label">Cancelados</span>
+      </div>
+    </div>
+    <div class="stat-card stat-info">
+      <fa-icon [icon]="faClipboardList" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().planesActivos }}</span>
+        <span class="stat-label">Planes activos</span>
+      </div>
+    </div>
+    <div class="stat-card stat-purple">
+      <fa-icon [icon]="faChartLine" class="stat-icon"></fa-icon>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats().pacientesSinControl }}</span>
+        <span class="stat-label">Sin control</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de citas -->
+  <section class="citas-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <fa-icon [icon]="faCalendarCheck"></fa-icon> Lista de citas
+      </h2>
+      <div class="busqueda-cita">
+        <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Buscar paciente o documento..."
+          [value]="busquedaCita()"
+          (input)="busquedaCita.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    @if (cargando()) {
+    <div class="loading-state">
+      <fa-icon [icon]="faSpinner" class="spin"></fa-icon>
+      <span>Cargando citas...</span>
+    </div>
+    } @else if (citasFiltradas().length === 0) {
+    <div class="empty-state">
+      <fa-icon [icon]="faCalendarCheck" class="empty-icon"></fa-icon>
+      <p>No hay citas registradas para hoy.</p>
+      <span>Use el módulo de Agenda para programar citas.</span>
+    </div>
+    } @else {
+    <div class="citas-list">
+      @for (cita of citasFiltradas(); track cita.id) {
+      <!-- ── Tarjeta de cita con flujo clínico completo ── -->
+      <!-- Click en el card abre la ficha; los botones de flujo usan stopPropagation -->
+      <div class="cita-card"
+           [class.cita-card--activa]="esCitaActiva(cita.estado)"
+           [class.cita-card--espera]="esCitaEspera(cita.estado)"
+           [class.cita-card--terminada]="esCitaTerminada(cita.estado)"
+           (click)="seleccionarCita(cita)">
+
+        <!-- Indicador lateral de estado -->
+        <div class="cita-estado-bar" [ngClass]="'bar-' + cita.estado.toLowerCase().replace('_','-')"></div>
+
+        <!-- Hora -->
+        <div class="cita-hora-col">
+          <span class="cita-hora">{{ cita.hora }}</span>
+          @if (citaCambiandoId() === cita.id) {
+            <fa-icon [icon]="faSpinner" class="spin cita-spin"></fa-icon>
+          }
+        </div>
+
+        <!-- Datos del paciente -->
+        <div class="cita-info">
+          <span class="cita-nombre">{{ cita.pacienteNombre }}</span>
+          <span class="cita-detalle">
+            {{ cita.pacienteDocumento }} · {{ cita.pacienteEdad }} años
+            @if (cita.pacienteEps) { · {{ cita.pacienteEps }} }
+          </span>
+          @if (cita.motivo) { <span class="cita-motivo">💬 {{ cita.motivo }}</span> }
+        </div>
+
+        <!-- Columna derecha: badge + acciones -->
+        <div class="cita-actions-col">
+          <span class="badge" [ngClass]="estadoCitaClass(cita.estado)">
+            {{ getEstadoLabel(cita.estado) }}
+          </span>
+
+          <!-- FLUJO: AGENDADA / CONFIRMADA → Llegó | No asistió | Cancelar -->
+          @if (esCitaPendiente(cita.estado)) {
+          <div class="cita-btns">
+            <button class="btn-flujo btn-llegada"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="marcarLlegada($event, cita)"
+                    title="Paciente llegó a la clínica">
+              🏥 Llegó
+            </button>
+            <button class="btn-flujo btn-no-asistio"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="marcarNoAsistio($event, cita)"
+                    title="Paciente no se presentó">
+              No asistió
+            </button>
+            <button class="btn-flujo btn-cancelar-sm"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="pedirConfirmCancelar($event, cita)"
+                    title="Cancelar cita">
+              ✕
+            </button>
+          </div>
+          }
+
+          <!-- FLUJO: EN_ESPERA → Iniciar atención | Cancelar -->
+          @if (esCitaEspera(cita.estado)) {
+          <div class="cita-btns">
+            <button class="btn-flujo btn-iniciar"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="iniciarAtencion($event, cita)"
+                    title="Llamar al paciente e iniciar la consulta">
+              ▶ Iniciar atención
+            </button>
+            <button class="btn-flujo btn-cancelar-sm"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="pedirConfirmCancelar($event, cita)"
+                    title="Cancelar cita">
+              ✕
+            </button>
+          </div>
+          }
+
+          <!-- FLUJO: EN_ATENCION → indicador + Finalizar (abrir ficha = click en el card) -->
+          @if (esCitaActiva(cita.estado)) {
+          <div class="cita-btns">
+            <button class="btn-flujo btn-finalizar"
+                    [disabled]="citaCambiandoId() === cita.id"
+                    (click)="finalizarCita($event, cita)"
+                    title="Marcar consulta como finalizada sin abrir la ficha">
+              ✓ Finalizar
+            </button>
+          </div>
+          }
+
+          <!-- FLUJO: ATENDIDA / FINALIZADO → solo badge, click en card abre historial -->
+          @if (cita.estado === 'NO_ASISTIO' || cita.estado === 'CANCELADA' || cita.estado === 'CANCELADO') {
+          <!-- Sin acciones para canceladas/no asistió -->
+          }
+        </div>
+      </div>
+
+      <!-- Confirmación inline de cancelación -->
+      @if (citaCancelId() === cita.id) {
+      <div class="cancel-confirm-inline" (click)="$event.stopPropagation()">
+        <span>¿Cancelar la cita de <strong>{{ cita.pacienteNombre }}</strong>?</span>
+        <div class="cancel-confirm-btns">
+          <button class="btn-confirm-si" (click)="confirmarCancelar($event, cita)">Sí, cancelar</button>
+          <button class="btn-confirm-no" (click)="pedirConfirmCancelar($event, cita)">No</button>
+        </div>
+      </div>
+      }
+      }
+    </div>
+    }
+  </section>
+
+  } @else {
+  <!-- ══════════════════════════════════════════════════
+       VISTA FICHA DE PACIENTE
+  ═══════════════════════════════════════════════════ -->
+
+  <!-- Header ficha -->
+  <header class="ficha-header">
+    <button class="btn-volver" (click)="volver()">
+      <fa-icon [icon]="faArrowLeft"></fa-icon> Volver
+    </button>
+
+    <div class="paciente-badge">
+      <div class="paciente-avatar">
+        {{ pacienteActivo()?.pacienteNombre?.charAt(0) ?? '?' }}
+      </div>
+      <div class="paciente-info">
+        <span class="paciente-nombre">{{ pacienteActivo()?.pacienteNombre }}</span>
+        <div class="paciente-meta">
+          <span>{{ pacienteActivo()?.pacienteDocumento }}</span>
+          <span>·</span>
+          <span>{{ pacienteActivo()?.pacienteEdad }} años</span>
+          <span>·</span>
+          <span>{{ pacienteActivo()?.pacienteEps ?? 'Particular' }}</span>
+          @if (formConsulta().alergias) {
+          <span class="alergia-badge">⚠ {{ formConsulta().alergias }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge de estado de la cita dentro de la ficha -->
+    @if (pacienteActivo()?.estado) {
+    <span class="badge ficha-estado-badge"
+          [ngClass]="estadoCitaClass(pacienteActivo()!.estado)">
+      {{ getEstadoLabel(pacienteActivo()!.estado) }}
+    </span>
+    }
+
+    <!-- Cambios pendientes -->
+    @if (cambiosPendientes().length > 0) {
+    <div class="cambios-badge">
+      <span>{{ cambiosPendientes().length }} cambio(s) sin guardar</span>
+    </div>
+    }
+
+    <!-- ✅ ACCIÓN PRINCIPAL: Finalizar consulta (solo si está EN_ATENCION) -->
+    @if (pacienteActivo()?.estado === 'EN_ATENCION') {
+    <button class="btn-finalizar-consulta"
+            [disabled]="cargando()"
+            (click)="finalizarDesdeFicha()"
+            title="Marcar la consulta como atendida y volver al listado">
+      @if (cargando()) {
+        <fa-icon [icon]="faSpinner" class="spin"></fa-icon>
+      } @else {
+        <fa-icon [icon]="faCircleCheck"></fa-icon>
+      }
+      Finalizar consulta
+    </button>
+    }
+
+    <!-- Indicador si ya está atendida (modo lectura) -->
+    @if (pacienteActivo()?.estado === 'ATENDIDA' || pacienteActivo()?.estado === 'FINALIZADO') {
+    <div class="ficha-atendida-badge">
+      <fa-icon [icon]="faCircleCheck"></fa-icon> Consulta finalizada
+    </div>
+    }
+  </header>
+
+  <!-- Tabs de la ficha -->
+  <nav class="ficha-tabs">
+    <button class="tab-btn" [class.active]="tabFicha() === 'odontograma'"    (click)="tabFicha.set('odontograma')">
+      <fa-icon [icon]="faTooth"></fa-icon> Odontograma
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'historia'"      (click)="tabFicha.set('historia')">
+      <fa-icon [icon]="faNotesMedical"></fa-icon> Historia
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'procedimientos'" (click)="tabFicha.set('procedimientos')">
+      <fa-icon [icon]="faStethoscope"></fa-icon> Procedimientos
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'plan'"          (click)="tabFicha.set('plan')">
+      <fa-icon [icon]="faFileInvoiceDollar"></fa-icon> Plan / Presupuesto
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'imagenes'"      (click)="tabFicha.set('imagenes')">
+      <fa-icon [icon]="faImages"></fa-icon> Imágenes
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'evolucion'"     (click)="tabFicha.set('evolucion')">
+      <fa-icon [icon]="faChartLine"></fa-icon> Evolución
+    </button>
+    <button class="tab-btn" [class.active]="tabFicha() === 'historial'"
+            (click)="tabFicha.set('historial')"
+            [class.tab-badge]="consultasHistorial().length > 0">
+      <fa-icon [icon]="faClipboardList"></fa-icon> Historial
+      @if (consultasHistorial().length > 0) {
+        <span class="tab-count">{{ consultasHistorial().length }}</span>
+      }
+    </button>
+  </nav>
+
+  <!-- ── TAB: ODONTOGRAMA ──────────────────────────────────────────── -->
+  @if (tabFicha() === 'odontograma') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faTooth"></fa-icon> Odontograma Interactivo</h2>
+      <button class="btn-primary" (click)="guardarOdontograma()" [disabled]="cambiosPendientes().length === 0">
+        <fa-icon [icon]="faSave"></fa-icon>
+        Guardar cambios ({{ cambiosPendientes().length }})
+      </button>
+    </div>
+    <app-odontograma
+      [piezas]="piezasDentales()"
+      (cambio)="onOdontogramaCambio($event)"
+    ></app-odontograma>
+  </section>
+  }
+
+  <!-- ── TAB: HISTORIA CLÍNICA ────────────────────────────────────── -->
+  @if (tabFicha() === 'historia') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faNotesMedical"></fa-icon> Historia Clínica Dental</h2>
+      <button class="btn-primary" (click)="guardarConsulta()">
+        <fa-icon [icon]="faSave"></fa-icon> Guardar historia
+      </button>
+    </div>
+
+    <div class="historia-grid">
+
+      <!-- ── Datos normativos de la consulta ── -->
+      <div class="historia-card odont-norm-card">
+        <h3 class="card-section-title odont-norm-title">
+          <span class="odont-norm-badge">Normativo</span>
+          Clasificación y consentimiento (Res. 1995/1999)
+        </h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de consulta <span class="req">*</span></label>
+            <select [value]="formConsulta().tipoConsulta ?? 'PRIMERA_VEZ'"
+              (change)="updateFormConsulta('tipoConsulta', $any($event.target).value)">
+              @for (op of TIPO_CONSULTA_OPTIONS; track op.value) {
+                <option [value]="op.value">{{ op.label }}</option>
+              }
+            </select>
+          </div>
+          <!-- CIE-10 odontológico K00-K14 -->
+          <div class="form-group odont-cie10-wrap">
+            <label>Diagnóstico CIE-10 (K00–K14)</label>
+            <div class="odont-cie10-input-wrap">
+              <input type="text"
+                [value]="(formConsulta().codigoCie10 ? formConsulta().codigoCie10 + ' — ' + formConsulta().descripcionCie10 : '')"
+                placeholder="Buscar código CIE-10..."
+                (focus)="showCie10Dropdown.set(true)"
+                (input)="cie10SearchQuery = $any($event.target).value; showCie10Dropdown.set(true)"
+                readonly
+                style="cursor:pointer"
+                (click)="showCie10Dropdown.set(true)" />
+              @if (formConsulta().codigoCie10) {
+                <button type="button" class="odont-cie10-clear"
+                  (click)="updateFormConsulta('codigoCie10', undefined); updateFormConsulta('descripcionCie10', undefined)">✕</button>
+              }
+            </div>
+            @if (showCie10Dropdown()) {
+              <div class="odont-cie10-dropdown">
+                <input type="text" class="odont-cie10-search" placeholder="Buscar..."
+                  [(ngModel)]="cie10SearchQuery" autofocus />
+                <ul>
+                  @for (item of cie10Filtrado(); track item.code) {
+                    <li (click)="seleccionarCie10(item)">
+                      <strong>{{ item.code }}</strong> — {{ item.desc }}
+                    </li>
+                  }
+                </ul>
+                <button type="button" class="odont-cie10-close" (click)="showCie10Dropdown.set(false)">Cerrar</button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Consentimiento informado odontológico -->
+        <div class="odont-consentimiento-row">
+          <div class="odont-consent-toggle">
+            <label class="odont-consent-label">
+              <input type="checkbox"
+                [checked]="formConsulta().consentimientoFirmado"
+                (change)="updateFormConsulta('consentimientoFirmado', $any($event.target).checked)" />
+              Consentimiento informado odontológico firmado
+            </label>
+            @if (formConsulta().consentimientoFirmado) {
+              <span class="odont-consent-ok">✅ Firmado</span>
+            } @else {
+              <span class="odont-consent-pending">⚠️ Pendiente</span>
+            }
+          </div>
+          @if (formConsulta().consentimientoFirmado) {
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fecha de firma</label>
+                <input type="date"
+                  [value]="formConsulta().fechaConsentimiento ?? ''"
+                  (input)="updateFormConsulta('fechaConsentimiento', $any($event.target).value)" />
+              </div>
+              <div class="form-group">
+                <label>Observaciones del consentimiento</label>
+                <input type="text"
+                  [value]="formConsulta().consentimientoObservaciones ?? ''"
+                  (input)="updateFormConsulta('consentimientoObservaciones', $any($event.target).value)"
+                  placeholder="Procedimientos autorizados, restricciones..." />
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- SOAP Subjetivo -->
+      <div class="historia-card">
+        <h3 class="card-section-title">📋 S — Subjetivo</h3>
+        <div class="form-group">
+          <label>Motivo de consulta *</label>
+          <textarea rows="2" [value]="formConsulta().motivoConsulta ?? ''"
+            (input)="updateFormConsulta('motivoConsulta', $any($event.target).value)"
+            placeholder="Motivo por el cual consulta el paciente..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Enfermedad actual</label>
+          <textarea rows="3" [value]="formConsulta().enfermedadActual ?? ''"
+            (input)="updateFormConsulta('enfermedadActual', $any($event.target).value)"
+            placeholder="Descripción detallada de la enfermedad actual..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Antecedentes odontológicos</label>
+          <textarea rows="2" [value]="formConsulta().antecedentesOdontologicos ?? ''"
+            (input)="updateFormConsulta('antecedentesOdontologicos', $any($event.target).value)"
+            placeholder="Tratamientos previos, extracciones, alergias a anestesia..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Antecedentes sistémicos</label>
+          <textarea rows="2" [value]="formConsulta().antecedentesSistemicos ?? ''"
+            (input)="updateFormConsulta('antecedentesSistemicos', $any($event.target).value)"
+            placeholder="Enfermedades de base, condiciones médicas relevantes..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Medicamentos actuales</label>
+          <input type="text" [value]="formConsulta().medicamentosActuales ?? ''"
+            (input)="updateFormConsulta('medicamentosActuales', $any($event.target).value)"
+            placeholder="Medicamentos que toma actualmente..." />
+        </div>
+        <div class="form-group">
+          <label>Alergias conocidas</label>
+          <input type="text" [value]="formConsulta().alergias ?? ''"
+            (input)="updateFormConsulta('alergias', $any($event.target).value)"
+            placeholder="Alergias a medicamentos, materiales dentales..." />
+        </div>
+        <div class="form-group">
+          <label>Hábitos orales</label>
+          <textarea rows="2" [value]="formConsulta().habitosOrales ?? ''"
+            (input)="updateFormConsulta('habitosOrales', $any($event.target).value)"
+            placeholder="Bruxismo, onicofagia, uso de chupete, respirador bucal..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Higiene oral</label>
+            <select [value]="formConsulta().higieneOral"
+              (change)="updateFormConsulta('higieneOral', $any($event.target).value)">
+              @for (op of HIGIENE_OPTIONS; track op) {
+              <option [value]="op">{{ op }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Riesgo de caries</label>
+            <select [value]="formConsulta().riesgoCaries"
+              (change)="updateFormConsulta('riesgoCaries', $any($event.target).value)">
+              @for (op of RIESGO_OPTIONS; track op) {
+              <option [value]="op">{{ op }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Condición periodontal</label>
+            <select [value]="formConsulta().condicionPeriodontal"
+              (change)="updateFormConsulta('condicionPeriodontal', $any($event.target).value)">
+              @for (op of PERIODO_OPTIONS; track op) {
+              <option [value]="op">{{ op }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOAP Objetivo -->
+      <div class="historia-card">
+        <h3 class="card-section-title">🔍 O — Objetivo (Examen clínico)</h3>
+        <div class="form-group">
+          <label>Examen extraoral</label>
+          <textarea rows="3" [value]="formConsulta().examenExtraOral ?? ''"
+            (input)="updateFormConsulta('examenExtraOral', $any($event.target).value)"
+            placeholder="ATM, ganglios, tejidos blandos faciales, perfil facial..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Examen intraoral</label>
+          <textarea rows="3" [value]="formConsulta().examenIntraOral ?? ''"
+            (input)="updateFormConsulta('examenIntraOral', $any($event.target).value)"
+            placeholder="Mucosas, lengua, encías, paladar, pisos, carrillos..."></textarea>
+        </div>
+
+        <!-- Índice CPOD (dentición permanente) -->
+        <div class="cpod-section">
+          <h4 class="cpod-titulo">Índice CPOD <span class="cpod-sub">(dentición permanente)</span></h4>
+          <div class="cpod-inputs">
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-c">C — Cariados</label>
+              <input type="number" min="0" max="32"
+                [value]="formConsulta().cpodCariados ?? 0"
+                (input)="updateFormConsulta('cpodCariados', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-p">P — Perdidos</label>
+              <input type="number" min="0" max="32"
+                [value]="formConsulta().cpodPerdidos ?? 0"
+                (input)="updateFormConsulta('cpodPerdidos', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-o">O — Obturados</label>
+              <input type="number" min="0" max="32"
+                [value]="formConsulta().cpodObturados ?? 0"
+                (input)="updateFormConsulta('cpodObturados', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-total-badge">
+              CPOD: <strong>{{ cpodTotal() }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Índice ceod (dentición temporal) -->
+        <div class="cpod-section cpod-section--temporal">
+          <h4 class="cpod-titulo">Índice ceod <span class="cpod-sub">(dentición temporal)</span></h4>
+          <div class="cpod-inputs">
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-c">c — Cariados</label>
+              <input type="number" min="0" max="20"
+                [value]="formConsulta().ceodCariados ?? 0"
+                (input)="updateFormConsulta('ceodCariados', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-p">e — Extraídos</label>
+              <input type="number" min="0" max="20"
+                [value]="formConsulta().ceodExtraidos ?? 0"
+                (input)="updateFormConsulta('ceodExtraidos', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-input-group">
+              <label class="cpod-label cpod-o">o — Obturados</label>
+              <input type="number" min="0" max="20"
+                [value]="formConsulta().ceodObturados ?? 0"
+                (input)="updateFormConsulta('ceodObturados', +$any($event.target).value)" />
+            </div>
+            <div class="cpod-total-badge">
+              ceod: <strong>{{ ceodTotal() }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Índice IHO-S -->
+        <div class="ihos-section">
+          <h4 class="ihos-titulo">
+            Índice IHO-S
+            <span class="ihos-badge" [ngClass]="ihosClassification().css">
+              {{ ihosClassification().label }}
+            </span>
+          </h4>
+          <div class="ihos-inputs">
+            <div class="form-group">
+              <label>Placa bacteriana (DI-S)</label>
+              <input type="number" min="0" max="3" step="0.1"
+                [value]="formConsulta().ihosPlaca ?? 0"
+                (input)="updateFormConsulta('ihosPlaca', +$any($event.target).value)" />
+              <small class="form-hint">0=limpio, 1=1/3, 2=2/3, 3=más 2/3</small>
+            </div>
+            <div class="form-group">
+              <label>Cálculo dental (CI-S)</label>
+              <input type="number" min="0" max="3" step="0.1"
+                [value]="formConsulta().ihosCalculo ?? 0"
+                (input)="updateFormConsulta('ihosCalculo', +$any($event.target).value)" />
+              <small class="form-hint">0=ninguno, 1=supraging., 2=subging., 3=cubre cuello</small>
+            </div>
+            <div class="ihos-total-badge">
+              IHO-S Total: <strong>{{ ihosTotal() }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOAP Análisis/Plan -->
+      <div class="historia-card historia-card-full">
+        <h3 class="card-section-title">🧠 A/P — Diagnóstico y Plan</h3>
+        <div class="form-group">
+          <label>Diagnóstico</label>
+          <textarea rows="3" [value]="formConsulta().diagnostico ?? ''"
+            (input)="updateFormConsulta('diagnostico', $any($event.target).value)"
+            placeholder="CIE-10, diagnóstico definitivo, presuntivo..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Plan de tratamiento inicial</label>
+          <textarea rows="3" [value]="formConsulta().planTratamiento ?? ''"
+            (input)="updateFormConsulta('planTratamiento', $any($event.target).value)"
+            placeholder="Prioridades de tratamiento, secuencia clínica sugerida..."></textarea>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+  }
+
+  <!-- ── TAB: PROCEDIMIENTOS ──────────────────────────────────────── -->
+  @if (tabFicha() === 'procedimientos') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faStethoscope"></fa-icon> Catálogo de Procedimientos</h2>
+    </div>
+    <div class="proc-busqueda">
+      <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+      <input class="search-input" type="text" placeholder="Buscar por nombre o código CUPS..."
+        [value]="busquedaProc()"
+        (input)="busquedaProc.set($any($event.target).value)" />
+    </div>
+    <div class="proc-categorias">
+      @for (proc of catalogoFiltrado(); track proc.id) {
+      <div class="proc-item" [class.selected]="procedimientoSel()?.id === proc.id"
+           (click)="seleccionarProcedimiento(proc)">
+        <div class="proc-info">
+          <span class="proc-codigo">{{ proc.codigo ?? '—' }}</span>
+          <span class="proc-nombre">{{ proc.nombre }}</span>
+          <span class="proc-cat badge badge-neutral">{{ proc.categoria }}</span>
+        </div>
+        <span class="proc-precio">{{ formatCurrency(proc.precioBase) }}</span>
+      </div>
+      }
+    </div>
+    @if (procedimientoSel()) {
+    <div class="proc-seleccionado">
+      <h4>Procedimiento seleccionado: <strong>{{ procedimientoSel()!.nombre }}</strong></h4>
+      <p class="text-secondary">Use la pestaña "Plan / Presupuesto" para agregarlo al plan de tratamiento del paciente.</p>
+    </div>
+    }
+  </section>
+  }
+
+  <!-- ── TAB: PLAN DE TRATAMIENTO ─────────────────────────────────── -->
+  @if (tabFicha() === 'plan') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faFileInvoiceDollar"></fa-icon> Plan de Tratamiento</h2>
+      <button class="btn-secondary" (click)="nuevoPlan()">
+        <fa-icon [icon]="faPlus"></fa-icon> Nuevo plan
+      </button>
+    </div>
+
+    <!-- Planes existentes del paciente -->
+    @if (planesPaciente().length > 0) {
+    <div class="planes-list">
+      @for (plan of planesPaciente(); track plan.id) {
+      <div class="plan-card" [class.plan-active]="planActivo()?.id === plan.id" (click)="abrirPlan(plan)">
+        <div class="plan-header-row">
+          <span class="plan-nombre">{{ plan.nombre }} — Fase {{ plan.fase }}</span>
+          <span class="badge" [ngClass]="planEstadoClass(plan.estado ?? '')">{{ getEstadoLabel(plan.estado ?? '') }}</span>
+        </div>
+        <div class="plan-meta">
+          <span>{{ plan.items?.length ?? 0 }} procedimientos</span>
+          <span>·</span>
+          <span>Total: {{ formatCurrency(plan.valorFinal) }}</span>
+          <span>·</span>
+          <span>Abonado: {{ formatCurrency(plan.valorAbonado) }}</span>
+          <span>·</span>
+          <span class="saldo" [class.saldo-ok]="(plan.saldoPendiente ?? 0) === 0">
+            Saldo: {{ formatCurrency(plan.saldoPendiente) }}
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Editor del plan activo -->
+    @if (planActivo()) {
+    <div class="plan-editor">
+      <div class="plan-editor-header">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre del plan</label>
+            <input type="text" [value]="planActivo()!.nombre ?? 'Plan de Tratamiento'"
+              (input)="setPlanNombre($any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>Fase</label>
+            <input type="number" min="1" [value]="planActivo()!.fase ?? 1"
+              (input)="setPlanFase(+$any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de pago</label>
+            <select [value]="planActivo()!.tipoPago ?? 'PARTICULAR'"
+              (change)="setPlanTipoPago($any($event.target).value)">
+              @for (op of TIPO_PAGO_OPTIONS; track op.value) {
+              <option [value]="op.value">{{ op.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descuento global (%)</label>
+            <input type="number" min="0" max="100" [value]="planActivo()!.descuento ?? 0"
+              (input)="setPlanDescuento(+$any($event.target).value)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Agregar procedimiento al plan -->
+      <div class="agregar-item-plan">
+        <h4>Agregar procedimiento</h4>
+        <div class="agregar-form">
+          <div class="form-group flex-grow">
+            <label>Procedimiento</label>
+            <select (change)="seleccionarProcedimiento(catalogo()[$any($event.target).value])">
+              <option value="">— Seleccionar —</option>
+              @for (proc of catalogo(); track proc.id; let i = $index) {
+              <option [value]="i">{{ proc.codigo ? '[' + proc.codigo + '] ' : '' }}{{ proc.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Pieza FDI</label>
+            <input type="number" min="11" max="85" placeholder="Ej: 16"
+              [value]="piezaSelPlan() ?? ''"
+              (input)="piezaSelPlan.set($any($event.target).value ? +$any($event.target).value : null)" />
+          </div>
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" min="1" [value]="cantidadPlan()"
+              (input)="cantidadPlan.set(+$any($event.target).value)" />
+          </div>
+          <div class="form-group">
+            <label>Descuento %</label>
+            <input type="number" min="0" max="100" [value]="descuentoItem()"
+              (input)="descuentoItem.set(+$any($event.target).value)" />
+          </div>
+          <button class="btn-primary btn-agregar" (click)="agregarItemPlan()">
+            <fa-icon [icon]="faPlus"></fa-icon> Agregar
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de ítems -->
+      @if ((planActivo()!.items ?? []).length > 0) {
+      <div class="plan-items-tabla">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Procedimiento</th>
+              <th>Código</th>
+              <th>Pieza</th>
+              <th>Cant.</th>
+              <th>Precio</th>
+              <th>Desc.%</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of planActivo()!.items; track $index; let i = $index) {
+            <tr>
+              <td>{{ item.procedimientoNombre }}</td>
+              <td class="text-secondary">{{ item.procedimientoCodigo ?? '—' }}</td>
+              <td>{{ item.piezaFdi ?? '—' }}</td>
+              <td>{{ item.cantidad }}</td>
+              <td>{{ formatCurrency(item.precioUnitario) }}</td>
+              <td>{{ item.descuento ?? 0 }}%</td>
+              <td class="font-bold">{{ formatCurrency(item.valorTotal) }}</td>
+              <td>
+                <span class="badge" [ngClass]="item.estado === 'COMPLETADO' ? 'badge-success' : 'badge-warning'">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-icon-danger" (click)="eliminarItemPlan(i)">
+                  <fa-icon [icon]="faTrash"></fa-icon>
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="tabla-total">
+              <td colspan="6" class="text-right">Subtotal</td>
+              <td colspan="3" class="font-bold">{{ formatCurrency(totalPlanNuevo()) }}</td>
+            </tr>
+            @if ((planActivo()!.descuento ?? 0) > 0) {
+            <tr class="tabla-desc">
+              <td colspan="6" class="text-right">Descuento ({{ planActivo()!.descuento }}%)</td>
+              <td colspan="3" class="color-danger">
+                - {{ formatCurrency(totalPlanNuevo() * (planActivo()!.descuento ?? 0) / 100) }}
+              </td>
+            </tr>
+            }
+            <tr class="tabla-final">
+              <td colspan="6" class="text-right font-bold">TOTAL A PAGAR</td>
+              <td colspan="3" class="font-bold color-primary">
+                {{ formatCurrency(totalPlanNuevo() * (1 - (planActivo()!.descuento ?? 0) / 100)) }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Abonos (solo si plan ya guardado) -->
+      @if (planActivo()!.id) {
+      <div class="abono-section">
+        <h4>Registrar abono</h4>
+        <div class="abono-form">
+          <div class="abono-info">
+            <span>Saldo pendiente: <strong class="color-primary">{{ formatCurrency(planActivo()!.saldoPendiente) }}</strong></span>
+          </div>
+          <div class="form-group">
+            <label>Monto del abono</label>
+            <input type="number" min="0" [value]="montoAbono()"
+              (input)="montoAbono.set(+$any($event.target).value)"
+              placeholder="0" />
+          </div>
+          <button class="btn-success" (click)="registrarAbono()" [disabled]="montoAbono() <= 0">
+            <fa-icon [icon]="faMoneyBillWave"></fa-icon> Registrar abono
+          </button>
+        </div>
+        <div class="estado-plan-acciones">
+          <span class="text-secondary">Cambiar estado:</span>
+          <button class="btn-xs btn-warning" (click)="cambiarEstadoPlan(planActivo()!, 'EN_TRATAMIENTO')">En tratamiento</button>
+          <button class="btn-xs btn-success" (click)="cambiarEstadoPlan(planActivo()!, 'FINALIZADO')">Finalizar</button>
+          <button class="btn-xs btn-danger" (click)="cambiarEstadoPlan(planActivo()!, 'CANCELADO')">Cancelar</button>
+        </div>
+      </div>
+      }
+      }
+
+      <!-- Botón guardar plan -->
+      <div class="plan-acciones">
+        <button class="btn-primary" (click)="guardarPlan()">
+          <fa-icon [icon]="faSave"></fa-icon> Guardar plan
+        </button>
+        <button class="btn-secondary" (click)="planActivo.set(null)">Cancelar</button>
+      </div>
+    </div>
+    }
+
+  </section>
+  }
+
+  <!-- ── TAB: IMÁGENES ─────────────────────────────────────────────── -->
+  @if (tabFicha() === 'imagenes') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faImages"></fa-icon> Imágenes Clínicas y Radiografías</h2>
+    </div>
+
+    <!-- Subir nueva imagen -->
+    <div class="upload-card">
+      <h4>Subir nueva imagen</h4>
+      <div class="upload-form">
+        <div class="form-group">
+          <label>Tipo</label>
+          <select [value]="nuevaImgTipo()"
+            (change)="nuevaImgTipo.set($any($event.target).value)">
+            @for (t of TIPOS_IMAGEN; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pieza FDI (opcional)</label>
+          <input type="number" min="11" max="85" placeholder="Ej: 26"
+            [value]="nuevaImgPieza() ?? ''"
+            (input)="nuevaImgPieza.set($any($event.target).value ? +$any($event.target).value : null)" />
+        </div>
+        <div class="form-group flex-grow">
+          <label>Descripción</label>
+          <input type="text" [value]="nuevaImgDesc()"
+            (input)="nuevaImgDesc.set($any($event.target).value)"
+            placeholder="Descripción de la imagen..." />
+        </div>
+      </div>
+
+      <div class="upload-area" [class.has-preview]="nuevaImgBase64()">
+        @if (nuevaImgBase64()) {
+          <img [src]="nuevaImgBase64()" class="img-preview" alt="Vista previa" />
+        } @else {
+          <label class="upload-label" for="file-input">
+            <fa-icon [icon]="faUpload" class="upload-icon"></fa-icon>
+            <span>Haga clic o arrastre la imagen aquí</span>
+            <span class="upload-hint">JPG, PNG, TIFF — máx. 10 MB</span>
+          </label>
+        }
+        <input id="file-input" type="file" accept="image/*" class="file-input"
+          (change)="onArchivoSeleccionado($event)" />
+      </div>
+
+      <button class="btn-primary" [disabled]="!nuevaImgBase64()" (click)="subirImagen()">
+        <fa-icon [icon]="faUpload"></fa-icon> Guardar imagen
+      </button>
+    </div>
+
+    <!-- Galería de imágenes -->
+    <div class="imagenes-galeria">
+      @if (imagenes().length === 0) {
+      <div class="empty-state">
+        <fa-icon [icon]="faImages" class="empty-icon"></fa-icon>
+        <p>No hay imágenes para este paciente.</p>
+      </div>
+      }
+      @for (img of imagenes(); track img.id) {
+      <div class="img-card">
+        <div class="img-container" (click)="imagenVisor.set(img)">
+          <img [src]="img.thumbnailBase64 ?? img.url" [alt]="img.descripcion ?? 'Imagen'" />
+          <div class="img-overlay">
+            <fa-icon [icon]="faEye"></fa-icon>
+          </div>
+        </div>
+        <div class="img-info">
+          <span class="img-tipo badge badge-neutral">{{ img.tipo }}</span>
+          @if (img.piezaFdi) { <span class="img-pieza">Pieza {{ img.piezaFdi }}</span> }
+          <span class="img-fecha">{{ formatFecha(img.createdAt) }}</span>
+          <span class="img-desc">{{ img.descripcion ?? '—' }}</span>
+        </div>
+        <button class="btn-icon-danger" (click)="eliminarImagen(img)">
+          <fa-icon [icon]="faTrash"></fa-icon>
+        </button>
+      </div>
+      }
+    </div>
+
+    <!-- Visor de imagen -->
+    @if (imagenVisor()) {
+    <div class="visor-overlay" (click)="imagenVisor.set(null)">
+      <div class="visor-modal" (click)="$event.stopPropagation()">
+        <button class="visor-close" (click)="imagenVisor.set(null)">✕</button>
+        <img [src]="imagenVisor()!.thumbnailBase64 ?? imagenVisor()!.url" class="visor-img" [alt]="imagenVisor()!.descripcion ?? ''" />
+        <div class="visor-info">
+          <span>{{ imagenVisor()!.tipo }}</span>
+          @if (imagenVisor()!.piezaFdi) { <span>Pieza {{ imagenVisor()!.piezaFdi }}</span> }
+          <span>{{ formatFecha(imagenVisor()!.createdAt) }}</span>
+          <span>{{ imagenVisor()!.descripcion }}</span>
+          <span>Por: {{ imagenVisor()!.profesionalNombre }}</span>
+        </div>
+      </div>
+    </div>
+    }
+
+  </section>
+  }
+
+  <!-- ── TAB: EVOLUCIÓN ────────────────────────────────────────────── -->
+  @if (tabFicha() === 'evolucion') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title"><fa-icon [icon]="faChartLine"></fa-icon> Evolución del Paciente</h2>
+    </div>
+
+    <!-- Registro de nueva evolución -->
+    <div class="evolucion-form-card">
+      <h4>Registrar evolución de hoy</h4>
+      @if (!consultaActiva()?.id) {
+      <div class="alert alert-warning">
+        ⚠ Debe guardar la historia clínica primero para registrar una evolución.
+      </div>
+      }
+      <div class="form-group">
+        <label>Nota de evolución *</label>
+        <textarea rows="4" [value]="nuevaNota()"
+          (input)="nuevaNota.set($any($event.target).value)"
+          placeholder="Describa la evolución del paciente, procedimientos realizados, observaciones..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Control post-tratamiento</label>
+        <textarea rows="2" [value]="nuevoControl()"
+          (input)="nuevoControl.set($any($event.target).value)"
+          placeholder="Indicaciones post-operatorias, cuidados en casa..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Próxima cita recomendada</label>
+        <input type="datetime-local" [value]="proxCita()"
+          (change)="proxCita.set($any($event.target).value)" />
+      </div>
+      <button class="btn-primary" (click)="guardarEvolucion()" [disabled]="!nuevaNota()">
+        <fa-icon [icon]="faSave"></fa-icon> Guardar evolución
+      </button>
+    </div>
+
+    <!-- Historial de evoluciones -->
+    <div class="evoluciones-timeline">
+      @if (evoluciones().length === 0) {
+      <div class="empty-state">
+        <fa-icon [icon]="faChartLine" class="empty-icon"></fa-icon>
+        <p>No hay evoluciones registradas aún.</p>
+      </div>
+      } @else {
+      @for (ev of evoluciones(); track ev.id) {
+      <div class="evolucion-item">
+        <div class="ev-timeline-dot"></div>
+        <div class="ev-content">
+          <div class="ev-header">
+            <span class="ev-fecha">{{ formatFecha(ev.createdAt) }} {{ formatHora(ev.createdAt) }}</span>
+            <span class="ev-profesional">Dr. {{ ev.profesionalNombre }}</span>
+          </div>
+          <p class="ev-nota">{{ ev.notaEvolucion }}</p>
+          @if (ev.controlPostTratamiento) {
+          <div class="ev-control">
+            <strong>Control post-tratamiento:</strong> {{ ev.controlPostTratamiento }}
+          </div>
+          }
+          @if (ev.proximaCitaRecomendada) {
+          <div class="ev-proxima">
+            📅 Próxima cita: {{ formatFecha(ev.proximaCitaRecomendada) }}
+          </div>
+          }
+        </div>
+      </div>
+      }
+      }
+    </div>
+
+  </section>
+  }
+
+  <!-- ── TAB: HISTORIAL DE CONSULTAS ──────────────────────────────── -->
+  @if (tabFicha() === 'historial') {
+  <section class="ficha-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <fa-icon [icon]="faClipboardList"></fa-icon> Historial de consultas
+      </h2>
+      <span class="text-secondary" style="font-size:0.82rem">
+        {{ consultasHistorial().length }} consulta(s) registradas
+      </span>
+    </div>
+
+    @if (consultasHistorial().length === 0) {
+    <div class="empty-state">
+      <fa-icon [icon]="faClipboardList" class="empty-icon"></fa-icon>
+      <p>No hay consultas anteriores registradas.</p>
+    </div>
+    } @else {
+    <div class="historial-consultas-list">
+      @for (c of consultasHistorial(); track c.id) {
+      <!-- ── Tarjeta de consulta ── -->
+      <div class="hc-card" [class.hc-card--open]="consultaExpandidaId() === c.id">
+
+        <!-- Cabecera siempre visible (click para expandir) -->
+        <div class="hc-header" (click)="toggleConsultaHistorial(c)">
+          <div class="hc-header-left">
+            <span class="hc-fecha">{{ formatFecha(c.createdAt) }}</span>
+            <span class="hc-hora text-secondary">{{ formatHora(c.createdAt) }}</span>
+          </div>
+          <div class="hc-header-center">
+            <span class="hc-motivo">{{ c.motivoConsulta ?? 'Sin motivo registrado' }}</span>
+            @if (c.diagnostico) {
+            <span class="hc-dx text-secondary">{{ c.diagnostico }}</span>
+            }
+          </div>
+          <div class="hc-header-right">
+            <span class="hc-prof text-secondary">Dr. {{ c.profesionalNombre }}</span>
+            <span class="badge" [ngClass]="c.estado === 'FINALIZADO' || c.estado === 'ATENDIDA' ? 'badge-success' : 'badge-primary'">
+              {{ getEstadoLabel(c.estado ?? '') }}
+            </span>
+            @if ((c.cpodCariados ?? 0) + (c.cpodPerdidos ?? 0) + (c.cpodObturados ?? 0) > 0) {
+            <span class="hc-cpod">
+              CPOD {{ (c.cpodCariados ?? 0) + (c.cpodPerdidos ?? 0) + (c.cpodObturados ?? 0) }}
+            </span>
+            }
+          </div>
+          <span class="hc-chevron" [class.hc-chevron--open]="consultaExpandidaId() === c.id">▾</span>
+        </div>
+
+        <!-- Detalle expandible con SOAP completo + odontograma -->
+        @if (consultaExpandidaId() === c.id) {
+        <div class="hc-body">
+
+          <!-- SOAP SOAP SOAP -->
+          <div class="hc-soap-grid">
+
+            <!-- S: Subjetivo -->
+            <div class="hc-soap-col">
+              <h4 class="hc-soap-title hc-s">S — Subjetivo</h4>
+              @if (c.motivoConsulta) {
+              <div class="hc-field">
+                <span class="hc-label">Motivo de consulta</span>
+                <span class="hc-value">{{ c.motivoConsulta }}</span>
+              </div>
+              }
+              @if (c.enfermedadActual) {
+              <div class="hc-field">
+                <span class="hc-label">Enfermedad actual</span>
+                <span class="hc-value">{{ c.enfermedadActual }}</span>
+              </div>
+              }
+              @if (c.antecedentesOdontologicos) {
+              <div class="hc-field">
+                <span class="hc-label">Antecedentes odontológicos</span>
+                <span class="hc-value">{{ c.antecedentesOdontologicos }}</span>
+              </div>
+              }
+              @if (c.antecedentesSistemicos) {
+              <div class="hc-field">
+                <span class="hc-label">Antecedentes sistémicos</span>
+                <span class="hc-value">{{ c.antecedentesSistemicos }}</span>
+              </div>
+              }
+              @if (c.medicamentosActuales) {
+              <div class="hc-field">
+                <span class="hc-label">Medicamentos</span>
+                <span class="hc-value">{{ c.medicamentosActuales }}</span>
+              </div>
+              }
+              @if (c.alergias) {
+              <div class="hc-field hc-field--alert">
+                <span class="hc-label">⚠ Alergias</span>
+                <span class="hc-value">{{ c.alergias }}</span>
+              </div>
+              }
+              @if (c.habitosOrales) {
+              <div class="hc-field">
+                <span class="hc-label">Hábitos orales</span>
+                <span class="hc-value">{{ c.habitosOrales }}</span>
+              </div>
+              }
+            </div>
+
+            <!-- O: Objetivo -->
+            <div class="hc-soap-col">
+              <h4 class="hc-soap-title hc-o">O — Objetivo</h4>
+              <div class="hc-field">
+                <span class="hc-label">Higiene oral</span>
+                <span class="hc-value">{{ labelHigiene(c.higieneOral) }}</span>
+              </div>
+              <div class="hc-field">
+                <span class="hc-label">Riesgo de caries</span>
+                <span class="hc-value">{{ labelRiesgo(c.riesgoCaries) }}</span>
+              </div>
+              <div class="hc-field">
+                <span class="hc-label">Condición periodontal</span>
+                <span class="hc-value">{{ labelPerio(c.condicionPeriodontal) }}</span>
+              </div>
+              @if (c.examenExtraOral) {
+              <div class="hc-field">
+                <span class="hc-label">Examen extraoral</span>
+                <span class="hc-value">{{ c.examenExtraOral }}</span>
+              </div>
+              }
+              @if (c.examenIntraOral) {
+              <div class="hc-field">
+                <span class="hc-label">Examen intraoral</span>
+                <span class="hc-value">{{ c.examenIntraOral }}</span>
+              </div>
+              }
+              <!-- CPOD -->
+              @if ((c.cpodCariados ?? 0) + (c.cpodPerdidos ?? 0) + (c.cpodObturados ?? 0) > 0) {
+              <div class="hc-cpod-row">
+                <span class="hc-cpod-item hc-c">C={{ c.cpodCariados ?? 0 }}</span>
+                <span class="hc-cpod-item hc-p">P={{ c.cpodPerdidos ?? 0 }}</span>
+                <span class="hc-cpod-item hc-o-item">O={{ c.cpodObturados ?? 0 }}</span>
+                <span class="hc-cpod-total">CPOD={{ (c.cpodCariados ?? 0) + (c.cpodPerdidos ?? 0) + (c.cpodObturados ?? 0) }}</span>
+              </div>
+              }
+            </div>
+
+            <!-- A/P: Análisis y Plan -->
+            <div class="hc-soap-col">
+              <h4 class="hc-soap-title hc-ap">A/P — Diagnóstico y Plan</h4>
+              @if (c.diagnostico) {
+              <div class="hc-field">
+                <span class="hc-label">Diagnóstico</span>
+                <span class="hc-value">{{ c.diagnostico }}</span>
+              </div>
+              }
+              @if (c.planTratamiento) {
+              <div class="hc-field">
+                <span class="hc-label">Plan de tratamiento</span>
+                <span class="hc-value">{{ c.planTratamiento }}</span>
+              </div>
+              }
+            </div>
+          </div>
+
+          <!-- ── Odontograma de esta consulta ── -->
+          <div class="hc-odontograma-section">
+            <h4 class="hc-odont-title">
+              <fa-icon [icon]="faTooth"></fa-icon> Dientes tratados en esta consulta
+            </h4>
+
+            @if (cargandoOdontHist()) {
+            <div class="hc-odont-loading">
+              <fa-icon [icon]="faSpinner" class="spin"></fa-icon> Cargando...
+            </div>
+            } @else if (odontogramaHistorial().length === 0) {
+            <p class="hc-odont-empty text-secondary">
+              No se registraron cambios en el odontograma para esta consulta.
+            </p>
+            } @else {
+            <div class="hc-odont-tabla">
+              <div class="hc-odont-header">
+                <span>Pieza (FDI)</span>
+                <span>Superficie</span>
+                <span>Estado registrado</span>
+                <span>Observación</span>
+              </div>
+              @for (row of odontogramaHistorial(); track row.id) {
+              <div class="hc-odont-row">
+                <span class="hc-odont-pieza">{{ row.piezaFdi }}</span>
+                <span class="hc-odont-sup">{{ labelSuperficie(row.superficie) }}</span>
+                <span class="hc-odont-estado">
+                  <span class="badge" style="font-size:0.72rem"
+                        [style.background]="getEstadoColorHist(row.estado)">
+                    {{ getEstadoLabel(row.estado) }}
+                  </span>
+                </span>
+                <span class="hc-odont-obs text-secondary">{{ row.observacion ?? '—' }}</span>
+              </div>
+              }
+            </div>
+            }
+          </div>
+
+        </div>
+        }
+      </div>
+      }
+    </div>
+    }
+  </section>
+  }
+
+  } <!-- fin @else -->
+
+</div>

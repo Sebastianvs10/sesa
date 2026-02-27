@@ -8,6 +8,7 @@ import com.sesa.salud.dto.ProgramacionMesDto;
 import com.sesa.salud.dto.ResumenProfesionalDto;
 import com.sesa.salud.dto.TurnoDto;
 import com.sesa.salud.dto.TurnoRequestDto;
+import com.sesa.salud.dto.TurnoResponseDto;
 import com.sesa.salud.entity.enums.ServicioClinico;
 import com.sesa.salud.entity.enums.TipoTurno;
 
@@ -48,11 +49,11 @@ public interface TurnoService {
      */
     List<TurnoDto> listar(int anio, int mes, ServicioClinico servicio, TipoTurno tipoTurno, Long personalId);
 
-    /** Crea un nuevo turno validando las reglas colombianas del CST. */
-    TurnoDto crear(TurnoRequestDto request, Long usuarioId);
+    /** Crea un nuevo turno; devuelve el turno y advertencias (exceso horas, descanso) sin bloquear. */
+    TurnoResponseDto crear(TurnoRequestDto request, Long usuarioId);
 
-    /** Actualiza un turno existente revalidando las reglas. */
-    TurnoDto actualizar(Long turnoId, TurnoRequestDto request, Long usuarioId);
+    /** Actualiza un turno existente; devuelve el turno y advertencias sin bloquear. */
+    TurnoResponseDto actualizar(Long turnoId, TurnoRequestDto request, Long usuarioId);
 
     /** Mueve un turno a otra fecha (drag & drop en el frontend). */
     TurnoDto moverFecha(Long turnoId, java.time.LocalDate nuevaFecha, Long usuarioId);

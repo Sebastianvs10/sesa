@@ -1,54 +1,445 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <h1 class="sesa-page-title">Facturación</h1>
-    <p class="sesa-page-subtitle">Cuentas médicas, validación y exportación RIPS (CSV)</p>
+<section class="fac-page">
+
+  <!-- ═══════════════════════════════════ HEADER ══════════════════════════════════ -->
+  <header class="fac-header">
+    <div class="fac-header-text">
+      <h1 class="fac-title">Facturación</h1>
+      <p class="fac-subtitle">Cuentas médicas · RIPS · Glosas · Estados</p>
+    </div>
+    <div class="fac-header-actions">
+      <button class="sesa-btn sesa-btn-secondary" type="button" (click)="abrirPanelRips()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Exportar RIPS
+      </button>
+      <button class="sesa-btn sesa-btn-primary" type="button" (click)="abrirPanelCrear()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Factura
+      </button>
+    </div>
   </header>
 
-  @if (error) { <p class="sesa-error">{{ error }}</p> }
+  <!-- ═══════════════════════════════════ KPI CARDS ═══════════════════════════════ -->
+  <div class="fac-kpi-grid">
+    @if (loadingResumen()) {
+      @for (sk of [1,2,3,4]; track sk) {
+        <div class="fac-kpi-card"><sesa-skeleton preset="stat-card" /></div>
+      }
+    } @else {
+      @if (resumen(); as r) {
+      <div class="fac-kpi-card fac-kpi-card--blue">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Facturado este mes</span>
+          <strong class="fac-kpi-value">{{ r.totalFacturadoMes | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span class="fac-kpi-sub">{{ r.cantidadMes }} factura{{ r.cantidadMes !== 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      <div class="fac-kpi-card fac-kpi-card--warning">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Pendiente de cobro</span>
+          <strong class="fac-kpi-value">{{ r.montoPendiente | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span class="fac-kpi-sub">{{ r.cantidadPendiente }} pendiente{{ r.cantidadPendiente !== 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      <div class="fac-kpi-card fac-kpi-card--success">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Pagadas</span>
+          <strong class="fac-kpi-value">{{ r.montoPagado | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span class="fac-kpi-sub">{{ r.cantidadPagada }} pagada{{ r.cantidadPagada !== 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      <div class="fac-kpi-card fac-kpi-card--danger">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Rechazadas / Anuladas</span>
+          <strong class="fac-kpi-value">{{ r.cantidadRechazada + r.cantidadAnulada }}</strong>
+          <span class="fac-kpi-sub">{{ r.cantidadRechazada }} glosa{{ r.cantidadRechazada !== 1 ? 's' : '' }} · {{ r.cantidadAnulada }} anulada{{ r.cantidadAnulada !== 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      }
+    }
+  </div>
 
-  <sesa-card title="Facturas por paciente">
-    <div class="sesa-form-grid">
-      <div class="sesa-form-field">
-        <label>Paciente</label>
-        <select [(ngModel)]="selectedPacienteId">
-          <option [ngValue]="null">Seleccione...</option>
-          @for (p of pacientes; track p.id) {
+  <!-- ═══════════════════════════════════ FILTROS ═════════════════════════════════ -->
+  <sesa-card>
+    <div class="fac-filters">
+      <div class="fac-filter-field">
+        <label class="fac-filter-label">Estado</label>
+        <select class="fac-input" [(ngModel)]="filtroEstado">
+          <option value="">Todos los estados</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="EN_PROCESO">En proceso (glosa)</option>
+          <option value="PAGADA">Pagada</option>
+          <option value="RECHAZADA">Rechazada</option>
+          <option value="ANULADA">Anulada</option>
+        </select>
+      </div>
+      <div class="fac-filter-field">
+        <label class="fac-filter-label">Desde</label>
+        <input class="fac-input" type="date" [(ngModel)]="filtroDesde" />
+      </div>
+      <div class="fac-filter-field">
+        <label class="fac-filter-label">Hasta</label>
+        <input class="fac-input" type="date" [(ngModel)]="filtroHasta" />
+      </div>
+      <div class="fac-filter-field">
+        <label class="fac-filter-label">Paciente</label>
+        <select class="fac-input" [(ngModel)]="filtroPacienteId">
+          <option [ngValue]="null">Todos los pacientes</option>
+          @for (p of pacientes(); track p.id) {
             <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
           }
         </select>
       </div>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="cargarFacturas()">Consultar</button>
+      <div class="fac-filter-actions">
+        <button class="sesa-btn sesa-btn-primary" type="button" (click)="buscar(0)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Buscar
+        </button>
+        <button class="sesa-btn sesa-btn-outline" type="button" (click)="limpiarFiltros()">Limpiar</button>
       </div>
     </div>
-    <div class="sesa-table-wrap">
-      <table class="sesa-table">
-        <thead><tr><th>ID</th><th>Orden</th><th>Valor</th><th>Estado</th><th>Fecha</th></tr></thead>
+  </sesa-card>
+
+  <!-- ═══════════════════════════════════ TABLA ═══════════════════════════════════ -->
+  <sesa-card>
+    <div class="fac-table-header">
+      <span class="fac-table-count">
+        @if (!loading()) {
+          {{ totalElements() }} resultado{{ totalElements() !== 1 ? 's' : '' }}
+        }
+      </span>
+    </div>
+
+    <div class="fac-table-wrap">
+      <table class="fac-table">
+        <thead>
+          <tr>
+            <th>N° Factura</th>
+            <th>Paciente</th>
+            <th>Doc. / EPS</th>
+            <th>CUPS / Servicio</th>
+            <th>Responsable</th>
+            <th>Valor Total</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
         <tbody>
-          @for (f of facturas; track f.id) {
-            <tr>
-              <td>{{ f.id }}</td>
-              <td>{{ f.ordenId || '—' }}</td>
-              <td>{{ f.valorTotal }}</td>
-              <td>{{ f.estado || '—' }}</td>
-              <td>{{ f.fechaFactura || '—' }}</td>
-            </tr>
-          } @empty {
-            <tr><td colspan="5">Sin facturas para el paciente.</td></tr>
+          @if (loading()) {
+            @for (sk of [1,2,3,4,5]; track sk) {
+              <tr>
+                @for (c of [1,2,3,4,5,6,7]; track c) {
+                  <td><sesa-skeleton height="0.85rem" [width]="c === 7 ? '80px' : '100%'" /></td>
+                }
+              </tr>
+            }
+          } @else {
+            @for (f of facturas(); track f.id) {
+              <tr [class.fac-row--anulada]="f.estado === 'ANULADA'">
+                <td class="fac-td-numero">
+                  <span class="fac-num">{{ f.numeroFactura || ('F-' + f.id) }}</span>
+                  @if (f.ordenId) {
+                    <span class="fac-orden-tag">Ord. {{ f.ordenId }}</span>
+                  }
+                </td>
+                <td>
+                  <div class="fac-paciente">
+                    <span class="fac-paciente-nombre">{{ f.pacienteNombre }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="fac-doc-eps">
+                    <span class="fac-doc">{{ f.pacienteTipoDocumento || 'CC' }} {{ f.pacienteDocumento || '—' }}</span>
+                    @if (f.epsNombre) {
+                      <span class="fac-eps">{{ f.epsNombre }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  @if (f.codigoCups) {
+                    <span class="fac-cups-badge" title="{{ f.descripcionCups }}">{{ f.codigoCups }}</span>
+                  }
+                  @if (f.tipoServicio) {
+                    <span class="fac-tipo-servicio">{{ f.tipoServicio | titlecase }}</span>
+                  }
+                </td>
+                <td>
+                  @if (f.responsablePago) {
+                    <span class="fac-resp-badge fac-resp-{{ f.responsablePago | lowercase }}">{{ f.responsablePago }}</span>
+                  } @else {
+                    <span class="fac-muted">—</span>
+                  }
+                </td>
+                <td class="fac-td-valor">
+                  {{ f.valorTotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </td>
+                <td>
+                  <span class="fac-badge {{ estadoClass(f.estado) }}">{{ estadoLabel(f.estado) }}</span>
+                </td>
+                <td class="fac-td-fecha">
+                  {{ f.fechaFactura | date:'dd/MM/yyyy' }}
+                </td>
+                <td class="fac-td-actions">
+                  @if (f.estado !== 'ANULADA') {
+                    <div class="fac-actions-group">
+                      @if (f.estado === 'PENDIENTE') {
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-secondary" type="button"
+                          title="Marcar pagada"
+                          (click)="cambiarEstado(f, 'PAGADA')">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                          Pagar
+                        </button>
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button"
+                          title="Poner en proceso (glosa)"
+                          (click)="cambiarEstado(f, 'EN_PROCESO')">
+                          Glosa
+                        </button>
+                      }
+                      @if (f.estado === 'EN_PROCESO') {
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-secondary" type="button"
+                          (click)="cambiarEstado(f, 'PAGADA')">Pagar</button>
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button"
+                          (click)="cambiarEstado(f, 'RECHAZADA')">Rechazar</button>
+                      }
+                      <button class="sesa-btn sesa-btn-sm sesa-btn-danger" type="button"
+                        title="Anular factura"
+                        (click)="cambiarEstado(f, 'ANULADA')">
+                        Anular
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="fac-anulada-tag">Anulada</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="fac-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <p>No se encontraron facturas con los filtros seleccionados.</p>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
     </div>
-  </sesa-card>
 
-  <sesa-card title="Exportar RIPS">
-    <div class="sesa-form-grid">
-      <div class="sesa-form-field"><label>Desde</label><input type="date" [(ngModel)]="desde" /></div>
-      <div class="sesa-form-field"><label>Hasta</label><input type="date" [(ngModel)]="hasta" /></div>
-      <div class="sesa-form-actions"><button type="button" class="sesa-btn sesa-btn-secondary" (click)="exportarRips()">Generar RIPS</button></div>
-    </div>
-    @if (ripsCsv) {
-      <textarea rows="10" [value]="ripsCsv" readonly></textarea>
+    <!-- Paginación -->
+    @if (totalPages() > 1) {
+      <div class="fac-pagination">
+        <button class="fac-page-btn" type="button"
+          [disabled]="currentPage() === 0"
+          (click)="buscar(currentPage() - 1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        @for (p of paginas(); track p) {
+          <button class="fac-page-btn" type="button"
+            [class.fac-page-btn--active]="p === currentPage()"
+            (click)="buscar(p)">{{ p + 1 }}</button>
+        }
+        <button class="fac-page-btn" type="button"
+          [disabled]="currentPage() === totalPages() - 1"
+          (click)="buscar(currentPage() + 1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
     }
   </sesa-card>
+
 </section>
+
+<!-- ════════════════════════════════ PANEL LATERAL ══════════════════════════════ -->
+@if (panelOpen()) {
+  <div class="fac-overlay" (click)="cerrarPanel()" role="presentation"></div>
+  <aside class="fac-panel" role="dialog" [attr.aria-label]="panelMode() === 'crear' ? 'Nueva factura' : 'Exportar RIPS'">
+    <div class="fac-panel-header">
+      <h2 class="fac-panel-title">
+        @if (panelMode() === 'crear') { Nueva Factura }
+        @else { Exportar RIPS }
+      </h2>
+      <button class="sesa-btn sesa-btn-icon-only sesa-btn-outline" type="button" (click)="cerrarPanel()" aria-label="Cerrar panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- ── Formulario nueva factura ─────────────────────────────── -->
+    @if (panelMode() === 'crear') {
+      <form class="fac-panel-form" (ngSubmit)="guardarFactura()">
+        <div class="fac-field">
+          <label class="fac-label">
+            N° Factura
+            <span class="fac-norm-hint">Se genera automáticamente FV-AAAA-NNNNNN</span>
+          </label>
+          <input class="fac-input" type="text" [(ngModel)]="form.numeroFactura" name="numeroFactura"
+            placeholder="Dejar vacío para generación automática" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Paciente <span class="fac-required">*</span></label>
+          <select class="fac-input" [(ngModel)]="form.pacienteId" name="pacienteId" required>
+            <option [ngValue]="0" disabled>Seleccione paciente...</option>
+            @for (p of pacientes(); track p.id) {
+              <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- ── Sección normativa CUPS / RIPS ── -->
+        <div class="fac-section-label">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+          Servicio prestado (RIPS — Res. 3374/2000)
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">
+            Tipo de servicio <span class="fac-required">*</span>
+          </label>
+          <select class="fac-input" [(ngModel)]="form.tipoServicio" name="tipoServicio">
+            <option value="">Seleccione tipo...</option>
+            <option value="CONSULTA_EXTERNA">Consulta externa</option>
+            <option value="URGENCIAS">Urgencias</option>
+            <option value="HOSPITALIZACION">Hospitalización</option>
+            <option value="PROCEDIMIENTO">Procedimiento quirúrgico/médico</option>
+            <option value="LABORATORIO">Laboratorio</option>
+            <option value="IMAGEN">Imágenes diagnósticas</option>
+            <option value="MEDICAMENTO">Medicamento / farmacia</option>
+            <option value="ODONTOLOGIA">Odontología</option>
+          </select>
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Código CUPS del procedimiento</label>
+          <div style="display:flex;gap:0.5rem">
+            <select class="fac-input" style="width:120px" (change)="seleccionarCups($any($event.target).value)">
+              <option value="">— CUPS —</option>
+              @for (c of catalogoCups; track c.codigo) {
+                <option [value]="c.codigo">{{ c.codigo }} – {{ c.descripcion }}</option>
+              }
+            </select>
+            <input class="fac-input" type="text" [(ngModel)]="form.codigoCups" name="codigoCups"
+              placeholder="Cód. CUPS" style="width:110px;text-transform:uppercase" />
+            <input class="fac-input" type="text" [(ngModel)]="form.descripcionCups" name="descripcionCups"
+              placeholder="Descripción del procedimiento" style="flex:1" />
+          </div>
+        </div>
+
+        <!-- ── Responsable del pago ── -->
+        <div class="fac-section-label">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/></svg>
+          Financiación y pago
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Responsable del pago</label>
+          <select class="fac-input" [(ngModel)]="form.responsablePago" name="responsablePago">
+            <option value="">Seleccione...</option>
+            <option value="EPS">EPS (Régimen contributivo/subsidiado)</option>
+            <option value="ARL">ARL (Accidente de trabajo)</option>
+            <option value="SOAT">SOAT (Accidente de tránsito)</option>
+            <option value="PACIENTE_PARTICULAR">Paciente particular</option>
+            <option value="ENTE_TERRITORIAL">Ente territorial</option>
+            <option value="FOSYGA_VICTIMAS">ADRES / Víctimas</option>
+          </select>
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">N° Autorización EPS</label>
+          <input class="fac-input" type="text" [(ngModel)]="form.numeroAutorizacionEps" name="numeroAutorizacionEps"
+            placeholder="Número de autorización (si aplica)" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Cuota moderadora / Copago (COP)</label>
+          <input class="fac-input" type="number" min="0" step="100" [(ngModel)]="form.cuotaModeradora" name="cuotaModeradora"
+            placeholder="0" />
+          <span class="fac-field-hint">Valor a cargo del paciente (Ley 100/1993 Art. 187)</span>
+        </div>
+
+        <!-- ── Totales ── -->
+        <div class="fac-field">
+          <label class="fac-label">Valor Total del servicio (COP) <span class="fac-required">*</span></label>
+          <input class="fac-input" type="number" min="0" step="100" [(ngModel)]="form.valorTotal" name="valorTotal"
+            placeholder="0" required />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Estado inicial</label>
+          <select class="fac-input" [(ngModel)]="form.estado" name="estado">
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="EN_PROCESO">En proceso</option>
+            <option value="PAGADA">Pagada</option>
+          </select>
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Concepto / Descripción adicional</label>
+          <textarea class="fac-input fac-textarea" [(ngModel)]="form.descripcion" name="descripcion"
+            rows="2" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+        <div class="fac-panel-footer">
+          <button class="sesa-btn sesa-btn-outline" type="button" (click)="cerrarPanel()">Cancelar</button>
+          <button class="sesa-btn sesa-btn-primary" type="submit" [disabled]="saving()">
+            @if (saving()) { Guardando... } @else { Crear Factura }
+          </button>
+        </div>
+      </form>
+    }
+
+    <!-- ── Panel RIPS ──────────────────────────────────────────── -->
+    @if (panelMode() === 'rips') {
+      <div class="fac-panel-form">
+        <div class="fac-rips-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fac-rips-icon" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <div>
+            <p class="fac-rips-desc"><strong>RIPS estructurado Res. 3374/2000</strong> — Genera los archivos CT, US, AP y AC separados para reporte a EPS/SISPRO/ADRES.</p>
+            <p class="fac-rips-desc fac-rips-desc--small">CT: datos paciente · US: servicios · AP: procedimientos · AC: consultas</p>
+          </div>
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Fecha inicio <span class="fac-required">*</span></label>
+          <input class="fac-input" type="date" [(ngModel)]="ripsDesde" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Fecha fin <span class="fac-required">*</span></label>
+          <input class="fac-input" type="date" [(ngModel)]="ripsHasta" />
+        </div>
+
+        <!-- Resultado de generación estructurada -->
+        @if (ripsArchivos) {
+          <div class="fac-rips-archivos">
+            <p class="fac-rips-resumen">{{ ripsArchivos['resumen'] }}</p>
+            <div class="fac-rips-botones">
+              @for (tipo of ['CT','US','AP','AC']; track tipo) {
+                <button class="sesa-btn sesa-btn-outline fac-rips-dl-btn" type="button"
+                  (click)="descargarArchivoRips(tipo)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  {{ tipo }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="fac-panel-footer">
+          <button class="sesa-btn sesa-btn-outline" type="button" (click)="cerrarPanel()">Cerrar</button>
+          <button class="sesa-btn sesa-btn-secondary" type="button"
+            [disabled]="generandoRips() || !ripsDesde || !ripsHasta"
+            (click)="descargarRips()">
+            CSV genérico
+          </button>
+          <button class="sesa-btn sesa-btn-primary" type="button"
+            [disabled]="generandoRips() || !ripsDesde || !ripsHasta"
+            (click)="generarRipsEstructurado()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            @if (generandoRips()) { Generando... } @else { Generar RIPS Res. 3374 }
+          </button>
+        </div>
+      </div>
+    }
+  </aside>
+}

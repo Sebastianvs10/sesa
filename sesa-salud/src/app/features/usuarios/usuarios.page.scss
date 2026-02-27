@@ -693,6 +693,128 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   MULTI-ROL: CHIP SELECTOR
+═══════════════════════════════════════════════════════════════════════ */
+
+/* Hint inline en el título de sección */
+.up-section-hint {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--sesa-text-secondary);
+  font-style: italic;
+}
+
+/* Grid de chips de roles */
+.up-role-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+/* Chip individual */
+.up-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem 0.45rem 0.65rem;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  border-color: var(--sesa-border);
+  user-select: none;
+  outline: none;
+
+  &:hover {
+    border-color: currentColor;
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+  }
+
+  /* Icono check/circle */
+  .up-role-chip-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Estado seleccionado: usa los colores del rol */
+  &.up-role-chip--selected {
+    .up-role-chip-check svg { stroke: currentColor; }
+  }
+
+  /* Colores por rol — no seleccionado */
+  &.up-role-chip--medico        { &.up-role-chip--selected { background: rgba(2,132,199,0.12);   color: #0284c7; border-color: rgba(2,132,199,0.4);   } }
+  &.up-role-chip--coordinador   { &.up-role-chip--selected { background: rgba(13,148,136,0.12);  color: #0d9488; border-color: rgba(13,148,136,0.4);  } }
+  &.up-role-chip--odontologo    { &.up-role-chip--selected { background: rgba(219,39,119,0.12);  color: #be185d; border-color: rgba(219,39,119,0.4);  } }
+  &.up-role-chip--bacteriologo  { &.up-role-chip--selected { background: rgba(8,145,178,0.12);   color: #0891b2; border-color: rgba(8,145,178,0.4);   } }
+  &.up-role-chip--enfermero     { &.up-role-chip--selected { background: rgba(5,150,105,0.12);   color: #059669; border-color: rgba(5,150,105,0.4);   } }
+  &.up-role-chip--jefe-enfermeria{ &.up-role-chip--selected { background: rgba(124,58,237,0.12); color: #7c3aed; border-color: rgba(124,58,237,0.4); } }
+  &.up-role-chip--auxiliar      { &.up-role-chip--selected { background: rgba(16,185,129,0.12);  color: #059669; border-color: rgba(16,185,129,0.4);  } }
+  &.up-role-chip--psicologo     { &.up-role-chip--selected { background: rgba(67,56,202,0.12);   color: #4338ca; border-color: rgba(67,56,202,0.4);   } }
+  &.up-role-chip--farmacia      { &.up-role-chip--selected { background: rgba(234,88,12,0.12);   color: #ea580c; border-color: rgba(234,88,12,0.4);   } }
+  &.up-role-chip--recepcionista { &.up-role-chip--selected { background: rgba(217,119,6,0.12);   color: #d97706; border-color: rgba(217,119,6,0.4);   } }
+  &.up-role-chip--admin         { &.up-role-chip--selected { background: rgba(124,58,237,0.14);  color: #7c3aed; border-color: rgba(124,58,237,0.45); } }
+  &.up-role-chip--super         { &.up-role-chip--selected { background: rgba(185,28,28,0.12);   color: #b91c1c; border-color: rgba(185,28,28,0.4);   } }
+  &.up-role-chip--default       { &.up-role-chip--selected { background: var(--sesa-bg);         color: var(--sesa-text-primary); border-color: var(--sesa-border); } }
+}
+
+/* Resumen de roles seleccionados */
+.up-roles-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--sesa-bg);
+  border-radius: 8px;
+  border: 1px solid var(--sesa-border);
+}
+
+.up-roles-summary-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-right: 0.25rem;
+  white-space: nowrap;
+}
+
+.up-roles-empty-hint {
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+  font-style: italic;
+}
+
+/* Contenedor de múltiples badges en la tabla */
+.up-roles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+/* Texto secundario */
+.up-text-muted {
+  color: var(--sesa-text-secondary);
+  font-size: 0.85rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════════════════════════════ */
 
@@ -702,4 +824,6 @@
   .up-field.up-field--2 { grid-column: 1; }
   .up-header { flex-direction: column; align-items: stretch; }
   .up-header .up-btn { width: 100%; justify-content: center; }
+  .up-role-chips-grid { gap: 0.4rem; }
+  .up-role-chip { font-size: 0.74rem; padding: 0.38rem 0.75rem 0.38rem 0.55rem; }
 }

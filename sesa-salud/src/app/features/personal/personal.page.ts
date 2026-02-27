@@ -46,13 +46,20 @@ export class PersonalPageComponent implements OnInit {
   editingId: number | null = null;
   showForm = false;
   rolesPersonal = ROLES_PERSONAL;
+  /** Roles seleccionados en el formulario (multi-rol). */
+  selectedRoles: string[] = [];
   fotoFile: File | null = null;
   firmaFile: File | null = null;
   form: PersonalRequestDto = {
     nombres: '', apellidos: '',
-    identificacion: '', primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
+    tipoDocumento: '', identificacion: '',
+    primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
     celular: '', email: '', password: '',
-    rol: '', activo: true,
+    rol: '', roles: [], activo: true,
+    tarjetaProfesional: '', especialidadFormal: '', numeroRethus: '',
+    fechaNacimiento: '', sexo: '',
+    municipio: '', departamento: '',
+    tipoVinculacion: '', fechaIngreso: '', fechaRetiro: '',
   };
 
   private readonly toast = inject(SesaToastService);
@@ -138,37 +145,53 @@ export class PersonalPageComponent implements OnInit {
 
   getEmptyForm(): PersonalRequestDto {
     return {
-      nombres: '',
-      apellidos: '',
-      identificacion: '',
-      primerNombre: '',
-      segundoNombre: '',
-      primerApellido: '',
-      segundoApellido: '',
-      celular: '',
-      email: '',
-      password: '',
-      rol: '',
-      activo: true,
+      nombres: '', apellidos: '',
+      tipoDocumento: '', identificacion: '',
+      primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
+      celular: '', email: '', password: '',
+      rol: '', roles: [], activo: true,
+      tarjetaProfesional: '', especialidadFormal: '', numeroRethus: '',
+      fechaNacimiento: '', sexo: '',
+      municipio: '', departamento: '',
+      tipoVinculacion: '', fechaIngreso: '', fechaRetiro: '',
     };
+  }
+
+  /** Devuelve true si el rol dado está en los roles seleccionados. */
+  isRolSelected(rol: string): boolean {
+    return this.selectedRoles.includes(rol);
+  }
+
+  /** Alterna la selección de un rol en el formulario. */
+  toggleRol(rol: string): void {
+    const idx = this.selectedRoles.indexOf(rol);
+    if (idx === -1) {
+      this.selectedRoles = [...this.selectedRoles, rol];
+    } else {
+      this.selectedRoles = this.selectedRoles.filter(r => r !== rol);
+    }
+    this.form.roles = [...this.selectedRoles];
+    this.form.rol = this.selectedRoles[0] ?? '';
   }
 
   openCreate(): void {
     this.editingId = null;
     this.showForm = true;
     this.form = this.getEmptyForm();
+    this.selectedRoles = [];
     this.fotoFile = null;
     this.firmaFile = null;
     this.saveError = null;
   }
 
-
   openEdit(p: PersonalDto): void {
     this.editingId = p.id;
     this.showForm = true;
+    this.selectedRoles = p.roles ? [...p.roles] : (p.rol ? [p.rol] : []);
     this.form = {
       nombres: p.nombres,
       apellidos: p.apellidos ?? '',
+      tipoDocumento: p.tipoDocumento ?? '',
       identificacion: p.identificacion ?? '',
       primerNombre: p.primerNombre ?? '',
       segundoNombre: p.segundoNombre ?? '',
@@ -177,8 +200,19 @@ export class PersonalPageComponent implements OnInit {
       celular: p.celular ?? '',
       email: p.email ?? '',
       password: '',
-      rol: p.rol ?? '',
+      rol: this.selectedRoles[0] ?? '',
+      roles: [...this.selectedRoles],
       activo: p.activo ?? true,
+      tarjetaProfesional: p.tarjetaProfesional ?? '',
+      especialidadFormal: p.especialidadFormal ?? '',
+      numeroRethus: p.numeroRethus ?? '',
+      fechaNacimiento: p.fechaNacimiento ?? '',
+      sexo: p.sexo ?? '',
+      municipio: p.municipio ?? '',
+      departamento: p.departamento ?? '',
+      tipoVinculacion: p.tipoVinculacion ?? '',
+      fechaIngreso: p.fechaIngreso ?? '',
+      fechaRetiro: p.fechaRetiro ?? '',
     };
     this.fotoFile = null;
     this.firmaFile = null;
@@ -217,8 +251,8 @@ export class PersonalPageComponent implements OnInit {
       this.saveError = 'La contraseña es obligatoria para el acceso';
       return;
     }
-    if (!this.form.rol?.trim()) {
-      this.saveError = 'Seleccione un rol';
+    if (this.selectedRoles.length === 0) {
+      this.saveError = 'Seleccione al menos un rol';
       return;
     }
     if (this.isSuperAdmin && !this.selectedSchema) {
@@ -230,6 +264,7 @@ export class PersonalPageComponent implements OnInit {
     const payload: PersonalRequestDto = {
       nombres,
       apellidos: apellidos || undefined,
+      tipoDocumento: this.form.tipoDocumento?.trim() || undefined,
       identificacion: this.form.identificacion?.trim() || undefined,
       primerNombre: this.form.primerNombre?.trim() || undefined,
       segundoNombre: this.form.segundoNombre?.trim() || undefined,
@@ -238,8 +273,19 @@ export class PersonalPageComponent implements OnInit {
       celular: this.form.celular?.trim() || undefined,
       email: this.form.email.trim(),
       password: this.form.password?.trim() || undefined,
-      rol: this.form.rol.trim(),
+      rol: this.selectedRoles[0],
+      roles: [...this.selectedRoles],
       activo: this.form.activo ?? true,
+      tarjetaProfesional: this.form.tarjetaProfesional?.trim() || undefined,
+      especialidadFormal: this.form.especialidadFormal?.trim() || undefined,
+      numeroRethus: this.form.numeroRethus?.trim() || undefined,
+      fechaNacimiento: this.form.fechaNacimiento?.trim() || undefined,
+      sexo: this.form.sexo?.trim() || undefined,
+      municipio: this.form.municipio?.trim() || undefined,
+      departamento: this.form.departamento?.trim() || undefined,
+      tipoVinculacion: this.form.tipoVinculacion?.trim() || undefined,
+      fechaIngreso: this.form.fechaIngreso?.trim() || undefined,
+      fechaRetiro: this.form.fechaRetiro?.trim() || undefined,
     };
     const schema = this.isSuperAdmin ? this.selectedSchema : undefined;
     const isCreate = this.editingId == null;

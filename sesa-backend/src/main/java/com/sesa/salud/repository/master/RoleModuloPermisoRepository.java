@@ -19,6 +19,8 @@ public interface RoleModuloPermisoRepository extends JpaRepository<RoleModuloPer
 
     List<RoleModuloPermiso> findByRolIn(Set<String> roles);
 
+    boolean existsByRolAndModulo(String rol, String modulo);
+
     @Modifying
     @Query("DELETE FROM RoleModuloPermiso r WHERE r.rol = :rol")
     void deleteByRol(String rol);

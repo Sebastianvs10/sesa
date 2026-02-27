@@ -407,6 +407,40 @@
               </div>
             </div>
 
+            <!-- Campos normativos Res. 2953/2014 -->
+            <div class="citas-norm-section">
+              <div class="citas-norm-header">
+                <span class="citas-norm-badge">Res. 2953/2014</span>
+                <span class="citas-norm-title">Datos normativos de la cita</span>
+              </div>
+              <div class="citas-norm-grid">
+                <div class="citas-norm-field">
+                  <label class="citas-field-label" for="tipoCita">Tipo de cita <span class="req">*</span></label>
+                  <select id="tipoCita" class="citas-field-select"
+                    [value]="tipoCita()"
+                    (change)="tipoCita.set($any($event.target).value)">
+                    <option value="PRIMERA_VEZ">Primera vez (límite 3 días)</option>
+                    <option value="CONTROL">Control (límite 3 días)</option>
+                    <option value="ESPECIALISTA">Especialista (límite 15 días)</option>
+                    <option value="URGENTE">Urgente</option>
+                  </select>
+                </div>
+                <div class="citas-norm-field">
+                  <label class="citas-field-label" for="duracionMin">Duración estimada (min)</label>
+                  <input id="duracionMin" type="number" class="citas-field-input"
+                    min="10" max="120" step="5"
+                    [value]="duracionMin()"
+                    (input)="duracionMin.set(+$any($event.target).value)" />
+                </div>
+                <div class="citas-norm-field citas-norm-field--full">
+                  <label class="citas-field-label" for="numAutorizacion">N° Autorización EPS</label>
+                  <input id="numAutorizacion" type="text" class="citas-field-input"
+                    placeholder="Ej. EPS-2025-001234 (si aplica)"
+                    [(ngModel)]="numeroAutorizacion" maxlength="60" />
+                </div>
+              </div>
+            </div>
+
             <!-- Nota -->
             <div class="citas-summary-nota">
               <label class="citas-nota-label" for="citaNota">Nota opcional</label>
@@ -520,12 +554,20 @@
                 <tr class="citas-row" [class.citas-row--actioning]="isActioning(c.id)">
                   <td class="citas-cell-hora">
                     <span class="citas-hora-chip">{{ formatHora(c.fechaHora) }}</span>
+                    @if (c.tipoCita) {
+                      <span class="citas-tipo-badge">{{ tipoCitaLabel(c.tipoCita) }}</span>
+                    }
                   </td>
                   <td class="citas-cell-paciente">
                     <div class="citas-row-paciente">
                       <div class="citas-row-avatar">{{ (c.pacienteNombre || 'P')[0].toUpperCase() }}</div>
                       <div>
                         <span class="citas-row-nombre">{{ c.pacienteNombre }}</span>
+                        @if (oportunidadClass(c)) {
+                          <span class="citas-oportunidad-chip" [ngClass]="oportunidadClass(c)">
+                            {{ oportunidadLabel(c) }}
+                          </span>
+                        }
                       </div>
                     </div>
                   </td>
