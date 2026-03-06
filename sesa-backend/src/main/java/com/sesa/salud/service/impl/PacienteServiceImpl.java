@@ -27,7 +27,16 @@ public class PacienteServiceImpl implements PacienteService {
     @Override
     @Transactional(readOnly = true)
     public Page<PacienteDto> findAll(Pageable pageable) {
-        return pacienteRepository.findByActivoTrue(pageable).map(this::toDto);
+        return pacienteRepository.findAll(pageable).map(this::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PacienteDto> findAll(Pageable pageable, Boolean activo) {
+        if (activo == null) {
+            return pacienteRepository.findAll(pageable).map(this::toDto);
+        }
+        return pacienteRepository.findByActivo(activo, pageable).map(this::toDto);
     }
 
     @Override

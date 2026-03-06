@@ -45,7 +45,10 @@ public class PermissionServiceImpl implements PermissionService {
         Map.entry(RoleConstants.PSICOLOGO,           "Psicólogo"),
         Map.entry(RoleConstants.REGENTE_FARMACIA,    "Regente de Farmacia"),
         Map.entry(RoleConstants.RECEPCIONISTA,       "Recepcionista"),
-        Map.entry(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico")
+        Map.entry(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico"),
+        Map.entry(RoleConstants.EBS,                  "Profesional EBS"),
+        Map.entry(RoleConstants.COORDINADOR_TERRITORIAL, "Coordinador Territorial"),
+        Map.entry(RoleConstants.SUPERVISOR_APS,      "Supervisor APS")
     );
 
     @PostConstruct
@@ -64,6 +67,8 @@ public class PermissionServiceImpl implements PermissionService {
                 loadFromDb();
                 // 3. Seedear permisos de roles nuevos que aún no tienen entradas en BD
                 seedMissingRolePermissions();
+                // 4. Garantizar que RECEPCIONISTA siempre tenga acceso a PACIENTES
+                ensureRecepcionistaTienePacientes();
             } else {
                 initMatrix();
                 seedToDb();
@@ -71,6 +76,35 @@ public class PermissionServiceImpl implements PermissionService {
         } catch (Exception e) {
             log.warn("No se pudo cargar permisos desde BD, usando matriz por defecto: {}", e.getMessage());
             initMatrix();
+        }
+    }
+
+    /**
+     * Garantiza que el rol RECEPCIONISTA tenga siempre el módulo PACIENTES
+     * (y acciones por defecto). Si falta, lo añade en memoria y en BD.
+     */
+    private void ensureRecepcionistaTienePacientes() {
+        String rol = RoleConstants.RECEPCIONISTA;
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> perms = matrix.get(rol);
+        if (perms == null) {
+            Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> defaults = buildDefaultMatrix().get(rol);
+            if (defaults != null) {
+                matrix.put(rol, new HashMap<>(defaults));
+                for (RoleConstants.Modulo mod : defaults.keySet()) {
+                    roleModuloPermisoRepository.save(
+                        RoleModuloPermiso.builder().rol(rol).modulo(mod.name()).build());
+                }
+                log.info("Permisos de RECEPCIONISTA inicializados (incl. PACIENTES).");
+            }
+            return;
+        }
+        if (!perms.containsKey(RoleConstants.Modulo.PACIENTES)) {
+            Set<RoleConstants.Accion> acciones = Set.of(
+                RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR);
+            perms.put(RoleConstants.Modulo.PACIENTES, new HashSet<>(acciones));
+            roleModuloPermisoRepository.save(
+                RoleModuloPermiso.builder().rol(rol).modulo(RoleConstants.Modulo.PACIENTES.name()).build());
+            log.info("Módulo PACIENTES añadido al rol RECEPCIONISTA.");
         }
     }
 
@@ -168,6 +202,7 @@ public class PermissionServiceImpl implements PermissionService {
         medico.put(RoleConstants.Modulo.CITAS,             Set.of(RoleConstants.Accion.VER));
         medico.put(RoleConstants.Modulo.CONSULTA_MEDICA,   Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
         medico.put(RoleConstants.Modulo.REPORTES,          Set.of(RoleConstants.Accion.VER));
+        medico.put(RoleConstants.Modulo.EBS,               Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
         m.put(RoleConstants.MEDICO, medico);
 
         // ODONTOLOGO: similar a médico para su ámbito
@@ -254,6 +289,32 @@ public class PermissionServiceImpl implements PermissionService {
         recepcionista.put(RoleConstants.Modulo.FACTURACION,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.FACTURAR));
         recepcionista.put(RoleConstants.Modulo.URGENCIAS,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR));
         m.put(RoleConstants.RECEPCIONISTA, recepcionista);
+
+        // EBS: Profesional EBS — módulo EBS + pacientes, historia, consulta, citas para visitas domiciliarias
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> ebs = new HashMap<>();
+        ebs.put(RoleConstants.Modulo.DASHBOARD,      Set.of(RoleConstants.Accion.VER));
+        ebs.put(RoleConstants.Modulo.PACIENTES,      Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        ebs.put(RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        ebs.put(RoleConstants.Modulo.CONSULTA_MEDICA, Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        ebs.put(RoleConstants.Modulo.CITAS,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        ebs.put(RoleConstants.Modulo.EBS,            Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        m.put(RoleConstants.EBS, ebs);
+
+        // COORDINADOR_TERRITORIAL: asigna territorios a equipos EBS + ver todo EBS
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> coordTerr = new HashMap<>();
+        coordTerr.put(RoleConstants.Modulo.DASHBOARD,    Set.of(RoleConstants.Accion.VER));
+        coordTerr.put(RoleConstants.Modulo.PACIENTES,     Set.of(RoleConstants.Accion.VER));
+        coordTerr.put(RoleConstants.Modulo.EBS,          Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR));
+        coordTerr.put(RoleConstants.Modulo.REPORTES,     Set.of(RoleConstants.Accion.VER));
+        m.put(RoleConstants.COORDINADOR_TERRITORIAL, coordTerr);
+
+        // SUPERVISOR_APS: dashboards gerenciales EBS, reportes, sin edición operativa
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> supAps = new HashMap<>();
+        supAps.put(RoleConstants.Modulo.DASHBOARD,   Set.of(RoleConstants.Accion.VER));
+        supAps.put(RoleConstants.Modulo.EBS,         Set.of(RoleConstants.Accion.VER));
+        supAps.put(RoleConstants.Modulo.REPORTES,    Set.of(RoleConstants.Accion.VER));
+        supAps.put(RoleConstants.Modulo.PACIENTES,   Set.of(RoleConstants.Accion.VER));
+        m.put(RoleConstants.SUPERVISOR_APS, supAps);
     }
 
     private static Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> allPermissions() {

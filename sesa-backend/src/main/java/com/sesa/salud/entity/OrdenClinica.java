@@ -41,6 +41,18 @@ public class OrdenClinica {
     @Builder.Default
     private String estado = "PENDIENTE";
 
+    /** Resultado de la orden (ej. resultado de laboratorio) cuando estado = COMPLETADO. */
+    @Column(columnDefinition = "TEXT")
+    private String resultado;
+
+    @Column(name = "fecha_resultado")
+    private Instant fechaResultado;
+
+    /** Profesional que registró el resultado (ej. bacteriólogo). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resultado_registrado_por_id")
+    private Personal resultadoRegistradoPor;
+
     @Column(name = "valor_estimado", precision = 14, scale = 2)
     private BigDecimal valorEstimado;
 

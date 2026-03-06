@@ -1,0 +1,340 @@
+/* Portal del Paciente — Historia Clínica */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.phc {
+  padding: 0 0 24px;
+  max-width: 700px;
+  margin: 0 auto;
+
+  // ─── Header ──────────────────────────────────────────────────────────
+  &__header {
+    padding: 24px 20px 16px;
+    background: linear-gradient(160deg, var(--portal-accent-alpha) 0%, transparent 100%);
+    border-bottom: 1px solid var(--sesa-border-light);
+  }
+
+  &__title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    margin: 0 0 4px;
+    letter-spacing: -0.4px;
+  }
+
+  &__sub {
+    font-size: 13px;
+    color: var(--sesa-text-secondary);
+    margin: 0;
+  }
+
+  // ─── Tabs ──────────────────────────────────────────────────────────────
+  &__tabs {
+    display: flex;
+    padding: 12px 20px 0;
+    gap: 4px;
+    border-bottom: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  &__tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sesa-text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all var(--sesa-transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 8px 8px 0 0;
+
+    &--active {
+      color: var(--portal-accent);
+      border-bottom-color: var(--portal-accent);
+      font-weight: 600;
+    }
+
+    &:active { background: var(--sesa-bg); }
+  }
+
+  // ─── Sections ──────────────────────────────────────────────────────────
+  &__section-wrap {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__card {
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  &__card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--sesa-border-light);
+
+    &--blue { background: var(--portal-accent-alpha); color: var(--portal-accent); }
+    &--red { background: rgba(239,68,68,0.08); color: var(--sesa-error); }
+    &--purple { background: var(--portal-purple-alpha); color: var(--portal-purple); }
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    divide-y: var(--sesa-border-light);
+  }
+
+  &__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--sesa-border-light);
+
+    &:last-child { border-bottom: none; }
+
+    &-label {
+      font-size: 13px;
+      color: var(--sesa-text-secondary);
+    }
+
+    &-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sesa-text-primary);
+      text-align: right;
+
+      &--badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+      }
+
+      &--red {
+        background: rgba(239,68,68,0.1);
+        color: var(--sesa-error);
+      }
+
+      &--green {
+        background: rgba(34,197,94,0.1);
+        color: var(--sesa-success);
+      }
+    }
+  }
+
+  &__text-block {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--sesa-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  // ─── Consultas list ────────────────────────────────────────────────────
+  &__list {
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__consulta-item {
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color var(--sesa-transition-fast);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &--open {
+      border-color: var(--portal-accent);
+      box-shadow: 0 0 0 2px var(--portal-accent-alpha);
+
+      .phc__consulta-chevron {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  &__consulta-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  &__consulta-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--portal-accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--portal-accent-alpha);
+  }
+
+  &__consulta-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__consulta-fecha {
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+    font-weight: 500;
+  }
+
+  &__consulta-motivo {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__consulta-medico {
+    font-size: 12px;
+    color: var(--sesa-text-secondary);
+  }
+
+  &__consulta-chevron {
+    flex-shrink: 0;
+    color: var(--sesa-text-muted);
+    transition: transform var(--sesa-transition-normal);
+  }
+
+  &__consulta-detail {
+    border-top: 1px solid var(--sesa-border-light);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--sesa-bg);
+    animation: slide-down 0.2s ease;
+  }
+
+  &__consulta-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--sesa-text-muted);
+    }
+
+    &-val {
+      font-size: 13px;
+      color: var(--sesa-text-primary);
+      line-height: 1.5;
+
+      &--code {
+        font-family: monospace;
+        background: var(--portal-accent-alpha);
+        color: var(--portal-accent);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        display: inline-block;
+      }
+    }
+  }
+
+  // ─── Load more ─────────────────────────────────────────────────────────
+  &__load-more {
+    width: 100%;
+    padding: 12px;
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 12px;
+    color: var(--portal-accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--sesa-transition-fast);
+
+    &:disabled { opacity: 0.6; cursor: default; }
+    &:active { background: var(--portal-accent-alpha); }
+  }
+
+  // ─── Empty ─────────────────────────────────────────────────────────────
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 20px;
+    color: var(--sesa-text-muted);
+
+    svg { opacity: 0.4; }
+
+    p {
+      font-size: 14px;
+      text-align: center;
+      margin: 0;
+    }
+  }
+
+  // ─── Error ─────────────────────────────────────────────────────────────
+  &__error {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--sesa-error);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+
+    p { font-size: 14px; margin: 0; }
+
+    button {
+      padding: 8px 20px;
+      background: var(--sesa-error);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  &__skeleton {
+    height: 72px;
+    background: var(--sesa-border-light);
+    border-radius: 14px;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

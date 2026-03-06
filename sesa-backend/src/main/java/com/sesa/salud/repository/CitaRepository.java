@@ -37,4 +37,13 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     @Query("SELECT c.estado, COUNT(c) FROM Cita c WHERE DATE(c.fechaHora) = :fecha GROUP BY c.estado")
     List<Object[]> countByEstadoAndFecha(@Param("fecha") LocalDate fecha);
+
+    /** Citas en ventana 24h (recordatorio): entre inicio y fin, estado AGENDADA, sin recordatorio 24h enviado. */
+    @Query("SELECT c FROM Cita c WHERE c.fechaHora BETWEEN :inicio AND :fin AND c.estado = 'AGENDADA' AND c.recordatorio24hEnviadoAt IS NULL")
+    List<Cita> findParaRecordatorio24h(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    /** Citas en ventana 1h (recordatorio): entre inicio y fin, estado AGENDADA, sin recordatorio 1h enviado. */
+    @Query("SELECT c FROM Cita c WHERE c.fechaHora BETWEEN :inicio AND :fin AND c.estado = 'AGENDADA' AND c.recordatorio1hEnviadoAt IS NULL")
+    List<Cita> findParaRecordatorio1h(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
 }

@@ -1,0 +1,253 @@
+/* Portal del paciente — Consentimientos (firma desde móvil) */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.pcons {
+  padding: 1rem;
+  padding-bottom: 5rem;
+  min-height: 100%;
+  background: var(--sesa-bg);
+}
+
+.pcons__header {
+  margin-bottom: 1.5rem;
+}
+
+.pcons__title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.pcons__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+}
+
+.pcons__loading,
+.pcons__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+}
+
+.pcons__spinner {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+  border: 3px solid var(--sesa-border);
+  border-top-color: var(--portal-accent, #6366f1);
+  border-radius: 50%;
+  animation: pcons-spin 0.8s linear infinite;
+}
+
+@keyframes pcons-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pcons__empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  color: var(--sesa-text-secondary);
+  opacity: 0.7;
+}
+
+.pcons__empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pcons__empty-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.pcons__empty-text {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.pcons__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pcons__card {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.pcons__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.pcons__card-tipo {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--sesa-text-primary);
+}
+
+.pcons__card-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(234, 179, 8, 0.2);
+  color: #b45309;
+}
+
+.pcons__card-proc {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.4;
+}
+
+.pcons__card-meta {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.pcons__btn-firmar {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--portal-accent, #6366f1);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pcons__btn-firmar:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.pcons__btn-firmar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Modal firma */
+.pcons__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.pcons__modal {
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.pcons__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.pcons__modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.pcons__modal-close {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--sesa-text-secondary);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pcons__modal-proc {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+}
+
+.pcons__canvas-wrap {
+  margin-bottom: 1rem;
+  border: 2px dashed var(--sesa-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--sesa-input-bg, #f8fafc);
+}
+
+.pcons__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.pcons__modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.pcons__btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.pcons__btn--ghost {
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  border: 1px solid var(--sesa-border);
+}
+
+.pcons__btn--primary {
+  background: var(--portal-accent, #6366f1);
+  color: #fff;
+}
+
+.pcons__btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

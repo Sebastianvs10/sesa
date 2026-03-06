@@ -75,10 +75,11 @@ export class CitaService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/citas`;
 
-  /** Alias de compatibilidad — devuelve citas de la fecha indicada (o hoy si se omite). */
-  list(fecha?: string): Observable<CitaDto[]> {
+  /** Citas de la fecha (o hoy). Si profesionalId se indica, solo citas de ese profesional (horas por especialista). */
+  list(fecha?: string, profesionalId?: number): Observable<CitaDto[]> {
     let params = new HttpParams();
     if (fecha) params = params.set('fecha', fecha);
+    if (profesionalId != null && profesionalId > 0) params = params.set('profesionalId', String(profesionalId));
     return this.http.get<CitaDto[]>(this.apiUrl, { params });
   }
 

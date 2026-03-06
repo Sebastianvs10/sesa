@@ -50,7 +50,9 @@ CREATE TABLE IF NOT EXISTS pacientes (
     estado_civil VARCHAR(20),
     escolaridad VARCHAR(50),
     ocupacion VARCHAR(100),
-    pertenencia_etnica VARCHAR(50)
+    pertenencia_etnica VARCHAR(50),
+    -- Portal del paciente: usuario vinculado (notificaciones, consentimientos)
+    usuario_id BIGINT
 );
 
 -- Columnas para pacientes existentes (migraciones incrementales)
@@ -65,6 +67,7 @@ ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS estado_civil VARCHAR(20);
 ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS escolaridad VARCHAR(50);
 ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS ocupacion VARCHAR(100);
 ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS pertenencia_etnica VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS usuario_id BIGINT;
 
 CREATE TABLE IF NOT EXISTS personal (
     id BIGSERIAL PRIMARY KEY,
@@ -268,12 +271,16 @@ CREATE TABLE IF NOT EXISTS citas (
     tipo_cita VARCHAR(20),
     numero_autorizacion_eps VARCHAR(60),
     duracion_estimada_min INT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    recordatorio_24h_enviado_at TIMESTAMPTZ,
+    recordatorio_1h_enviado_at TIMESTAMPTZ
 );
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS motivo_cancelacion TEXT;
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS tipo_cita VARCHAR(20);
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS numero_autorizacion_eps VARCHAR(60);
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS duracion_estimada_min INT;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_24h_enviado_at TIMESTAMPTZ;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_1h_enviado_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS consultas (
     id BIGSERIAL PRIMARY KEY,
@@ -339,6 +346,9 @@ CREATE TABLE IF NOT EXISTS ordenes_clinicas (
     tipo VARCHAR(50) NOT NULL,
     detalle TEXT,
     estado VARCHAR(30) DEFAULT 'PENDIENTE',
+    resultado TEXT,
+    fecha_resultado TIMESTAMPTZ,
+    resultado_registrado_por_id BIGINT REFERENCES personal(id),
     valor_estimado NUMERIC(14,2),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -536,7 +546,8 @@ CREATE TABLE IF NOT EXISTS notificaciones (
     remitente_id BIGINT NOT NULL,
     remitente_nombre VARCHAR(200),
     fecha_envio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    cita_id BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS notificacion_destinatarios (
@@ -559,6 +570,21 @@ CREATE TABLE IF NOT EXISTS notificacion_adjuntos (
     content_type VARCHAR(100),
     tamano BIGINT,
     datos BYTEA
+);
+
+-- Recordatorios de cita y portal paciente: columnas en tablas existentes
+ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS cita_id BIGINT;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_24h_enviado_at TIMESTAMPTZ;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_1h_enviado_at TIMESTAMPTZ;
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS usuario_id BIGINT;
+
+-- Dispositivos para notificaciones push (portal/móvil)
+CREATE TABLE IF NOT EXISTS dispositivos_push (
+    id          BIGSERIAL PRIMARY KEY,
+    usuario_id  BIGINT NOT NULL,
+    token       VARCHAR(512) NOT NULL,
+    plataforma  VARCHAR(20) NOT NULL DEFAULT 'WEB',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS farmacia_dispensaciones (
@@ -647,6 +673,45 @@ CREATE INDEX IF NOT EXISTS idx_dolores_historia  ON dolores (historia_clinica_id
 -- farmacia
 CREATE INDEX IF NOT EXISTS idx_dispensaciones_medicamento ON farmacia_dispensaciones (medicamento_id);
 CREATE INDEX IF NOT EXISTS idx_dispensaciones_paciente    ON farmacia_dispensaciones (paciente_id);
+
+-- ============================================================
+-- MÓDULO FACTURACIÓN ELECTRÓNICA DIAN (Res. 000042 / UBL 2.1)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS facturacion_electronica_config (
+    id                         BIGSERIAL PRIMARY KEY,
+    facturacion_activa         BOOLEAN      NOT NULL DEFAULT FALSE,
+    nit                        VARCHAR(20),
+    razon_social               VARCHAR(255),
+    nombre_comercial           VARCHAR(255),
+    regimen                    VARCHAR(50),
+    direccion                  VARCHAR(255),
+    municipio                  VARCHAR(100),
+    departamento               VARCHAR(100),
+    pais                       VARCHAR(100),
+    email_contacto             VARCHAR(255),
+    ambiente                   VARCHAR(20)   NOT NULL DEFAULT 'HABILITACION', -- HABILITACION / PRODUCCION
+    numero_resolucion          VARCHAR(50),
+    fecha_resolucion           DATE,
+    prefijo                    VARCHAR(10),
+    rango_desde                BIGINT,
+    rango_hasta                BIGINT,
+    clave_tecnica              VARCHAR(128),
+    software_id                VARCHAR(64),
+    software_pin               VARCHAR(64),
+    plantilla_pdf              VARCHAR(100),
+    created_at                 TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMPTZ
+);
+
+ALTER TABLE facturas
+    ADD COLUMN IF NOT EXISTS dian_cufe        VARCHAR(128),
+    ADD COLUMN IF NOT EXISTS dian_qr_url      VARCHAR(512),
+    ADD COLUMN IF NOT EXISTS dian_estado      VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS dian_mensaje     TEXT,
+    ADD COLUMN IF NOT EXISTS dian_xml_path    VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS dian_pdf_path    VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS dian_fecha_envio TIMESTAMPTZ;
 
 -- ============================================================
 -- MÓDULO ODONTOLOGÍA
@@ -810,6 +875,33 @@ INSERT INTO procedimientos_catalogo (codigo, nombre, categoria, precio_base, ori
   ('898101','Corona sobre implante','Implantología',1500000,'CUPS')
 ON CONFLICT DO NOTHING;
 
+-- ── Receta electrónica (QR verificable, anti-falsificación)
+CREATE TABLE IF NOT EXISTS recetas_electronicas (
+    id                          BIGSERIAL PRIMARY KEY,
+    token_verificacion          VARCHAR(64) NOT NULL UNIQUE,
+    atencion_id                 BIGINT,
+    paciente_id                 BIGINT NOT NULL,
+    consulta_id                 BIGINT,
+    medico_nombre               VARCHAR(200) NOT NULL,
+    medico_tarjeta_profesional  VARCHAR(50),
+    paciente_nombre             VARCHAR(200) NOT NULL,
+    paciente_documento          VARCHAR(50),
+    fecha_emision               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    diagnostico                 TEXT,
+    observaciones               TEXT,
+    valida_hasta                TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS receta_medicamentos (
+    id          BIGSERIAL PRIMARY KEY,
+    receta_id   BIGINT NOT NULL REFERENCES recetas_electronicas(id) ON DELETE CASCADE,
+    medicamento VARCHAR(200) NOT NULL,
+    dosis       VARCHAR(100),
+    frecuencia  VARCHAR(100),
+    duracion    VARCHAR(100)
+);
+
 -- ── Tabla Consentimiento Informado (Ley 23/1981, Res. 3380/1981)
 CREATE TABLE IF NOT EXISTS consentimientos_informados (
     id                  BIGSERIAL PRIMARY KEY,
@@ -864,3 +956,147 @@ ALTER TABLE consultas_odontologicas ADD COLUMN IF NOT EXISTS ceod_extraidos INTE
 ALTER TABLE consultas_odontologicas ADD COLUMN IF NOT EXISTS ceod_obturados INTEGER;
 ALTER TABLE consultas_odontologicas ADD COLUMN IF NOT EXISTS ihos_placa NUMERIC(4,2);
 ALTER TABLE consultas_odontologicas ADD COLUMN IF NOT EXISTS ihos_calculo NUMERIC(4,2);
+
+-- ============================================================
+-- MÓDULO EQUIPOS BÁSICOS DE SALUD (EBS)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS ebs_territories (
+    id                  BIGSERIAL PRIMARY KEY,
+    code                VARCHAR(50) NOT NULL UNIQUE,
+    name                VARCHAR(200) NOT NULL,
+    type                VARCHAR(50),
+    parent_territory_id BIGINT REFERENCES ebs_territories(id),
+    geometry            TEXT,
+    assigned_team_id    BIGINT,
+    igac_departamento_codigo VARCHAR(2),
+    igac_municipio_codigo    VARCHAR(5),
+    igac_vereda_codigo       VARCHAR(20),
+    active              BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_departamento_codigo VARCHAR(2);
+ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_municipio_codigo VARCHAR(5);
+ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_vereda_codigo VARCHAR(20);
+
+CREATE TABLE IF NOT EXISTS ebs_households (
+    id               BIGSERIAL PRIMARY KEY,
+    territory_id     BIGINT NOT NULL REFERENCES ebs_territories(id),
+    fhir_location_id VARCHAR(64),
+    address_text     VARCHAR(255),
+    latitude         NUMERIC(10,6),
+    longitude        NUMERIC(10,6),
+    rural            BOOLEAN,
+    stratum          VARCHAR(20),
+    state            VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE_VISITA',
+    risk_level       VARCHAR(20),
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ebs_family_groups (
+    id                     BIGSERIAL PRIMARY KEY,
+    household_id           BIGINT NOT NULL REFERENCES ebs_households(id),
+    fhir_group_id          VARCHAR(64),
+    main_contact_patient_id BIGINT REFERENCES pacientes(id),
+    socioeconomic_level    VARCHAR(30),
+    risk_notes             TEXT,
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ebs_brigades (
+    id           BIGSERIAL PRIMARY KEY,
+    name         VARCHAR(200) NOT NULL,
+    territory_id BIGINT NOT NULL REFERENCES ebs_territories(id),
+    date_start   DATE NOT NULL,
+    date_end     DATE NOT NULL,
+    status       VARCHAR(30) NOT NULL DEFAULT 'PROGRAMADA',
+    notes        TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ebs_territory_team (
+    territory_id BIGINT NOT NULL REFERENCES ebs_territories(id) ON DELETE CASCADE,
+    personal_id   BIGINT NOT NULL REFERENCES personal(id) ON DELETE CASCADE,
+    PRIMARY KEY (territory_id, personal_id)
+);
+
+CREATE TABLE IF NOT EXISTS ebs_brigade_team (
+    brigade_id   BIGINT NOT NULL REFERENCES ebs_brigades(id) ON DELETE CASCADE,
+    personal_id  BIGINT NOT NULL REFERENCES personal(id) ON DELETE CASCADE,
+    PRIMARY KEY (brigade_id, personal_id)
+);
+
+CREATE TABLE IF NOT EXISTS ebs_alerts (
+    id                   BIGSERIAL PRIMARY KEY,
+    type                 VARCHAR(50) NOT NULL,
+    vereda_codigo        VARCHAR(20),
+    municipio_codigo     VARCHAR(5),
+    departamento_codigo  VARCHAR(2),
+    title                VARCHAR(300) NOT NULL,
+    description          TEXT,
+    alert_date           DATE NOT NULL,
+    status               VARCHAR(30) NOT NULL DEFAULT 'ACTIVA',
+    external_id          VARCHAR(64),
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ebs_home_visits (
+    id              BIGSERIAL PRIMARY KEY,
+    household_id    BIGINT NOT NULL REFERENCES ebs_households(id),
+    family_group_id BIGINT REFERENCES ebs_family_groups(id),
+    professional_id BIGINT REFERENCES personal(id),
+    brigade_id      BIGINT REFERENCES ebs_brigades(id),
+    visit_date      TIMESTAMPTZ NOT NULL,
+    visit_type      VARCHAR(50),
+    tipo_intervencion VARCHAR(80),
+    vereda_codigo   VARCHAR(20),
+    diagnostico_cie10 VARCHAR(20),
+    plan_cuidado    TEXT,
+    motivo          TEXT,
+    notes           TEXT,
+    fhir_encounter_id VARCHAR(64),
+    status          VARCHAR(30) NOT NULL DEFAULT 'EN_PROCESO',
+    offline_uuid    VARCHAR(64),
+    sync_status     VARCHAR(20) NOT NULL DEFAULT 'SYNCED',
+    sync_errors     TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ebs_risk_assessments (
+    id                  BIGSERIAL PRIMARY KEY,
+    patient_id          BIGINT NOT NULL REFERENCES pacientes(id),
+    home_visit_id       BIGINT REFERENCES ebs_home_visits(id),
+    category            VARCHAR(30) NOT NULL,
+    score               NUMERIC(5,2),
+    risk_level          VARCHAR(20),
+    fhir_observation_id VARCHAR(64),
+    valid_from          TIMESTAMPTZ,
+    valid_to            TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_households_territory
+    ON ebs_households(territory_id);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_households_state
+    ON ebs_households(state);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_households_risk
+    ON ebs_households(risk_level);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_home_visits_household
+    ON ebs_home_visits(household_id, visit_date);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_risk_patient
+    ON ebs_risk_assessments(patient_id);
+
+CREATE INDEX IF NOT EXISTS idx_ebs_risk_level
+    ON ebs_risk_assessments(risk_level);
+
+-- Migraciones EBS: columnas nuevas en visitas y tablas brigadas/equipo/alertas
+ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS brigade_id BIGINT REFERENCES ebs_brigades(id);
+ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS tipo_intervencion VARCHAR(80);
+ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS vereda_codigo VARCHAR(20);
+ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS diagnostico_cie10 VARCHAR(20);
+ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS plan_cuidado TEXT;

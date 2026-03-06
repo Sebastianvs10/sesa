@@ -94,4 +94,11 @@ public class ReporteController {
     public List<DashboardCitasPorEstadoDto> citasPorEstado() {
         return reporteService.citasPorEstado();
     }
+
+    /** Tablero de calidad en salud — Res. 0256/2016 (indicadores de efectividad, cobertura, satisfacción). */
+    @GetMapping("/calidad")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR','COORDINADOR_MEDICO','SUPERVISOR_APS','JEFE_ENFERMERIA','ENFERMERO','ODONTOLOGO','RECEPCIONISTA')")
+    public List<IndicadorCalidadDto> indicadoresCalidad() {
+        return reporteService.getIndicadoresCalidadRes256();
+    }
 }

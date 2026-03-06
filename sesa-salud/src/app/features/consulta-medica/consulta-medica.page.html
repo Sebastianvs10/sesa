@@ -335,6 +335,25 @@
                   <fa-icon [icon]="faNotesMedical"></fa-icon>
                   Factura
                 </button>
+
+                <button
+                  type="button"
+                  class="cm-btn cm-btn--primary cm-btn--sm"
+                  (click)="iniciarVideoconsulta(cita)"
+                  title="Iniciar videoconsulta WebRTC"
+                >
+                  <fa-icon [icon]="faVideo"></fa-icon>
+                  Videoconsulta
+                </button>
+
+                <button
+                  class="cm-btn cm-btn--ghost cm-btn--sm"
+                  (click)="abrirRecetaElectronica(cita)"
+                  title="Emitir receta electrónica con QR verificable"
+                >
+                  <fa-icon [icon]="faFilePrescription"></fa-icon>
+                  Receta QR
+                </button>
               </div>
 
             </article>
@@ -480,4 +499,12 @@
       </div>
     </div>
   </div>
+}
+
+<!-- Modal Receta electrónica con QR -->
+@if (showRecetaModal() && citaParaReceta(); as citaReceta) {
+  <sesa-receta-electronica-modal
+    [cita]="citaReceta"
+    (closed)="cerrarRecetaModal()"
+  />
 }

@@ -1,58 +1,57 @@
-<div class="sesa-empresa-wizard-page">
-  <div class="sesa-page-header sesa-page-header--premium">
-    <a class="sesa-btn sesa-btn-secondary sesa-btn--premium sesa-btn-back" routerLink="/empresas">
-      <span class="sesa-btn-arrow">←</span> Volver
-    </a>
-    <div class="sesa-page-header-content">
-      <div class="sesa-page-header-icon">
+<div class="ewizard">
+  <header class="ewizard-header">
+    <nav class="ewizard-breadcrumb" aria-label="Navegación">
+      <a routerLink="/empresas" class="ewizard-back">
+        <span class="ewizard-back-arrow" aria-hidden="true">←</span>
+        <span>Empresas</span>
+      </a>
+      <span class="ewizard-breadcrumb-sep" aria-hidden="true">/</span>
+      <span class="ewizard-breadcrumb-current">{{ isEdit ? 'Editar' : 'Nueva empresa' }}</span>
+    </nav>
+    <div class="ewizard-header-main">
+      <div class="ewizard-header-icon" aria-hidden="true">
         <fa-icon [icon]="isEdit ? faPenToSquare : faBuilding"></fa-icon>
       </div>
-      <div>
-        <h1 class="sesa-page-title">{{ isEdit ? 'Editar empresa' : 'Nueva empresa' }}</h1>
-        <p class="sesa-page-subtitle">Complete la información en los pasos siguientes</p>
+      <div class="ewizard-header-text">
+        <h1 class="ewizard-title">{{ isEdit ? 'Editar empresa' : 'Nueva empresa' }}</h1>
+        <p class="ewizard-subtitle">Configure la empresa en pocos pasos. Los módulos que asigne serán los que verá el personal al entrar y al configurar roles.</p>
       </div>
     </div>
-    <div class="sesa-page-header-spacer"></div>
-  </div>
+  </header>
 
-  <div class="sesa-wizard-container">
-    <!-- Progress bar -->
-    <div class="sesa-progress-wrapper">
-      <div class="sesa-progress-bar">
-        <div class="sesa-progress-fill" [style.width.%]="((step + 1) / steps.length) * 100"></div>
-      </div>
-      <p class="sesa-progress-text">Paso {{ step + 1 }} de {{ steps.length }}</p>
-    </div>
-
-    <!-- Tabs modernos -->
-    <div class="sesa-wizard-tabs">
-      @for (s of steps; track s; let i = $index) {
-      <button type="button" class="sesa-wizard-tab" [class.sesa-wizard-tab--active]="step === i"
-        [class.sesa-wizard-tab--completed]="step > i" (click)="goStep(i)" [disabled]="step < i">
-        <span class="sesa-wizard-tab-icon">
-          @if (step > i) {
-          ✓
-          } @else if (step === i) {
-          {{ i + 1 }}
-          } @else {
-          {{ i + 1 }}
-          }
-        </span>
-        <span class="sesa-wizard-tab-label">{{ s }}</span>
-      </button>
-      }
-    </div>
-
-    <!-- Contenido -->
-    <sesa-card class="sesa-wizard-card">
-      @if (error) {
-      <div class="sesa-login-error" role="alert">
-        <fa-icon [icon]="faTriangleExclamation" class="sesa-error-icon"></fa-icon>
-        <div class="sesa-error-content">
-          <p class="sesa-error-title">Error</p>
-          <p class="sesa-error-message">{{ error }}</p>
+  <div class="ewizard-container">
+    <div class="ewizard-stepper" role="tablist" aria-label="Pasos del asistente">
+      <div class="ewizard-progress" aria-hidden="true">
+        <div class="ewizard-progress-track">
+          <div class="ewizard-progress-fill" [style.width.%]="((step + 1) / steps.length) * 100"></div>
         </div>
+        <span class="ewizard-progress-label">Paso {{ step + 1 }} de {{ steps.length }}</span>
       </div>
+      <div class="ewizard-tabs">
+        @for (s of steps; track s; let i = $index) {
+          <button type="button" class="ewizard-tab"
+            [class.ewizard-tab--current]="step === i"
+            [class.ewizard-tab--done]="step > i"
+            (click)="goStep(i)"
+            [disabled]="step < i"
+            [attr.aria-selected]="step === i"
+            [attr.aria-label]="'Paso ' + (i+1) + ': ' + s">
+            <span class="ewizard-tab-num">{{ step > i ? '✓' : (i + 1) }}</span>
+            <span class="ewizard-tab-text">{{ s }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <main class="ewizard-card" role="main">
+      @if (error) {
+        <div class="ewizard-error" role="alert">
+          <fa-icon [icon]="faTriangleExclamation" aria-hidden="true"></fa-icon>
+          <div>
+            <strong>Error</strong>
+            <p>{{ error }}</p>
+          </div>
+        </div>
       }
 
       @switch (step) {
@@ -161,70 +160,71 @@
       </form>
       }
       @case (1) {
-      <div class="sesa-modules-section sesa-modules-section--premium">
-        <div class="sesa-form-section-header sesa-modules-section-header">
-          <fa-icon [icon]="faGear" class="sesa-form-section-icon"></fa-icon>
-          <div class="sesa-modules-header-content">
-            <div>
-              <h3 class="sesa-form-section-title">Módulos y submódulos</h3>
-              <p class="sesa-form-section-description">Selecciona los módulos contratados y sus funcionalidades. Al
-                activar un módulo se activan todos sus submódulos.</p>
-            </div>
-            <div class="sesa-modules-toggle-btns">
-              <button type="button" class="sesa-modules-toggle-btn" (click)="expandAllModulos()">Expandir todo</button>
-              <button type="button" class="sesa-modules-toggle-btn" (click)="collapseAllModulos()">Colapsar todo</button>
-            </div>
-          </div>
-        </div>
-        @if (loadingModulos) {
-        <div class="sesa-modulos-loading">
-          <span class="sesa-loading-spinner"></span>
-          <p>Cargando catálogo de módulos desde la base de datos…</p>
-        </div>
-        } @else if (modulosError) {
-        <div class="sesa-modulos-error" role="alert">
-          <fa-icon [icon]="faTriangleExclamation" class="sesa-error-icon"></fa-icon>
-          <div>
-            <p class="sesa-modulos-error-title">No se pudo cargar el catálogo</p>
-            <p class="sesa-modulos-error-message">{{ modulosError }}</p>
-          </div>
-        </div>
-        } @else {
-        <div class="sesa-modulos-scroll-wrapper">
-          <ul class="sesa-modulos-list">
-            @for (m of modulos; track m.codigo) {
-            <li class="sesa-modulo-row" [class.sesa-modulo-row--selected]="getModuloCheckState(m.codigo) !== 'none'" [class.sesa-modulo-row--expanded]="isExpanded(m.codigo)">
-              <div class="sesa-modulo-row-header" [class.sesa-modulo-row-header--clickable]="m.submodulos.length > 0" (click)="m.submodulos.length > 0 && toggleExpanded(m.codigo)">
-                <label class="sesa-modulo-check-wrap" (click)="$event.stopPropagation()">
-                  <input type="checkbox" [checked]="getModuloCheckState(m.codigo) === 'full'" [indeterminate]="getModuloCheckState(m.codigo) === 'partial'" (change)="toggleModulo(m.codigo)" class="sesa-modulo-check" />
-                  <span class="sesa-modulo-check-custom" [class.sesa-modulo-check-custom--partial]="getModuloCheckState(m.codigo) === 'partial'" [class.sesa-modulo-check-custom--full]="getModuloCheckState(m.codigo) === 'full'"></span>
-                </label>
-                <span class="sesa-modulo-name">{{ m.nombre }}</span>
-                @if (m.submodulos.length > 0) {
-                <span class="sesa-modulo-badge">{{ countSelectedSubs(m.codigo) }}/{{ m.submodulos.length }}</span>
-                <span class="sesa-modulo-chevron" [class.sesa-modulo-chevron--open]="isExpanded(m.codigo)">▾</span>
-                }
+        <section class="ewizard-modules" aria-labelledby="modulos-title">
+          <div class="ewizard-modules-head">
+            <div class="ewizard-modules-title-block">
+              <fa-icon [icon]="faGear" class="ewizard-modules-icon" aria-hidden="true"></fa-icon>
+              <div>
+                <h2 id="modulos-title" class="ewizard-modules-title">Módulos desde la base de datos</h2>
+                <p class="ewizard-modules-desc">Los módulos que active aquí serán los que aparecerán al personal al entrar al sistema y al configurar roles y permisos. Catálogo cargado desde la base de datos.</p>
               </div>
-              @if (m.submodulos.length > 0 && isExpanded(m.codigo)) {
-              <div class="sesa-modulo-dropdown">
-                <ul class="sesa-submodulos-list">
-                  @for (sub of m.submodulos; track sub.codigo) {
-                  <li class="sesa-submodulo-item">
-                    <label class="sesa-submodulo-label">
-                      <input type="checkbox" [checked]="isSubmoduloSelected(sub.codigo)" (change)="toggleSubmodulo(m.codigo, sub.codigo)" />
-                      <span class="sesa-submodulo-name">{{ sub.nombre }}</span>
-                    </label>
+            </div>
+            <div class="ewizard-modules-actions">
+              <button type="button" class="ewizard-modules-btn" (click)="seleccionarTodosModulos()">Seleccionar todo</button>
+              <button type="button" class="ewizard-modules-btn" (click)="deseleccionarTodosModulos()">Deseleccionar todo</button>
+              <button type="button" class="ewizard-modules-btn ewizard-modules-btn--secondary" (click)="expandAllModulos()">Expandir</button>
+              <button type="button" class="ewizard-modules-btn ewizard-modules-btn--secondary" (click)="collapseAllModulos()">Colapsar</button>
+            </div>
+          </div>
+          @if (loadingModulos) {
+            <div class="ewizard-modules-loading">
+              <span class="ewizard-spinner" aria-hidden="true"></span>
+              <p>Cargando catálogo de módulos desde la base de datos…</p>
+            </div>
+          } @else if (modulosError) {
+            <div class="ewizard-modules-err" role="alert">
+              <fa-icon [icon]="faTriangleExclamation" aria-hidden="true"></fa-icon>
+              <div>
+                <strong>No se pudo cargar el catálogo</strong>
+                <p>{{ modulosError }}</p>
+              </div>
+            </div>
+          } @else {
+            <div class="ewizard-modules-scroll">
+              <ul class="ewizard-modules-list">
+                @for (m of modulos; track m.codigo) {
+                  <li class="ewizard-module-item" [class.ewizard-module-item--selected]="getModuloCheckState(m.codigo) !== 'none'" [class.ewizard-module-item--open]="isExpanded(m.codigo)">
+                    <div class="ewizard-module-head" [class.ewizard-module-head--clickable]="m.submodulos.length > 0" (click)="m.submodulos.length > 0 && toggleExpanded(m.codigo)">
+                      <label class="ewizard-module-check" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [checked]="getModuloCheckState(m.codigo) === 'full'" [indeterminate]="getModuloCheckState(m.codigo) === 'partial'" (change)="toggleModulo(m.codigo)" />
+                        <span class="ewizard-module-checkbox" [class.ewizard-module-checkbox--partial]="getModuloCheckState(m.codigo) === 'partial'" [class.ewizard-module-checkbox--full]="getModuloCheckState(m.codigo) === 'full'"></span>
+                      </label>
+                      <span class="ewizard-module-name">{{ m.nombre }}</span>
+                      @if (m.submodulos.length > 0) {
+                        <span class="ewizard-module-badge">{{ countSelectedSubs(m.codigo) }}/{{ m.submodulos.length }}</span>
+                        <span class="ewizard-module-chevron" [class.ewizard-module-chevron--open]="isExpanded(m.codigo)" aria-hidden="true">▾</span>
+                      }
+                    </div>
+                    @if (m.submodulos.length > 0 && isExpanded(m.codigo)) {
+                      <div class="ewizard-module-subs">
+                        <ul class="ewizard-subs-list">
+                          @for (sub of m.submodulos; track sub.codigo) {
+                            <li>
+                              <label class="ewizard-sub-item">
+                                <input type="checkbox" [checked]="isSubmoduloSelected(sub.codigo)" (change)="toggleSubmodulo(m.codigo, sub.codigo)" />
+                                <span>{{ sub.nombre }}</span>
+                              </label>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </li>
-                  }
-                </ul>
-              </div>
-              }
-            </li>
-            }
-          </ul>
-        </div>
-        }
-      </div>
+                }
+              </ul>
+            </div>
+          }
+        </section>
       }
       @case (2) {
       <form [formGroup]="formGeneral" class="sesa-wizard-form sesa-wizard-form--premium">
@@ -357,6 +357,6 @@
           }
         </button>
       </div>
-    </sesa-card>
+    </main>
   </div>
 </div>

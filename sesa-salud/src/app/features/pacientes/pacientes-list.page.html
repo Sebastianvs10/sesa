@@ -49,7 +49,7 @@
 
   <!-- ═══ TARJETA PRINCIPAL ═════════════════════════════════════════════ -->
   <div class="plp-card">
-    <!-- Barra de búsqueda -->
+    <!-- Barra de búsqueda y filtro por estado -->
     <div class="plp-search-bar">
       <div class="plp-search-wrap">
         <svg class="plp-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -71,6 +71,20 @@
             </svg>
           </button>
         }
+      </div>
+      <div class="plp-filter-activo">
+        <label for="plp-filter-activo" class="plp-filter-label">Estado:</label>
+        <select
+          id="plp-filter-activo"
+          class="plp-filter-select"
+          [ngModel]="filterActivo"
+          (ngModelChange)="filterActivo = $event; onFilterActivoChange()"
+          [disabled]="loading"
+        >
+          <option [ngValue]="null">Todos</option>
+          <option [ngValue]="true">Solo activos</option>
+          <option [ngValue]="false">Solo inactivos</option>
+        </select>
       </div>
       <button type="button" class="plp-btn plp-btn--outline" (click)="onSearch()" [disabled]="loading">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -101,6 +115,7 @@
             <th>Documento</th>
             <th>Teléfono</th>
             <th>EPS</th>
+            <th class="plp-col-estado">Estado</th>
             <th class="plp-col-actions">Acciones</th>
           </tr>
         </thead>
@@ -120,6 +135,7 @@
                 <td><div class="plp-skeleton" style="width:90px;height:0.8rem;border-radius:4px"></div></td>
                 <td><div class="plp-skeleton" style="width:80px;height:0.8rem;border-radius:4px"></div></td>
                 <td><div class="plp-skeleton" style="width:70px;height:0.8rem;border-radius:4px"></div></td>
+                <td><div class="plp-skeleton" style="width:60px;height:0.8rem;border-radius:4px"></div></td>
                 <td class="plp-col-actions">
                   <div class="plp-actions-cell">
                     <div class="plp-skeleton plp-skeleton--rounded" style="width:32px;height:32px"></div>
@@ -152,6 +168,13 @@
                     <span class="plp-eps-badge">{{ p.epsNombre }}</span>
                   } @else {
                     <span class="plp-text-muted">—</span>
+                  }
+                </td>
+                <td class="plp-col-estado">
+                  @if (p.activo !== false) {
+                    <span class="plp-badge plp-badge--activo">Activo</span>
+                  } @else {
+                    <span class="plp-badge plp-badge--inactivo">Inactivo</span>
                   }
                 </td>
                 <td class="plp-col-actions">

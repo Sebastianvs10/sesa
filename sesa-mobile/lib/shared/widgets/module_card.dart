@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
+import '../../features/ebs/ebs_layout_screen.dart';
 
 class ModuleCard extends StatefulWidget {
   const ModuleCard({super.key, required this.code, required this.index});
@@ -28,7 +29,14 @@ class _ModuleCardState extends State<ModuleCard> {
       onTapUp    : (_) => setState(() => _pressed = false),
       onTapCancel: ()  => setState(() => _pressed = false),
       onTap: () {
-        // TODO: navegar al módulo correspondiente
+        if (widget.code == 'EBS') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const EbsLayoutScreen(),
+            ),
+          );
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$label — próximamente',
@@ -138,6 +146,7 @@ class _ModuleCardState extends State<ModuleCard> {
       'NOTIFICACIONES'  : Icons.notifications_rounded,
       'ROLES'           : Icons.admin_panel_settings_rounded,
       'REPORTES'        : Icons.bar_chart_rounded,
+      'EBS'             : Icons.health_and_safety_rounded,
     };
     return map[code] ?? Icons.apps_rounded;
   }
@@ -160,6 +169,7 @@ class _ModuleCardState extends State<ModuleCard> {
       'NOTIFICACIONES'  : 'Notificaciones',
       'ROLES'           : 'Roles',
       'REPORTES'        : 'Reportes',
+      'EBS'             : 'EBS — APS',
     };
     return map[code] ?? code;
   }

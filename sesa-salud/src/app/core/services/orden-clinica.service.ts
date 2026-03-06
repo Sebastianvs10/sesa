@@ -11,6 +11,10 @@ export interface OrdenClinicaDto {
   tipo: string;
   detalle?: string;
   estado?: string;
+  resultado?: string;
+  fechaResultado?: string;
+  resultadoRegistradoPorNombre?: string;
+  resultadoRegistradoPorRol?: string;
   valorEstimado?: number;
   createdAt?: string;
 }
@@ -36,5 +40,9 @@ export class OrdenClinicaService {
 
   create(request: OrdenClinicaRequestDto): Observable<OrdenClinicaDto> {
     return this.http.post<OrdenClinicaDto>(this.apiUrl, request);
+  }
+
+  registrarResultado(ordenId: number, resultado: string): Observable<OrdenClinicaDto> {
+    return this.http.patch<OrdenClinicaDto>(`${this.apiUrl}/${ordenId}/resultado`, { resultado });
   }
 }

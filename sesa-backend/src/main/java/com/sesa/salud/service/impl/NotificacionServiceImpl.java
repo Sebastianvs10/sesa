@@ -62,6 +62,7 @@ public class NotificacionServiceImpl implements NotificacionService {
                 .remitenteId(remitenteId)
                 .remitenteNombre(remitenteNombre)
                 .fechaEnvio(Instant.now())
+                .citaId(request.getCitaId())
                 .build();
 
         List<NotificacionDestinatario> destinatarios = new ArrayList<>();
@@ -153,6 +154,61 @@ public class NotificacionServiceImpl implements NotificacionService {
             dest.setFechaLectura(Instant.now());
             destinatarioRepository.save(dest);
         }
+    }
+
+    @Override
+    @Transactional
+    public void marcarLeidas(List<Long> notificacionIds, Long usuarioId) {
+        if (notificacionIds == null || notificacionIds.isEmpty()) return;
+        for (Long notificacionId : notificacionIds) {
+            try {
+                marcarLeida(notificacionId, usuarioId);
+            } catch (Exception e) {
+                log.debug("No se pudo marcar notificación {} como leída: {}", notificacionId, e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void marcarNoLeida(Long notificacionId, Long usuarioId) {
+        NotificacionDestinatario dest = destinatarioRepository
+                .findByNotificacionIdAndUsuarioId(notificacionId, usuarioId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Destinatario no encontrado para notificación " + notificacionId));
+        if (Boolean.TRUE.equals(dest.getLeido())) {
+            dest.setLeido(false);
+            dest.setFechaLectura(null);
+            destinatarioRepository.save(dest);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void marcarNoLeidas(List<Long> notificacionIds, Long usuarioId) {
+        if (notificacionIds == null || notificacionIds.isEmpty()) return;
+        for (Long notificacionId : notificacionIds) {
+            try {
+                marcarNoLeida(notificacionId, usuarioId);
+            } catch (Exception e) {
+                log.debug("No se pudo marcar notificación {} como no leída: {}", notificacionId, e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteAdjunto(Long notificacionId, Long adjuntoId, Long usuarioId) {
+        Notificacion notificacion = notificacionRepository.findById(notificacionId)
+                .orElseThrow(() -> new RuntimeException("Notificación no encontrada: " + notificacionId));
+        if (!notificacion.getRemitenteId().equals(usuarioId)) {
+            throw new RuntimeException("Solo el remitente puede eliminar adjuntos de esta notificación");
+        }
+        NotificacionAdjunto adjunto = adjuntoRepository.findById(adjuntoId)
+                .filter(a -> a.getNotificacion().getId().equals(notificacionId))
+                .orElseThrow(() -> new RuntimeException("Adjunto no encontrado: " + adjuntoId));
+        adjuntoRepository.delete(adjunto);
+        log.info("Adjunto id={} eliminado de notificación id={}", adjuntoId, notificacionId);
     }
 
     @Override
@@ -302,6 +358,7 @@ public class NotificacionServiceImpl implements NotificacionService {
                 .remitenteId(n.getRemitenteId())
                 .remitenteNombre(n.getRemitenteNombre())
                 .fechaEnvio(n.getFechaEnvio())
+                .citaId(n.getCitaId())
                 .adjuntos(adjuntosDto)
                 .destinatarios(destinatariosDto)
                 .build();

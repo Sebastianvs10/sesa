@@ -25,6 +25,7 @@ public class NotificacionDto {
     private Long remitenteId;
     private String remitenteNombre;
     private Instant fechaEnvio;
+    private Long citaId;
     private List<AdjuntoInfo> adjuntos;
     private List<DestinatarioInfo> destinatarios;
 

@@ -72,6 +72,28 @@ public class Factura {
     @Column(name = "consecutive_counter")
     private Long consecutiveCounter;
 
+    // Campos facturación electrónica DIAN (Res. 000042 / UBL 2.1)
+    @Column(name = "dian_cufe", length = 128)
+    private String dianCufe;
+
+    @Column(name = "dian_qr_url", length = 512)
+    private String dianQrUrl;
+
+    @Column(name = "dian_estado", length = 30)
+    private String dianEstado;
+
+    @Column(name = "dian_mensaje", columnDefinition = "TEXT")
+    private String dianMensaje;
+
+    @Column(name = "dian_xml_path", length = 500)
+    private String dianXmlPath;
+
+    @Column(name = "dian_pdf_path", length = 500)
+    private String dianPdfPath;
+
+    @Column(name = "dian_fecha_envio")
+    private Instant dianFechaEnvio;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

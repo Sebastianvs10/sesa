@@ -134,6 +134,31 @@
             />
           </sesa-card>
         }
+
+        @if (permissions.canAccess('EBS')) {
+          <sesa-card
+            title="Resumen EBS — APS territorial"
+            subtitle="Cobertura y seguimiento (Equipos Básicos de Salud)"
+            alignHeader="start"
+            class="sesa-dashboard-ebs-card"
+          >
+            <div class="sesa-dashboard-ebs-hooks">
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCoberturaTerritorial() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Cobertura territorial</span>
+              </div>
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsPoblacionVisitada() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Población visitada</span>
+              </div>
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCronicosControlados() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Crónicos controlados</span>
+              </div>
+            </div>
+            <a routerLink="/ebs" class="sesa-dashboard-more">Ver módulo EBS →</a>
+          </sesa-card>
+        }
       </main>
     </div>
   }

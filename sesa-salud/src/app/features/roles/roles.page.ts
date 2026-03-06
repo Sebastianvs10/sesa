@@ -29,6 +29,7 @@ export const MODULOS_GRUPOS: ModuloGrupo[] = [
       { codigo: 'EVOLUCION_ENFERMERIA', label: 'Evolución de Enfermería', icon: '💉' },
       { codigo: 'URGENCIAS',            label: 'Urgencias',               icon: '🚑' },
       { codigo: 'HOSPITALIZACION',      label: 'Hospitalización',         icon: '🛏️' },
+      { codigo: 'EBS',                  label: 'Equipos Básicos de Salud', icon: '🌱' },
     ],
   },
   {
@@ -79,6 +80,9 @@ export const ROL_META: Record<string, RolMeta> = {
   ADMIN:               { icon: '🛡️', color: '#1f6ae1', descripcion: 'Administrador con acceso completo excepto gestión de roles.', categoria: 'Sistema' },
   COORDINADOR_MEDICO:  { icon: '🩺', color: '#0891b2', descripcion: 'Supervisión clínica: historias, laboratorios, citas, reportes y agenda.', categoria: 'Clínico' },
   MEDICO:              { icon: '👨‍⚕️', color: '#16a34a', descripcion: 'Atención médica completa: historia clínica, urgencias, hospitalización.', categoria: 'Clínico' },
+  EBS:                 { icon: '🌱', color: '#059669', descripcion: 'Equipos Básicos de Salud: visitas domiciliarias, APS territorial.', categoria: 'APS' },
+  COORDINADOR_TERRITORIAL: { icon: '🗺️', color: '#0d9488', descripcion: 'Asignación de microterritorios a equipos EBS y gestión territorial.', categoria: 'APS' },
+  SUPERVISOR_APS:      { icon: '📊', color: '#047857', descripcion: 'Supervisión de Atención Primaria: dashboards y reportes EBS.', categoria: 'APS' },
   ODONTOLOGO:          { icon: '🦷', color: '#2563eb', descripcion: 'Atención odontológica: historia clínica, laboratorios e imágenes.', categoria: 'Clínico' },
   BACTERIOLOGO:        { icon: '🔬', color: '#d97706', descripcion: 'Procesamiento y resultado de exámenes de laboratorio.', categoria: 'Clínico' },
   ENFERMERO:           { icon: '💉', color: '#db2777', descripcion: 'Cuidado y seguimiento de pacientes en urgencias y hospitalización.', categoria: 'Enfermería' },

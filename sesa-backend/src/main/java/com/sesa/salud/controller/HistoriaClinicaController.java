@@ -24,9 +24,9 @@ public class HistoriaClinicaController {
     @GetMapping("/paciente/{pacienteId}")
     @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
     public ResponseEntity<HistoriaClinicaDto> getByPaciente(@PathVariable("pacienteId") Long pacienteId) {
-        return historiaClinicaService.findByPacienteId(pacienteId)
+        return historiaClinicaService.findOrCreateMinimalIfHasConsultas(pacienteId)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.ok().build());
     }
 
     @PostMapping("/paciente/{pacienteId}")

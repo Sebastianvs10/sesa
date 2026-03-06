@@ -9,6 +9,7 @@ import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
 import { EmpresaService, EmpresaDto } from '../../core/services/empresa.service';
+import { FacturacionElectronicaConfigService, FacturacionElectronicaConfigDto } from '../../core/services/facturacion-electronica-config.service';
 import { environment } from '../../../environments/environment';
 
 /** Detecta si un string tiene formato UUID v4. */
@@ -26,6 +27,7 @@ export class MiEmpresaPageComponent implements OnInit {
   private readonly empresaService = inject(EmpresaService);
   readonly empresaCurrent = inject(EmpresaCurrentService);
   private readonly toast = inject(SesaToastService);
+  private readonly feConfigService = inject(FacturacionElectronicaConfigService);
 
   loading   = signal(false);
   error     = signal<string | null>(null);
@@ -68,6 +70,18 @@ export class MiEmpresaPageComponent implements OnInit {
     return roles.includes('ADMIN') || roles.includes('SUPERADMINISTRADOR');
   }
 
+  // ── Facturación electrónica DIAN ────────────────────────────────
+  feLoading = signal(false);
+  feError = signal<string | null>(null);
+  feSaving = signal(false);
+  feConfig = signal<FacturacionElectronicaConfigDto>({});
+
+  readonly feIsActiva = computed(() => this.feConfig().facturacionActiva ?? false);
+  readonly feAmbienteLabel = computed(() => {
+    const amb = this.feConfig().ambiente ?? 'HABILITACION';
+    return amb === 'PRODUCCION' ? 'Producción' : 'Habilitación';
+  });
+
   /** El botón de subir está habilitado cuando hay archivo Y, si es superadmin, también una empresa seleccionada. */
   get canSubmit(): boolean {
     if (!this.selectedFile) return false;
@@ -80,6 +94,7 @@ export class MiEmpresaPageComponent implements OnInit {
     if (this.isSuperAdmin()) {
       this.loadEmpresas();
     }
+    this.loadFeConfig();
   }
 
   private loadEmpresas(): void {
@@ -206,5 +221,48 @@ export class MiEmpresaPageComponent implements OnInit {
         this.toast.error(msg, 'Error');
       },
     });
+  }
+
+  // ── Facturación electrónica: configuración por empresa ──────────
+
+  private loadFeConfig(): void {
+    this.feLoading.set(true);
+    this.feError.set(null);
+    this.feConfigService.getConfig().subscribe({
+      next: (cfg) => {
+        this.feLoading.set(false);
+        this.feConfig.set(cfg);
+      },
+      error: (err) => {
+        this.feLoading.set(false);
+        const msg = err.error?.message || err.message || 'No se pudo cargar la configuración de facturación electrónica.';
+        this.feError.set(msg);
+      },
+    });
+  }
+
+  saveFeConfig(): void {
+    const cfg = this.feConfig();
+    if (!cfg) return;
+    this.feSaving.set(true);
+    this.feError.set(null);
+    this.feConfigService.updateConfig(cfg).subscribe({
+      next: (updated) => {
+        this.feSaving.set(false);
+        this.feConfig.set(updated);
+        this.toast.success('Configuración de facturación electrónica guardada.', 'DIAN');
+      },
+      error: (err) => {
+        this.feSaving.set(false);
+        const msg = err.error?.message || err.message || 'Error al guardar la configuración de facturación electrónica.';
+        this.feError.set(msg);
+        this.toast.error(msg, 'DIAN');
+      },
+    });
+  }
+
+  toggleFeActiva(value: boolean): void {
+    const current = this.feConfig() ?? {};
+    this.feConfig.set({ ...current, facturacionActiva: value });
   }
 }

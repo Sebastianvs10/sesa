@@ -4,6 +4,7 @@
 
 package com.sesa.salud.controller.advice;
 
+import com.sesa.salud.exception.VideoconsultaTokenInvalidoException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(VideoconsultaTokenInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> handleVideoconsultaTokenInvalido(VideoconsultaTokenInvalidoException e) {
+        log.warn("Token de videoconsulta inválido: {}", e.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Enlace inválido o expirado");
+        body.put(MESSAGE_KEY, e.getMessage());
+        body.put(STATUS_KEY, HttpStatus.FORBIDDEN.value());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
         log.debug("Mensaje HTTP no legible");
@@ -70,6 +81,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("Argumento inválido: {}", e.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Datos inválidos");
+        body.put(MESSAGE_KEY, e.getMessage() != null ? e.getMessage() : "Revise los datos enviados");
+        body.put(STATUS_KEY, HttpStatus.BAD_REQUEST.value());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
+        log.error("Error en videoconsulta o lógica de negocio: {}", e.getMessage(), e);
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Error en el servidor");
+        body.put(MESSAGE_KEY, e.getMessage() != null ? e.getMessage() : "Por favor intente más tarde");
+        body.put(STATUS_KEY, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception e) {
         log.error("Error inesperado", e);
@@ -77,7 +108,6 @@ public class GlobalExceptionHandler {
         body.put(ERROR_KEY, "Error en el servidor");
         body.put(MESSAGE_KEY, "Por favor intente más tarde");
         body.put(STATUS_KEY, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        // NUNCA exponer el stack trace o mensaje detallado en producción
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

@@ -47,6 +47,10 @@ export interface OrdenClinicaLabDto {
   tipo: string;
   detalle: string;
   estado: string;
+  resultado?: string;
+  fechaResultado?: string;
+  resultadoRegistradoPorNombre?: string;
+  resultadoRegistradoPorRol?: string;
   createdAt?: string;
 }
 

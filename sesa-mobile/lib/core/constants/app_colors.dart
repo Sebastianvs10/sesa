@@ -70,5 +70,6 @@ class AppColors {
     'NOTIFICACIONES'  : [Color(0xFFF59E0B), Color(0xFFEF4444)],
     'ROLES'           : [Color(0xFF14B8A6), Color(0xFF6366F1)],
     'REPORTES'        : [Color(0xFF22C55E), Color(0xFF0EA5E9)],
+    'EBS'             : [Color(0xFF1F6AE1), Color(0xFF2BB0A6)],
   };
 }

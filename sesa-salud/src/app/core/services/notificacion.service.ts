@@ -103,6 +103,26 @@ export class NotificacionService {
     return this.http.put<void>(`${this.apiUrl}/${id}/leer`, {});
   }
 
+  /** Marcar varias notificaciones como leídas (solo donde el usuario es destinatario) */
+  marcarLeidas(ids: number[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/marcar-leidas`, { notificacionIds: ids });
+  }
+
+  /** Marcar una notificación como no leída (solo destinatario) */
+  marcarNoLeida(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/no-leer`, {});
+  }
+
+  /** Marcar varias notificaciones como no leídas (solo donde el usuario es destinatario) */
+  marcarNoLeidas(ids: number[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/marcar-no-leidas`, { notificacionIds: ids });
+  }
+
+  /** Eliminar un adjunto de una notificación (solo el remitente puede) */
+  deleteAdjunto(notificacionId: number, adjuntoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`);
+  }
+
   /** URL de descarga de adjunto */
   adjuntoUrl(notificacionId: number, adjuntoId: number): string {
     return `${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`;

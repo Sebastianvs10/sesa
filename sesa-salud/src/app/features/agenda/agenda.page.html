@@ -123,26 +123,35 @@
     </div>
   }
 
-  <!-- ══════════ FILTROS ══════════ -->
+  <!-- ══════════ FILTROS (Especialidad · Especialista · Tipo turno) ══════════ -->
   <div class="ag-filtros">
-    <select class="ag-select" [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)">
-      <option value="TODOS">🏥 Todos los servicios</option>
-      @for (s of servicios; track s) {
-        <option [value]="s">{{ servicioConfig[s].icon }} {{ servicioConfig[s].label }}</option>
-      }
-    </select>
-    <select class="ag-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
-      <option value="TODOS">🕐 Todos los turnos</option>
-      @for (t of tiposTurno; track t) {
-        <option [value]="t">{{ turnoConfig[t].label }}</option>
-      }
-    </select>
-    <select class="ag-select" [ngModel]="filtroProfesional()" (ngModelChange)="filtroProfesional.set(+$event)">
-      <option [value]="0">👤 Todos los profesionales</option>
-      @for (p of profVisibles(); track p.id) {
-        <option [value]="p.id">{{ nombreCorto(p) }}</option>
-      }
-    </select>
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Especialidad</span>
+      <select class="ag-select" [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)" aria-label="Filtrar por especialidad">
+        <option value="TODOS">🏥 Todas</option>
+        @for (s of servicios; track s) {
+          <option [value]="s">{{ servicioConfig[s].icon }} {{ servicioConfig[s].label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Tipo turno</span>
+      <select class="ag-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)" aria-label="Filtrar por tipo de turno">
+        <option value="TODOS">🕐 Todos</option>
+        @for (t of tiposTurno; track t) {
+          <option [value]="t">{{ turnoConfig[t].label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Especialista</span>
+      <select class="ag-select" [ngModel]="filtroProfesional()" (ngModelChange)="filtroProfesional.set(+$event)" aria-label="Filtrar por especialista">
+        <option [value]="0">👤 Todos</option>
+        @for (p of profVisibles(); track p.id) {
+          <option [value]="p.id">{{ nombreCorto(p) }}</option>
+        }
+      </select>
+    </label>
     <button class="ag-btn ag-btn--ghost ag-btn--sm" (click)="toggleDashboard()">
       {{ showDashboard() ? '▲ Ocultar resumen' : '▼ Ver resumen' }}
     </button>

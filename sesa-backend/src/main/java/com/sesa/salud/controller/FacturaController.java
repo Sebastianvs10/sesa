@@ -6,6 +6,7 @@ package com.sesa.salud.controller;
 import com.sesa.salud.dto.FacturaDto;
 import com.sesa.salud.dto.FacturaRequestDto;
 import com.sesa.salud.dto.ResumenFacturacionDto;
+import com.sesa.salud.dto.RipsGenerarRequestDto;
 import com.sesa.salud.service.FacturaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +76,13 @@ public class FacturaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(facturaService.create(dto));
     }
 
+    /** Emite una factura como electrónica ante la DIAN (si la empresa tiene configuración activa). */
+    @PostMapping("/{id:\\d+}/emitir-electronica")
+    @PreAuthorize("hasAnyRole('ADMIN','FACTURACION','SUPERADMINISTRADOR')")
+    public ResponseEntity<FacturaDto> emitirElectronica(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(facturaService.emitirElectronica(id));
+    }
+
     @PutMapping("/{id:\\d+}")
     @PreAuthorize("hasAnyRole('ADMIN','FACTURACION','SUPERADMINISTRADOR')")
     public ResponseEntity<FacturaDto> update(@PathVariable("id") Long id, @Valid @RequestBody FacturaRequestDto dto) {
@@ -122,6 +131,24 @@ public class FacturaController {
     public ResponseEntity<Map<String, String>> exportRipsEstructurado(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        Instant d = desde.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant h = hasta.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        Map<String, String> archivos = facturaService.exportRipsEstructurado(d, h);
+        return ResponseEntity.ok(archivos);
+    }
+
+    /** Generación automática de RIPS para un periodo. Si no se envía cuerpo, se usa el mes anterior. */
+    @PostMapping(value = "/rips/generar-automatico", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN','FACTURACION','SUPERADMINISTRADOR')")
+    public ResponseEntity<Map<String, String>> generarRipsAutomatico(
+            @RequestBody(required = false) RipsGenerarRequestDto request) {
+        YearMonth mesAnterior = YearMonth.now().minusMonths(1);
+        LocalDate desde = request != null && request.getDesde() != null && !request.getDesde().isBlank()
+                ? LocalDate.parse(request.getDesde())
+                : mesAnterior.atDay(1);
+        LocalDate hasta = request != null && request.getHasta() != null && !request.getHasta().isBlank()
+                ? LocalDate.parse(request.getHasta())
+                : mesAnterior.atEndOfMonth();
         Instant d = desde.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant h = hasta.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
         Map<String, String> archivos = facturaService.exportRipsEstructurado(d, h);

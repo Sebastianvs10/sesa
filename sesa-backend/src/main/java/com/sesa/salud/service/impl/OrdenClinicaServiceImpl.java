@@ -5,18 +5,24 @@ package com.sesa.salud.service.impl;
 
 import com.sesa.salud.dto.OrdenClinicaDto;
 import com.sesa.salud.dto.OrdenClinicaRequestDto;
+import com.sesa.salud.dto.ResultadoOrdenDto;
 import com.sesa.salud.entity.Consulta;
 import com.sesa.salud.entity.OrdenClinica;
 import com.sesa.salud.entity.Paciente;
 import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
+import com.sesa.salud.repository.PersonalRepository;
+import com.sesa.salud.security.JwtPrincipal;
 import com.sesa.salud.service.OrdenClinicaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +33,7 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
     private final OrdenClinicaRepository ordenClinicaRepository;
     private final PacienteRepository pacienteRepository;
     private final ConsultaRepository consultaRepository;
+    private final PersonalRepository personalRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,6 +89,21 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
 
     @Override
     @Transactional
+    public OrdenClinicaDto registrarResultado(Long id, ResultadoOrdenDto dto) {
+        OrdenClinica orden = ordenClinicaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + id));
+        orden.setResultado(dto.getResultado());
+        orden.setFechaResultado(Instant.now());
+        orden.setEstado("COMPLETADO");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof JwtPrincipal principal) {
+            personalRepository.findByUsuario_Id(principal.userId()).ifPresent(orden::setResultadoRegistradoPor);
+        }
+        return toDto(ordenClinicaRepository.save(orden));
+    }
+
+    @Override
+    @Transactional
     public void deleteById(Long id) {
         if (!ordenClinicaRepository.existsById(id)) {
             throw new RuntimeException("Orden clínica no encontrada: " + id);
@@ -92,6 +114,13 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
     private OrdenClinicaDto toDto(OrdenClinica o) {
         String pacienteNombre = o.getPaciente().getNombres() + " " +
                 (o.getPaciente().getApellidos() != null ? o.getPaciente().getApellidos() : "");
+        String regPorNombre = null;
+        String regPorRol = null;
+        if (o.getResultadoRegistradoPor() != null) {
+            var p = o.getResultadoRegistradoPor();
+            regPorNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
+            regPorRol = p.getRol();
+        }
         return OrdenClinicaDto.builder()
                 .id(o.getId())
                 .pacienteId(o.getPaciente().getId())
@@ -100,6 +129,10 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .tipo(o.getTipo())
                 .detalle(o.getDetalle())
                 .estado(o.getEstado())
+                .resultado(o.getResultado())
+                .fechaResultado(o.getFechaResultado())
+                .resultadoRegistradoPorNombre(regPorNombre)
+                .resultadoRegistradoPorRol(regPorRol)
                 .valorEstimado(o.getValorEstimado())
                 .createdAt(o.getCreatedAt())
                 .build();

@@ -1,363 +1,516 @@
-<div class="sesa-notif-page">
-
-  <!-- ========== Pestañas ========== -->
-  <div class="sesa-notif-tabs">
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'recibidas'"
-      (click)="switchTab('recibidas')">
-      <fa-icon [icon]="faInbox" class="sesa-notif-tab-icon"></fa-icon>
-      Recibidas
-      @if (noLeidas() > 0) {
-        <span class="sesa-notif-badge">{{ noLeidas() }}</span>
+<!--
+  Bandeja de notificaciones — UX/UI premium, estilo moderno.
+  Sidebar, búsqueda, acciones masivas, empty states, confirmación al cerrar.
+  Autor: Ing. J Sebastian Vargas S
+-->
+<div class="notif-layout">
+  <!-- Sidebar -->
+  <aside class="notif-sidebar" aria-label="Navegación de notificaciones">
+    <nav class="notif-nav">
+      <span class="notif-nav-label">MENÚ</span>
+      <button
+        type="button"
+        class="notif-nav-item"
+        [class.notif-nav-item--active]="menuActive() === 'inbox'"
+        (click)="setMenu('inbox')">
+        <fa-icon [icon]="faInbox"></fa-icon>
+        <span>Bandeja de entrada</span>
+        @if (noLeidas() > 0) {
+          <span class="notif-nav-badge">{{ noLeidas() }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="notif-nav-item"
+        [class.notif-nav-item--active]="menuActive() === 'important'"
+        (click)="setMenu('important')">
+        <fa-icon [icon]="faFlag"></fa-icon>
+        <span>Importantes</span>
+        @if (countImportant() > 0) {
+          <span class="notif-nav-badge">{{ countImportant() }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="notif-nav-item"
+        [class.notif-nav-item--active]="menuActive() === 'sent'"
+        (click)="setMenu('sent')">
+        <fa-icon [icon]="faPaperPlane"></fa-icon>
+        <span>Enviados</span>
+      </button>
+    </nav>
+    <nav class="notif-nav">
+      <span class="notif-nav-label">CATEGORÍAS</span>
+      @for (cat of categoryFilters(); track cat.id) {
+        <button
+          type="button"
+          class="notif-nav-item"
+          [class.notif-nav-item--active]="categoryActive() === cat.id"
+          (click)="setCategory(cat.id)">
+          <fa-icon [icon]="cat.icon"></fa-icon>
+          <span>{{ cat.label }}</span>
+          @if (cat.count > 0) {
+            <span class="notif-nav-badge">{{ cat.count }}</span>
+          }
+        </button>
       }
-    </button>
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'enviadas'"
-      (click)="switchTab('enviadas')">
-      <fa-icon [icon]="faPaperPlane" class="sesa-notif-tab-icon"></fa-icon>
-      Enviadas
-    </button>
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'redactar'"
-      (click)="switchTab('redactar')">
-      <fa-icon [icon]="faPenToSquare" class="sesa-notif-tab-icon"></fa-icon>
-      Redactar
-    </button>
-  </div>
+    </nav>
+  </aside>
 
-  <!-- ========== Alertas ========== -->
-  @if (error()) {
-    <div class="sesa-notif-alert sesa-notif-alert--error">
-      {{ error() }}
-      <button (click)="error.set(null)">&times;</button>
-    </div>
-  }
-  @if (success()) {
-    <div class="sesa-notif-alert sesa-notif-alert--success">
-      {{ success() }}
-      <button (click)="success.set(null)">&times;</button>
-    </div>
-  }
-
-  <!-- ========== Panel principal ========== -->
-  <div class="sesa-notif-body">
-
-    <!-- ===== DETALLE (overlay) ===== -->
-    @if (selectedNotif(); as n) {
-      <div class="sesa-notif-detail">
-        <div class="sesa-notif-detail-header">
-          <h2>{{ n.titulo }}</h2>
-          <button class="sesa-notif-close" (click)="closeDetail()">&times;</button>
+  <!-- Main -->
+  <main class="notif-main">
+    <!-- Header: stats + búsqueda + filtros + orden + Compose -->
+    <header class="notif-header">
+      @if (menuActive() === 'inbox' && noLeidas() > 0) {
+        <span class="notif-stats-pill" aria-live="polite">
+          <span class="notif-stats-dot"></span>
+          {{ noLeidas() }} sin leer
+        </span>
+      }
+      <div class="notif-search-wrap">
+        <fa-icon [icon]="faSearch" class="notif-search-icon" aria-hidden="true"></fa-icon>
+        <input
+          type="text"
+          class="notif-search"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Buscar notificaciones, usuarios o contenido…"
+          aria-label="Buscar en notificaciones" />
+      </div>
+      <div class="notif-header-controls">
+        <div class="notif-dropdown" [class.notif-dropdown--open]="filterDropdownOpen()" role="group" aria-label="Filtro por tipo">
+          <button type="button" class="notif-dropdown-trigger" [class.notif-dropdown-trigger--active]="headerFilterType()" (click)="toggleFilterDropdown()">
+            <fa-icon [icon]="faFilter"></fa-icon>
+            <span>{{ headerFilterType() ? (headerFilterType() === 'URGENTE' ? 'Urgente' : headerFilterType() === 'INFORMATIVO' ? 'Informativo' : 'General') : 'Tipo' }}</span>
+          </button>
+          <div class="notif-dropdown-menu">
+            <button type="button" class="notif-dropdown-item" (click)="setHeaderFilterType('')">Todos</button>
+            <button type="button" class="notif-dropdown-item" (click)="setHeaderFilterType('GENERAL')">General</button>
+            <button type="button" class="notif-dropdown-item" (click)="setHeaderFilterType('URGENTE')">Urgente</button>
+            <button type="button" class="notif-dropdown-item" (click)="setHeaderFilterType('INFORMATIVO')">Informativo</button>
+          </div>
         </div>
-        <div class="sesa-notif-detail-meta">
-          <span class="sesa-notif-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-          <span>De: <strong>{{ n.remitenteNombre || 'Sistema' }}</strong></span>
-          <span>{{ n.fechaEnvio | date:'medium' }}</span>
+        <div class="notif-dropdown" [class.notif-dropdown--open]="sortDropdownOpen()" role="group" aria-label="Ordenar por fecha">
+          <button type="button" class="notif-dropdown-trigger" (click)="toggleSortDropdown()">
+            <fa-icon [icon]="sortOrder() === 'fecha-desc' ? faSortDown : faSortUp"></fa-icon>
+            <span>Fecha</span>
+          </button>
+          <div class="notif-dropdown-menu">
+            <button type="button" class="notif-dropdown-item" [class.notif-dropdown-item--active]="sortOrder() === 'fecha-desc'" (click)="setSortOrderAndClose('fecha-desc')">
+              Más recientes primero
+            </button>
+            <button type="button" class="notif-dropdown-item" [class.notif-dropdown-item--active]="sortOrder() === 'fecha-asc'" (click)="setSortOrderAndClose('fecha-asc')">
+              Más antiguas primero
+            </button>
+          </div>
         </div>
-        <div class="sesa-notif-detail-content" [innerHTML]="n.contenido"></div>
-
-        @if (n.adjuntos && n.adjuntos.length > 0) {
-          <div class="sesa-notif-adjuntos-section">
-            <h4>Adjuntos ({{ n.adjuntos.length }})</h4>
-            <div class="sesa-notif-adjuntos-grid">
-              @for (adj of n.adjuntos; track adj.id) {
-                <div class="sesa-notif-adjunto-card">
-                  @if (isImageType(adj.contentType)) {
-                    <img [src]="adjuntoPreviewUrl(n.id, adj.id)" [alt]="adj.nombreArchivo" class="sesa-notif-adjunto-preview" />
-                  } @else if (isVideoType(adj.contentType)) {
-                    <video [src]="adjuntoPreviewUrl(n.id, adj.id)" class="sesa-notif-adjunto-preview" controls></video>
-                  } @else {
-                    <div class="sesa-notif-adjunto-icon"><fa-icon [icon]="faPaperclip"></fa-icon></div>
-                  }
-                  <div class="sesa-notif-adjunto-info">
-                    <span class="sesa-notif-adjunto-name">{{ adj.nombreArchivo }}</span>
-                    @if (adj.tamano) {
-                      <span class="sesa-notif-adjunto-size">{{ formatFileSize(adj.tamano) }}</span>
-                    }
-                  </div>
-                  <button class="sesa-notif-adjunto-dl" (click)="downloadFile(n.id, adj)">Descargar</button>
-                </div>
-              }
+        @if (menuActive() === 'inbox' || menuActive() === 'important') {
+          <div class="notif-dropdown" [class.notif-dropdown--open]="estadoDropdownOpen()" role="group" aria-label="Filtro por estado">
+            <button type="button" class="notif-dropdown-trigger" [class.notif-dropdown-trigger--active]="stateFilter() !== 'all'" (click)="toggleEstadoDropdown()">
+              <span>{{ stateFilter() === 'read' ? 'Leídas' : stateFilter() === 'unread' ? 'No leídas' : 'Estado' }}</span>
+            </button>
+            <div class="notif-dropdown-menu">
+              <button type="button" class="notif-dropdown-item" [class.notif-dropdown-item--active]="stateFilter() === 'all'" (click)="setEstadoFilter('all')">Todos</button>
+              <button type="button" class="notif-dropdown-item" [class.notif-dropdown-item--active]="stateFilter() === 'unread'" (click)="setEstadoFilter('unread')">No leídas</button>
+              <button type="button" class="notif-dropdown-item" [class.notif-dropdown-item--active]="stateFilter() === 'read'" (click)="setEstadoFilter('read')">Leídas</button>
             </div>
           </div>
         }
-
-        @if (n.destinatarios && n.destinatarios.length > 0) {
-          <div class="sesa-notif-destinatarios-section">
-            <h4>Destinatarios ({{ n.destinatarios.length }})</h4>
-            <div class="sesa-notif-destinatarios-list">
-              @for (d of n.destinatarios; track d.usuarioId) {
-                <div class="sesa-notif-dest-item">
-                  <span class="sesa-notif-dest-avatar">{{ (d.usuarioNombre || d.usuarioEmail || '?').charAt(0).toUpperCase() }}</span>
-                  <span class="sesa-notif-dest-name">{{ d.usuarioNombre || d.usuarioEmail }}</span>
-                  @if (d.leido) {
-                    <span class="sesa-notif-dest-leido">Leído</span>
-                  } @else {
-                    <span class="sesa-notif-dest-no-leido">No leído</span>
-                  }
-                </div>
-              }
-            </div>
-          </div>
+        @if (hasSelection()) {
+          <span class="notif-header-selection">{{ selectedCount() }} seleccionada(s)</span>
         }
       </div>
-    } @else {
-      <!-- ===== LISTA RECIBIDAS ===== -->
-      @if (tab() === 'recibidas') {
-        <div class="sesa-notif-list">
+      <button type="button" class="notif-btn-compose" (click)="openCompose()" aria-label="Nueva notificación">
+        <fa-icon [icon]="faPlus"></fa-icon>
+        Nueva notificación
+      </button>
+    </header>
+
+    @if (filterDropdownOpen() || sortDropdownOpen() || estadoDropdownOpen()) {
+      <div class="notif-dropdown-backdrop" (click)="closeDropdowns()" aria-hidden="true"></div>
+    }
+
+    <!-- Barra de acciones masivas -->
+    @if (hasSelection() && !selectedNotif()) {
+      <div class="notif-bulk-bar" role="toolbar" aria-label="Acciones sobre selección">
+        <span class="notif-bulk-count">{{ selectedCount() }} seleccionada(s)</span>
+        @if ((menuActive() === 'inbox' || menuActive() === 'important') && selectedCount() > 0) {
+          <button type="button" class="notif-bulk-btn notif-bulk-btn--primary" (click)="markSelectedAsRead()">
+            <fa-icon [icon]="faCheckDouble"></fa-icon>
+            Marcar como leídas
+          </button>
+          <button type="button" class="notif-bulk-btn notif-bulk-btn--outline" (click)="markSelectedAsUnread()">
+            <fa-icon [icon]="faEnvelope"></fa-icon>
+            Marcar como no leídas
+          </button>
+        }
+        <button type="button" class="notif-bulk-btn notif-bulk-btn--outline" (click)="archiveSelected()">
+          <fa-icon [icon]="faArchive"></fa-icon>
+          Archivar
+        </button>
+        <button type="button" class="notif-bulk-btn notif-bulk-btn--danger" (click)="deleteSelected()">
+          <fa-icon [icon]="faTrashCan"></fa-icon>
+          Eliminar
+        </button>
+        <button type="button" class="notif-bulk-btn notif-bulk-btn--secondary" (click)="clearSelection()">
+          Cancelar selección
+        </button>
+      </div>
+    }
+
+    <!-- Alertas -->
+    @if (error()) {
+      <div class="notif-alert notif-alert--error">
+        <span>{{ error() }}</span>
+        <button type="button" (click)="error.set(null)" aria-label="Cerrar">&times;</button>
+      </div>
+    }
+    @if (success()) {
+      <div class="notif-alert notif-alert--success">
+        <span>{{ success() }}</span>
+        <button type="button" (click)="success.set(null)" aria-label="Cerrar">&times;</button>
+      </div>
+    }
+
+    <!-- Content: lista siempre visible + panel detalle lateral (Slack/Linear) -->
+    <div class="notif-content" [class.notif-content--with-detail]="selectedNotif()">
+      <!-- Lista de notificaciones (siempre visible) -->
+      <div class="notif-list-wrap">
+          <div class="notif-list-header">
+            <label class="notif-check-all">
+              <input
+                type="checkbox"
+                [checked]="isAllSelected()"
+                (change)="toggleSelectAll($event)" />
+            </label>
+            <span class="notif-col notif-col--avatar"></span>
+            <span class="notif-col time">Fecha</span>
+            <span class="notif-col message">Mensaje</span>
+            <span class="notif-col notif-col--tag">Tipo</span>
+            <span class="notif-col notif-col--actions"></span>
+          </div>
+
           @if (loading()) {
-            <div class="sesa-notif-loading">
-              <div class="sesa-spinner"></div>
+            <div class="notif-loading">
+              <div class="notif-spinner"></div>
               <span>Cargando...</span>
             </div>
-          } @else if (recibidas().length === 0) {
-            <div class="sesa-notif-empty">
-              <fa-icon [icon]="faInbox" class="sesa-notif-empty-icon"></fa-icon>
-              <p>No tiene notificaciones recibidas.</p>
+          } @else if (filteredList().length === 0) {
+            <div class="notif-empty">
+              <div class="notif-empty-icon-wrap">
+                <fa-icon [icon]="faInbox" class="notif-empty-icon" aria-hidden="true"></fa-icon>
+              </div>
+              <p class="notif-empty-text">{{ emptyMessage() }}</p>
+              <button type="button" class="notif-empty-cta" (click)="openCompose()">
+                <fa-icon [icon]="faPlus"></fa-icon>
+                Nueva notificación
+              </button>
             </div>
           } @else {
-            @for (n of recibidas(); track n.id) {
-              <button class="sesa-notif-row" (click)="viewNotif(n)">
-                <div class="sesa-notif-row-left">
-                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-                  <span class="sesa-notif-row-avatar">{{ (n.remitenteNombre || '?').charAt(0).toUpperCase() }}</span>
-                </div>
-                <div class="sesa-notif-row-body">
-                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
-                  <div class="sesa-notif-row-from">{{ n.remitenteNombre || 'Sistema' }}</div>
-                </div>
-                <div class="sesa-notif-row-right">
-                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
-                  @if (n.adjuntos && n.adjuntos.length > 0) {
-                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
-                  }
-                </div>
-              </button>
+            @for (group of groupedByDate(); track group.key) {
+              <section class="notif-group" [attr.aria-label]="group.label">
+                <h3 class="notif-group-title">{{ group.label }}</h3>
+                @for (n of group.items; track n.id) {
+                  <div
+                    class="notif-row"
+                    [class.notif-row--unread]="isUnread(n)"
+                    [class.notif-row--urgent]="n.tipo === 'URGENTE'"
+                    [class.notif-row--selected]="selectedNotif()?.id === n.id"
+                    (click)="viewNotif(n)">
+                    <span class="notif-row-unread-bar" aria-hidden="true"></span>
+                    <label class="notif-row-check" (click)="$event.stopPropagation()">
+                      <input
+                        type="checkbox"
+                        [checked]="isListSelected(n.id)"
+                        (change)="toggleSelect(n.id, $event)" />
+                    </label>
+                    <div class="notif-row-avatar" [title]="n.remitenteNombre || '?'">
+                      {{ getInitial(n.remitenteNombre || '?') }}
+                    </div>
+                    <div class="notif-row-time">{{ n.fechaEnvio | date:'short' }}</div>
+                    <div class="notif-row-message">
+                      <strong class="notif-row-subject">{{ n.titulo }}</strong>
+                      <span class="notif-row-preview">{{ contentPreview(n) }}</span>
+                    </div>
+                    <span class="notif-row-tag" [class]="'notif-tag--' + (n.tipo | lowercase)">{{ n.tipo }}</span>
+                    <div class="notif-row-actions">
+                      @if ((menuActive() === 'inbox' || menuActive() === 'important') && isUnread(n)) {
+                        <button type="button" class="notif-row-action" (click)="quickMarkAsRead(n, $event)" title="Marcar como leída" aria-label="Marcar como leída">
+                          <fa-icon [icon]="faCheckDouble"></fa-icon>
+                        </button>
+                      }
+                      <button type="button" class="notif-row-action" (click)="quickMarkImportant(n, $event)" title="Marcar como importante" aria-label="Marcar como importante">
+                        <fa-icon [icon]="faStar"></fa-icon>
+                      </button>
+                      <button type="button" class="notif-row-action" (click)="quickDelete(n, $event)" title="Eliminar" aria-label="Eliminar">
+                        <fa-icon [icon]="faTrashCan"></fa-icon>
+                      </button>
+                      <button type="button" class="notif-row-action" (click)="viewNotif(n); $event.stopPropagation()" title="Más opciones / Abrir detalle" aria-label="Abrir detalle">
+                        <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+                      </button>
+                      @if (n.adjuntos && n.adjuntos.length > 0) {
+                        <span class="notif-row-clip" title="Adjuntos"><fa-icon [icon]="faPaperclip"></fa-icon> {{ n.adjuntos.length }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </section>
             }
           }
-        </div>
-      }
 
-      <!-- ===== LISTA ENVIADAS ===== -->
-      @if (tab() === 'enviadas') {
-        <div class="sesa-notif-list">
-          @if (loading()) {
-            <div class="sesa-notif-loading">
-              <div class="sesa-spinner"></div>
-              <span>Cargando...</span>
+          @if (totalElements() > pageSize) {
+            <div class="notif-pagination">
+              <span class="notif-pagination-info">
+                Mostrando {{ (currentPage() * pageSize) + 1 }}–{{ min((currentPage() + 1) * pageSize, totalElements()) }} de {{ totalElements() }}
+              </span>
+              <div class="notif-pagination-btns">
+                <button type="button" [disabled]="currentPage() === 0" (click)="goToPage(0)">&laquo;</button>
+                <button type="button" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">&lsaquo;</button>
+                <span class="notif-pagination-num">{{ currentPage() + 1 }}</span>
+                <button type="button" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(currentPage() + 1)">&rsaquo;</button>
+                <button type="button" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(totalPages() - 1)">&raquo;</button>
+              </div>
             </div>
-          } @else if (enviadas().length === 0) {
-            <div class="sesa-notif-empty">
-              <fa-icon [icon]="faPaperPlane" class="sesa-notif-empty-icon"></fa-icon>
-              <p>No ha enviado notificaciones.</p>
-            </div>
-          } @else {
-            @for (n of enviadas(); track n.id) {
-              <button class="sesa-notif-row" (click)="viewNotif(n)">
-                <div class="sesa-notif-row-left">
-                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-                </div>
-                <div class="sesa-notif-row-body">
-                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
-                  <div class="sesa-notif-row-from">Para: {{ n.destinatarios?.length || 0 }} destinatarios</div>
-                </div>
-                <div class="sesa-notif-row-right">
-                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
-                  @if (n.adjuntos && n.adjuntos.length > 0) {
-                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
-                  }
-                </div>
-              </button>
-            }
           }
         </div>
-      }
 
-      <!-- ===== REDACTAR ===== -->
-      @if (tab() === 'redactar') {
-        <div class="sesa-notif-compose">
-          <form [formGroup]="form" (ngSubmit)="send()" class="sesa-notif-compose-form">
-            <div class="sesa-notif-compose-left">
-              <div class="sesa-field">
-                <label class="sesa-label">Título *</label>
-                <input class="sesa-input" formControlName="titulo" placeholder="Asunto de la notificación" />
-              </div>
-
-              <div class="sesa-field">
-                <label class="sesa-label">Tipo</label>
-                <select class="sesa-input" formControlName="tipo">
-                  <option value="GENERAL">General</option>
-                  <option value="URGENTE">Urgente</option>
-                  <option value="INFORMATIVO">Informativo</option>
-                </select>
-              </div>
-
-              <div class="sesa-field sesa-field--grow">
-                <label class="sesa-label">Contenido *</label>
-                <textarea
-                  class="sesa-input sesa-textarea"
-                  formControlName="contenido"
-                  placeholder="Escriba el contenido de la notificación (admite HTML)..."
-                  rows="10"></textarea>
-              </div>
-
-              <div class="sesa-field">
-                <label class="sesa-label">Adjuntos</label>
-                <div class="sesa-adjuntos-upload">
-                  <label class="sesa-upload-btn">
-                    <input type="file" multiple (change)="onFilesSelected($event)" hidden />
-                    <fa-icon [icon]="faPaperclip"></fa-icon>
-                    <span> Agregar archivos</span>
-                  </label>
-                  @if (adjuntos.length > 0) {
-                    <div class="sesa-adjuntos-list">
-                      @for (f of adjuntos; track $index) {
-                        <div class="sesa-adjunto-chip">
-                          <span>{{ f.name }} ({{ formatFileSize(f.size) }})</span>
-                          <button type="button" (click)="removeAdjunto($index)">&times;</button>
-                        </div>
+      <!-- Panel de detalle lateral derecho (Slack/Linear) -->
+      @if (selectedNotif(); as n) {
+        <aside class="notif-detail-panel" role="complementary" aria-label="Detalle de notificación">
+          <div class="notif-detail-panel-inner">
+            <div class="notif-detail-header">
+              <button type="button" class="notif-detail-close" (click)="closeDetail()" aria-label="Cerrar detalle">
+                <fa-icon [icon]="faTimes"></fa-icon>
+              </button>
+            </div>
+            <h1 class="notif-detail-title">{{ n.titulo }}</h1>
+            <div class="notif-detail-meta">
+              <span class="notif-detail-tag" [class]="'notif-tag--' + (n.tipo | lowercase)">{{ n.tipo }}</span>
+              <span class="notif-detail-from">De: <strong>{{ n.remitenteNombre || 'Sistema' }}</strong></span>
+              <span class="notif-detail-date">{{ n.fechaEnvio | date:'medium' }}</span>
+              @if ((menuActive() === 'inbox' || menuActive() === 'important') && !isUnread(n)) {
+                <button type="button" class="notif-detail-action" (click)="markAsUnread(n)">
+                  <fa-icon [icon]="faEnvelope"></fa-icon>
+                  Marcar como no leída
+                </button>
+              }
+            </div>
+            <div class="notif-detail-body" [innerHTML]="n.contenido"></div>
+            @if (n.adjuntos && n.adjuntos.length > 0) {
+              <section class="notif-detail-adjuntos">
+                <h3>Adjuntos ({{ n.adjuntos.length }})</h3>
+                <div class="notif-adjuntos-grid">
+                  @for (adj of n.adjuntos; track adj.id) {
+                    <div class="notif-adjunto-card">
+                      @if (isImageType(adj.contentType)) {
+                        <img [src]="adjuntoPreviewUrl(n.id, adj.id)" [alt]="adj.nombreArchivo" class="notif-adjunto-preview" />
+                      } @else if (isVideoType(adj.contentType)) {
+                        <video [src]="adjuntoPreviewUrl(n.id, adj.id)" class="notif-adjunto-preview" controls></video>
+                      } @else {
+                        <div class="notif-adjunto-icon"><fa-icon [icon]="faPaperclip"></fa-icon></div>
+                      }
+                      <div class="notif-adjunto-info">
+                        <span class="notif-adjunto-name">{{ adj.nombreArchivo }}</span>
+                        @if (adj.tamano) {
+                          <span class="notif-adjunto-size">{{ formatFileSize(adj.tamano) }}</span>
+                        }
+                      </div>
+                      <div class="notif-adjunto-actions">
+                        <button type="button" class="notif-adjunto-dl" (click)="downloadFile(n.id, adj)">Descargar</button>
+                        @if (isRemitente(n)) {
+                          <button type="button" class="notif-adjunto-delete" (click)="deleteAdjunto(n.id, adj)" [title]="'Eliminar ' + adj.nombreArchivo">
+                            <fa-icon [icon]="faTrashCan"></fa-icon>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+            @if (n.destinatarios && n.destinatarios.length > 0) {
+              <section class="notif-detail-destinatarios">
+                <h3>Destinatarios ({{ n.destinatarios.length }})</h3>
+                <div class="notif-dest-list">
+                  @for (d of n.destinatarios; track d.usuarioId) {
+                    <div class="notif-dest-item">
+                      <span class="notif-dest-avatar">{{ getInitial(d.usuarioNombre || d.usuarioEmail || '?') }}</span>
+                      <span class="notif-dest-name">{{ d.usuarioNombre || d.usuarioEmail }}</span>
+                      @if (d.leido) {
+                        <span class="notif-dest-leido">Leído</span>
+                      } @else {
+                        <span class="notif-dest-noleido">No leído</span>
                       }
                     </div>
                   }
                 </div>
-              </div>
+              </section>
+            }
+          </div>
+        </aside>
+      }
+    </div>
+  </main>
+</div>
+
+<!-- Panel Redactar (overlay) -->
+@if (composeOpen()) {
+  <div class="notif-compose-backdrop" (click)="closeComposeWithConfirm()" aria-hidden="true"></div>
+  <div class="notif-compose-panel" role="dialog" aria-labelledby="compose-title" aria-modal="true">
+    <header class="notif-compose-header">
+      <h2 id="compose-title">Redactar notificación</h2>
+      <button type="button" class="notif-compose-close" (click)="closeComposeWithConfirm()" aria-label="Cerrar">
+        <fa-icon [icon]="faTimes"></fa-icon>
+      </button>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="send()" class="notif-compose-form">
+      <div class="notif-compose-body">
+        <div class="notif-compose-main">
+          <div class="notif-field">
+            <label class="notif-label" for="compose-titulo">Asunto *</label>
+            <div class="notif-input-wrap">
+              <input
+                id="compose-titulo"
+                class="notif-input"
+                formControlName="titulo"
+                (input)="onComposeFormChange()"
+                placeholder="Asunto de la notificación"
+                [attr.maxlength]="subjectMaxLength" />
+              <span class="notif-char-count">{{ subjectLength() }}/{{ subjectMaxLength }}</span>
             </div>
-
-            <div class="sesa-notif-compose-right">
-              <label class="sesa-label">Destinatarios *</label>
-
-              <!-- ADMIN: toggle "Enviar a todos" -->
-              @if (isAdmin && !isSuperAdmin) {
-                <label class="sesa-dest-broadcast-toggle">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="broadcastTodos"
-                    [ngModelOptions]="{ standalone: true }"
-                    (change)="onBroadcastTodosChange()" />
-                  <span>
-                    <fa-icon [icon]="faBullhorn"></fa-icon>
-                    Enviar a <strong>todos</strong> los usuarios de esta empresa
-                  </span>
+          </div>
+          <div class="notif-field">
+            <label class="notif-label">Tipo</label>
+            <select class="notif-input" formControlName="tipo" (change)="onComposeFormChange()">
+              <option value="GENERAL">General</option>
+              <option value="URGENTE">Urgente</option>
+              <option value="INFORMATIVO">Informativo</option>
+            </select>
+          </div>
+          <div class="notif-field notif-field--editor">
+            <label class="notif-label">Mensaje *</label>
+            <div class="notif-editor-toolbar">
+              <button type="button" class="notif-editor-btn" (click)="execCmd('bold')" title="Negrita">
+                <fa-icon [icon]="faBold"></fa-icon>
+              </button>
+              <button type="button" class="notif-editor-btn" (click)="execCmd('italic')" title="Cursiva">
+                <fa-icon [icon]="faItalic"></fa-icon>
+              </button>
+              <button type="button" class="notif-editor-btn" (click)="execCmd('insertUnorderedList')" title="Lista">
+                <fa-icon [icon]="faListUl"></fa-icon>
+              </button>
+              <button type="button" class="notif-editor-btn" (click)="execCmd('insertOrderedList')" title="Lista numerada">
+                <fa-icon [icon]="faListOl"></fa-icon>
+              </button>
+              <button type="button" class="notif-editor-btn" (click)="execCmd('createLink')" title="Enlace">
+                <fa-icon [icon]="faLink"></fa-icon>
+              </button>
+            </div>
+            <div
+              class="notif-editor-content"
+              contenteditable="true"
+              [innerHTML]="form.get('contenido')?.value || ''"
+              (input)="onEditorInput($event)"
+              (blur)="syncEditorToForm()"
+              placeholder="Escriba el contenido (puede usar formato en negrita, listas, etc.)"></div>
+            @if (form.get('contenido')?.invalid && form.get('contenido')?.touched) {
+              <span class="notif-field-error">El contenido es obligatorio.</span>
+            }
+          </div>
+          <div class="notif-field">
+            <label class="notif-label">Adjuntos</label>
+            <div class="notif-upload-zone" (click)="fileInput.click()" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+              <input #fileInput type="file" multiple (change)="onFilesSelected($event)" class="notif-file-input" />
+              <fa-icon [icon]="faPaperclip" class="notif-upload-icon"></fa-icon>
+              <span>Arrastre archivos aquí o haga clic para seleccionar</span>
+            </div>
+            @if (adjuntos.length > 0) {
+              <ul class="notif-adjuntos-list">
+                @for (f of adjuntos; track $index) {
+                  <li class="notif-adjunto-item">
+                    <span>{{ f.name }} ({{ formatFileSize(f.size) }})</span>
+                    <button type="button" (click)="removeAdjunto($index)" aria-label="Quitar">&times;</button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+        <div class="notif-compose-sidebar">
+          <label class="notif-label">Destinatarios *</label>
+          @if (isAdmin && !isSuperAdmin) {
+            <label class="notif-broadcast-toggle">
+              <input type="checkbox" [(ngModel)]="broadcastTodos" [ngModelOptions]="{ standalone: true }" (change)="onBroadcastTodosChange()" />
+              <span><fa-icon [icon]="faBullhorn"></fa-icon> Enviar a <strong>todos</strong> los usuarios</span>
+            </label>
+          }
+          @if (!broadcastTodos && !isSuperAdmin) {
+            <div class="notif-dest-toolbar">
+              <input
+                class="notif-input notif-dest-search"
+                [(ngModel)]="searchDestinatarios"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Buscar..." />
+              <button type="button" class="notif-btn-sm" (click)="selectAll()">Todos</button>
+              <button type="button" class="notif-btn-sm" (click)="deselectAll()">Ninguno</button>
+            </div>
+            <div class="notif-dest-list-scroll">
+              @for (u of filteredDestinatarios(); track u.id) {
+                <label class="notif-dest-option" [class.notif-dest-option--selected]="isSelected(u.id)">
+                  <input type="checkbox" [checked]="isSelected(u.id)" (change)="toggleDestinatario(u.id)" />
+                  <span class="notif-dest-option-name">{{ u.nombre || u.email }}</span>
+                  @if (u.rol) {
+                    <span class="notif-dest-option-rol">{{ u.rol }}</span>
+                  }
                 </label>
               }
-
-              <!-- Selector individual (oculto si broadcastTodos o si es SUPERADMIN usando broadcast-admins) -->
-              @if (!broadcastTodos && !isSuperAdmin) {
-                <div class="sesa-dest-toolbar">
-                  <input
-                    class="sesa-input sesa-dest-search"
-                    [(ngModel)]="searchDestinatarios"
-                    [ngModelOptions]="{ standalone: true }"
-                    placeholder="Buscar destinatario…" />
-                  <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
-                  <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
-                </div>
-                <div class="sesa-dest-grid">
-                  @for (u of filteredDestinatarios(); track u.id) {
-                    <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
-                      <input
-                        type="checkbox"
-                        [checked]="isSelected(u.id)"
-                        (change)="toggleDestinatario(u.id)" />
-                      <div class="sesa-dest-option-info">
-                        <span class="sesa-dest-option-name">{{ u.nombre || u.email }}</span>
-                        <span class="sesa-dest-option-email">{{ u.email }}</span>
-                        @if (u.rol) {
-                          <span class="sesa-dest-option-rol">{{ u.rol }}</span>
-                        }
-                      </div>
-                    </label>
-                  }
-                  @if (filteredDestinatarios().length === 0) {
-                    <p class="sesa-dest-empty">No se encontraron usuarios.</p>
-                  }
-                </div>
-                <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
-              }
-
-              @if (broadcastTodos) {
-                <p class="sesa-dest-broadcast-info">
-                  <fa-icon [icon]="faBullhorn"></fa-icon>
-                  Se enviará a <strong>todos los usuarios activos</strong> de esta empresa.
-                </p>
-              }
-
-              <!-- SUPERADMIN: panel broadcast a admins de todas las empresas -->
-              @if (isSuperAdmin) {
-                <div class="sesa-dest-superadmin">
-                  <p class="sesa-dest-superadmin-info">
-                    Como <strong>Super Administrador</strong> puede enviar esta notificación
-                    al usuario Administrador de <strong>cada empresa registrada</strong>.
-                  </p>
-                  <p class="sesa-dest-superadmin-note">
-                    Use el botón «Enviar a todos los administradores» en la parte inferior.
-                    <br/>También puede enviar individualmente a usuarios de su propio schema.
-                  </p>
-                  <div class="sesa-dest-toolbar">
-                    <input
-                      class="sesa-input sesa-dest-search"
-                      [(ngModel)]="searchDestinatarios"
-                      [ngModelOptions]="{ standalone: true }"
-                      placeholder="Buscar usuario en schema propio…" />
-                    <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
-                    <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
-                  </div>
-                  <div class="sesa-dest-grid">
-                    @for (u of filteredDestinatarios(); track u.id) {
-                      <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
-                        <input
-                          type="checkbox"
-                          [checked]="isSelected(u.id)"
-                          (change)="toggleDestinatario(u.id)" />
-                        <div class="sesa-dest-option-info">
-                          <span class="sesa-dest-option-name">{{ u.nombre || u.email }}</span>
-                          <span class="sesa-dest-option-email">{{ u.email }}</span>
-                        </div>
-                      </label>
-                    }
-                  </div>
-                  @if (selectedIds.size > 0) {
-                    <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
-                  }
-                </div>
+            </div>
+            <div class="notif-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+          }
+          @if (isSuperAdmin) {
+            <p class="notif-superadmin-info">Como Super Administrador puede enviar a todos los admins desde el botón inferior.</p>
+            <div class="notif-dest-toolbar">
+              <input class="notif-input notif-dest-search" [(ngModel)]="searchDestinatarios" [ngModelOptions]="{ standalone: true }" placeholder="Buscar en su schema..." />
+              <button type="button" class="notif-btn-sm" (click)="selectAll()">Todos</button>
+              <button type="button" class="notif-btn-sm" (click)="deselectAll()">Ninguno</button>
+            </div>
+            <div class="notif-dest-list-scroll">
+              @for (u of filteredDestinatarios(); track u.id) {
+                <label class="notif-dest-option" [class.notif-dest-option--selected]="isSelected(u.id)">
+                  <input type="checkbox" [checked]="isSelected(u.id)" (change)="toggleDestinatario(u.id)" />
+                  <span class="notif-dest-option-name">{{ u.nombre || u.email }}</span>
+                </label>
               }
             </div>
-
-            <div class="sesa-notif-compose-actions">
-              <!-- Envío estándar (todos los roles) -->
-              @if (!isSuperAdmin || selectedIds.size > 0) {
-                <button type="submit" class="sesa-btn sesa-btn--primary" [disabled]="loading()">
-                  @if (loading()) {
-                    <span class="sesa-spinner-sm"></span> Enviando…
-                  } @else {
-                    <fa-icon [icon]="faPaperPlane"></fa-icon>
-                    {{ broadcastTodos ? 'Enviar a todos' : 'Enviar notificación' }}
-                  }
-                </button>
-              }
-
-              <!-- Broadcast a admins (solo SUPERADMIN) -->
-              @if (isSuperAdmin) {
-                <button
-                  type="button"
-                  class="sesa-btn sesa-btn--broadcast"
-                  [disabled]="loading()"
-                  (click)="broadcastAdmins()">
-                  @if (loading()) {
-                    <span class="sesa-spinner-sm"></span> Enviando…
-                  } @else {
-                    <fa-icon [icon]="faBullhorn"></fa-icon>
-                    Enviar a todos los administradores
-                  }
-                </button>
-              }
-            </div>
-          </form>
+            @if (selectedIds.size > 0) {
+              <div class="notif-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
+            }
+          }
         </div>
-      }
-    }
+      </div>
+      <footer class="notif-compose-footer">
+        @if (!isSuperAdmin || selectedIds.size > 0) {
+          <button type="submit" class="notif-btn notif-btn--primary" [disabled]="loading()">
+            @if (loading()) {
+              <span class="notif-spinner-sm"></span> Enviando…
+            } @else {
+              <fa-icon [icon]="faPaperPlane"></fa-icon>
+              {{ broadcastTodos ? 'Enviar a todos' : 'Enviar' }}
+            }
+          </button>
+        }
+        @if (isSuperAdmin) {
+          <button type="button" class="notif-btn notif-btn--broadcast" [disabled]="loading()" (click)="broadcastAdmins()">
+            @if (loading()) {
+              <span class="notif-spinner-sm"></span> Enviando…
+            } @else {
+              <fa-icon [icon]="faBullhorn"></fa-icon>
+              Enviar a todos los administradores
+            }
+          </button>
+        }
+        <button type="button" class="notif-btn notif-btn--secondary" (click)="closeComposeWithConfirm()">Cancelar</button>
+      </footer>
+    </form>
   </div>
-</div>
+}

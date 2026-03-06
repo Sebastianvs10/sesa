@@ -1,0 +1,294 @@
+/* Portal del Paciente — Layout Shell (topbar + bottomnav) */
+/* Autor: Ing. J Sebastian Vargas S */
+
+// ─── Variables del Portal ──────────────────────────────────────────────────
+:host {
+  display: block;
+  height: 100%;
+}
+
+// ─── Shell ─────────────────────────────────────────────────────────────────
+.portal-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  min-height: 100vh;
+  background: var(--sesa-bg);
+  position: relative;
+  overflow: hidden;
+
+  // Safe area para iOS notch / Dynamic Island
+  &.ios-device {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+// ─── Top Bar ───────────────────────────────────────────────────────────────
+.portal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--sesa-topbar-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--sesa-border);
+  padding: env(safe-area-inset-top) 0 0;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    max-width: 700px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__logo-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--portal-accent), var(--portal-accent-2));
+    box-shadow: 0 4px 12px var(--portal-accent-shadow);
+    flex-shrink: 0;
+  }
+
+  &__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &__name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+  }
+
+  &__sub {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--portal-accent);
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__icon-btn {
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: var(--sesa-surface);
+    color: var(--sesa-text-secondary);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--sesa-transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+
+    &:active {
+      transform: scale(0.93);
+      background: var(--sesa-border);
+    }
+
+    &--notif::after {
+      content: '';
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      background: var(--sesa-error);
+      border-radius: 50%;
+      border: 2px solid var(--sesa-surface);
+    }
+  }
+}
+
+// ─── Main Content ──────────────────────────────────────────────────────────
+.portal-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+
+  // Scrollbar oculto en móvil
+  &::-webkit-scrollbar { display: none; }
+  scrollbar-width: none;
+}
+
+// ─── Bottom Navigation ─────────────────────────────────────────────────────
+.portal-bottomnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  background: var(--sesa-topbar-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--sesa-border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--sesa-text-muted);
+    padding: 8px 4px;
+    transition: color var(--sesa-transition-fast);
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+
+    &:active {
+      .portal-bottomnav__icon {
+        transform: scale(0.88);
+      }
+    }
+
+    &--active {
+      color: var(--portal-accent);
+
+      .portal-bottomnav__indicator {
+        opacity: 1;
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      .portal-bottomnav__icon {
+        filter: drop-shadow(0 0 6px var(--portal-accent-shadow));
+      }
+
+      .portal-bottomnav__label {
+        font-weight: 600;
+      }
+    }
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--sesa-transition-fast);
+    line-height: 1;
+
+    svg { display: block; }
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+  }
+
+  &__indicator {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 28px;
+    height: 3px;
+    background: var(--portal-accent);
+    border-radius: 0 0 4px 4px;
+    opacity: 0;
+    transition: all var(--sesa-transition-normal);
+    transform-origin: center;
+  }
+}
+
+// ─── Responsive — tablet/desktop muestra sidebar en vez de bottomnav ───────
+@media (min-width: 768px) {
+  .portal-shell {
+    flex-direction: row;
+  }
+
+  .portal-topbar {
+    display: none;
+  }
+
+  .portal-bottomnav {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    left: 0;
+    width: 80px;
+    height: 100dvh;
+    height: 100vh;
+    flex-direction: column;
+    border-top: none;
+    border-right: 1px solid var(--sesa-border);
+    padding-bottom: 0;
+    padding-top: 24px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+
+    &::before {
+      content: '';
+      display: block;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--portal-accent), var(--portal-accent-2));
+      border-radius: 14px;
+      margin: 0 auto 24px;
+      flex-shrink: 0;
+    }
+
+    &__item {
+      flex: 0;
+      width: 100%;
+      padding: 14px 4px;
+      border-radius: 0;
+      gap: 6px;
+    }
+
+    &__indicator {
+      top: 50%;
+      left: 0;
+      bottom: auto;
+      transform: translate(0, -50%) scaleY(0);
+      width: 3px;
+      height: 28px;
+      border-radius: 0 4px 4px 0;
+      transform-origin: center;
+    }
+
+    &__item--active .portal-bottomnav__indicator {
+      transform: translate(0, -50%) scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .portal-main {
+    flex: 1;
+    padding-bottom: 0;
+  }
+}

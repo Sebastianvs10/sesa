@@ -1,0 +1,397 @@
+/* Portal del Paciente — Dashboard / Inicio */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.portal-home {
+  padding: 0 0 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+// ─── Hero / Saludo ─────────────────────────────────────────────────────────
+.portal-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 20px 20px;
+  background: linear-gradient(135deg, var(--portal-accent) 0%, var(--portal-accent-2) 100%);
+  color: #fff;
+
+  &__bg-blur {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.12) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  &__content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  &__avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+    backdrop-filter: blur(8px);
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__greeting {
+    font-size: 13px;
+    opacity: 0.85;
+    margin: 0 0 2px;
+    font-weight: 500;
+  }
+
+  &__name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.4px;
+  }
+
+  &__date {
+    font-size: 12px;
+    opacity: 0.75;
+    margin: 0;
+    text-transform: capitalize;
+  }
+
+  // Próxima cita pill
+  &__prox-cita {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-top: 4px;
+  }
+
+  &__prox-cita-icon {
+    width: 30px;
+    height: 30px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__prox-cita-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__prox-cita-label {
+    font-size: 10px;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  &__prox-cita-val {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__prox-cita-badge {
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 3px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Stats Cards ───────────────────────────────────────────────────────────
+.portal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.portal-stat-card {
+  background: var(--sesa-surface);
+  border-radius: 16px;
+  border: 1px solid var(--sesa-border);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--sesa-text-primary);
+  transition: all var(--sesa-transition-fast);
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &--hc::before { background: var(--portal-accent); }
+  &--lab::before { background: var(--sesa-success); }
+  &--ord::before { background: var(--portal-purple); }
+
+  &--skeleton {
+    pointer-events: none;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    min-height: 80px;
+  }
+
+  &__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &--hc &__icon { background: var(--portal-accent-alpha); color: var(--portal-accent); }
+  &--lab &__icon { background: rgba(34,197,94,0.12); color: var(--sesa-success); }
+  &--ord &__icon { background: var(--portal-purple-alpha); color: var(--portal-purple); }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__val {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.5px;
+    color: var(--sesa-text-primary);
+  }
+
+  &__label {
+    font-size: 11px;
+    color: var(--sesa-text-secondary);
+    font-weight: 500;
+  }
+
+  &__arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--sesa-text-muted);
+    opacity: 0.6;
+  }
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────
+.portal-section {
+  padding: 4px 20px 8px;
+
+  &__title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    margin: 0 0 12px;
+    letter-spacing: -0.2px;
+  }
+}
+
+// ─── Última Consulta Card ─────────────────────────────────────────────────
+.portal-consulta-card {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__avatar {
+    width: 38px;
+    height: 38px;
+    background: var(--portal-accent-alpha);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--portal-accent);
+    flex-shrink: 0;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__medico {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+  }
+
+  &__fecha {
+    font-size: 12px;
+    color: var(--sesa-text-secondary);
+  }
+
+  &__motivo {
+    font-size: 13px;
+    color: var(--sesa-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  &__dx {
+    background: var(--sesa-bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__dx-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: var(--sesa-text-muted);
+  }
+
+  &__dx-val {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sesa-text-primary);
+  }
+}
+
+// ─── Quick Links ──────────────────────────────────────────────────────────
+.portal-quicklinks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.portal-quicklink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--sesa-text-primary);
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    .portal-quicklink__icon { transform: scale(0.92); }
+  }
+
+  &__icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--sesa-transition-fast);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+    &--blue { background: var(--portal-accent-alpha); color: var(--portal-accent); }
+    &--green { background: rgba(34,197,94,0.12); color: var(--sesa-success); }
+    &--purple { background: var(--portal-purple-alpha); color: var(--portal-purple); }
+    &--orange { background: rgba(245,158,11,0.12); color: var(--sesa-warning); }
+  }
+
+  span {
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    color: var(--sesa-text-secondary);
+    line-height: 1.3;
+  }
+}
+
+// ─── Error Banner ─────────────────────────────────────────────────────────
+.portal-error-banner {
+  margin: 8px 20px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sesa-error);
+
+  span { flex: 1; }
+
+  button {
+    background: var(--sesa-error);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+}
+
+// ─── Skeleton Loader ──────────────────────────────────────────────────────
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

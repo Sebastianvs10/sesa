@@ -444,3 +444,32 @@
   background: var(--sesa-surface);
 }
 
+/* Resumen EBS (hooks para métricas futuras) */
+.sesa-dashboard-ebs-card {
+  margin-top: 1rem;
+}
+
+.sesa-dashboard-ebs-hooks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sesa-dashboard-ebs-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sesa-dashboard-ebs-metric-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--sesa-secondary);
+}
+
+.sesa-dashboard-ebs-metric-label {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+

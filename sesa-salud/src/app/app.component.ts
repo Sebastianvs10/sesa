@@ -27,6 +27,7 @@ import {
   faUserDoctor,
   faTooth,
   faUserTie,
+  faMapLocationDot,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from './core/services/auth.service';
 import { EmpresaCurrentService } from './core/services/empresa-current.service';
@@ -127,6 +128,7 @@ const SIDEBAR_CATALOG: SidebarSection[] = [
       { codigo: 'EVOLUCION_ENFERMERIA',label: 'Evolución Enfermería',   route: '/evolucion-enfermeria',  icon: faHeartPulse },
       { codigo: 'CONSULTA_MEDICA',     label: 'Consulta Médica',        route: '/consulta-medica',       icon: faUserDoctor },
       { codigo: 'ODONTOLOGIA',         label: 'Odontología',            route: '/odontologia',           icon: faTooth },
+      { codigo: 'EBS',                 label: 'Equipos Básicos de Salud (EBS)', route: '/ebs', icon: faMapLocationDot },
     ],
   },
   {
@@ -246,14 +248,27 @@ export class AppComponent implements OnInit, OnDestroy {
       this.permissions.load(this.authService.rolActivo());
       this.empresaCurrent.load();
       this.loadNotifications();
-      this.notificationsSubscription = interval(30_000).subscribe(() => this.loadNotifications());
+      // Refrescar contador de notificaciones cada 15 s y al volver a la pestaña
+      this.notificationsSubscription = interval(15_000).subscribe(() => this.loadNotifications());
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', this.onVisibilityChange);
+      }
       // Activar cierre de sesión automático por inactividad
       this.idleTimeout.start();
     }
   }
 
+  private onVisibilityChange = (): void => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible' && this.authService.isAuthenticated()) {
+      this.loadNotifications();
+    }
+  };
+
   ngOnDestroy(): void {
     this.notificationsSubscription?.unsubscribe();
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    }
     this.idleTimeout.stop();
   }
 
@@ -289,8 +304,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.navigate(['/notificaciones']);
   }
 
-  get isLoginRoute(): boolean {
-    return this.router.url.startsWith('/login');
+  /** Muestra el shell (sidebar, topbar) solo si está autenticado y no está en /login. Evita ver el dashboard al recargar en /login. */
+  get showAppShell(): boolean {
+    return this.authService.isAuthenticated() && !this.router.url.startsWith('/login');
   }
 
   get userInitials(): string {
@@ -322,6 +338,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.permissions.load(rol);
   }
 
+  /** Texto plano para previsualización de notificación (sin etiquetas HTML). */
+  notifPreview(html: string | undefined, maxLen = 80): string {
+    if (!html || typeof html !== 'string') return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = (div.textContent || div.innerText || '').trim().replace(/\s+/g, ' ');
+    if (text.length <= maxLen) return text;
+    return text.slice(0, maxLen) + '…';
+  }
+
   /** Etiqueta legible para un rol técnico. */
   rolLabel(rol: string): string {
     const map: Record<string, string> = {
@@ -337,6 +363,9 @@ export class AppComponent implements OnInit, OnDestroy {
       PSICOLOGO:           'Psicólogo',
       REGENTE_FARMACIA:    'Regente de Farmacia',
       RECEPCIONISTA:       'Recepcionista',
+      EBS:                 'Profesional EBS',
+      COORDINADOR_TERRITORIAL: 'Coordinador Territorial',
+      SUPERVISOR_APS:      'Supervisor APS',
     };
     return map[rol] ?? rol;
   }

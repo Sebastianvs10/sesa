@@ -81,6 +81,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/health", "/sync/status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/recetas/verificar/**").permitAll()
+                        // Videoconsulta: unirse por enlace y señalización sin login (enlace compartido)
+                        .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/videoconsulta/salas/*/signaling").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*/signaling").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/videoconsulta/salas/*/habilitar-asistente").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/videoconsulta/salas/*/consentimiento-asistente").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/videoconsulta/salas/*/notas").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*/notas").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*/validar-asistente").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*/solicitud-asistente-pendiente").permitAll()
                         // GET /archivos/{uuid} es público; la validación de acceso privado
                         // se hace a nivel de negocio en ArchivoController con el flag acceso_publico
                         .requestMatchers(HttpMethod.GET, "/archivos/**").permitAll()

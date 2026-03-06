@@ -1,0 +1,181 @@
+<section class="sesa-page ebs-page">
+  <header class="ebs-header">
+    <div class="ebs-header-left">
+      <div class="ebs-header-icon" aria-hidden="true">APS</div>
+      <div>
+        <h1 class="ebs-title">Equipos Básicos de Salud (EBS)</h1>
+        <p class="ebs-subtitle">
+          Gestión territorial, visitas domiciliarias y riesgo poblacional bajo APS.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="ebs-layout">
+    <aside class="ebs-sidebar">
+      <sesa-card
+        title="Microterritorios"
+        subtitle="Asignados al equipo EBS actual"
+        alignHeader="start"
+      >
+        @if (loadingTerritories()) {
+          <div class="ebs-territories-skeleton">
+            @for (sk of [1, 2, 3, 4]; track sk) {
+              <div class="ebs-territory-skeleton-row">
+                <sesa-skeleton width="60%" height="0.9rem" />
+                <sesa-skeleton width="40%" height="0.7rem" />
+              </div>
+            }
+          </div>
+        } @else if (territories().length === 0) {
+          <sesa-empty-state
+            icon="search"
+            title="Sin microterritorios"
+            message="Aún no hay microterritorios configurados para tu equipo EBS."
+            [compact]="true"
+          />
+        } @else {
+          <div class="ebs-filters">
+            <label class="ebs-filter">
+              <span>Nivel de riesgo</span>
+              <select
+                class="ebs-select"
+                [ngModel]="riskFilter"
+                (ngModelChange)="riskFilter = $event; reloadHouseholds()"
+              >
+                <option value="TODOS">Todos</option>
+                <option value="MUY_ALTO">Muy alto</option>
+                <option value="ALTO">Alto</option>
+                <option value="MEDIO">Medio</option>
+                <option value="BAJO">Bajo</option>
+              </select>
+            </label>
+          </div>
+
+          <ul class="ebs-territory-list">
+            @for (t of territories(); track t.id) {
+              <li
+                class="ebs-territory-item"
+                [class.ebs-territory-item--active]="selectedTerritoryId() === t.id"
+                (click)="selectTerritory(t.id)"
+              >
+                <div class="ebs-territory-main">
+                  <span class="ebs-territory-name">{{ t.name }}</span>
+                  <span class="ebs-territory-code">{{ t.code }}</span>
+                </div>
+                <div class="ebs-territory-metrics">
+                  <span class="ebs-chip ebs-chip-muted">
+                    {{ t.visitedHouseholdsCount }}/{{ t.householdsCount }} hogares visitados
+                  </span>
+                  @if (t.highRiskHouseholdsCount > 0) {
+                    <span class="ebs-chip ebs-chip-danger">
+                      {{ t.highRiskHouseholdsCount }} hogares de alto riesgo
+                    </span>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </sesa-card>
+    </aside>
+
+    <main class="ebs-main">
+      <sesa-card
+        [title]="selectedTerritory()?.name || 'Hogares'"
+        [subtitle]="
+          selectedTerritory()
+            ? 'Hogares georreferenciados y estado de visitas para el microterritorio seleccionado.'
+            : 'Selecciona un microterritorio para ver sus hogares y programar visitas.'
+        "
+        alignHeader="start"
+      >
+        @if (!selectedTerritory()) {
+          <sesa-empty-state
+            icon="search"
+            title="Selecciona un microterritorio"
+            message="Elige un microterritorio en la columna izquierda para ver sus hogares y priorizar visitas."
+            [compact]="true"
+          />
+        } @else if (loadingHouseholds()) {
+          <div class="ebs-household-skeleton-list">
+            @for (sk of [1, 2, 3, 4, 5]; track sk) {
+              <div class="ebs-household-skeleton-row">
+                <sesa-skeleton width="45%" height="0.9rem" />
+                <sesa-skeleton width="30%" height="0.8rem" />
+                <sesa-skeleton width="20%" height="0.8rem" />
+              </div>
+            }
+          </div>
+        } @else if (households().length === 0) {
+          <sesa-empty-state
+            icon="box"
+            title="Sin hogares registrados"
+            message="Aún no hay hogares registrados en este microterritorio."
+            [compact]="true"
+          />
+        } @else {
+          <div class="ebs-household-filters">
+            <label class="ebs-filter">
+              <span>Estado de visita</span>
+              <select
+                class="ebs-select"
+                [ngModel]="visitStatusFilter"
+                (ngModelChange)="visitStatusFilter = $event; reloadHouseholds()"
+              >
+                <option value="TODOS">Todos</option>
+                <option value="PENDIENTE_VISITA">Pendiente de visita</option>
+                <option value="EN_SEGUIMIENTO">En seguimiento</option>
+                <option value="CERRADO">Cerrado</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="ebs-household-list">
+            @for (h of households(); track h.id) {
+              <article class="ebs-household-item">
+                <div class="ebs-household-main">
+                  <h2 class="ebs-household-address">
+                    {{ h.addressText }}
+                  </h2>
+                  <p class="ebs-household-meta">
+                    @if (h.lastVisitDate) {
+                      Última visita: {{ h.lastVisitDate | date: 'dd/MM/yyyy' }}
+                    } @else {
+                      Aún sin visitas registradas
+                    }
+                  </p>
+                </div>
+                <div class="ebs-household-tags">
+                  <span [class]="badgeClassForRisk(h.riskLevel)">
+                    {{ labelRisk(h.riskLevel) }}
+                  </span>
+                  <span class="ebs-chip ebs-chip-muted">
+                    {{ visitStateLabel(h.state) }}
+                  </span>
+                  <button
+                    type="button"
+                    class="ebs-chip ebs-chip-primary ebs-chip-action"
+                    (click)="nuevaVisita(h)"
+                  >
+                    Nueva visita
+                  </button>
+                  <a routerLink="/historia-clinica" class="ebs-chip ebs-chip-primary ebs-chip-link">
+                    Abrir historia
+                  </a>
+                  <span class="ebs-atajos-label">Desde visita:</span>
+                  <a [routerLink]="['/consulta-medica']" queryParamsHandling="merge" class="ebs-chip ebs-chip-action ebs-chip-link" title="Solicitar teleconsulta o consulta desde este hogar">Teleconsulta</a>
+                  <a [routerLink]="['/consulta-medica']" queryParamsHandling="merge" class="ebs-chip ebs-chip-action ebs-chip-link" title="Generar receta electrónica (desde consulta)">Receta electrónica</a>
+                  <a [routerLink]="['/citas']" class="ebs-chip ebs-chip-action ebs-chip-link" title="Programar cita presencial">Agendar cita</a>
+                  <a [routerLink]="['/consulta-medica']" queryParamsHandling="merge" class="ebs-chip ebs-chip-action ebs-chip-link" title="Interconsulta (desde consulta médica)">Interconsulta</a>
+                  <a [routerLink]="['/consulta-medica']" queryParamsHandling="merge" class="ebs-chip ebs-chip-action ebs-chip-link" title="Registrar incapacidad (desde consulta)">Incapacidad</a>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </sesa-card>
+    </main>
+  </div>
+</section>
+

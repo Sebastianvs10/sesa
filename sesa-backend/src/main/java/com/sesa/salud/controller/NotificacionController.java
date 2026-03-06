@@ -5,6 +5,7 @@
 package com.sesa.salud.controller;
 
 import com.sesa.salud.dto.DestinatarioDisponibleDto;
+import com.sesa.salud.dto.MarcarLeidasRequest;
 import com.sesa.salud.dto.NotificacionBroadcastResult;
 import com.sesa.salud.dto.NotificacionCreateRequest;
 import com.sesa.salud.dto.NotificacionDto;
@@ -113,6 +114,60 @@ public class NotificacionController {
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         notificacionService.marcarLeida(id, principal.userId());
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Marca como leídas varias notificaciones para el usuario actual (solo donde es destinatario).
+     */
+    @PostMapping("/marcar-leidas")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarLeidas(
+            @Valid @RequestBody MarcarLeidasRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        if (request.getNotificacionIds() != null && !request.getNotificacionIds().isEmpty()) {
+            notificacionService.marcarLeidas(request.getNotificacionIds(), principal.userId());
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/no-leer")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarNoLeida(
+            @PathVariable("id") Long id,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.marcarNoLeida(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Marca como no leídas varias notificaciones para el usuario actual (solo donde es destinatario).
+     */
+    @PostMapping("/marcar-no-leidas")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarNoLeidas(
+            @Valid @RequestBody MarcarLeidasRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        if (request.getNotificacionIds() != null && !request.getNotificacionIds().isEmpty()) {
+            notificacionService.marcarNoLeidas(request.getNotificacionIds(), principal.userId());
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Elimina un adjunto de una notificación. Solo el remitente de la notificación puede hacerlo.
+     */
+    @DeleteMapping("/{notificacionId}/adjuntos/{adjuntoId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteAdjunto(
+            @PathVariable("notificacionId") Long notificacionId,
+            @PathVariable("adjuntoId") Long adjuntoId,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.deleteAdjunto(notificacionId, adjuntoId, principal.userId());
+        return ResponseEntity.noContent().build();
     }
 
     // ── Destinatarios disponibles ──────────────────────────────────────────────

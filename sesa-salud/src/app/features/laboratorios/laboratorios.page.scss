@@ -596,6 +596,33 @@ $transition:  0.18s ease;
   padding: 0.85rem 1rem;
 }
 
+.lab-resultado-items {
+  margin: 0 0 0.5rem;
+}
+
+.lab-resultado-item {
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--sesa-text-primary);
+  &:last-child { margin-bottom: 0; }
+  strong { font-weight: 700; color: var(--sesa-text-primary); }
+}
+
+.lab-resultado-pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0;
+  border-left: 3px solid var(--sesa-success, #10b981);
+  padding-left: 0.75rem;
+  background: var(--sesa-surface);
+  border-radius: 0 6px 6px 0;
+}
+
+.lab-meta-rol { font-weight: 500; color: var(--sesa-text-secondary); }
+
 .lab-resultado-text {
   margin: 0 0 0.6rem;
   font-size: 0.84rem;
@@ -665,6 +692,37 @@ $transition:  0.18s ease;
   box-sizing: border-box;
   &::placeholder { color: var(--sesa-input-placeholder); }
   &:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.15); }
+}
+
+/* Plantilla por tipo de prueba: grid de campos */
+.lab-plantilla-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.lab-form-group--inline {
+  margin-bottom: 0;
+  .lab-form-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.5rem;
+  }
+}
+
+.lab-form-unit {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.lab-form-ref {
+  font-size: 0.7rem;
+  color: var(--sesa-text-secondary);
+  font-weight: 400;
+  opacity: 0.9;
 }
 
 .lab-form-select {

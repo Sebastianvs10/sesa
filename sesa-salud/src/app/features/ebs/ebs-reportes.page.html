@@ -1,0 +1,71 @@
+<div class="ebs-reportes">
+  <header class="ebs-reportes__header">
+    <h1 class="ebs-reportes__title">Reportes EBS</h1>
+    <p class="ebs-reportes__sub">Cobertura territorial y datos para exportar.</p>
+    <div class="ebs-reportes__toolbar">
+      <select class="ebs-reportes__select" [value]="reportType()" (change)="reportType.set($any($event.target).value)">
+        <option value="COBERTURA">Cobertura territorial</option>
+      </select>
+      <button type="button" class="ebs-reportes__btn" (click)="load()">Actualizar</button>
+      <button type="button" class="ebs-reportes__btn ebs-reportes__btn--primary" (click)="downloadExcel()">Descargar Excel (CSV)</button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <sesa-card>
+      <sesa-skeleton preset="form" />
+    </sesa-card>
+  } @else {
+    @let r = report();
+    @if (r) {
+      <sesa-card class="ebs-reportes__card">
+        <div class="ebs-reportes__summary">
+          <div class="ebs-reportes__kpi">
+            <span class="ebs-reportes__kpi-value">{{ r.totalHouseholds ?? 0 }}</span>
+            <span class="ebs-reportes__kpi-label">Total hogares</span>
+          </div>
+          <div class="ebs-reportes__kpi">
+            <span class="ebs-reportes__kpi-value">{{ r.visitedHouseholds ?? 0 }}</span>
+            <span class="ebs-reportes__kpi-label">Visitados</span>
+          </div>
+          <div class="ebs-reportes__kpi">
+            <span class="ebs-reportes__kpi-value">{{ r.coveragePercent ?? 0 }}%</span>
+            <span class="ebs-reportes__kpi-label">Cobertura</span>
+          </div>
+        </div>
+        @if (r.rows?.length) {
+          <div class="ebs-reportes__table-wrap">
+            <table class="ebs-reportes__table">
+              <thead>
+                <tr>
+                  <th>Territorio</th>
+                  <th>Vereda</th>
+                  <th>Hogares</th>
+                  <th>Visitados</th>
+                  <th>Cobertura %</th>
+                  <th>Alto riesgo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of r.rows; track row.territoryName) {
+                  <tr>
+                    <td>{{ row.territoryName }}</td>
+                    <td>{{ row.veredaName ?? '-' }}</td>
+                    <td>{{ row.households }}</td>
+                    <td>{{ row.visited }}</td>
+                    <td>{{ row.percent }}</td>
+                    <td>{{ row.highRisk }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </sesa-card>
+    } @else {
+      <sesa-card>
+        <p class="ebs-reportes__empty">Elige el tipo de reporte y pulsa <strong>Actualizar</strong> para cargar los datos.</p>
+      </sesa-card>
+    }
+  }
+</div>

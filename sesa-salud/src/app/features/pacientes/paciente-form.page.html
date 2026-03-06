@@ -1,237 +1,299 @@
-<div class="sesa-page-header">
-  <h1 class="sesa-page-title">{{ isEdit ? 'Editar paciente' : 'Nuevo paciente' }}</h1>
-  <a class="sesa-btn sesa-btn-secondary" routerLink="/pacientes">← Volver</a>
-</div>
-
-<sesa-card [loading]="loadingPatient()">
-  @if (error && !loadingPatient()) {
-    <div class="sesa-error-banner">{{ error }}</div>
-  }
-
-  @if (!loadingPatient()) {
-    <form [formGroup]="form" (ngSubmit)="submit()">
-
-      <!-- ══════════════ SECCIÓN 1: IDENTIFICACIÓN ══════════════ -->
-      <div class="pf-section">
-        <div class="pf-section-header">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
-          <h2>Identificación del paciente</h2>
-        </div>
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Tipo documento">
-            <select formControlName="tipoDocumento">
-              <option value="CC">CC — Cédula de Ciudadanía</option>
-              <option value="CE">CE — Cédula de Extranjería</option>
-              <option value="TI">TI — Tarjeta de Identidad</option>
-              <option value="RC">RC — Registro Civil</option>
-              <option value="PA">PA — Pasaporte</option>
-              <option value="CN">CN — Certificado Nacido Vivo</option>
-              <option value="MS">MS — Menor Sin Identificación</option>
-              <option value="AS">AS — Adulto Sin Identificación</option>
-              <option value="CD">CD — Carné Diplomático</option>
-              <option value="NUIP">NUIP — Número Único Identificación Personal</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field
-            label="Número de documento"
-            [required]="true"
-            [error]="form.get('documento')?.invalid && form.get('documento')?.touched ? 'Requerido' : ''"
-          >
-            <input type="text" formControlName="documento" placeholder="Número de documento" />
-          </sesa-form-field>
-          <sesa-form-field
-            label="Nombres"
-            [required]="true"
-            [error]="form.get('nombres')?.invalid && form.get('nombres')?.touched ? 'Requerido' : ''"
-          >
-            <input type="text" formControlName="nombres" placeholder="Nombres completos" />
-          </sesa-form-field>
-          <sesa-form-field label="Apellidos">
-            <input type="text" formControlName="apellidos" placeholder="Apellidos" />
-          </sesa-form-field>
-          <sesa-form-field label="Fecha de nacimiento">
-            <input type="date" formControlName="fechaNacimiento" />
-          </sesa-form-field>
-          <sesa-form-field label="Sexo biológico">
-            <select formControlName="sexo">
-              <option value="">Seleccione</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-              <option value="I">Indeterminado/Intersexual</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Grupo sanguíneo">
-            <select formControlName="grupoSanguineo">
-              <option value="">Seleccione</option>
-              <option value="A+">A+</option>
-              <option value="A-">A-</option>
-              <option value="B+">B+</option>
-              <option value="B-">B-</option>
-              <option value="AB+">AB+</option>
-              <option value="AB-">AB-</option>
-              <option value="O+">O+</option>
-              <option value="O-">O-</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Estado civil">
-            <select formControlName="estadoCivil">
-              <option value="">Seleccione</option>
-              <option value="SOLTERO">Soltero(a)</option>
-              <option value="CASADO">Casado(a)</option>
-              <option value="UNION_LIBRE">Unión libre</option>
-              <option value="VIUDO">Viudo(a)</option>
-              <option value="DIVORCIADO">Divorciado(a)</option>
-              <option value="SEPARADO">Separado(a)</option>
-            </select>
-          </sesa-form-field>
-        </div>
+<div class="pf-page">
+  <!-- Header premium -->
+  <header class="pf-header">
+    <div class="pf-header-left">
+      <a class="pf-back" routerLink="/pacientes" aria-label="Volver a pacientes">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div class="pf-header-text">
+        <h1 class="pf-title">{{ isEdit ? 'Editar paciente' : 'Nuevo paciente' }}</h1>
+        <p class="pf-subtitle">Paso {{ currentStep() }} de {{ totalSteps }} — {{ steps[currentStep() - 1].label }}</p>
       </div>
+    </div>
+  </header>
 
-      <!-- ══════════════ SECCIÓN 2: AFILIACIÓN AL SGSSS ══════════════ -->
-      <div class="pf-section">
-        <div class="pf-section-header">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg>
-          <h2>Afiliación al SGSSS</h2>
-          <span class="pf-norm-badge">Res. 3374/2000 RIPS</span>
-        </div>
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Régimen de afiliación">
-            <select formControlName="regimenAfiliacion">
-              <option value="">Seleccione</option>
-              <option value="CONTRIBUTIVO">Contributivo</option>
-              <option value="SUBSIDIADO">Subsidiado</option>
-              <option value="VINCULADO">Vinculado / No afiliado</option>
-              <option value="EXCEPCION">Excepción (Fuerzas Militares, Policía, etc.)</option>
-              <option value="ESPECIAL">Especial (Magisterio, Ecopetrol, etc.)</option>
-              <option value="PARTICULAR">Particular / Pago directo</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Tipo de usuario">
-            <select formControlName="tipoUsuario">
-              <option value="">Seleccione</option>
-              <option value="AFILIADO_COTIZANTE">Afiliado cotizante</option>
-              <option value="AFILIADO_BENEFICIARIO">Afiliado beneficiario</option>
-              <option value="AFILIADO_ADICIONAL">Afiliado adicional</option>
-              <option value="PARTICULAR">Particular</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="EPS / Aseguradora">
-            <select formControlName="epsId">
-              <option [ngValue]="null">Seleccione</option>
-              @for (e of epsList; track e.id) {
-                <option [ngValue]="e.id">{{ e.nombre }}</option>
-              }
-            </select>
-          </sesa-form-field>
-        </div>
-      </div>
-
-      <!-- ══════════════ SECCIÓN 3: RESIDENCIA ══════════════ -->
-      <div class="pf-section">
-        <div class="pf-section-header">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/></svg>
-          <h2>Lugar de residencia</h2>
-          <span class="pf-norm-badge">DIVIPOLA</span>
-        </div>
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Departamento">
-            <select formControlName="departamentoResidencia">
-              <option value="">Seleccione departamento</option>
-              @for (d of departamentos; track d.codigo) {
-                <option [value]="d.codigo">{{ d.nombre }}</option>
-              }
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Código municipio DIVIPOLA">
-            <input type="text" formControlName="municipioResidencia" placeholder="Ej. 05001 (Medellín)" maxlength="7" />
-          </sesa-form-field>
-          <sesa-form-field label="Zona de residencia">
-            <select formControlName="zonaResidencia">
-              <option value="URBANA">Urbana</option>
-              <option value="RURAL">Rural</option>
-              <option value="CENTRO_POBLADO">Centro Poblado</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Dirección">
-            <input type="text" formControlName="direccion" placeholder="Dirección de residencia" />
-          </sesa-form-field>
-        </div>
-      </div>
-
-      <!-- ══════════════ SECCIÓN 4: CONTACTO ══════════════ -->
-      <div class="pf-section">
-        <div class="pf-section-header">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
-          <h2>Datos de contacto</h2>
-        </div>
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Teléfono / Celular">
-            <input type="tel" formControlName="telefono" placeholder="Número de contacto" />
-          </sesa-form-field>
-          <sesa-form-field label="Correo electrónico">
-            <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
-          </sesa-form-field>
-          <sesa-form-field label="Contacto de emergencia — Nombre">
-            <input type="text" formControlName="contactoEmergenciaNombre" placeholder="Nombre del acudiente o familiar" />
-          </sesa-form-field>
-          <sesa-form-field label="Contacto de emergencia — Teléfono">
-            <input type="tel" formControlName="contactoEmergenciaTelefono" placeholder="Teléfono del acudiente" />
-          </sesa-form-field>
-        </div>
-      </div>
-
-      <!-- ══════════════ SECCIÓN 5: DATOS SOCIODEMOGRÁFICOS ══════════════ -->
-      <div class="pf-section">
-        <div class="pf-section-header">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
-          <h2>Datos sociodemográficos</h2>
-          <span class="pf-norm-badge">SISPRO</span>
-        </div>
-        <div class="sesa-form-grid">
-          <sesa-form-field label="Escolaridad">
-            <select formControlName="escolaridad">
-              <option value="">Seleccione</option>
-              <option value="NINGUNA">Ninguna</option>
-              <option value="PREESCOLAR">Preescolar</option>
-              <option value="BASICA_PRIMARIA">Básica primaria</option>
-              <option value="BASICA_SECUNDARIA">Básica secundaria</option>
-              <option value="MEDIA">Media (bachillerato)</option>
-              <option value="TECNICA">Técnica / Tecnológica</option>
-              <option value="UNIVERSITARIA">Universitaria</option>
-              <option value="POSTGRADO">Posgrado (especialización/maestría/doctorado)</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Ocupación / Profesión">
-            <input type="text" formControlName="ocupacion" placeholder="Ocupación u oficio" />
-          </sesa-form-field>
-          <sesa-form-field label="Pertenencia étnica">
-            <select formControlName="pertenenciaEtnica">
-              <option value="">No aplica / Sin información</option>
-              <option value="INDIGENA">Indígena</option>
-              <option value="GITANO_ROM">Gitano(a) / ROM</option>
-              <option value="RAIZAL">Raizal (archipiélagos San Andrés y Providencia)</option>
-              <option value="PALENQUERO">Palenquero(a)</option>
-              <option value="AFROCOLOMBIANO">Afrocolombiano(a) / Afrodescendiente</option>
-              <option value="NINGUNA_ANTERIOR">Ninguna de las anteriores</option>
-            </select>
-          </sesa-form-field>
-          <sesa-form-field label="Activo en el sistema">
-            <input type="checkbox" formControlName="activo" />
-          </sesa-form-field>
-        </div>
-      </div>
-
-      <div class="sesa-form-actions">
-        <a class="sesa-btn sesa-btn-secondary" routerLink="/pacientes">Cancelar</a>
-        <button type="submit" class="sesa-btn sesa-btn-primary sesa-btn-icon" [disabled]="saving()">
-          @if (saving()) {
-            <span class="sesa-btn-spinner" aria-hidden="true"></span>
-            Guardando…
-          } @else {
-            {{ isEdit ? 'Guardar cambios' : 'Crear paciente' }}
-          }
+  <!-- Stepper visual -->
+  <div class="pf-stepper">
+    <div class="pf-stepper-progress" [style.width.%]="progressPercent()"></div>
+    <div class="pf-stepper-steps">
+      @for (step of steps; track step.id; let i = $index) {
+        <button
+          type="button"
+          class="pf-step"
+          [class.pf-step--active]="currentStep() === step.id"
+          [class.pf-step--done]="currentStep() > step.id"
+          [class.pf-step--clickable]="currentStep() > step.id"
+          (click)="goToStep(i)"
+          [attr.aria-current]="currentStep() === step.id ? 'step' : null"
+          [attr.aria-label]="'Paso ' + step.id + ': ' + step.label"
+        >
+          <span class="pf-step-num">
+            @if (currentStep() > step.id) {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            } @else {
+              {{ step.id }}
+            }
+          </span>
+          <span class="pf-step-label">{{ step.short }}</span>
         </button>
-      </div>
-    </form>
-  }
-</sesa-card>
+      }
+    </div>
+  </div>
+
+  <sesa-card [loading]="loadingPatient()">
+    @if (error && !loadingPatient()) {
+      <div class="pf-error-banner">{{ error }}</div>
+    }
+
+    @if (!loadingPatient()) {
+      <form [formGroup]="form" (ngSubmit)="isLastStep() ? submit() : nextStep()" class="pf-form">
+        <!-- Paso 1: Identificación -->
+        @if (currentStep() === 1) {
+          <div class="pf-step-content">
+            <div class="pf-step-head">
+              <span class="pf-step-icon pf-step-icon--id" aria-hidden="true"></span>
+              <h2 class="pf-step-title">Identificación del paciente</h2>
+              <p class="pf-step-desc">Datos básicos de identidad y documento.</p>
+            </div>
+            <div class="pf-grid">
+              <sesa-form-field label="Tipo documento">
+                <select formControlName="tipoDocumento">
+                  <option value="CC">CC — Cédula de Ciudadanía</option>
+                  <option value="CE">CE — Cédula de Extranjería</option>
+                  <option value="TI">TI — Tarjeta de Identidad</option>
+                  <option value="RC">RC — Registro Civil</option>
+                  <option value="PA">PA — Pasaporte</option>
+                  <option value="CN">CN — Certificado Nacido Vivo</option>
+                  <option value="MS">MS — Menor Sin Identificación</option>
+                  <option value="AS">AS — Adulto Sin Identificación</option>
+                  <option value="CD">CD — Carné Diplomático</option>
+                  <option value="NUIP">NUIP — Número Único Identificación Personal</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Número de documento" [required]="true" [error]="form.get('documento')?.invalid && form.get('documento')?.touched ? 'Requerido' : ''">
+                <input type="text" formControlName="documento" placeholder="Número de documento" />
+              </sesa-form-field>
+              <sesa-form-field label="Nombres" [required]="true" [error]="form.get('nombres')?.invalid && form.get('nombres')?.touched ? 'Requerido' : ''">
+                <input type="text" formControlName="nombres" placeholder="Nombres completos" />
+              </sesa-form-field>
+              <sesa-form-field label="Apellidos">
+                <input type="text" formControlName="apellidos" placeholder="Apellidos" />
+              </sesa-form-field>
+              <sesa-form-field label="Fecha de nacimiento">
+                <input type="date" formControlName="fechaNacimiento" />
+              </sesa-form-field>
+              <sesa-form-field label="Sexo biológico">
+                <select formControlName="sexo">
+                  <option value="">Seleccione</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="I">Indeterminado/Intersexual</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Grupo sanguíneo">
+                <select formControlName="grupoSanguineo">
+                  <option value="">Seleccione</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Estado civil">
+                <select formControlName="estadoCivil">
+                  <option value="">Seleccione</option>
+                  <option value="SOLTERO">Soltero(a)</option>
+                  <option value="CASADO">Casado(a)</option>
+                  <option value="UNION_LIBRE">Unión libre</option>
+                  <option value="VIUDO">Viudo(a)</option>
+                  <option value="DIVORCIADO">Divorciado(a)</option>
+                  <option value="SEPARADO">Separado(a)</option>
+                </select>
+              </sesa-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 2: Afiliación -->
+        @if (currentStep() === 2) {
+          <div class="pf-step-content">
+            <div class="pf-step-head">
+              <span class="pf-step-icon pf-step-icon--eps" aria-hidden="true"></span>
+              <h2 class="pf-step-title">Afiliación al SGSSS</h2>
+              <p class="pf-step-desc">Régimen y EPS según Res. 3374/2000 RIPS.</p>
+            </div>
+            <div class="pf-grid">
+              <sesa-form-field label="Régimen de afiliación">
+                <select formControlName="regimenAfiliacion">
+                  <option value="">Seleccione</option>
+                  <option value="CONTRIBUTIVO">Contributivo</option>
+                  <option value="SUBSIDIADO">Subsidiado</option>
+                  <option value="VINCULADO">Vinculado / No afiliado</option>
+                  <option value="EXCEPCION">Excepción (Fuerzas Militares, Policía, etc.)</option>
+                  <option value="ESPECIAL">Especial (Magisterio, Ecopetrol, etc.)</option>
+                  <option value="PARTICULAR">Particular / Pago directo</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Tipo de usuario">
+                <select formControlName="tipoUsuario">
+                  <option value="">Seleccione</option>
+                  <option value="AFILIADO_COTIZANTE">Afiliado cotizante</option>
+                  <option value="AFILIADO_BENEFICIARIO">Afiliado beneficiario</option>
+                  <option value="AFILIADO_ADICIONAL">Afiliado adicional</option>
+                  <option value="PARTICULAR">Particular</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="EPS / Aseguradora">
+                <select formControlName="epsId">
+                  <option [ngValue]="null">Seleccione</option>
+                  @for (e of epsList; track e.id) {
+                    <option [ngValue]="e.id">{{ e.nombre }}</option>
+                  }
+                </select>
+              </sesa-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 3: Residencia -->
+        @if (currentStep() === 3) {
+          <div class="pf-step-content">
+            <div class="pf-step-head">
+              <span class="pf-step-icon pf-step-icon--map" aria-hidden="true"></span>
+              <h2 class="pf-step-title">Lugar de residencia</h2>
+              <p class="pf-step-desc">Ubicación y dirección (DIVIPOLA).</p>
+            </div>
+            <div class="pf-grid">
+              <sesa-form-field label="Departamento">
+                <select formControlName="departamentoResidencia">
+                  <option value="">Seleccione departamento</option>
+                  @for (d of departamentos; track d.codigo) {
+                    <option [value]="d.codigo">{{ d.nombre }}</option>
+                  }
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Código municipio DIVIPOLA">
+                <input type="text" formControlName="municipioResidencia" placeholder="Ej. 05001 (Medellín)" maxlength="7" />
+              </sesa-form-field>
+              <sesa-form-field label="Zona de residencia">
+                <select formControlName="zonaResidencia">
+                  <option value="URBANA">Urbana</option>
+                  <option value="RURAL">Rural</option>
+                  <option value="CENTRO_POBLADO">Centro Poblado</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Dirección">
+                <input type="text" formControlName="direccion" placeholder="Dirección de residencia" />
+              </sesa-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 4: Contacto -->
+        @if (currentStep() === 4) {
+          <div class="pf-step-content">
+            <div class="pf-step-head">
+              <span class="pf-step-icon pf-step-icon--phone" aria-hidden="true"></span>
+              <h2 class="pf-step-title">Datos de contacto</h2>
+              <p class="pf-step-desc">Teléfono, correo y contacto de emergencia.</p>
+            </div>
+            <div class="pf-grid">
+              <sesa-form-field label="Teléfono / Celular">
+                <input type="tel" formControlName="telefono" placeholder="Número de contacto" />
+              </sesa-form-field>
+              <sesa-form-field label="Correo electrónico">
+                <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+              </sesa-form-field>
+              <sesa-form-field label="Contacto de emergencia — Nombre">
+                <input type="text" formControlName="contactoEmergenciaNombre" placeholder="Nombre del acudiente o familiar" />
+              </sesa-form-field>
+              <sesa-form-field label="Contacto de emergencia — Teléfono">
+                <input type="tel" formControlName="contactoEmergenciaTelefono" placeholder="Teléfono del acudiente" />
+              </sesa-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Paso 5: Sociodemográficos -->
+        @if (currentStep() === 5) {
+          <div class="pf-step-content">
+            <div class="pf-step-head">
+              <span class="pf-step-icon pf-step-icon--people" aria-hidden="true"></span>
+              <h2 class="pf-step-title">Datos sociodemográficos</h2>
+              <p class="pf-step-desc">Escolaridad, ocupación y estado en el sistema (SISPRO).</p>
+            </div>
+            <div class="pf-grid">
+              <sesa-form-field label="Escolaridad">
+                <select formControlName="escolaridad">
+                  <option value="">Seleccione</option>
+                  <option value="NINGUNA">Ninguna</option>
+                  <option value="PREESCOLAR">Preescolar</option>
+                  <option value="BASICA_PRIMARIA">Básica primaria</option>
+                  <option value="BASICA_SECUNDARIA">Básica secundaria</option>
+                  <option value="MEDIA">Media (bachillerato)</option>
+                  <option value="TECNICA">Técnica / Tecnológica</option>
+                  <option value="UNIVERSITARIA">Universitaria</option>
+                  <option value="POSTGRADO">Posgrado (especialización/maestría/doctorado)</option>
+                </select>
+              </sesa-form-field>
+              <sesa-form-field label="Ocupación / Profesión">
+                <input type="text" formControlName="ocupacion" placeholder="Ocupación u oficio" />
+              </sesa-form-field>
+              <sesa-form-field label="Pertenencia étnica">
+                <select formControlName="pertenenciaEtnica">
+                  <option value="">No aplica / Sin información</option>
+                  <option value="INDIGENA">Indígena</option>
+                  <option value="GITANO_ROM">Gitano(a) / ROM</option>
+                  <option value="RAIZAL">Raizal (archipiélagos San Andrés y Providencia)</option>
+                  <option value="PALENQUERO">Palenquero(a)</option>
+                  <option value="AFROCOLOMBIANO">Afrocolombiano(a) / Afrodescendiente</option>
+                  <option value="NINGUNA_ANTERIOR">Ninguna de las anteriores</option>
+                </select>
+              </sesa-form-field>
+              <div class="pf-activo-field">
+                <label class="pf-activo-label">
+                  <input type="checkbox" formControlName="activo" class="pf-activo-checkbox" />
+                  <span class="pf-activo-text">Activo en el sistema</span>
+                </label>
+                <span class="pf-activo-hint">Si está marcado, el paciente aparecerá en listados y podrá recibir atención.</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Footer acciones -->
+        <div class="pf-actions">
+          <div class="pf-actions-left">
+            @if (isFirstStep()) {
+              <a class="pf-btn pf-btn--ghost" routerLink="/pacientes">Cancelar</a>
+            } @else {
+              <button type="button" class="pf-btn pf-btn--ghost" (click)="prevStep()">Anterior</button>
+            }
+          </div>
+          <div class="pf-actions-right">
+            @if (isLastStep()) {
+              <button type="submit" class="pf-btn pf-btn--primary" [disabled]="saving()">
+                @if (saving()) {
+                  <span class="pf-spinner" aria-hidden="true"></span>
+                  Guardando…
+                } @else {
+                  {{ isEdit ? 'Guardar cambios' : 'Crear paciente' }}
+                }
+              </button>
+            } @else {
+              <button type="submit" class="pf-btn pf-btn--primary">Siguiente</button>
+            }
+          </div>
+        </div>
+      </form>
+    }
+  </sesa-card>
+</div>

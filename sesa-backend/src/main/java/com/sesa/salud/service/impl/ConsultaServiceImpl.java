@@ -6,6 +6,7 @@ package com.sesa.salud.service.impl;
 
 import com.sesa.salud.dto.ConsultaDto;
 import com.sesa.salud.dto.ConsultaRequestDto;
+import com.sesa.salud.dto.HistoriaClinicaRequestDto;
 import com.sesa.salud.entity.Cita;
 import com.sesa.salud.entity.Consulta;
 import com.sesa.salud.entity.Paciente;
@@ -16,6 +17,7 @@ import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.repository.PersonalRepository;
 import com.sesa.salud.security.JwtPrincipal;
 import com.sesa.salud.service.ConsultaService;
+import com.sesa.salud.service.HistoriaClinicaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +38,7 @@ public class ConsultaServiceImpl implements ConsultaService {
     private final PacienteRepository pacienteRepository;
     private final PersonalRepository personalRepository;
     private final CitaRepository citaRepository;
+    private final HistoriaClinicaService historiaClinicaService;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +81,9 @@ public class ConsultaServiceImpl implements ConsultaService {
     public ConsultaDto create(ConsultaRequestDto dto) {
         Paciente paciente = pacienteRepository.findById(dto.getPacienteId())
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
+        if (historiaClinicaService.findByPacienteId(paciente.getId()).isEmpty()) {
+            historiaClinicaService.createForPaciente(paciente.getId(), new HistoriaClinicaRequestDto());
+        }
         Personal profesional = dto.getProfesionalId() != null
                 ? personalRepository.findById(dto.getProfesionalId()).orElse(null)
                 : null;

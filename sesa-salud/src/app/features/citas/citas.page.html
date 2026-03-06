@@ -489,6 +489,27 @@
           />
         </div>
 
+        <div class="citas-lista-filtros-row">
+          <label class="citas-lista-filtro-label">
+            <span>Especialidad</span>
+            <select class="citas-lista-select" [ngModel]="filterServicio()" (ngModelChange)="onFilterServicioChange($event)">
+              <option value="">Todas</option>
+              @for (e of especialidades; track e.id) {
+                <option [value]="e.id">{{ e.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="citas-lista-filtro-label">
+            <span>Especialista</span>
+            <select class="citas-lista-select" [ngModel]="filterProfesionalId()" (ngModelChange)="filterProfesionalId.set($event ? +$event : null)">
+              <option [ngValue]="null">Todos</option>
+              @for (p of profesionalesParaFiltroAgenda; track p.id) {
+                <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos ?? '' }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
         <div class="citas-filter-chips">
           <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === ''"     (click)="filterEstado.set('')">Todas</button>
           <button class="citas-filter-chip" [class.citas-filter-chip--active]="filterEstado() === 'PENDIENTE'"    (click)="filterEstado.set('PENDIENTE')">Pendientes</button>
@@ -532,7 +553,7 @@
         <sesa-empty-state
           icon="calendar"
           title="Sin citas"
-          [message]="filterEstado() ? 'No hay citas con el estado seleccionado para esta fecha.' : 'No hay citas programadas para el día seleccionado.'"
+          [message]="(filterEstado() || filterServicio() || filterProfesionalId()) ? 'No hay citas que coincidan con los filtros para esta fecha.' : 'No hay citas programadas para el día seleccionado.'"
           actionLabel="Crear nueva cita"
           (action)="setTab('nueva')">
         </sesa-empty-state>

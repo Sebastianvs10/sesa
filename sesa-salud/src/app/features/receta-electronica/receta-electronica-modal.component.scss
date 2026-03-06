@@ -1,0 +1,207 @@
+/* Modal Receta electrónica con QR */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.rem-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.rem-modal {
+  background: var(--sesa-surface);
+  border-radius: 16px;
+  border: 1px solid var(--sesa-border);
+  box-shadow: var(--sesa-shadow-xl);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.rem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.rem-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+}
+
+.rem-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--sesa-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: var(--sesa-bg); color: var(--sesa-text-primary); }
+}
+
+.rem-body {
+  padding: 20px;
+}
+
+.rem-desc {
+  font-size: 13px;
+  color: var(--sesa-text-secondary);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.rem-section { margin-top: 16px; }
+.rem-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  margin: 0 0 10px;
+}
+
+.rem-row {
+  margin-bottom: 12px;
+
+  &--readonly {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--sesa-border-light);
+  }
+}
+
+.rem-label { font-size: 12px; color: var(--sesa-text-muted); font-weight: 600; display: block; margin-bottom: 4px; }
+.rem-val { font-size: 14px; color: var(--sesa-text-primary); font-weight: 500; }
+
+.rem-input, .rem-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: 10px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 14px;
+
+  &--short { width: 100%; }
+}
+
+.rem-textarea { resize: vertical; min-height: 60px; }
+
+.rem-med {
+  display: grid;
+  grid-template-columns: 1fr 80px 80px 80px auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rem-btn-remove {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--sesa-error);
+  background: transparent;
+  border: 1px solid var(--sesa-error);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rem-btn-add {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--sesa-primary);
+  background: var(--sesa-bg);
+  border: 1px dashed var(--sesa-border);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.rem-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.rem-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.15s;
+
+  &--ghost { background: var(--sesa-bg); color: var(--sesa-text-secondary); }
+  &--primary { background: var(--sesa-primary); color: white; }
+  &--outline { background: transparent; border: 1px solid var(--sesa-primary); color: var(--sesa-primary); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:active:not(:disabled) { transform: scale(0.98); }
+}
+
+/* Resultado */
+.rem-body--result { padding: 20px; }
+.rem-result-header { margin-bottom: 16px; }
+.rem-result-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--sesa-success);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+.rem-result-date { font-size: 13px; color: var(--sesa-text-muted); margin: 6px 0 0; }
+.rem-result-grid {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.rem-result-qr {
+  flex-shrink: 0;
+  text-align: center;
+}
+.rem-result-qr-label { font-size: 11px; color: var(--sesa-text-muted); margin: 8px 0 0; }
+.rem-result-data { flex: 1; min-width: 200px; }
+.rem-result-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--sesa-text-primary);
+  line-height: 1.8;
+}
+.rem-result-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .rem-med {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .rem-backdrop { background: white; }
+  .rem-modal { box-shadow: none; border: none; max-height: none; }
+  .rem-header .rem-close, .rem-footer, .rem-result-actions { display: none !important; }
+}

@@ -32,4 +32,19 @@ class ApiConstants {
   // ── Reportes dashboard ────────────────────────────────────────
   static String get reportResumen => '$baseUrl/reportes/resumen';
   static String get citas         => '$baseUrl/citas';
+
+  // ── EBS (Equipos Básicos de Salud) ───────────────────────────
+  static String get ebsBase           => '$baseUrl/ebs';
+  static String get ebsTerritories    => '$ebsBase/territories';
+  static String get ebsHouseholds     => '$ebsBase/households';
+  static String get ebsHomeVisits     => '$ebsBase/home-visits';
+  static String get ebsDashboard      => '$ebsBase/dashboard';
+  static String get ebsBrigades        => '$ebsBase/brigades';
+  static String get ebsAlerts         => '$ebsBase/alerts';
+  static String ebsTerritoryTeam(int id) => '$ebsBase/territories/$id/team';
+  static String ebsBrigadeTeam(int id)   => '$ebsBase/brigades/$id/team';
+  static String get ebsReportsData    => '$ebsBase/reports/data';
+  static String get ebsIgacDeptos     => '$baseUrl/igac/departamentos';
+  static String get ebsIgacMunicipios => '$baseUrl/igac/municipios';
+  static String get ebsIgacVeredas   => '$baseUrl/igac/veredas';
 }

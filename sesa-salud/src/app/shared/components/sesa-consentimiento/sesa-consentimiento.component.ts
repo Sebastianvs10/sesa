@@ -71,6 +71,13 @@ export class SesaConsentimientoComponent implements OnInit {
 
   abrirFormulario(): void {
     const profId = this.profesionalId ?? this.auth.currentUser()?.personalId;
+    if (profId == null || profId === undefined) {
+      this.toast.warning(
+        'No hay profesional vinculado a tu usuario. Un administrador debe asignar tu cuenta a un registro de personal para crear consentimientos.',
+        'Profesional requerido'
+      );
+      return;
+    }
     this.form.set({
       tipo: 'GENERAL',
       estado: 'PENDIENTE',
@@ -102,7 +109,8 @@ export class SesaConsentimientoComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.toast.error(err?.error?.error || 'No se pudo crear.', 'Error');
+        const msg = err?.error?.message ?? err?.error?.error ?? 'No se pudo crear el consentimiento.';
+        this.toast.error(msg, 'Error');
       },
     });
   }

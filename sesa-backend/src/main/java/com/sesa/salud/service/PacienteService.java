@@ -13,6 +13,12 @@ public interface PacienteService {
 
     Page<PacienteDto> findAll(Pageable pageable);
 
+    /**
+     * Lista pacientes opcionalmente filtrados por estado activo.
+     * @param activo null = todos, true = solo activos, false = solo inactivos.
+     */
+    Page<PacienteDto> findAll(Pageable pageable, Boolean activo);
+
     Page<PacienteDto> search(String q, Pageable pageable);
 
     PacienteDto findById(Long id);

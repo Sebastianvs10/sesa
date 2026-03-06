@@ -43,6 +43,17 @@ export interface DashboardStatsDto {
   citasPorEstado?: DashboardCitasPorEstadoDto[];
 }
 
+/** Indicador de calidad en salud — Res. 0256/2016 */
+export interface IndicadorCalidadDto {
+  codigo: string;
+  nombre: string;
+  categoria: string;
+  valor: string;
+  meta: string;
+  unidad: string;
+  interpretacion: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReporteService {
   private readonly http = inject(HttpClient);
@@ -77,5 +88,10 @@ export class ReporteService {
 
   citasPorEstado(): Observable<DashboardCitasPorEstadoDto[]> {
     return this.http.get<DashboardCitasPorEstadoDto[]>(`${this.apiUrl}/dashboard/citas-por-estado`);
+  }
+
+  /** Tablero de calidad en salud — Res. 0256/2016 */
+  indicadoresCalidad(): Observable<IndicadorCalidadDto[]> {
+    return this.http.get<IndicadorCalidadDto[]>(`${this.apiUrl}/calidad`);
   }
 }

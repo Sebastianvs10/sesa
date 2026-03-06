@@ -1167,6 +1167,39 @@
   &:focus { outline: none; }
 }
 
+.citas-lista-filtros-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.citas-lista-filtro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+
+  span { white-space: nowrap; }
+}
+
+.citas-lista-select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--sesa-border);
+  border-radius: 8px;
+  background: var(--sesa-input-bg, var(--sesa-surface));
+  color: var(--sesa-text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  min-width: 140px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--sesa-secondary);
+  }
+}
+
 .citas-filter-chips {
   display: flex;
   gap: 0.4rem;

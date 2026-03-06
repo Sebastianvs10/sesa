@@ -1,0 +1,186 @@
+/* Página Inicio EBS — resumen por rol */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-inicio {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ebs-inicio__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-inicio__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.ebs-inicio__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-inicio__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ebs-inicio__error {
+  color: var(--sesa-error);
+  margin: 0;
+}
+
+.ebs-inicio__dashboard {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-inicio__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ebs-inicio__kpi {
+  padding: 0.75rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border-light);
+  text-align: center;
+}
+
+.ebs-inicio__kpi-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-inicio__kpi-label {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-inicio__kpi--highlight .ebs-inicio__kpi-value {
+  color: var(--sesa-secondary);
+}
+
+.ebs-inicio__kpi--alert .ebs-inicio__kpi-value {
+  color: var(--sesa-error);
+}
+
+.ebs-inicio__territory-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.ebs-inicio__territory-item {
+  margin-bottom: 0.35rem;
+}
+
+.ebs-inicio__territory-link {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+  color: var(--sesa-text-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background var(--sesa-transition-smooth), border-color var(--sesa-transition-smooth);
+}
+
+.ebs-inicio__territory-link:hover {
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-border);
+}
+
+.ebs-inicio__territory-name {
+  font-weight: 600;
+  display: block;
+}
+
+.ebs-inicio__territory-meta {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-inicio__territory-risk {
+  font-size: 0.75rem;
+  color: var(--sesa-error);
+  margin-left: 0.5rem;
+}
+
+.ebs-inicio__link {
+  font-size: 0.9rem;
+  color: var(--sesa-secondary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.ebs-inicio__link:hover {
+  text-decoration: underline;
+}
+
+.ebs-inicio__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.ebs-inicio__action {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+  color: var(--sesa-text-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background var(--sesa-transition-smooth), border-color var(--sesa-transition-smooth);
+}
+
+.ebs-inicio__action:hover {
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-secondary);
+}
+
+.ebs-inicio__action--primary {
+  background: rgba(31, 106, 225, 0.1);
+  border-color: var(--sesa-secondary);
+  color: var(--sesa-secondary);
+}
+
+.ebs-inicio__action-icon {
+  font-size: 1.25rem;
+}
+
+/* Móvil: touch targets y espaciado */
+@media (max-width: 768px) {
+  .ebs-inicio {
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+  }
+  .ebs-inicio__action {
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+  }
+  .ebs-inicio__territory-link {
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+  }
+  .ebs-inicio__kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ebs-inicio__actions {
+    grid-template-columns: 1fr;
+  }
+}

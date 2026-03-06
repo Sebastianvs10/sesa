@@ -140,3 +140,79 @@
   color: var(--sesa-text-muted);
   font-size: 0.95rem;
 }
+
+/* Tablero de calidad Res. 0256/2016 */
+.sesa-report-card-full {
+  grid-column: 1 / -1;
+}
+
+.sesa-calidad-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: var(--sesa-text-secondary);
+}
+
+.sesa-calidad-table-wrap {
+  overflow-x: auto;
+
+  /* PrimeNG Table: tema SESA */
+  ::ng-deep .sesa-reportes-table {
+    .p-datatable-thead > tr > th {
+      background: var(--sesa-surface);
+      color: var(--sesa-text-secondary);
+      border-color: var(--sesa-border);
+    }
+    .p-datatable-tbody > tr > td {
+      color: var(--sesa-text-primary);
+      border-color: var(--sesa-border);
+    }
+    .p-datatable-tbody > tr:hover {
+      background: var(--sesa-surface-hover);
+    }
+  }
+}
+
+.sesa-calidad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th, td {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--sesa-border);
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--sesa-text-secondary);
+    background: var(--sesa-surface);
+  }
+
+  td {
+    color: var(--sesa-text-primary);
+  }
+
+  .sesa-calidad-code {
+    font-family: var(--sesa-font-mono, monospace);
+    font-size: 0.85rem;
+  }
+
+  .sesa-calidad-name {
+    font-weight: 500;
+  }
+
+  .sesa-calidad-interp {
+    max-width: 280px;
+    color: var(--sesa-text-secondary);
+    font-size: 0.85rem;
+  }
+}
+
+.sesa-calidad-empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--sesa-text-muted);
+}

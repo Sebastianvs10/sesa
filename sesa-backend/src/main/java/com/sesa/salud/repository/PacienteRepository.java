@@ -19,6 +19,10 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long> {
 
     Page<Paciente> findByActivoTrue(Pageable pageable);
 
+    Page<Paciente> findByActivo(Boolean activo, Pageable pageable);
+
     Page<Paciente> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCaseOrDocumentoContaining(
             String nombres, String apellidos, String documento, Pageable pageable);
+
+    java.util.Optional<Paciente> findByUsuarioId(Long usuarioId);
 }

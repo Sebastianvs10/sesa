@@ -53,6 +53,13 @@ public class CitaServiceImpl implements CitaService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<CitaDto> findByFechaAndProfesionalId(LocalDate fecha, Long profesionalId) {
+        return citaRepository.findByFechaAndProfesionalId(fecha, profesionalId).stream()
+                .map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CitaDto> findByPacienteId(Long pacienteId, Pageable pageable) {
         return citaRepository.findByPaciente_Id(pacienteId, pageable).getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -72,6 +79,7 @@ public class CitaServiceImpl implements CitaService {
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
         Personal profesional = personalRepository.findById(dto.getProfesionalId())
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado: " + dto.getProfesionalId()));
+        validarNoSolapamiento(dto.getProfesionalId(), dto.getFechaHora(), dto.getDuracionEstimadaMin(), null);
         Cita c = Cita.builder()
                 .paciente(paciente)
                 .profesional(profesional)
@@ -96,6 +104,7 @@ public class CitaServiceImpl implements CitaService {
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
         Personal profesional = personalRepository.findById(dto.getProfesionalId())
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado: " + dto.getProfesionalId()));
+        validarNoSolapamiento(dto.getProfesionalId(), dto.getFechaHora(), dto.getDuracionEstimadaMin(), id);
         c.setPaciente(paciente);
         c.setProfesional(profesional);
         c.setServicio(dto.getServicio());
@@ -184,6 +193,30 @@ public class CitaServiceImpl implements CitaService {
     @Transactional(readOnly = true)
     public List<Personal> findProfesionalesMedicos() {
         return personalRepository.findByRolIn(List.of("MEDICO", "JEFE_ENFERMERIA", "ODONTOLOGO", "PSICOLOGO", "COORDINADOR_MEDICO"));
+    }
+
+    /**
+     * Valida que el profesional no tenga otra cita (no cancelada) en el mismo horario.
+     * El solapamiento se evalúa por profesional: distintas especialidades/profesionales pueden compartir hora.
+     */
+    private void validarNoSolapamiento(Long profesionalId, LocalDateTime fechaHora, Integer duracionMin, Long excludeCitaId) {
+        if (fechaHora == null) return;
+        LocalDate fecha = fechaHora.toLocalDate();
+        int duracion = (duracionMin != null && duracionMin > 0) ? duracionMin : 30;
+        LocalDateTime finNueva = fechaHora.plusMinutes(duracion);
+        List<Cita> delDia = citaRepository.findByFechaAndProfesionalId(fecha, profesionalId);
+        boolean solapada = delDia.stream()
+                .filter(c -> !"CANCELADA".equalsIgnoreCase(c.getEstado()))
+                .filter(c -> excludeCitaId == null || !c.getId().equals(excludeCitaId))
+                .anyMatch(c -> {
+                    int dur = (c.getDuracionEstimadaMin() != null && c.getDuracionEstimadaMin() > 0)
+                            ? c.getDuracionEstimadaMin() : 30;
+                    LocalDateTime finC = c.getFechaHora().plusMinutes(dur);
+                    return c.getFechaHora().isBefore(finNueva) && finC.isAfter(fechaHora);
+                });
+        if (solapada) {
+            throw new IllegalStateException("El profesional ya tiene otra cita en ese horario. Las citas se validan por especialista; elija otra hora o otro profesional.");
+        }
     }
 
     // ── Conversores ──────────────────────────────────────────────────────

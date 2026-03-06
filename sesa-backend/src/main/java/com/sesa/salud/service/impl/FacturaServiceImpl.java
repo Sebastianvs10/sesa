@@ -13,6 +13,7 @@ import com.sesa.salud.repository.FacturaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.service.FacturaService;
+import com.sesa.salud.service.FacturacionElectronicaDianService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final FacturaRepository facturaRepository;
     private final PacienteRepository pacienteRepository;
     private final OrdenClinicaRepository ordenClinicaRepository;
+    private final FacturacionElectronicaDianService facturacionElectronicaDianService;
 
     @Override
     @Transactional(readOnly = true)
@@ -141,6 +143,20 @@ public class FacturaServiceImpl implements FacturaService {
         }
         factura.setEstado(nuevoEstado.toUpperCase());
         return toDto(facturaRepository.save(factura));
+    }
+
+    @Override
+    @Transactional
+    public FacturaDto emitirElectronica(Long id) {
+        Factura factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada: " + id));
+        // Evitar reenvíos innecesarios si ya fue aceptada por DIAN
+        if ("ACEPTADA".equalsIgnoreCase(factura.getDianEstado())) {
+            return toDto(factura);
+        }
+        facturacionElectronicaDianService.emitirFactura(factura);
+        Factura guardada = facturaRepository.save(factura);
+        return toDto(guardada);
     }
 
     @Override

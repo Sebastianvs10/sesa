@@ -8,10 +8,14 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.sesa.salud.dto.EmpresaDto;
 import com.sesa.salud.dto.pdf.*;
 import com.sesa.salud.entity.*;
+import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.HistoriaClinicaRepository;
+import com.sesa.salud.repository.OrdenClinicaRepository;
+import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -24,6 +28,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,10 +39,33 @@ import java.util.stream.Collectors;
 public class HistoriaClinicaPdfService {
 
     private final HistoriaClinicaRepository historiaClinicaRepository;
+    private final ConsultaRepository consultaRepository;
+    private final OrdenClinicaRepository ordenClinicaRepository;
+    private final PacienteRepository pacienteRepository;
     private final EmpresaService empresaService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DT_FMT   = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    /** Parsea resultado en líneas "Etiqueta: valor" a ítems para PDF (etiqueta en negrita + valor). */
+    private List<ResultadoItemPdfDto> parseResultadoItems(String resultado) {
+        if (resultado == null || resultado.isBlank()) return List.of();
+        List<ResultadoItemPdfDto> items = new ArrayList<>();
+        for (String line : resultado.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+            int colon = trimmed.indexOf(": ");
+            if (colon > 0) {
+                items.add(ResultadoItemPdfDto.builder()
+                        .etiqueta(trimmed.substring(0, colon).trim())
+                        .valor(trimmed.substring(colon + 2).trim())
+                        .build());
+            } else {
+                items.add(ResultadoItemPdfDto.builder().etiqueta(trimmed).valor("").build());
+            }
+        }
+        return items;
+    }
 
     /** Engine standalone (no requiere contexto web de Spring). */
     private static final TemplateEngine TEMPLATE_ENGINE = buildEngine();
@@ -69,6 +97,154 @@ public class HistoriaClinicaPdfService {
         HistoriaClinica historia = historiaClinicaRepository.findByPacienteId(pacienteId)
                 .orElseThrow(() -> new RuntimeException("Historia clínica no encontrada para paciente: " + pacienteId));
         return renderizar(historia);
+    }
+
+    /** PDF de órdenes clínicas y resultados del paciente. */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfOrdenesPaciente(Long pacienteId) {
+        OrdenesPacientePdfDto dto = buildOrdenesPacienteDto(pacienteId);
+        String html = TEMPLATE_ENGINE.process("pdf/ordenes-resultados", buildOrdenesContext(dto));
+        return htmlToPdf(html);
+    }
+
+    /** PDF de una sola orden clínica (con datos del paciente). */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfOrdenIndividual(Long ordenId) {
+        OrdenesPacientePdfDto dto = buildOrdenIndividualDto(ordenId);
+        String html = TEMPLATE_ENGINE.process("pdf/ordenes-resultados", buildOrdenesContext(dto));
+        return htmlToPdf(html);
+    }
+
+    private OrdenesPacientePdfDto buildOrdenIndividualDto(Long ordenId) {
+        OrdenClinica oc = ordenClinicaRepository.findById(ordenId)
+                .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + ordenId));
+        Paciente p = oc.getPaciente();
+        if (p == null) throw new RuntimeException("Orden sin paciente asociado: " + ordenId);
+        EmpresaDto empresa = loadEmpresa();
+        String logoBase64 = null;
+        String logoContentType = null;
+        try {
+            var logoOpt = empresaService.getLogoResource(TenantContextHolder.getTenantSchema());
+            if (logoOpt.isPresent()) {
+                byte[] logoBytes = logoOpt.get().getResource().getContentAsByteArray();
+                logoBase64 = Base64.getEncoder().encodeToString(logoBytes);
+                logoContentType = logoOpt.get().getContentType() != null ? logoOpt.get().getContentType() : "image/png";
+            }
+        } catch (Exception e) {
+            log.debug("No se pudo cargar logo para PDF orden individual: {}", e.getMessage());
+        }
+        String fechaRes = oc.getFechaResultado() != null ? DT_FMT.format(oc.getFechaResultado().atZone(ZoneOffset.UTC)) : null;
+        OrdenPdfDto ordenDto = OrdenPdfDto.builder()
+                .tipo(oc.getTipo())
+                .detalle(oc.getDetalle())
+                .estado(oc.getEstado() != null ? oc.getEstado() : "PENDIENTE")
+                .resultado(oc.getResultado())
+                .fechaResultado(fechaRes)
+                .resultadoItems(parseResultadoItems(oc.getResultado()))
+                .build();
+        List<OrdenPdfDto> ordenesDtos = List.of(ordenDto);
+        String pacienteNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
+        String pacienteFechaNac = p.getFechaNacimiento() != null ? DATE_FMT.format(p.getFechaNacimiento()) : null;
+        String pacienteEdad = p.getFechaNacimiento() != null ? String.valueOf(Period.between(p.getFechaNacimiento(), LocalDate.now()).getYears()) : null;
+        String profesionalNombre = null;
+        String profesionalRol = null;
+        String profesionalIdentificacion = null;
+        if (oc.getResultadoRegistradoPor() != null) {
+            var prof = oc.getResultadoRegistradoPor();
+            profesionalNombre = (prof.getNombres() + " " + (prof.getApellidos() != null ? prof.getApellidos() : "")).trim();
+            profesionalRol = prof.getRol();
+            profesionalIdentificacion = prof.getIdentificacion();
+        }
+        return OrdenesPacientePdfDto.builder()
+                .empresaNombre(empresa != null ? empresa.getRazonSocial() : "IPS SESA Salud")
+                .empresaIdentificacion(empresa != null ? empresa.getIdentificacion() : null)
+                .logoBase64(logoBase64)
+                .logoContentType(logoContentType)
+                .pacienteNombre(pacienteNombre)
+                .pacienteDocumento(p.getDocumento())
+                .pacienteTipoDocumento(p.getTipoDocumento())
+                .pacienteFechaNacimiento(pacienteFechaNac)
+                .pacienteEdad(pacienteEdad)
+                .pacienteSexo(p.getSexo())
+                .pacienteTelefono(p.getTelefono())
+                .pacienteEmail(p.getEmail())
+                .pacienteDireccion(p.getDireccion())
+                .fechaGeneracion(DT_FMT.format(java.time.ZonedDateTime.now(ZoneOffset.UTC)))
+                .profesionalNombre(profesionalNombre)
+                .profesionalRol(profesionalRol)
+                .profesionalIdentificacion(profesionalIdentificacion)
+                .ordenes(ordenesDtos)
+                .build();
+    }
+
+    private Context buildOrdenesContext(OrdenesPacientePdfDto dto) {
+        Context ctx = new Context();
+        ctx.setVariable("data", dto);
+        if (dto != null) {
+            ctx.setVariable("pacienteFechaNacimiento", dto.getPacienteFechaNacimiento());
+            ctx.setVariable("pacienteEdad", dto.getPacienteEdad());
+            ctx.setVariable("pacienteSexo", dto.getPacienteSexo());
+            ctx.setVariable("pacienteTelefono", dto.getPacienteTelefono());
+            ctx.setVariable("pacienteEmail", dto.getPacienteEmail());
+            ctx.setVariable("pacienteDireccion", dto.getPacienteDireccion());
+            ctx.setVariable("pacienteTipoDocumento", dto.getPacienteTipoDocumento());
+            ctx.setVariable("profesionalNombre", dto.getProfesionalNombre());
+            ctx.setVariable("profesionalRol", dto.getProfesionalRol());
+            ctx.setVariable("profesionalIdentificacion", dto.getProfesionalIdentificacion());
+        }
+        return ctx;
+    }
+
+    private OrdenesPacientePdfDto buildOrdenesPacienteDto(Long pacienteId) {
+        Paciente p = pacienteRepository.findById(pacienteId)
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + pacienteId));
+        EmpresaDto empresa = loadEmpresa();
+        String logoBase64 = null;
+        String logoContentType = null;
+        try {
+            var logoOpt = empresaService.getLogoResource(TenantContextHolder.getTenantSchema());
+            if (logoOpt.isPresent()) {
+                byte[] logoBytes = logoOpt.get().getResource().getContentAsByteArray();
+                logoBase64 = Base64.getEncoder().encodeToString(logoBytes);
+                logoContentType = logoOpt.get().getContentType() != null ? logoOpt.get().getContentType() : "image/png";
+            }
+        } catch (Exception e) {
+            log.debug("No se pudo cargar logo para PDF órdenes: {}", e.getMessage());
+        }
+        List<OrdenClinica> list = ordenClinicaRepository.findByPaciente_IdOrderByCreatedAtDesc(pacienteId, PageRequest.of(0, 500));
+        if (list == null) list = new ArrayList<>();
+        List<OrdenPdfDto> ordenesDtos = new ArrayList<>();
+        for (OrdenClinica oc : list) {
+            String fechaRes = oc.getFechaResultado() != null ? DT_FMT.format(oc.getFechaResultado().atZone(ZoneOffset.UTC)) : null;
+            ordenesDtos.add(OrdenPdfDto.builder()
+                    .tipo(oc.getTipo())
+                    .detalle(oc.getDetalle())
+                    .estado(oc.getEstado() != null ? oc.getEstado() : "PENDIENTE")
+                    .resultado(oc.getResultado())
+                    .fechaResultado(fechaRes)
+                    .resultadoItems(parseResultadoItems(oc.getResultado()))
+                    .build());
+        }
+        String pacienteNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
+        String pacienteFechaNac = p.getFechaNacimiento() != null ? DATE_FMT.format(p.getFechaNacimiento()) : null;
+        String pacienteEdad = p.getFechaNacimiento() != null ? String.valueOf(Period.between(p.getFechaNacimiento(), LocalDate.now()).getYears()) : null;
+        return OrdenesPacientePdfDto.builder()
+                .empresaNombre(empresa != null ? empresa.getRazonSocial() : "IPS SESA Salud")
+                .empresaIdentificacion(empresa != null ? empresa.getIdentificacion() : null)
+                .logoBase64(logoBase64)
+                .logoContentType(logoContentType)
+                .pacienteNombre(pacienteNombre)
+                .pacienteDocumento(p.getDocumento())
+                .pacienteTipoDocumento(p.getTipoDocumento())
+                .pacienteFechaNacimiento(pacienteFechaNac)
+                .pacienteEdad(pacienteEdad)
+                .pacienteSexo(p.getSexo())
+                .pacienteTelefono(p.getTelefono())
+                .pacienteEmail(p.getEmail())
+                .pacienteDireccion(p.getDireccion())
+                .fechaGeneracion(DT_FMT.format(java.time.ZonedDateTime.now(ZoneOffset.UTC)))
+                .ordenes(ordenesDtos)
+                .build();
     }
 
     private byte[] renderizar(HistoriaClinica hc) {
@@ -111,6 +287,9 @@ public class HistoriaClinicaPdfService {
                 .map(this::toAtencionDto)
                 .collect(Collectors.toList());
 
+        /* Última consulta SOAP del paciente (modelo Consulta) */
+        ConsultaSoapPdfDto ultimaSoap = buildUltimaConsultaSoap(p.getId());
+
         return HistoriaClinicaPdfDto.builder()
                 .empresaNombre(empresa != null ? empresa.getRazonSocial() : "IPS SESA Salud")
                 .empresaIdentificacion(empresa != null ? empresa.getIdentificacion() : null)
@@ -130,7 +309,7 @@ public class HistoriaClinicaPdfService {
                 .pacienteNombre(
                         (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim())
                 .pacienteDocumento(p.getDocumento())
-                .pacienteTipoDocumento(p.getTipoDocumento())
+                .pacienteTipoDocumento(p.getTipoDocumento() != null ? p.getTipoDocumento() : "CC")
                 .pacienteFechaNacimiento(p.getFechaNacimiento() != null
                         ? DATE_FMT.format(p.getFechaNacimiento()) : null)
                 .pacienteEdad(edad)
@@ -140,6 +319,17 @@ public class HistoriaClinicaPdfService {
                 .pacienteDireccion(p.getDireccion())
                 .epsNombre(p.getEps() != null ? p.getEps().getNombre() : null)
                 .epsCodigo(p.getEps() != null ? p.getEps().getCodigo() : null)
+                .pacienteMunicipioResidencia(p.getMunicipioResidencia())
+                .pacienteDepartamentoResidencia(p.getDepartamentoResidencia())
+                .pacienteZonaResidencia(p.getZonaResidencia())
+                .pacienteRegimenAfiliacion(p.getRegimenAfiliacion())
+                .pacienteTipoUsuario(p.getTipoUsuario())
+                .pacienteContactoEmergenciaNombre(p.getContactoEmergenciaNombre())
+                .pacienteContactoEmergenciaTelefono(p.getContactoEmergenciaTelefono())
+                .pacienteEstadoCivil(p.getEstadoCivil())
+                .pacienteEscolaridad(p.getEscolaridad())
+                .pacienteOcupacion(p.getOcupacion())
+                .pacientePertenenciaEtnica(p.getPertenenciaEtnica())
                 .grupoSanguineo(hc.getGrupoSanguineo())
                 .alergiasGenerales(hc.getAlergiasGenerales())
                 .antecedentesPersonales(hc.getAntecedentesPersonales())
@@ -153,6 +343,109 @@ public class HistoriaClinicaPdfService {
                 .habitosSustancias(hc.getHabitosSustancias())
                 .habitosDetalles(hc.getHabitosDetalles())
                 .atenciones(atencionesDtos)
+                .ultimaConsultaSoap(ultimaSoap)
+                .build();
+    }
+
+    /** Construye el DTO de la última consulta SOAP del paciente (entidad Consulta) con órdenes y profesional.
+     * Prefiere la consulta más reciente que tenga al menos una orden, para que el PDF muestre las órdenes emitidas. */
+    private ConsultaSoapPdfDto buildUltimaConsultaSoap(Long pacienteId) {
+        List<Consulta> list = consultaRepository.findByPaciente_IdOrderByFechaConsultaDesc(
+                pacienteId, PageRequest.of(0, 50));
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        Consulta c = null;
+        List<OrdenClinica> ordenes = new ArrayList<>();
+        for (Consulta consulta : list) {
+            List<OrdenClinica> ord = ordenClinicaRepository.findByConsulta_IdOrderByCreatedAtAsc(consulta.getId());
+            if (ord != null && !ord.isEmpty()) {
+                c = consulta;
+                ordenes = ord;
+                break;
+            }
+        }
+        if (c == null) {
+            c = list.get(0);
+            ordenes = ordenClinicaRepository.findByConsulta_IdOrderByCreatedAtAsc(c.getId());
+        }
+        if (ordenes == null) {
+            ordenes = new ArrayList<>();
+        }
+        if (ordenes.isEmpty()) {
+            List<OrdenClinica> porPaciente = ordenClinicaRepository.findByPaciente_IdOrderByCreatedAtDesc(
+                    pacienteId, PageRequest.of(0, 100));
+            if (porPaciente != null) {
+                List<OrdenClinica> filtradas = new ArrayList<>();
+                Long consultaId = c.getId();
+                for (OrdenClinica oc : porPaciente) {
+                    if (oc.getConsulta() != null && consultaId.equals(oc.getConsulta().getId())) {
+                        filtradas.add(oc);
+                    }
+                }
+                ordenes = filtradas;
+            }
+        }
+        Personal prof = c.getProfesional();
+
+        List<OrdenPdfDto> ordenesDtos = new ArrayList<>();
+        for (OrdenClinica oc : ordenes) {
+            String fechaRes = oc.getFechaResultado() != null
+                    ? DT_FMT.format(oc.getFechaResultado().atZone(ZoneOffset.UTC)) : null;
+            ordenesDtos.add(OrdenPdfDto.builder()
+                    .tipo(oc.getTipo())
+                    .detalle(oc.getDetalle())
+                    .estado(oc.getEstado() != null ? oc.getEstado() : "PENDIENTE")
+                    .resultado(oc.getResultado())
+                    .fechaResultado(fechaRes)
+                    .resultadoItems(parseResultadoItems(oc.getResultado()))
+                    .build());
+        }
+
+        String firmaB64 = null;
+        String firmaCt = null;
+        if (prof != null && prof.getFirmaData() != null) {
+            firmaB64 = Base64.getEncoder().encodeToString(prof.getFirmaData());
+            firmaCt = prof.getFirmaContentType();
+        }
+
+        String profNombre = prof != null
+                ? (prof.getNombres() + " " + (prof.getApellidos() != null ? prof.getApellidos() : "")).trim()
+                : null;
+
+        return ConsultaSoapPdfDto.builder()
+                .fechaConsulta(c.getFechaConsulta() != null
+                        ? DT_FMT.format(c.getFechaConsulta().atZone(ZoneOffset.UTC)) : null)
+                .motivoConsulta(c.getMotivoConsulta())
+                .enfermedadActual(c.getEnfermedadActual())
+                .codigoCie10(c.getCodigoCie10())
+                .codigoCie10Secundario(c.getCodigoCie10Secundario())
+                .presionArterial(c.getPresionArterial())
+                .frecuenciaCardiaca(c.getFrecuenciaCardiaca())
+                .frecuenciaRespiratoria(c.getFrecuenciaRespiratoria())
+                .temperatura(c.getTemperatura())
+                .peso(c.getPeso())
+                .talla(c.getTalla())
+                .imc(c.getImc())
+                .saturacionO2(c.getSaturacionO2())
+                .dolorEva(c.getDolorEva())
+                .perimetroAbdominal(c.getPerimetroAbdominal())
+                .perimetroCefalico(c.getPerimetroCefalico())
+                .hallazgosExamen(c.getHallazgosExamen())
+                .diagnostico(c.getDiagnostico())
+                .planTratamiento(c.getPlanTratamiento())
+                .tratamientoFarmacologico(c.getTratamientoFarmacologico())
+                .observacionesClinicas(c.getObservacionesClincias())
+                .recomendaciones(c.getRecomendaciones())
+                .profesionalNombre(profNombre)
+                .profesionalRol(prof != null ? prof.getRol() : null)
+                .profesionalEspecialidad(prof != null ? prof.getEspecialidadFormal() : null)
+                .profesionalIdentificacion(prof != null ? prof.getIdentificacion() : null)
+                .profesionalTarjetaProfesional(prof != null ? prof.getTarjetaProfesional() : null)
+                .profesionalNumeroRethus(prof != null ? prof.getNumeroRethus() : null)
+                .firmaBase64(firmaB64)
+                .firmaContentType(firmaCt)
+                .ordenes(ordenesDtos)
                 .build();
     }
 
@@ -194,10 +487,14 @@ public class HistoriaClinicaPdfService {
                         : null)
                 .profesionalRol(prof != null ? prof.getRol() : null)
                 .profesionalIdentificacion(prof != null ? prof.getIdentificacion() : null)
+                .profesionalEspecialidad(prof != null ? prof.getEspecialidadFormal() : null)
+                .profesionalTarjetaProfesional(prof != null ? prof.getTarjetaProfesional() : null)
+                .profesionalNumeroRethus(prof != null ? prof.getNumeroRethus() : null)
                 .firmaBase64(prof != null && prof.getFirmaData() != null
                         ? Base64.getEncoder().encodeToString(prof.getFirmaData()) : null)
                 .firmaContentType(prof != null ? prof.getFirmaContentType() : null)
                 .motivoConsulta(a.getMotivoConsulta())
+                .versionEnfermedad(a.getVersionEnfermedad())
                 .enfermedadActual(a.getEnfermedadActual())
                 .sintomasAsociados(a.getSintomasAsociados())
                 .factoresMejoran(a.getFactoresMejoran())
@@ -231,6 +528,7 @@ public class HistoriaClinicaPdfService {
     private String renderTemplate(HistoriaClinicaPdfDto dto) {
         Context ctx = new Context();
         ctx.setVariable("data", dto);
+        ctx.setVariable("ultimaConsultaSoap", dto != null ? dto.getUltimaConsultaSoap() : null);
         return TEMPLATE_ENGINE.process("pdf/historia-clinica", ctx);
     }
 

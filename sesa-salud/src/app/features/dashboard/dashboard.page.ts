@@ -192,6 +192,19 @@ export class DashboardPageComponent implements OnInit {
       cards.push({ titulo: 'Facturación', valor: r.totalFacturas, displayValor: r.totalFacturas, chip: r.totalFacturado != null ? `$${Number(r.totalFacturado).toLocaleString('es-CO')}` : 'Facturas', chipClase: 'sesa-chip-success', icon: faFileInvoiceDollar, link: '/facturacion', gradient: 'linear-gradient(135deg, #22c55e, #16a34a)' });
     }
 
+    if (this.permissions.canAccess('EBS')) {
+      cards.push({
+        titulo: 'EBS — APS territorial',
+        valor: '-',
+        displayValor: '-',
+        chip: 'Equipos Básicos de Salud',
+        chipClase: 'sesa-chip-primary',
+        icon: this.faChartLine,
+        link: '/ebs',
+        gradient: 'linear-gradient(135deg, #059669, #10b981)',
+      });
+    }
+
     return cards;
   }
 
@@ -227,5 +240,16 @@ export class DashboardPageComponent implements OnInit {
 
   get fechaHoyFormateada(): string {
     return new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  /** Hooks EBS: placeholders hasta que el backend exponga métricas (GET /ebs/dashboard/coverage, etc.). */
+  ebsCoberturaTerritorial(): string {
+    return '—';
+  }
+  ebsPoblacionVisitada(): string {
+    return '—';
+  }
+  ebsCronicosControlados(): string {
+    return '—';
   }
 }

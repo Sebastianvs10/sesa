@@ -1,0 +1,251 @@
+/* Portal del Paciente — Órdenes Médicas */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.pord {
+  padding: 0 0 24px;
+  max-width: 700px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 20px 16px;
+    background: linear-gradient(160deg, var(--portal-purple-alpha) 0%, transparent 100%);
+    border-bottom: 1px solid var(--sesa-border-light);
+  }
+
+  &__header-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--portal-purple-alpha);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--portal-purple);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    margin: 0 0 3px;
+    letter-spacing: -0.4px;
+  }
+
+  &__sub {
+    font-size: 13px;
+    color: var(--sesa-text-secondary);
+    margin: 0;
+  }
+
+  // ─── Filtros ──────────────────────────────────────────────────────────
+  &__filters {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__filter-chip {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    color: var(--sesa-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--sesa-transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+
+    &--active {
+      background: var(--portal-purple-alpha);
+      border-color: var(--portal-purple);
+      color: var(--portal-purple);
+      font-weight: 600;
+    }
+
+    &:active { transform: scale(0.96); }
+  }
+
+  // ─── Lista ────────────────────────────────────────────────────────────
+  &__list {
+    padding: 4px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__item {
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__item-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__tipo-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    &--lab  { background: rgba(34,197,94,0.1); color: var(--sesa-success); }
+    &--img  { background: var(--portal-accent-alpha); color: var(--portal-accent); }
+    &--proc { background: rgba(245,158,11,0.1); color: var(--sesa-warning); }
+    &--inter{ background: var(--portal-purple-alpha); color: var(--portal-purple); }
+    &--default { background: var(--sesa-bg); color: var(--sesa-text-secondary); }
+  }
+
+  &__item-estado {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+
+    &--pending    { background: rgba(245,158,11,0.1); color: var(--sesa-warning); }
+    &--done       { background: rgba(34,197,94,0.1);  color: var(--sesa-success); }
+    &--cancelled  { background: rgba(100,116,139,0.1); color: var(--sesa-text-muted); }
+    &--default    { background: var(--sesa-bg); color: var(--sesa-text-secondary); }
+  }
+
+  &__item-desc {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  &__item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+
+    svg { flex-shrink: 0; }
+
+    &--code {
+      font-family: monospace;
+      background: var(--sesa-bg);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--sesa-text-secondary);
+    }
+  }
+
+  &__item-dx {
+    background: var(--sesa-bg);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: var(--sesa-text-muted);
+    }
+
+    &-val {
+      font-size: 13px;
+      color: var(--sesa-text-primary);
+      line-height: 1.4;
+    }
+  }
+
+  // ─── Load more / empty / error ────────────────────────────────────────
+  &__load-more {
+    width: 100%;
+    padding: 12px;
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 12px;
+    color: var(--portal-purple);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--sesa-transition-fast);
+
+    &:disabled { opacity: 0.6; cursor: default; }
+    &:active { background: var(--portal-purple-alpha); }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 52px 20px;
+    color: var(--sesa-text-muted);
+
+    svg { opacity: 0.35; }
+    p { font-size: 14px; text-align: center; margin: 0; }
+  }
+
+  &__error {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--sesa-error);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+
+    p { font-size: 14px; margin: 0; }
+
+    button {
+      padding: 8px 20px;
+      background: var(--sesa-error);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  &__skeleton {
+    height: 110px;
+    background: var(--sesa-border-light);
+    border-radius: 16px;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

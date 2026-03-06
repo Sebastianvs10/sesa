@@ -14,7 +14,7 @@ import { faChartBar, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { DashboardChartBarComponent } from '../../shared/components/dashboard-chart-bar/dashboard-chart-bar.component';
 import { DashboardChartDoughnutComponent } from '../../shared/components/dashboard-chart-doughnut/dashboard-chart-doughnut.component';
-import { ReporteService, DashboardStatsDto } from '../../core/services/reporte.service';
+import { ReporteService, DashboardStatsDto, IndicadorCalidadDto } from '../../core/services/reporte.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 const MESES_LABELS: Record<number, string> = {
@@ -47,6 +47,8 @@ export class ReportesPageComponent implements OnInit {
 
   loading = true;
   error = false;
+  loadingCalidad = true;
+  indicadoresCalidad: IndicadorCalidadDto[] = [];
 
   chartCitasPorDia: { labels: string[]; values: number[] } = { labels: [], values: [] };
   chartConsultasPorMes: { labels: string[]; values: number[] } = { labels: [], values: [] };
@@ -58,6 +60,16 @@ export class ReportesPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStats();
+    this.loadCalidad();
+  }
+
+  loadCalidad(): void {
+    this.reporteService.indicadoresCalidad()
+      .pipe(catchError(() => of<IndicadorCalidadDto[]>([])))
+      .subscribe((list) => {
+        this.indicadoresCalidad = list;
+        this.loadingCalidad = false;
+      });
   }
 
   loadStats(): void {

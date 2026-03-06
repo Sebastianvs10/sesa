@@ -425,9 +425,14 @@
           </div>
         }
 
-        <div class="fac-panel-footer">
+        <div class="fac-panel-footer fac-panel-footer--wrap">
           <button class="sesa-btn sesa-btn-outline" type="button" (click)="cerrarPanel()">Cerrar</button>
           <button class="sesa-btn sesa-btn-secondary" type="button"
+            [disabled]="generandoRips()"
+            (click)="generarRipsAutomatico()">
+            @if (generandoRips()) { Generando... } @else { RIPS automático (mes anterior) }
+          </button>
+          <button class="sesa-btn sesa-btn-outline" type="button"
             [disabled]="generandoRips() || !ripsDesde || !ripsHasta"
             (click)="descargarRips()">
             CSV genérico

@@ -11,5 +11,6 @@ import java.util.List;
 
 public interface OrdenClinicaRepository extends JpaRepository<OrdenClinica, Long> {
     List<OrdenClinica> findByPaciente_IdOrderByCreatedAtDesc(Long pacienteId, Pageable pageable);
+    List<OrdenClinica> findByConsulta_IdOrderByCreatedAtAsc(Long consultaId);
     List<OrdenClinica> findByTipoOrderByCreatedAtDesc(String tipo, Pageable pageable);
 }

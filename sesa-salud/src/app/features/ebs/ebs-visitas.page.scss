@@ -1,0 +1,104 @@
+/* Historial de visitas EBS — premium */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-visitas {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.ebs-visitas__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-visitas__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+.ebs-visitas__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-visitas__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.ebs-visitas__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+.ebs-visitas__select {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  min-width: 160px;
+}
+.ebs-visitas__btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-secondary);
+  color: #fff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ebs-visitas__btn:hover { opacity: 0.9; }
+
+.ebs-visitas__skeleton { display: flex; flex-direction: column; gap: 0.5rem; }
+.ebs-visitas__error { color: var(--sesa-error); margin: 0; }
+
+.ebs-visitas__list { list-style: none; margin: 0; padding: 0; }
+.ebs-visitas__item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+}
+.ebs-visitas__item-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.ebs-visitas__item-address { display: block; width: 100%; margin-bottom: 0.2rem; }
+.ebs-visitas__item-date { font-size: 0.8rem; color: var(--sesa-text-secondary); }
+.ebs-visitas__item-type {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(31, 106, 225, 0.1);
+  color: var(--sesa-secondary);
+  font-weight: 500;
+}
+.ebs-visitas__item-territory,
+.ebs-visitas__item-prof { font-size: 0.75rem; color: var(--sesa-text-secondary); }
+.ebs-visitas__item-notes { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--sesa-text-secondary); }
+
+@media (max-width: 768px) {
+  .ebs-visitas__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ebs-visitas__select {
+    min-height: 48px;
+    min-width: 0;
+  }
+  .ebs-visitas__btn {
+    min-height: 48px;
+  }
+  .ebs-visitas__item {
+    padding: 1rem;
+  }
+}

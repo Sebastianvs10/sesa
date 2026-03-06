@@ -60,6 +60,12 @@ public class Cita {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "recordatorio_24h_enviado_at")
+    private Instant recordatorio24hEnviadoAt;
+
+    @Column(name = "recordatorio_1h_enviado_at")
+    private Instant recordatorio1hEnviadoAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

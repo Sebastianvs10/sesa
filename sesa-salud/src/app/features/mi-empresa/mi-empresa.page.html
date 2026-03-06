@@ -145,4 +145,271 @@
 
   </div>
 
+  <!-- ── SECCIÓN FACTURACIÓN ELECTRÓNICA DIAN ─────────────────── -->
+  <div class="emp-section emp-section--fe">
+    <div class="emp-section-header">
+      <div class="emp-section-icon emp-section-icon--fe">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M4 4.5A1.5 1.5 0 015.5 3H13l3 3v9.5A1.5 1.5 0 0114.5 17h-9A1.5 1.5 0 014 15.5v-11z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          <path d="M7 11h6M7 8.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="emp-section-title">Facturación electrónica DIAN</h2>
+        <p class="emp-section-sub">Configura si esta empresa emite o no facturas electrónicas (Res. 000042 / UBL 2.1).</p>
+        <div class="emp-fe-pills">
+          <span class="emp-fe-pill" [class.emp-fe-pill--off]="!feIsActiva()">
+            <span class="emp-fe-pill-dot"></span>
+            {{ feIsActiva() ? 'Facturación electrónica activa' : 'Facturación electrónica desactivada' }}
+          </span>
+          <span class="emp-fe-pill emp-fe-pill--ghost">
+            Ambiente: {{ feAmbienteLabel() }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    @if (feLoading()) {
+      <p class="emp-fe-loading">Cargando configuración de facturación electrónica…</p>
+    } @else {
+      <div class="emp-fe-grid" *ngIf="feConfig() as cfg">
+
+        <div class="emp-fe-toggle-row">
+          <div>
+            <p class="emp-fe-toggle-title">Activar facturación electrónica</p>
+            <p class="emp-fe-toggle-sub">
+              Cuando está activa, las facturas podrán enviarse a la DIAN desde el módulo de facturación.
+            </p>
+          </div>
+          <label class="emp-switch">
+            <input
+              #feToggle
+              type="checkbox"
+              [checked]="cfg.facturacionActiva ?? false"
+              (change)="toggleFeActiva(feToggle.checked)" />
+            <span class="emp-switch-track">
+              <span class="emp-switch-thumb"></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="emp-fe-columns" [class.emp-fe-columns--disabled]="!(cfg.facturacionActiva ?? false)">
+
+          <div class="emp-fe-col">
+            <h3 class="emp-fe-col-title">Datos del emisor</h3>
+
+            <div class="emp-field">
+              <label class="emp-field-label">NIT</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().nit"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field">
+              <label class="emp-field-label">Razón social</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().razonSocial"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field">
+              <label class="emp-field-label">Nombre comercial</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().nombreComercial"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field">
+              <label class="emp-field-label">Régimen</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().regimen"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field">
+              <label class="emp-field-label">Dirección</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().direccion"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field emp-field--inline">
+              <div>
+                <label class="emp-field-label">Municipio</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().municipio"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Departamento</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().departamento"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+
+            <div class="emp-field emp-field--inline">
+              <div>
+                <label class="emp-field-label">País</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().pais"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Correo de notificación</label>
+                <input
+                  class="emp-input"
+                  type="email"
+                  [(ngModel)]="feConfig().emailContacto"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="emp-fe-col">
+            <h3 class="emp-fe-col-title">Resolución DIAN y software</h3>
+
+            <div class="emp-field emp-field--inline">
+              <div>
+                <label class="emp-field-label">Ambiente</label>
+                <select
+                  class="emp-select emp-select--sm"
+                  [(ngModel)]="feConfig().ambiente"
+                  [disabled]="!(cfg.facturacionActiva ?? false)">
+                  <option value="HABILITACION">Habilitación</option>
+                  <option value="PRODUCCION">Producción</option>
+                </select>
+              </div>
+              <div>
+                <label class="emp-field-label">Plantilla PDF</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  placeholder="default"
+                  [(ngModel)]="feConfig().plantillaPdf"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+
+            <div class="emp-field emp-field--inline">
+              <div>
+                <label class="emp-field-label">Número de resolución</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().numeroResolucion"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Fecha resolución</label>
+                <input
+                  class="emp-input"
+                  type="date"
+                  [(ngModel)]="feConfig().fechaResolucion"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+
+            <div class="emp-field emp-field--inline">
+              <div class="emp-field--xs">
+                <label class="emp-field-label">Prefijo</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  maxlength="10"
+                  [(ngModel)]="feConfig().prefijo"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Rango desde</label>
+                <input
+                  class="emp-input"
+                  type="number"
+                  [(ngModel)]="feConfig().rangoDesde"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Rango hasta</label>
+                <input
+                  class="emp-input"
+                  type="number"
+                  [(ngModel)]="feConfig().rangoHasta"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+
+            <div class="emp-field">
+              <label class="emp-field-label">Clave técnica</label>
+              <input
+                class="emp-input"
+                type="text"
+                [(ngModel)]="feConfig().claveTecnica"
+                [disabled]="!(cfg.facturacionActiva ?? false)" />
+            </div>
+
+            <div class="emp-field emp-field--inline">
+              <div>
+                <label class="emp-field-label">Software ID</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().softwareId"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+              <div>
+                <label class="emp-field-label">Software PIN</label>
+                <input
+                  class="emp-input"
+                  type="text"
+                  [(ngModel)]="feConfig().softwarePin"
+                  [disabled]="!(cfg.facturacionActiva ?? false)" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        @if (feError()) {
+          <div class="emp-feedback emp-feedback--error" role="alert">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4M10 13.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            {{ feError() }}
+          </div>
+        }
+
+        <div class="emp-fe-actions">
+          <button
+            type="button"
+            class="emp-btn-primary"
+            [disabled]="feSaving()"
+            (click)="saveFeConfig()">
+            @if (feSaving()) {
+              <span class="emp-spinner"></span>Guardando…
+            } @else {
+              Guardar configuración DIAN
+            }
+          </button>
+          <p class="emp-fe-note">
+            Esta configuración aplica solo para la empresa (schema) actual. Otras empresas del SaaS pueden tener parámetros DIAN diferentes.
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+
 </div>

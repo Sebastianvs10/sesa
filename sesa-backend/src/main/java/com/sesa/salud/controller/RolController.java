@@ -166,6 +166,9 @@ public class RolController {
             case "REGENTE_FARMACIA"    -> "Regente de Farmacia";
             case "RECEPCIONISTA"       -> "Recepcionista";
             case "COORDINADOR_MEDICO"  -> "Coordinador Médico";
+            case "EBS"                 -> "Profesional EBS";
+            case "COORDINADOR_TERRITORIAL" -> "Coordinador Territorial";
+            case "SUPERVISOR_APS"      -> "Supervisor APS";
             default -> codigo;
         };
     }

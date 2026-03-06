@@ -36,6 +36,12 @@ public class ConsentimientoInformadoController {
 
     @PostMapping
     public ResponseEntity<ConsentimientoInformadoDto> create(@RequestBody ConsentimientoInformadoDto dto) {
+        if (dto.getPacienteId() == null) {
+            throw new IllegalArgumentException("pacienteId es obligatorio");
+        }
+        if (dto.getProfesionalId() == null) {
+            throw new IllegalArgumentException("El usuario debe tener un profesional vinculado (personalId). Asigne el usuario a un registro de personal.");
+        }
         Paciente p = pacienteRepo.findById(dto.getPacienteId())
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
         Personal prof = personalRepo.findById(dto.getProfesionalId())

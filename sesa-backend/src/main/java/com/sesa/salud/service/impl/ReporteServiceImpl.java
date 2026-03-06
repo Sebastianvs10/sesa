@@ -3,7 +3,13 @@
  */
 package com.sesa.salud.service.impl;
 
-import com.sesa.salud.dto.*;
+import com.sesa.salud.dto.DashboardCitasPorDiaDto;
+import com.sesa.salud.dto.DashboardCitasPorEstadoDto;
+import com.sesa.salud.dto.DashboardFacturacionMesDto;
+import com.sesa.salud.dto.DashboardMesCountDto;
+import com.sesa.salud.dto.DashboardStatsDto;
+import com.sesa.salud.dto.IndicadorCalidadDto;
+import com.sesa.salud.dto.ReporteResumenDto;
 import com.sesa.salud.repository.*;
 import com.sesa.salud.service.ReporteService;
 import lombok.RequiredArgsConstructor;
@@ -152,5 +158,73 @@ public class ReporteServiceImpl implements ReporteService {
                 .facturacionPorMes(facturacionPorUltimosMeses(6))
                 .citasPorEstado(citasPorEstado())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<IndicadorCalidadDto> getIndicadoresCalidadRes256() {
+        long totalCitas = citaRepository.count();
+        List<Object[]> porEstado = citaRepository.countGroupByEstado();
+        long citasRealizadas = 0;
+        long citasAgendadas = 0;
+        for (Object[] row : porEstado) {
+            String estado = row[0] != null ? ((String) row[0]).toUpperCase() : "";
+            Long total = row[1] != null ? (Long) row[1] : 0L;
+            if ("REALIZADA".equals(estado) || "ATENDIDA".equals(estado)) {
+                citasRealizadas += total;
+            } else if ("AGENDADA".equals(estado)) {
+                citasAgendadas += total;
+            }
+        }
+        long totalConsultas = consultaRepository.count();
+        long totalPacientes = pacienteRepository.count();
+
+        List<IndicadorCalidadDto> lista = new ArrayList<>();
+        lista.add(IndicadorCalidadDto.builder()
+                .codigo("RES256-OPC-01")
+                .nombre("Oportunidad en asignación de citas")
+                .categoria("Efectividad")
+                .valor(totalCitas > 0 ? String.format("%.1f", 100.0 * citasRealizadas / totalCitas) : "0")
+                .meta("≥ 95%")
+                .unidad("%")
+                .interpretacion("Porcentaje de citas realizadas sobre total programadas")
+                .build());
+        lista.add(IndicadorCalidadDto.builder()
+                .codigo("RES256-OPC-02")
+                .nombre("Citas agendadas (acumulado)")
+                .categoria("Efectividad")
+                .valor(String.valueOf(citasAgendadas))
+                .meta("-")
+                .unidad("citas")
+                .interpretacion("Cantidad de citas en estado agendada")
+                .build());
+        lista.add(IndicadorCalidadDto.builder()
+                .codigo("RES256-CON-01")
+                .nombre("Consultas médicas realizadas")
+                .categoria("Efectividad")
+                .valor(String.valueOf(totalConsultas))
+                .meta("-")
+                .unidad("consultas")
+                .interpretacion("Total de consultas registradas en el periodo")
+                .build());
+        lista.add(IndicadorCalidadDto.builder()
+                .codigo("RES256-PAC-01")
+                .nombre("Pacientes únicos atendidos")
+                .categoria("Cobertura")
+                .valor(String.valueOf(totalPacientes))
+                .meta("-")
+                .unidad("pacientes")
+                .interpretacion("Pacientes con historia clínica activa")
+                .build());
+        lista.add(IndicadorCalidadDto.builder()
+                .codigo("RES256-SAT-01")
+                .nombre("Satisfacción del usuario (estructura)")
+                .categoria("Satisfacción")
+                .valor("En implementación")
+                .meta("≥ 90%")
+                .unidad("%")
+                .interpretacion("Indicador según Res. 0256/2016 - requiere encuestas")
+                .build());
+        return lista;
     }
 }

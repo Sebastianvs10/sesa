@@ -257,6 +257,24 @@
       </button>
     </div>
 
+    <!-- Barra fija: Crear HC cuando el paciente no tiene historia (siempre visible al hacer scroll) -->
+    @if (canStartNewHistoria) {
+      <div class="hc-crear-hc-bar">
+        <div class="hc-crear-hc-bar-inner">
+          <span class="hc-crear-hc-bar-text">
+            <svg class="hc-crear-hc-bar-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/>
+            </svg>
+            Este paciente no tiene historia clínica. Las notas SOAP y órdenes se vinculan a la HC.
+          </span>
+          <button type="button" class="hc-btn hc-btn--primary hc-btn--crear-hc" (click)="iniciarNuevaHistoria()">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+            Crear Historia Clínica
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- ══════════════ TAB: HISTORIA ══════════════ -->
     @if (activeTab() === 'historia') {
       @if (canStartNewHistoria) {
@@ -402,6 +420,23 @@
 
     <!-- ══════════════ TAB: NOTA SOAP ══════════════ -->
     @if (activeTab() === 'soap') {
+      @if (canStartNewHistoria) {
+        <div class="hc-soap-sin-hc">
+          <div class="hc-soap-sin-hc-content">
+            <svg class="hc-soap-sin-hc-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/>
+            </svg>
+            <div>
+              <strong class="hc-soap-sin-hc-title">Sin historia clínica</strong>
+              <p class="hc-soap-sin-hc-text">Este paciente aún no tiene una historia clínica. Las notas SOAP se asocian a la HC. Crea la historia clínica primero y luego podrás vincular todas las consultas y notas.</p>
+            </div>
+            <button type="button" class="hc-btn hc-btn--primary" (click)="iniciarNuevaHistoria()">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              Crear Historia Clínica
+            </button>
+          </div>
+        </div>
+      }
       <div class="hc-soap-layout">
         <!-- Formulario SOAP -->
         <div class="hc-soap-form">
@@ -411,9 +446,22 @@
                 <path stroke-linecap="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
             </div>
-            <div>
+            <div class="hc-soap-header-text">
               <h3 class="hc-soap-title">Nueva nota clínica SOAP</h3>
               <p class="hc-soap-subtitle">Subjetivo · Objetivo · Análisis · Plan</p>
+            </div>
+            <div class="hc-soap-header-actions">
+              <button type="button" class="hc-btn hc-btn--primary hc-btn--large"
+                [disabled]="savingConsulta()" (click)="crearConsulta()">
+                @if (savingConsulta()) {
+                  <span class="hc-btn-spinner"></span> Guardando...
+                } @else {
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                  </svg>
+                  Guardar nota SOAP
+                }
+              </button>
             </div>
           </div>
 
@@ -822,6 +870,14 @@
               @for (t of ['LABORATORIO','MEDICAMENTO','PROCEDIMIENTO','IMAGEN']; track t) {
                 <button class="hc-filter-chip" [class.hc-filter-chip--active]="filterTipoOrden() === t" (click)="setFilterTipoOrden(t)">{{ tipoOrdenIcon(t) }} {{ t | titlecase }}</button>
               }
+              <button type="button" class="hc-btn hc-btn--pdf hc-btn--sm" [disabled]="descargandoPdfOrdenes() || imprimiendoPdfOrdenes() || ordenesPaciente.length === 0"
+                      (click)="descargarPdfOrdenes()" title="Descargar PDF de órdenes y resultados con datos del paciente">
+                {{ descargandoPdfOrdenes() ? 'Generando…' : 'PDF Órdenes' }}
+              </button>
+              <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" [disabled]="descargandoPdfOrdenes() || imprimiendoPdfOrdenes() || ordenesPaciente.length === 0"
+                      (click)="imprimirPdfOrdenes()" title="Imprimir órdenes y resultados con información del paciente">
+                {{ imprimiendoPdfOrdenes() ? 'Preparando…' : 'Imprimir' }}
+              </button>
             </div>
           </div>
 
@@ -829,22 +885,87 @@
             @for (s of [1,2,3]; track s) {
               <sesa-skeleton variant="rounded" width="100%" height="64px" borderRadius="10px" />
             }
-          } @else if (ordenesFiltradas().length === 0) {
+          }
+          @else if (ordenesFiltradas().length === 0) {
             <sesa-empty-state icon="clipboard" title="Sin órdenes" message="No hay órdenes clínicas emitidas aún." [compact]="true"></sesa-empty-state>
-          } @else {
+          }
+          @else {
             <div class="hc-orden-list">
               @for (o of ordenesFiltradas(); track o.id) {
-                <div class="hc-orden-item">
+                <div class="hc-orden-item" [class.hc-orden-item--expand]="ordenResultadoEditId() === o.id">
                   <span class="hc-orden-icon">{{ tipoOrdenIcon(o.tipo) }}</span>
                   <div class="hc-orden-info">
                     <span class="hc-orden-tipo">{{ o.tipo }}</span>
                     <p class="hc-orden-detalle">{{ o.detalle || 'Sin detalle' }}</p>
+                    @if (o.resultado) {
+                      <div class="hc-orden-resultado">
+                        <ng-container *ngIf="parseResultadoToItems(o.resultado).length > 0">
+                          <div class="hc-orden-resultado-items">
+                            @for (ri of parseResultadoToItems(o.resultado); track ri.etiqueta + ri.valor) {
+                              <div class="hc-orden-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
+                            }
+                          </div>
+                        </ng-container>
+                        <ng-container *ngIf="parseResultadoToItems(o.resultado).length === 0">
+                          <pre class="hc-orden-resultado-pre">{{ o.resultado }}</pre>
+                        </ng-container>
+                        <div class="hc-orden-resultado-meta">
+                          @if (o.resultadoRegistradoPorNombre) {
+                            <span>Registrado por: <strong>{{ o.resultadoRegistradoPorNombre }}</strong></span>
+                            @if (o.resultadoRegistradoPorRol) {
+                              <span class="hc-orden-rol">({{ o.resultadoRegistradoPorRol }})</span>
+                            }
+                          }
+                          @if (o.fechaResultado) {
+                            <span> · {{ o.fechaResultado | date:'short' }}</span>
+                          }
+                        </div>
+                      </div>
+                    }
                     @if (o.valorEstimado) {
                       <span class="hc-orden-valor">$ {{ o.valorEstimado | number }}</span>
                     }
                   </div>
-                  <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
+                  <div class="hc-orden-actions">
+                    @if (!ordenCompletada(o)) {
+                      <button type="button" class="hc-btn hc-btn--sm hc-btn--outline" (click)="openSubirResultado(o)">
+                        Subir resultado
+                      </button>
+                    }
+                    <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
+                            (click)="descargarPdfOrdenIndividual(o)" title="Descargar PDF de esta orden">
+                      @if (ordenPdfIndividualId() === o.id) {
+                        <span class="hc-btn-spinner"></span>
+                      } @else {
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                      }
+                    </button>
+                    <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
+                            (click)="imprimirPdfOrdenIndividual(o)" title="Imprimir esta orden">
+                      @if (ordenPdfIndividualId() === o.id) {
+                        <span class="hc-btn-spinner"></span>
+                      } @else {
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H5zm3 10a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                      }
+                    </button>
+                    <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
+                  </div>
                 </div>
+                @if (ordenResultadoEditId() === o.id) {
+                  <div class="hc-orden-resultado-form">
+                    <label class="hc-label">Resultado de la orden</label>
+                    <textarea class="hc-textarea" rows="3" [(ngModel)]="resultadoOrdenTexto"
+                              placeholder="Ingrese el resultado (ej. resultados de laboratorio)..."></textarea>
+                    <div class="hc-form-actions">
+                      <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" [disabled]="savingResultadoOrden()" (click)="guardarResultadoOrden()">
+                        {{ savingResultadoOrden() ? 'Guardando…' : 'Guardar resultado' }}
+                      </button>
+                      <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" [disabled]="savingResultadoOrden()" (click)="cancelarSubirResultado()">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                }
               }
             </div>
           }
@@ -1011,7 +1132,7 @@
             <label class="hc-label">Grupo sanguíneo</label>
             <select class="hc-select" [(ngModel)]="hcEditForm.grupoSanguineo">
               <option value="">No registrado</option>
-              @for (g of gruposSanguineos; track g) { <option [value]="g">{{ g }}</option> }
+              <option *ngFor="let g of gruposSanguineos" [value]="g">{{ g }}</option>
             </select>
           </div>
           <div class="hc-field">
@@ -1083,9 +1204,12 @@
       <div class="hc-modal-footer">
         <button class="hc-btn hc-btn--ghost" type="button" (click)="cancelarEditarHC()">Cancelar</button>
         <button class="hc-btn hc-btn--primary" type="button" [disabled]="savingUpdateHC()" (click)="guardarHC()">
-          @if (savingUpdateHC()) { <span class="hc-btn-spinner"></span> Guardando... } @else {
+          <ng-container *ngIf="savingUpdateHC()">
+            <span class="hc-btn-spinner"></span> Guardando...
+          </ng-container>
+          <ng-container *ngIf="!savingUpdateHC()">
             Guardar cambios
-          }
+          </ng-container>
         </button>
       </div>
     </div>

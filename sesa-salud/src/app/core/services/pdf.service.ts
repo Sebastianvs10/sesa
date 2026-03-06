@@ -26,6 +26,20 @@ export class PdfService {
     });
   }
 
+  /** Descarga el PDF de órdenes clínicas y resultados del paciente. */
+  descargarOrdenesPaciente(pacienteId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/pdf/ordenes/paciente/${pacienteId}`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Descarga el PDF de una sola orden (con datos del paciente y resultado). */
+  descargarOrdenIndividual(ordenId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/pdf/orden/${ordenId}`, {
+      responseType: 'blob',
+    });
+  }
+
   /**
    * Dispara la descarga del blob en el navegador.
    * @param blob    Blob recibido del servidor
@@ -38,5 +52,25 @@ export class PdfService {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Abre el PDF en una nueva ventana y dispara el diálogo de impresión.
+   * Incluye datos del paciente y resultados en el mismo documento.
+   */
+  openForPrint(blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (w) {
+      w.onload = () => {
+        w.print();
+        w.onafterprint = () => {
+          w.close();
+          URL.revokeObjectURL(url);
+        };
+      };
+    } else {
+      URL.revokeObjectURL(url);
+    }
   }
 }

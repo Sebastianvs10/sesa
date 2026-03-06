@@ -1,8 +1,4 @@
-<ng-container *ngIf="isLoginRoute; else sesaShell">
-  <router-outlet />
-</ng-container>
-
-<ng-template #sesaShell>
+<ng-container *ngIf="showAppShell; else onlyOutlet">
   <div class="sesa-shell">
     <aside class="sesa-sidebar">
       <div class="sesa-logo">
@@ -83,7 +79,7 @@
         <div class="sesa-topbar-title">
           {{ pageTitle }}
         </div>
-        <img src="/logo.png" alt="SESA" class="sesa-topbar-logo" />
+        <img src="/logo.png" alt="SESA" class="sesa-topbar-logo" width="250" height="120" />
         <div class="sesa-topbar-meta">
           <!-- Indicador de conexión a la red -->
           <span
@@ -137,7 +133,7 @@
                       role="menuitem"
                       (click)="openNotification(notif)">
                       <div class="sesa-topbar-notification-item-title">{{ notif.titulo }}</div>
-                      <div class="sesa-topbar-notification-item-preview">{{ notif.contenido | slice:0:80 }}{{ notif.contenido.length > 80 ? '…' : '' }}</div>
+                      <div class="sesa-topbar-notification-item-preview">{{ notifPreview(notif.contenido) }}</div>
                       <div class="sesa-topbar-notification-item-date">{{ notif.fechaEnvio | date:'short' }}</div>
                     </button>
                   }
@@ -289,6 +285,10 @@
     <!-- Indicador flotante de estado offline / sincronización -->
     <sesa-offline-status />
   </div>
+</ng-container>
+
+<ng-template #onlyOutlet>
+  <router-outlet />
 </ng-template>
 
 <!-- Sistema de notificaciones toast (global) -->

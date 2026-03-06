@@ -233,6 +233,31 @@ export class FacturacionPageComponent implements OnInit {
     });
   }
 
+  /** Generación automática RIPS (mes anterior por defecto). */
+  generarRipsAutomatico(): void {
+    this.generandoRips.set(true);
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const desde = lastMonth.toISOString().slice(0, 10);
+    lastMonth.setMonth(lastMonth.getMonth() + 1);
+    lastMonth.setDate(0);
+    const hasta = lastMonth.toISOString().slice(0, 10);
+    this.facturaService.generarRipsAutomatico({ desde, hasta }).subscribe({
+      next: (archivos) => {
+        this.ripsDesde = desde;
+        this.ripsHasta = hasta;
+        this.ripsArchivos = archivos;
+        this.generandoRips.set(false);
+        this.toast.success('RIPS automático generado (mes anterior). Descarga cada archivo.', 'RIPS automático');
+      },
+      error: (err: unknown) => {
+        const msg = (err as { error?: { error?: string } })?.error?.error ?? 'Error al generar RIPS automático';
+        this.toast.error(msg, 'Error RIPS');
+        this.generandoRips.set(false);
+      },
+    });
+  }
+
   /* ── RIPS estructurado Res. 3374/2000 ───────────────────── */
   generarRipsEstructurado(): void {
     if (!this.ripsDesde || !this.ripsHasta) {

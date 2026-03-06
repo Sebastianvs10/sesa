@@ -1,0 +1,310 @@
+/* Portal del Paciente — Laboratorios */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.plab {
+  padding: 0 0 24px;
+  max-width: 700px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 20px 16px;
+    background: linear-gradient(160deg, rgba(34,197,94,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid var(--sesa-border-light);
+  }
+
+  &__header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(34,197,94,0.12);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sesa-success);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    margin: 0 0 3px;
+    letter-spacing: -0.4px;
+  }
+
+  &__sub {
+    font-size: 13px;
+    color: var(--sesa-text-secondary);
+    margin: 0;
+  }
+
+  // ─── Filtros ──────────────────────────────────────────────────────────
+  &__filters {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__filter-chip {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    color: var(--sesa-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--sesa-transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+
+    &--active {
+      background: rgba(34,197,94,0.12);
+      border-color: var(--sesa-success);
+      color: var(--sesa-success);
+      font-weight: 600;
+    }
+
+    &:active { transform: scale(0.96); }
+  }
+
+  // ─── Lista ────────────────────────────────────────────────────────────
+  &__list {
+    padding: 4px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__item {
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color var(--sesa-transition-fast);
+
+    &--critico {
+      border-color: rgba(239,68,68,0.35);
+      background: rgba(239,68,68,0.02);
+    }
+  }
+
+  &__item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 14px 10px;
+  }
+
+  &__item-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--done {
+      background: var(--sesa-success);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+    }
+
+    &--pending {
+      background: var(--sesa-warning);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    }
+  }
+
+  &__item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__item-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__item-fecha {
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+  }
+
+  &__item-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    flex-shrink: 0;
+
+    &--done {
+      background: rgba(34,197,94,0.1);
+      color: var(--sesa-success);
+    }
+
+    &--pending {
+      background: rgba(245,158,11,0.1);
+      color: var(--sesa-warning);
+    }
+  }
+
+  &__item-critico-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sesa-error);
+    background: rgba(239,68,68,0.1);
+    padding: 3px 9px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  // ─── Resultado ────────────────────────────────────────────────────────
+  &__item-resultado {
+    border-top: 1px solid var(--sesa-border-light);
+    padding: 12px 14px;
+    background: var(--sesa-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__resultado-row {
+    display: flex;
+    gap: 16px;
+  }
+
+  &__resultado-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  &__resultado-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: var(--sesa-text-muted);
+  }
+
+  &__resultado-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sesa-text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+
+    &--critico { color: var(--sesa-error); }
+    &--ref {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sesa-text-secondary);
+    }
+  }
+
+  &__resultado-medico {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+  }
+
+  &__resultado-fecha {
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+  }
+
+  // ─── Pendiente msg ────────────────────────────────────────────────────
+  &__item-pending-msg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--sesa-border-light);
+    font-size: 12px;
+    color: var(--sesa-text-muted);
+    background: var(--sesa-bg);
+
+    svg { flex-shrink: 0; color: var(--sesa-warning); }
+  }
+
+  // ─── Load more / empty / error ────────────────────────────────────────
+  &__load-more {
+    width: 100%;
+    padding: 12px;
+    background: var(--sesa-surface);
+    border: 1px solid var(--sesa-border);
+    border-radius: 12px;
+    color: var(--sesa-success);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--sesa-transition-fast);
+
+    &:disabled { opacity: 0.6; cursor: default; }
+    &:active { background: rgba(34,197,94,0.08); }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 52px 20px;
+    color: var(--sesa-text-muted);
+
+    svg { opacity: 0.35; }
+    p { font-size: 14px; text-align: center; margin: 0; }
+  }
+
+  &__error {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--sesa-error);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+
+    p { font-size: 14px; margin: 0; }
+
+    button {
+      padding: 8px 20px;
+      background: var(--sesa-error);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  &__skeleton {
+    height: 80px;
+    background: var(--sesa-border-light);
+    border-radius: 16px;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

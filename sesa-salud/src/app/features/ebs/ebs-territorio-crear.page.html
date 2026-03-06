@@ -1,0 +1,70 @@
+<div class="ebs-crear">
+  <div class="ebs-crear__header">
+    <a routerLink="/ebs/territorios" class="ebs-crear__back">← Territorios</a>
+    <h1 class="ebs-crear__title">Nuevo territorio EBS</h1>
+    <p class="ebs-crear__sub">Define código, nombre y límites IGAC opcionales.</p>
+  </div>
+
+  <sesa-card class="ebs-crear__card">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="ebs-crear__form">
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Código <span class="ebs-crear__req">*</span></label>
+        <input type="text" formControlName="code" class="ebs-crear__input" placeholder="Ej: T-001" maxlength="50" />
+        @if (form.get('code')?.invalid && form.get('code')?.touched) {
+          <span class="ebs-crear__error">Código requerido</span>
+        }
+      </div>
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Nombre <span class="ebs-crear__req">*</span></label>
+        <input type="text" formControlName="name" class="ebs-crear__input" placeholder="Nombre del microterritorio" maxlength="200" />
+        @if (form.get('name')?.invalid && form.get('name')?.touched) {
+          <span class="ebs-crear__error">Nombre requerido</span>
+        }
+      </div>
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Tipo</label>
+        <select formControlName="type" class="ebs-crear__input">
+          <option value="MICROTERRITORIO">Microterritorio</option>
+          <option value="VEREDA">Vereda</option>
+          <option value="CORREGIMIENTO">Corregimiento</option>
+        </select>
+      </div>
+
+      <div class="ebs-crear__divider">Límites IGAC (opcional)</div>
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Departamento</label>
+        <select formControlName="igacDepartamentoCodigo" class="ebs-crear__input" (change)="onDepartamentoChange()">
+          <option value="">Seleccione</option>
+          @for (d of departamentos(); track d.codigoDane) {
+            <option [value]="d.codigoDane">{{ d.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Municipio</label>
+        <select formControlName="igacMunicipioCodigo" class="ebs-crear__input" (change)="onMunicipioChange()">
+          <option value="">Seleccione</option>
+          @for (m of municipios(); track m.codigoDane) {
+            <option [value]="m.codigoDane">{{ m.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="ebs-crear__row">
+        <label class="ebs-crear__label">Vereda</label>
+        <select formControlName="igacVeredaCodigo" class="ebs-crear__input">
+          <option value="">Seleccione</option>
+          @for (v of veredas(); track v.codigo) {
+            <option [value]="v.codigo">{{ v.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="ebs-crear__actions">
+        <button type="button" class="ebs-crear__btn ebs-crear__btn--secondary" routerLink="/ebs/territorios">Cancelar</button>
+        <button type="submit" class="ebs-crear__btn ebs-crear__btn--primary" [disabled]="form.invalid || loading()">
+          {{ loading() ? 'Creando…' : 'Crear territorio' }}
+        </button>
+      </div>
+    </form>
+  </sesa-card>
+</div>

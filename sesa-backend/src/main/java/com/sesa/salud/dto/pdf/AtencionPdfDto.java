@@ -16,11 +16,15 @@ public class AtencionPdfDto {
     private String profesionalNombre;
     private String profesionalRol;
     private String profesionalIdentificacion;
+    private String profesionalEspecialidad;
+    private String profesionalTarjetaProfesional;
+    private String profesionalNumeroRethus;
     private String firmaBase64;
     private String firmaContentType;
 
     /* Anamnesis */
     private String motivoConsulta;
+    private String versionEnfermedad;
     private String enfermedadActual;
     private String sintomasAsociados;
     private String factoresMejoran;

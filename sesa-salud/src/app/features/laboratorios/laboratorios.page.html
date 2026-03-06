@@ -140,7 +140,8 @@
             <div class="sk-badge"></div>
           </div>
         }
-      } @else if (itemsActivos().length === 0) {
+      }
+      @else if (itemsActivos().length === 0) {
         <div class="lab-empty">
           <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M24 8h16M26 8v14l-8 20a4 4 0 003.6 5.8h20.8A4 4 0 0046 42L38 22V8"/>
@@ -149,7 +150,8 @@
           </svg>
           <p>No hay solicitudes que coincidan</p>
         </div>
-      } @else {
+      }
+      @else {
         @for (item of itemsActivos(); track item.id) {
           <div
             class="lab-list-item"
@@ -267,7 +269,16 @@
                 Resultado registrado
               </h3>
               <div class="lab-resultado-display">
-                <p class="lab-resultado-text">{{ item.resultado }}</p>
+                <ng-container *ngIf="parseResultadoToItems(item.resultado).length > 0">
+                  <div class="lab-resultado-items">
+                    @for (ri of parseResultadoToItems(item.resultado); track ri.etiqueta + ri.valor) {
+                      <div class="lab-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
+                    }
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="parseResultadoToItems(item.resultado).length === 0">
+                  <pre class="lab-resultado-text lab-resultado-pre">{{ item.resultado }}</pre>
+                </ng-container>
                 @if (item.observaciones) {
                   <p class="lab-observaciones-text">
                     <strong>Observaciones:</strong> {{ item.observaciones }}
@@ -275,33 +286,64 @@
                 }
                 <div class="lab-resultado-meta">
                   @if (item.bacteriologoNombre) {
-                    <span>Bacteriólogo/a: <strong>{{ item.bacteriologoNombre }}</strong></span>
+                    <span>Registrado por: <strong>{{ item.bacteriologoNombre }}</strong></span>
                   }
                   @if (item.fechaResultado) {
-                    <span>Fecha: <strong>{{ formatFecha(item.fechaResultado) }}</strong></span>
+                    <span> · Fecha: <strong>{{ formatFecha(item.fechaResultado) }}</strong></span>
                   }
                 </div>
               </div>
             </div>
           }
 
-          <!-- Formulario de resultado -->
+          <!-- Formulario de resultado (plantilla por tipo de prueba o texto libre) -->
           @if (item.estado !== 'COMPLETADO' || !item.resultado) {
             <div class="lab-panel-section lab-panel-section--form">
               <h3 class="lab-panel-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-                Registrar resultado
+                @if (getPlantilla(item); as plantilla) {
+                  Plantilla: {{ plantilla.nombre }}
+                }
+                @else {
+                  Registrar resultado
+                }
               </h3>
-              <div class="lab-form-group">
-                <label class="lab-form-label">Resultado del análisis <span class="lab-required">*</span></label>
-                <textarea
-                  class="lab-form-textarea"
-                  rows="6"
-                  placeholder="Describa los hallazgos del análisis: valores, unidades, rangos de referencia, interpretación..."
-                  [ngModel]="formResultado().resultado"
-                  (ngModelChange)="setResultado($event)"
-                ></textarea>
-              </div>
+              @if (getPlantilla(item); as plantilla) {
+                <div class="lab-plantilla-fields">
+                  @for (campo of plantilla.campos; track campo.id) {
+                    <div class="lab-form-group lab-form-group--inline">
+                      <label class="lab-form-label">{{ campo.label }}
+                        @if (campo.unidad) {
+                          <span class="lab-form-unit">({{ campo.unidad }})</span>
+                        }
+                        @if (campo.ref) {
+                          <span class="lab-form-ref" title="Referencia">Ref: {{ campo.ref }}</span>
+                        }
+                      </label>
+                      <input
+                        type="text"
+                        [attr.inputmode]="campo.tipo === 'number' ? 'decimal' : 'text'"
+                        class="lab-form-input"
+                        [placeholder]="campo.placeholder || ''"
+                        [ngModel]="formResultado().templateValues[campo.id]"
+                        (ngModelChange)="setTemplateValue(campo.id, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+              }
+              @else {
+                <div class="lab-form-group">
+                  <label class="lab-form-label">Resultado del análisis <span class="lab-required">*</span></label>
+                  <textarea
+                    class="lab-form-textarea"
+                    rows="6"
+                    placeholder="Describa los hallazgos del análisis: valores, unidades, rangos de referencia, interpretación..."
+                    [ngModel]="formResultado().resultado"
+                    (ngModelChange)="setResultado($event)"
+                  ></textarea>
+                </div>
+              }
               <div class="lab-form-group">
                 <label class="lab-form-label">Observaciones adicionales</label>
                 <textarea
@@ -314,30 +356,139 @@
               </div>
               <button
                 class="lab-btn-guardar"
-                [disabled]="guardando() || !formResultado().resultado.trim()"
+                [disabled]="guardando() || !tieneResultadoValido()"
+                (click)="guardarResultado()"
+              >
+                <ng-container *ngIf="guardando()">
+                  <svg class="spinning" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                  Guardando...
+                </ng-container>
+                <ng-container *ngIf="!guardando()">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  Guardar resultado y completar
+                </ng-container>
+              </button>
+            </div>
+          }
+        }
+        @else {
+          <!-- Panel para órdenes de HC: registrar resultado aquí (se asocia a la orden y se ve en la HC) -->
+          @if (item.estado === 'COMPLETADO' || item.estado === 'COMPLETADA') {
+            @if (item.resultado) {
+              <div class="lab-panel-section">
+                <h3 class="lab-panel-section-title">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                  Resultado registrado (visible en Historia Clínica)
+                </h3>
+                <div class="lab-resultado-display">
+                  <ng-container *ngIf="parseResultadoToItems(item.resultado).length > 0">
+                    <div class="lab-resultado-items">
+                      @for (ri of parseResultadoToItems(item.resultado); track ri.etiqueta + ri.valor) {
+                        <div class="lab-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
+                      }
+                    </div>
+                  </ng-container>
+                  <ng-container *ngIf="parseResultadoToItems(item.resultado).length === 0">
+                    <pre class="lab-resultado-text lab-resultado-pre">{{ item.resultado }}</pre>
+                  </ng-container>
+                  <div class="lab-resultado-meta">
+                    @if (item.resultadoRegistradoPorNombre) {
+                      <span>Registrado por: <strong>{{ item.resultadoRegistradoPorNombre }}</strong></span>
+                      @if (item.resultadoRegistradoPorRol) {
+                        <span class="lab-meta-rol">Rol: {{ item.resultadoRegistradoPorRol }}</span>
+                      }
+                    }
+                    @if (item.fechaResultado) {
+                      <span> · Fecha resultado: <strong>{{ formatFecha(item.fechaResultado) }}</strong></span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          }
+          @else {
+            <div class="lab-panel-section">
+              <div class="lab-info-banner lab-info-banner--info">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                Registre aquí el resultado del análisis. Se asociará a esta orden y aparecerá en la Historia Clínica del paciente.
+              </div>
+            </div>
+            <div class="lab-panel-section lab-panel-section--form">
+              <h3 class="lab-panel-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                @if (getPlantilla(item); as plantilla) {
+                  Plantilla: {{ plantilla.nombre }}
+                }
+                @else {
+                  Registrar resultado en la orden de HC
+                }
+              </h3>
+              @if (getPlantilla(item); as plantilla) {
+                <div class="lab-plantilla-fields">
+                  @for (campo of plantilla.campos; track campo.id) {
+                    <div class="lab-form-group lab-form-group--inline">
+                      <label class="lab-form-label">{{ campo.label }}
+                        @if (campo.unidad) {
+                          <span class="lab-form-unit">({{ campo.unidad }})</span>
+                        }
+                        @if (campo.ref) {
+                          <span class="lab-form-ref" title="Referencia">Ref: {{ campo.ref }}</span>
+                        }
+                      </label>
+                      <input
+                        type="text"
+                        [attr.inputmode]="campo.tipo === 'number' ? 'decimal' : 'text'"
+                        class="lab-form-input"
+                        [placeholder]="campo.placeholder || ''"
+                        [ngModel]="formResultado().templateValues[campo.id]"
+                        (ngModelChange)="setTemplateValue(campo.id, $event)"
+                      />
+                    </div>
+                  }
+                </div>
+              }
+              @else {
+                <div class="lab-form-group">
+                  <label class="lab-form-label">Resultado del análisis <span class="lab-required">*</span></label>
+                  <textarea
+                    class="lab-form-textarea"
+                    rows="6"
+                    placeholder="Describa los hallazgos: valores, unidades, rangos de referencia, interpretación..."
+                    [ngModel]="formResultado().resultado"
+                    (ngModelChange)="setResultado($event)"
+                  ></textarea>
+                </div>
+              }
+              <div class="lab-form-group">
+                <label class="lab-form-label">Observaciones adicionales</label>
+                <textarea
+                  class="lab-form-textarea lab-form-textarea--sm"
+                  rows="3"
+                  placeholder="Condiciones de la muestra, recomendaciones..."
+                  [ngModel]="formResultado().observaciones"
+                  (ngModelChange)="setObservaciones($event)"
+                ></textarea>
+              </div>
+              <button
+                class="lab-btn-guardar"
+                [disabled]="guardando() || !tieneResultadoValido()"
                 (click)="guardarResultado()"
               >
                 @if (guardando()) {
                   <svg class="spinning" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
                   Guardando...
-                } @else {
+                }
+                @else {
                   <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                  Guardar resultado y completar
+                  Guardar resultado y asociar a la HC
                 }
               </button>
             </div>
           }
-        } @else {
-          <!-- Panel para órdenes de HC (solo lectura) -->
-          <div class="lab-panel-section">
-            <div class="lab-info-banner lab-info-banner--info">
-              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-              Para registrar el resultado de esta orden, crea una Solicitud Directa asociada al paciente desde el botón "+ Nueva Solicitud".
-            </div>
-          </div>
         }
       </div>
-    } @else {
+    }
+    @else {
       <div class="lab-panel-empty">
         <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="20" y="10" width="40" height="60" rx="4"/>
@@ -357,7 +508,7 @@
 </section>
 
 <!-- ===== SLIDE-OVER NUEVA SOLICITUD ===== -->
-@if (mostrarFormNuevo()) {
+<ng-container *ngIf="mostrarFormNuevo()">
   <div class="lab-overlay" (click)="mostrarFormNuevo.set(false)"></div>
   <div class="lab-slideover">
     <div class="lab-slideover-header">
@@ -438,14 +589,15 @@
         [disabled]="guardando() || !formNuevo().pacienteId || !formNuevo().tipoPrueba.trim()"
         (click)="crearSolicitud()"
       >
-        @if (guardando()) {
+        <ng-container *ngIf="guardando()">
           <svg class="spinning" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
           Creando...
-        } @else {
+        </ng-container>
+        <ng-container *ngIf="!guardando()">
           <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
           Crear solicitud
-        }
+        </ng-container>
       </button>
     </div>
   </div>
-}
+</ng-container>

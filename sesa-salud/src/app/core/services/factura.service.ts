@@ -135,6 +135,11 @@ export class FacturaService {
     return this.http.get<Record<string, string>>(`${this.apiUrl}/rips/estructurado`, { params });
   }
 
+  /** Generación automática de RIPS (por defecto mes anterior). Opcional: { desde, hasta } en formato yyyy-MM-dd. */
+  generarRipsAutomatico(body?: { desde?: string; hasta?: string }): Observable<Record<string, string>> {
+    return this.http.post<Record<string, string>>(`${this.apiUrl}/rips/generar-automatico`, body ?? {});
+  }
+
   /** Descarga un archivo RIPS estructurado específico (CT, US, AP o AC). */
   descargarArchivoRips(contenido: string, nombreArchivo: string): void {
     const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });

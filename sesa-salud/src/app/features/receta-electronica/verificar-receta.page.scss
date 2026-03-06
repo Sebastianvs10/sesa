@@ -1,0 +1,141 @@
+/* Verificación pública de receta electrónica */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ver-rec {
+  min-height: 100vh;
+  background: var(--sesa-bg);
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ver-rec__card {
+  max-width: 480px;
+  width: 100%;
+  background: var(--sesa-surface);
+  border-radius: 20px;
+  border: 1px solid var(--sesa-border);
+  padding: 28px 24px;
+  box-shadow: var(--sesa-shadow-lg);
+}
+
+.ver-rec__brand {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--sesa-border-light);
+}
+
+.ver-rec__logo {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sesa-primary);
+  letter-spacing: -0.5px;
+}
+
+.ver-rec__sub {
+  display: block;
+  font-size: 13px;
+  color: var(--sesa-text-muted);
+  margin-top: 4px;
+}
+
+.ver-rec__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px;
+
+  p { margin: 0; color: var(--sesa-text-secondary); font-size: 14px; }
+}
+
+.ver-rec__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--sesa-border);
+  border-top-color: var(--sesa-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ver-rec__ok { text-align: center; }
+.ver-rec__ok-icon {
+  color: var(--sesa-success);
+  margin-bottom: 12px;
+}
+.ver-rec__ok-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 8px;
+}
+.ver-rec__ok-text {
+  font-size: 14px;
+  color: var(--sesa-text-secondary);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.ver-rec__data {
+  text-align: left;
+  background: var(--sesa-bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.ver-rec__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sesa-border-light);
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.ver-rec__label {
+  font-size: 12px;
+  color: var(--sesa-text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ver-rec__val {
+  font-size: 14px;
+  color: var(--sesa-text-primary);
+  font-weight: 500;
+  text-align: right;
+}
+
+.ver-rec__meds { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sesa-border-light); }
+.ver-rec__list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--sesa-text-primary);
+  line-height: 1.8;
+}
+.ver-rec__dosis { color: var(--sesa-text-secondary); font-weight: normal; }
+
+.ver-rec__invalid { text-align: center; padding: 16px 0; }
+.ver-rec__invalid-icon { color: var(--sesa-error); margin-bottom: 12px; }
+.ver-rec__invalid-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 8px;
+}
+.ver-rec__invalid-text {
+  font-size: 14px;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}

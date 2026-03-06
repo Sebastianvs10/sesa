@@ -1,0 +1,21 @@
+{
+  "name": "SESA Salud — Portal del Paciente",
+  "short_name": "SESA Portal",
+  "description": "Consulta tu historia clínica, resultados de laboratorio y órdenes médicas desde cualquier lugar.",
+  "theme_color": "#0a2e4f",
+  "background_color": "#0a2e4f",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/portal",
+  "icons": [
+    {
+      "src": "icon3.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical"],
+  "lang": "es-CO"
+}

@@ -182,6 +182,10 @@ $drop-radius: 16px;
   box-shadow: var(--sesa-shadow-md);
 }
 
+.emp-section--fe {
+  margin-top: 1.75rem;
+}
+
 .emp-section-header {
   display: flex;
   align-items: center;
@@ -214,6 +218,212 @@ $drop-radius: 16px;
   margin: 0;
   font-size: 0.875rem;
   color: var(--sesa-text-secondary);
+}
+
+.emp-fe-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.emp-fe-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34,197,94,.4);
+  background: rgba(34,197,94,.06);
+  color: var(--sesa-text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.emp-fe-pill--off {
+  border-color: rgba(148,163,184,.6);
+  background: rgba(148,163,184,.08);
+}
+
+.emp-fe-pill--ghost {
+  border-color: rgba(59,130,246,.4);
+  background: rgba(59,130,246,.06);
+}
+
+.emp-fe-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+// ── Facturación electrónica DIAN ────────────────────────────────
+
+.emp-fe-loading {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+
+.emp-fe-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.emp-fe-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: $radius-inner;
+  background: rgba(43,176,166,.04);
+  border: 1px solid rgba(43,176,166,.18);
+}
+
+.emp-fe-toggle-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.emp-fe-toggle-sub {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sesa-text-secondary);
+}
+
+.emp-switch {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    display: none;
+  }
+}
+
+.emp-switch-track {
+  width: 42px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--sesa-border);
+  position: relative;
+  transition: background var(--sesa-transition);
+}
+
+.emp-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15,23,42,.3);
+  transition: transform var(--sesa-transition);
+}
+
+.emp-switch input:checked + .emp-switch-track {
+  background: var(--sesa-primary);
+}
+
+.emp-switch input:checked + .emp-switch-track .emp-switch-thumb {
+  transform: translateX(20px);
+}
+
+.emp-fe-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+}
+
+.emp-fe-columns--disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.emp-fe-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.emp-fe-col-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.emp-field--inline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.emp-field--xs {
+  max-width: 120px;
+}
+
+.emp-input {
+  width: 100%;
+  padding: 0.6875rem 0.875rem;
+  border-radius: $radius-inner;
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color var(--sesa-transition), box-shadow var(--sesa-transition);
+
+  &:focus {
+    border-color: var(--sesa-primary);
+    box-shadow: 0 0 0 1px rgba(37,99,235,.18);
+  }
+}
+
+.emp-select--sm {
+  max-width: 180px;
+}
+
+.emp-fe-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.emp-fe-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sesa-text-secondary);
+  max-width: 360px;
+}
+
+.emp-section-icon--fe {
+  background: linear-gradient(135deg, rgba(148,163,184,.09), rgba(37,99,235,.08));
+  border-color: rgba(37,99,235,.2);
+  color: var(--sesa-primary);
+}
+
+@media (max-width: 768px) {
+  .emp-fe-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .emp-fe-toggle-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .emp-fe-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 // ── FIELD ─────────────────────────────────────────────────────────────────────

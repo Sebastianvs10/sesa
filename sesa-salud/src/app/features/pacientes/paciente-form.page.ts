@@ -1,22 +1,29 @@
 /**
- * Formulario de Paciente — skeleton modo editar, spinner guardar, toast CRUD.
+ * Formulario de Paciente — wizard por pasos, skeleton, toast CRUD. Estilo SaaS premium.
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { PacienteService, PacienteRequestDto } from '../../core/services/paciente.service';
 import { EpsService, EpsDto } from '../../core/services/eps.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
-import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+
+const STEPS = [
+  { id: 1, label: 'Identificación', short: 'Datos' },
+  { id: 2, label: 'Afiliación', short: 'EPS' },
+  { id: 3, label: 'Residencia', short: 'Ubicación' },
+  { id: 4, label: 'Contacto', short: 'Contacto' },
+  { id: 5, label: 'Sociodemográficos', short: 'Más datos' },
+] as const;
 
 @Component({
   standalone: true,
   selector: 'sesa-paciente-form-page',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SesaCardComponent, SesaFormFieldComponent, SesaSkeletonComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, SesaCardComponent, SesaFormFieldComponent],
   templateUrl: './paciente-form.page.html',
   styleUrl: './paciente-form.page.scss',
 })
@@ -28,6 +35,9 @@ export class PacienteFormPageComponent implements OnInit {
   private readonly epsService = inject(EpsService);
   private readonly toast = inject(SesaToastService);
 
+  readonly steps = STEPS;
+  readonly totalSteps = STEPS.length;
+  currentStep = signal(1);
   form!: FormGroup;
   epsList: EpsDto[] = [];
   isEdit = false;
@@ -35,6 +45,10 @@ export class PacienteFormPageComponent implements OnInit {
   loadingPatient = signal(false);
   saving = signal(false);
   error: string | null = null;
+
+  isFirstStep = computed(() => this.currentStep() === 1);
+  isLastStep = computed(() => this.currentStep() === this.totalSteps);
+  progressPercent = computed(() => (this.currentStep() / this.totalSteps) * 100);
 
   // Datos de municipios/departamentos (DIVIPOLA simplificado - principales)
   readonly departamentos = [
@@ -128,6 +142,46 @@ export class PacienteFormPageComponent implements OnInit {
         },
       });
     }
+  }
+
+  nextStep(): void {
+    if (!this.validateCurrentStep()) return;
+    if (this.currentStep() < this.totalSteps) {
+      this.currentStep.update((s) => s + 1);
+      this.error = null;
+    }
+  }
+
+  prevStep(): void {
+    if (this.currentStep() > 1) {
+      this.currentStep.update((s) => s - 1);
+      this.error = null;
+    }
+  }
+
+  goToStep(stepIndex: number): void {
+    const step = stepIndex + 1;
+    if (step >= 1 && step <= this.totalSteps && step <= this.currentStep()) {
+      this.currentStep.set(step);
+      this.error = null;
+    }
+  }
+
+  /** Valida solo los campos del paso actual. Paso 1 = documento y nombres obligatorios. */
+  private validateCurrentStep(): boolean {
+    const step = this.currentStep();
+    if (step === 1) {
+      const doc = this.form.get('documento');
+      const nom = this.form.get('nombres');
+      doc?.markAsTouched();
+      nom?.markAsTouched();
+      if (doc?.invalid || nom?.invalid) {
+        this.error = 'Complete documento y nombres para continuar';
+        return false;
+      }
+    }
+    this.error = null;
+    return true;
   }
 
   submit(): void {

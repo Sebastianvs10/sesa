@@ -1,0 +1,218 @@
+<section class="ebs-territorios">
+  <div class="ebs-territorios__grid">
+    <aside class="ebs-territorios__sidebar">
+      <sesa-card title="Microterritorios" subtitle="Asignados al equipo EBS" alignHeader="start">
+        <a routerLink="/ebs/territorios/crear" class="ebs-territorios__new-link">+ Nuevo territorio</a>
+        @if (loadingTerritories()) {
+          <div class="ebs-territorios__skeleton">
+            @for (sk of [1,2,3,4]; track sk) {
+              <sesa-skeleton width="70%" height="0.9rem" />
+            }
+          </div>
+        } @else if (territories().length === 0) {
+          <sesa-empty-state icon="search" title="Sin microterritorios" message="No hay microterritorios configurados." [compact]="true" />
+        } @else {
+          <label class="ebs-territorios__filter">
+            <span>Riesgo</span>
+            <select class="ebs-territorios__select" [ngModel]="riskFilter" (ngModelChange)="riskFilter = $event; loadTerritories()">
+              <option value="TODOS">Todos</option>
+              <option value="MUY_ALTO">Muy alto</option>
+              <option value="ALTO">Alto</option>
+              <option value="MEDIO">Medio</option>
+              <option value="BAJO">Bajo</option>
+            </select>
+          </label>
+          <ul class="ebs-territorios__list">
+            @for (t of territories(); track t.id) {
+              <li>
+                <button
+                  type="button"
+                  class="ebs-territorios__item"
+                  [class.ebs-territorios__item--active]="selectedTerritoryId() === t.id"
+                  (click)="selectTerritory(t.id)"
+                >
+                  <span class="ebs-territorios__item-name">{{ t.name }}</span>
+                  <span class="ebs-territorios__item-meta">{{ t.visitedHouseholdsCount }}/{{ t.householdsCount }} visitados</span>
+                  @if (igacPath(t)) {
+                    <span class="ebs-territorios__item-igac" title="Límites IGAC">{{ igacPath(t) }}</span>
+                  }
+                  @if (t.highRiskHouseholdsCount > 0) {
+                    <span class="ebs-territorios__item-risk">{{ t.highRiskHouseholdsCount }} alto riesgo</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </sesa-card>
+    </aside>
+
+    <main class="ebs-territorios__main">
+      <sesa-card
+        [title]="selectedTerritory()?.name || 'Hogares'"
+        [subtitle]="selectedTerritory() ? 'Hogares del microterritorio. Nueva visita o atajos desde cada hogar.' : 'Selecciona un microterritorio.'"
+        alignHeader="start"
+      >
+        @if (!selectedTerritory()) {
+          <sesa-empty-state icon="search" title="Selecciona un microterritorio" message="Elige uno en la lista." [compact]="true" />
+        } @else {
+          <div class="ebs-territorios__view-toggle">
+            <button
+              type="button"
+              class="ebs-territorios__view-btn"
+              [class.ebs-territorios__view-btn--active]="viewMode === 'list'"
+              (click)="viewMode = 'list'"
+            >
+              Lista
+            </button>
+            <button
+              type="button"
+              class="ebs-territorios__view-btn"
+              [class.ebs-territorios__view-btn--active]="viewMode === 'map'"
+              (click)="viewMode = 'map'"
+            >
+              Mapa
+            </button>
+          </div>
+          <div class="ebs-territorios__igac-bar">
+            <div class="ebs-territorios__igac-current">
+              <span class="ebs-territorios__igac-label">Límites oficiales IGAC</span>
+              @if (igacPath(selectedTerritory()!)) {
+                <span class="ebs-territorios__igac-path">{{ igacPath(selectedTerritory()!) }}</span>
+              } @else {
+                <span class="ebs-territorios__igac-empty">Sin asignar</span>
+              }
+            </div>
+            <button type="button" class="ebs-territorios__igac-btn" (click)="toggleIgacPanel()">
+              {{ showIgacPanel() ? 'Cerrar' : 'Asignar / Editar' }}
+            </button>
+          </div>
+          @if (showIgacPanel()) {
+            <div class="ebs-territorios__igac-form">
+              <label class="ebs-territorios__igac-field">
+                <span>Departamento</span>
+                <select class="ebs-territorios__select" [ngModel]="igacDepCodigo" (ngModelChange)="igacDepCodigo = $event; onIgacDepartamentoChange()">
+                  <option value="">-- Seleccione --</option>
+                  @for (d of igacDepartamentos(); track d.codigoDane) {
+                    <option [value]="d.codigoDane">{{ d.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ebs-territorios__igac-field">
+                <span>Municipio</span>
+                <select class="ebs-territorios__select" [ngModel]="igacMunCodigo" (ngModelChange)="igacMunCodigo = $event; onIgacMunicipioChange()" [disabled]="!igacDepCodigo">
+                  <option value="">-- Seleccione --</option>
+                  @for (m of igacMunicipios(); track m.codigoDane) {
+                    <option [value]="m.codigoDane">{{ m.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ebs-territorios__igac-field">
+                <span>Vereda</span>
+                <select class="ebs-territorios__select" [ngModel]="igacVeredaCodigo" (ngModelChange)="igacVeredaCodigo = $event" [disabled]="!igacMunCodigo">
+                  <option value="">-- Seleccione (opcional) --</option>
+                  @for (v of igacVeredas(); track v.codigo) {
+                    <option [value]="v.codigo">{{ v.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <button type="button" class="ebs-territorios__igac-save" (click)="saveIgac()" [disabled]="savingIgac()">
+                {{ savingIgac() ? 'Guardando…' : 'Guardar límites IGAC' }}
+              </button>
+            </div>
+          }
+          @if (viewMode === 'map') {
+            <label class="ebs-territorios__filter ebs-territorios__filter--inline">
+              <span>Estado visita</span>
+              <select class="ebs-territorios__select" [ngModel]="visitStatusFilter" (ngModelChange)="visitStatusFilter = $event; reloadHouseholds()">
+                <option value="TODOS">Todos</option>
+                <option value="PENDIENTE_VISITA">Pendiente</option>
+                <option value="EN_SEGUIMIENTO">En seguimiento</option>
+                <option value="CERRADO">Cerrado</option>
+              </select>
+            </label>
+            <div class="ebs-territorios__map-wrap">
+              <div class="ebs-territorios__map-legend" aria-hidden="true">
+                <span class="ebs-territorios__map-legend-item"><i style="background:#dc3545"></i> Alto</span>
+                <span class="ebs-territorios__map-legend-item"><i style="background:#fd7e14"></i> Medio</span>
+                <span class="ebs-territorios__map-legend-item"><i style="background:#198754"></i> Bajo</span>
+                <span class="ebs-territorios__map-legend-item"><i style="background:#6c757d"></i> Sin estratificar</span>
+              </div>
+              <sesa-ebs-territorios-map
+                [households]="householdsWithCoords()"
+                [fitBounds]="true"
+                (householdSelect)="onHouseholdSelectFromMap($event)"
+              />
+              @if (householdsWithCoords().length === 0 && !loadingHouseholds()) {
+                <div class="ebs-territorios__map-empty">
+                  <p>No hay hogares con coordenadas para mostrar en el mapa.</p>
+                  <p class="ebs-territorios__map-hint">Registra lat/long en los hogares para verlos aquí.</p>
+                </div>
+              }
+              @if (selectedHouseholdFromMap(); as h) {
+                <div class="ebs-territorios__map-panel">
+                  <div class="ebs-territorios__map-panel-header">
+                    <span class="ebs-territorios__map-panel-title">{{ h.addressText }}</span>
+                    <button type="button" class="ebs-territorios__map-panel-close" (click)="closeMapHouseholdPanel()" aria-label="Cerrar">×</button>
+                  </div>
+                  <div class="ebs-territorios__map-panel-body">
+                    <p class="ebs-territorios__map-panel-meta">
+                      {{ labelRisk(h.riskLevel) }} · {{ visitStateLabel(h.state) }}
+                    </p>
+                    @if (h.lastVisitDate) {
+                      <p class="ebs-territorios__map-panel-meta">Última visita: {{ h.lastVisitDate | date:'dd/MM/yyyy' }}</p>
+                    }
+                    <div class="ebs-territorios__map-panel-actions">
+                      <button type="button" class="ebs-territorios__map-panel-btn" (click)="nuevaVisita(h); closeMapHouseholdPanel()">Nueva visita</button>
+                      <a [routerLink]="['/ebs/visita/nueva']" [queryParams]="{ territorio: selectedTerritoryId(), hogar: h.id }" class="ebs-territorios__map-panel-btn ebs-territorios__map-panel-btn--link">Visita completa</a>
+                      <a routerLink="/historia-clinica" class="ebs-territorios__map-panel-btn ebs-territorios__map-panel-btn--link">Historia clínica</a>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (loadingHouseholds()) {
+            <div class="ebs-territorios__skeleton">
+              @for (sk of [1,2,3,4,5]; track sk) {
+                <sesa-skeleton width="50%" height="0.9rem" />
+              }
+            </div>
+          } @else if (households().length === 0) {
+            <sesa-empty-state icon="box" title="Sin hogares" message="No hay hogares en este microterritorio." [compact]="true" />
+          } @else {
+            <label class="ebs-territorios__filter">
+            <span>Estado visita</span>
+            <select class="ebs-territorios__select" [ngModel]="visitStatusFilter" (ngModelChange)="visitStatusFilter = $event; reloadHouseholds()">
+              <option value="TODOS">Todos</option>
+              <option value="PENDIENTE_VISITA">Pendiente</option>
+              <option value="EN_SEGUIMIENTO">En seguimiento</option>
+              <option value="CERRADO">Cerrado</option>
+            </select>
+          </label>
+          <div class="ebs-territorios__households">
+            @for (h of households(); track h.id) {
+              <article class="ebs-territorios__household">
+                <div class="ebs-territorios__household-head">
+                  <h3 class="ebs-territorios__household-address">{{ h.addressText }}</h3>
+                  <p class="ebs-territorios__household-meta">
+                    {{ h.lastVisitDate ? ('Última visita: ' + (h.lastVisitDate | date:'dd/MM/yyyy')) : 'Sin visitas' }}
+                  </p>
+                </div>
+                <div class="ebs-territorios__household-tags">
+                  <span [class]="badgeClassForRisk(h.riskLevel)">{{ labelRisk(h.riskLevel) }}</span>
+                  <span class="ebs-chip ebs-chip-muted">{{ visitStateLabel(h.state) }}</span>
+                  <button type="button" class="ebs-chip ebs-chip-primary ebs-chip-action" (click)="nuevaVisita(h)">Nueva visita</button>
+                  <a routerLink="/historia-clinica" class="ebs-chip ebs-chip-primary ebs-chip-link">Historia clínica</a>
+                  <a [routerLink]="['/ebs/visita/nueva']" [queryParams]="{ territorio: selectedTerritoryId(), hogar: h.id }" class="ebs-chip ebs-chip-action ebs-chip-link">Visita completa</a>
+                  <a [routerLink]="['/consulta-medica']" queryParamsHandling="merge" class="ebs-chip ebs-chip-action ebs-chip-link">Teleconsulta</a>
+                  <a [routerLink]="['/citas']" class="ebs-chip ebs-chip-action ebs-chip-link">Agendar cita</a>
+                </div>
+              </article>
+            }
+          </div>
+          }
+        }
+      </sesa-card>
+    </main>
+  </div>
+</section>

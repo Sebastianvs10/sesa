@@ -24,6 +24,7 @@ import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/ses
 import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-state/sesa-empty-state.component';
 import { SesaRdaPanelComponent } from '../../shared/components/sesa-rda-panel/sesa-rda-panel.component';
 import { SesaConsentimientoComponent } from '../../shared/components/sesa-consentimiento/sesa-consentimiento.component';
+import { parseResultadoToItems } from '../../core/utils/resultado-display.util';
 
 export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores' | 'consentimiento';
 export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGEN';
@@ -45,6 +46,9 @@ export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGE
   styleUrl: './historia-clinica.page.scss',
 })
 export class HistoriaClinicaPageComponent implements OnInit {
+  /** Expuesto para la plantilla: resultado por ítem (etiqueta en negrita + valor). */
+  protected readonly parseResultadoToItems = parseResultadoToItems;
+
   private readonly route          = inject(ActivatedRoute);
   private readonly router         = inject(Router);
   private readonly pacienteService   = inject(PacienteService);
@@ -93,6 +97,15 @@ export class HistoriaClinicaPageComponent implements OnInit {
 
   /* ── Filtro órdenes ───────────────────────────────────────────────── */
   filterTipoOrden = signal<string>('');
+
+  /* ── Subir resultado de orden ─────────────────────────────────────── */
+  ordenResultadoEditId = signal<number | null>(null);
+  resultadoOrdenTexto = '';
+  savingResultadoOrden = signal(false);
+  descargandoPdfOrdenes = signal(false);
+  imprimiendoPdfOrdenes = signal(false);
+  /** ID de la orden para la cual se está generando PDF/impresión individual (null = ninguna). */
+  ordenPdfIndividualId = signal<number | null>(null);
 
   /* ── Formulario SOAP (Consulta) ────────────────────────────────────
      Sección S — Subjetivo                                              */
@@ -268,12 +281,14 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private loadHistoria(pacienteId: number): void {
     this.historiaService.getByPacienteOrNull(pacienteId).subscribe({
       next: (historia) => {
-        this.historiaClinica.set(historia);
+        this.historiaClinica.set(historia ?? null);
         if (historia) this._populateHcEditForm(historia);
+        this.loadingPatient.set(false);
         this.loadFlujoClinico(pacienteId);
       },
       error: () => {
         this.historiaClinica.set(null);
+        this.loadingPatient.set(false);
         this.loadFlujoClinico(pacienteId);
       },
     });
@@ -675,10 +690,124 @@ export class HistoriaClinicaPageComponent implements OnInit {
   estadoBadge(estado?: string): string {
     const e = (estado ?? '').toUpperCase();
     if (e === 'PENDIENTE')    return 'badge--warning';
-    if (e === 'ACTIVA' || e === 'APROBADA' || e === 'PAGADA') return 'badge--success';
+    if (e === 'COMPLETADO' || e === 'COMPLETADA' || e === 'ACTIVA' || e === 'APROBADA' || e === 'PAGADA') return 'badge--success';
     if (e === 'CANCELADA' || e === 'CERRADA') return 'badge--danger';
     if (e === 'EN_PROCESO' || e === 'PARCIAL') return 'badge--info';
     return 'badge--secondary';
+  }
+
+  ordenCompletada(o: OrdenClinicaDto): boolean {
+    const e = (o.estado ?? '').toUpperCase();
+    return e === 'COMPLETADO' || e === 'COMPLETADA';
+  }
+
+  openSubirResultado(orden: OrdenClinicaDto): void {
+    this.ordenResultadoEditId.set(orden.id);
+    this.resultadoOrdenTexto = orden.resultado ?? '';
+  }
+
+  cancelarSubirResultado(): void {
+    this.ordenResultadoEditId.set(null);
+    this.resultadoOrdenTexto = '';
+  }
+
+  guardarResultadoOrden(): void {
+    const id = this.ordenResultadoEditId();
+    if (id == null || !this.resultadoOrdenTexto.trim()) {
+      this.toast.warning('Escribe el resultado de la orden.', 'Campo requerido');
+      return;
+    }
+    this.savingResultadoOrden.set(true);
+    this.ordenService.registrarResultado(id, this.resultadoOrdenTexto.trim()).subscribe({
+      next: () => {
+        this.savingResultadoOrden.set(false);
+        this.ordenResultadoEditId.set(null);
+        this.resultadoOrdenTexto = '';
+        this.toast.success('Resultado registrado. Orden marcada como completada.', 'Orden actualizada');
+        const pid = this.selectedPatient()?.id;
+        if (pid) this.loadFlujoClinico(pid);
+      },
+      error: (err) => {
+        this.savingResultadoOrden.set(false);
+        this.toast.error((err as { error?: { message?: string } })?.error?.message ?? 'No se pudo guardar el resultado.', 'Error');
+      },
+    });
+  }
+
+  descargarPdfOrdenes(): void {
+    const pacienteId = this.selectedPatient()?.id;
+    if (!pacienteId) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    this.descargandoPdfOrdenes.set(true);
+    this.pdfService.descargarOrdenesPaciente(pacienteId).subscribe({
+      next: (blob) => {
+        const nombre = this.selectedPatient()?.nombres ?? 'paciente';
+        this.pdfService.triggerDownload(blob, `ordenes-resultados-${String(nombre).replace(/\s+/g, '-')}.pdf`);
+        this.toast.success('PDF de órdenes y resultados descargado.', 'PDF generado');
+        this.descargandoPdfOrdenes.set(false);
+      },
+      error: () => {
+        this.toast.error('No se pudo generar el PDF.', 'Error PDF');
+        this.descargandoPdfOrdenes.set(false);
+      },
+    });
+  }
+
+  imprimirPdfOrdenes(): void {
+    const pacienteId = this.selectedPatient()?.id;
+    if (!pacienteId) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    if (this.ordenesPaciente.length === 0) {
+      this.toast.warning('No hay órdenes para imprimir.', 'Órdenes');
+      return;
+    }
+    this.imprimiendoPdfOrdenes.set(true);
+    this.pdfService.descargarOrdenesPaciente(pacienteId).subscribe({
+      next: (blob) => {
+        this.pdfService.openForPrint(blob);
+        this.toast.success('Use el diálogo de impresión para imprimir órdenes y resultados.', 'Imprimir');
+        this.imprimiendoPdfOrdenes.set(false);
+      },
+      error: () => {
+        this.toast.error('No se pudo generar el documento para imprimir.', 'Error');
+        this.imprimiendoPdfOrdenes.set(false);
+      },
+    });
+  }
+
+  descargarPdfOrdenIndividual(o: { id: number; detalle?: string }): void {
+    this.ordenPdfIndividualId.set(o.id);
+    this.pdfService.descargarOrdenIndividual(o.id).subscribe({
+      next: (blob) => {
+        const nombre = (o.detalle ?? 'orden').replace(/\s+/g, '-').slice(0, 40);
+        this.pdfService.triggerDownload(blob, `orden-${o.id}-${nombre}.pdf`);
+        this.toast.success('PDF de la orden descargado.', 'PDF');
+        this.ordenPdfIndividualId.set(null);
+      },
+      error: () => {
+        this.toast.error('No se pudo generar el PDF de la orden.', 'Error');
+        this.ordenPdfIndividualId.set(null);
+      },
+    });
+  }
+
+  imprimirPdfOrdenIndividual(o: { id: number }): void {
+    this.ordenPdfIndividualId.set(o.id);
+    this.pdfService.descargarOrdenIndividual(o.id).subscribe({
+      next: (blob) => {
+        this.pdfService.openForPrint(blob);
+        this.toast.success('Use el diálogo de impresión para esta orden.', 'Imprimir');
+        this.ordenPdfIndividualId.set(null);
+      },
+      error: () => {
+        this.toast.error('No se pudo generar el documento para imprimir.', 'Error');
+        this.ordenPdfIndividualId.set(null);
+      },
+    });
   }
 
   tipoOrdenIcon(tipo: string): string {

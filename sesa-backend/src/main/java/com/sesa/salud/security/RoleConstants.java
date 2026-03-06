@@ -21,11 +21,18 @@ public final class RoleConstants {
     public static final String REGENTE_FARMACIA      = "REGENTE_FARMACIA";
     public static final String RECEPCIONISTA         = "RECEPCIONISTA";
     public static final String COORDINADOR_MEDICO    = "COORDINADOR_MEDICO";
+    /** Profesional de Equipos Básicos de Salud (visitas domiciliarias, APS). */
+    public static final String EBS                    = "EBS";
+    /** Coordinador territorial: asigna microterritorios a equipos EBS. */
+    public static final String COORDINADOR_TERRITORIAL = "COORDINADOR_TERRITORIAL";
+    /** Supervisor de Atención Primaria en Salud: dashboards y supervisión EBS. */
+    public static final String SUPERVISOR_APS        = "SUPERVISOR_APS";
 
     public enum Modulo {
         DASHBOARD, PACIENTES, HISTORIA_CLINICA, LABORATORIOS, IMAGENES, URGENCIAS, HOSPITALIZACION,
         FARMACIA, FACTURACION, CITAS, USUARIOS, PERSONAL, EMPRESAS, NOTIFICACIONES, ROLES,
-        REPORTES, AGENDA, EVOLUCION_ENFERMERIA, CONSULTA_MEDICA, ODONTOLOGIA
+        REPORTES, AGENDA, EVOLUCION_ENFERMERIA, CONSULTA_MEDICA, ODONTOLOGIA,
+        EBS
     }
 
     public enum Accion { VER, CREAR, EDITAR, ELIMINAR, ORDENAR, PRESCRIBIR, DISPENSAR, FACTURAR }
@@ -33,7 +40,7 @@ public final class RoleConstants {
     public static final Set<String> ALL_ROLES = Set.of(
             SUPERADMINISTRADOR, ADMIN, MEDICO, ODONTOLOGO, BACTERIOLOGO, ENFERMERO,
             JEFE_ENFERMERIA, AUXILIAR_ENFERMERIA, PSICOLOGO, REGENTE_FARMACIA, RECEPCIONISTA,
-            COORDINADOR_MEDICO
+            COORDINADOR_MEDICO, EBS, COORDINADOR_TERRITORIAL, SUPERVISOR_APS
     );
 
     private RoleConstants() {}

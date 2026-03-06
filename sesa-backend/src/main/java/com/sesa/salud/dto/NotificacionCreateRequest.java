@@ -34,4 +34,7 @@ public class NotificacionCreateRequest {
      * a todos los usuarios activos del schema actual ignorando {@code destinatarioIds}.
      */
     private boolean broadcastTodos = false;
+
+    /** Opcional: ID de cita asociada (recordatorios automáticos). */
+    private Long citaId;
 }

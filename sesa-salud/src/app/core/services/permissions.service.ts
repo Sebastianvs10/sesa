@@ -8,6 +8,8 @@
 
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, of, Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -15,7 +17,8 @@ export type Modulo =
   | 'DASHBOARD' | 'PACIENTES' | 'HISTORIA_CLINICA' | 'LABORATORIOS' | 'IMAGENES'
   | 'URGENCIAS' | 'HOSPITALIZACION' | 'FARMACIA' | 'FACTURACION' | 'CITAS'
   | 'USUARIOS' | 'PERSONAL' | 'EMPRESAS' | 'NOTIFICACIONES' | 'ROLES'
-  | 'REPORTES' | 'AGENDA' | 'EVOLUCION_ENFERMERIA' | 'CONSULTA_MEDICA' | 'ODONTOLOGIA';
+  | 'REPORTES' | 'AGENDA' | 'EVOLUCION_ENFERMERIA' | 'CONSULTA_MEDICA' | 'ODONTOLOGIA'
+  | 'EBS';
 
 /** Mapa módulo → ruta (para guards de navegación). */
 const MODULO_ROUTE: Record<string, string> = {
@@ -39,6 +42,7 @@ const MODULO_ROUTE: Record<string, string> = {
   EVOLUCION_ENFERMERIA: '/evolucion-enfermeria',
   CONSULTA_MEDICA:      '/consulta-medica',
   ODONTOLOGIA:          '/odontologia',
+  EBS:                  '/ebs',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +53,8 @@ export class PermissionsService {
 
   private readonly _modulos = signal<Set<string>>(new Set());
   private readonly _loaded = signal(false);
+  /** Emite cuando la carga de permisos termina (éxito o error). Usado por guards al recargar. */
+  private readonly _loaded$ = new Subject<void>();
 
   /** Módulos activos del usuario actual (provenientes de la BD). */
   readonly modulos = this._modulos.asReadonly();
@@ -92,12 +98,26 @@ export class PermissionsService {
       next: (res) => {
         this._modulos.set(new Set(res.modulos ?? []));
         this._loaded.set(true);
+        this._loaded$.next();
       },
       error: () => {
         this._modulos.set(new Set());
         this._loaded.set(true);
+        this._loaded$.next();
       },
     });
+  }
+
+  /**
+   * Observable que emite cuando los permisos están cargados.
+   * Si aún no se han cargado, dispara load() y espera. Usado por roleGuard al recargar en una ruta protegida.
+   */
+  whenLoaded(): Observable<void> {
+    if (this._loaded()) return of(undefined);
+    if (!this.auth.isAuthenticated()) return of(undefined);
+    if (this.auth.isSuperAdmin()) return of(undefined);
+    this.load();
+    return this._loaded$.pipe(take(1));
   }
 
   /** Limpia los módulos al cerrar sesión. */

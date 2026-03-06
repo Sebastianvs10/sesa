@@ -399,6 +399,9 @@ export class PersonalPageComponent implements OnInit {
     const map: Record<string, string> = {
       MEDICO: 'medico',
       COORDINADOR_MEDICO: 'coordinador',
+      EBS: 'ebs',
+      COORDINADOR_TERRITORIAL: 'coordinador-territorial',
+      SUPERVISOR_APS: 'supervisor-aps',
       ODONTOLOGO: 'odontologo',
       BACTERIOLOGO: 'bacteriologo',
       ENFERMERO: 'enfermero',

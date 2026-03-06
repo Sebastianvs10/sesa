@@ -1,0 +1,97 @@
+<section class="ebs-inicio">
+  <header class="ebs-inicio__header">
+    <h1 class="ebs-inicio__title">Equipos Básicos de Salud</h1>
+    <p class="ebs-inicio__subtitle">
+      Atención Primaria en Salud: gestión territorial, visitas domiciliarias y seguimiento poblacional.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="ebs-inicio__skeleton">
+      <sesa-skeleton width="100%" height="4rem" />
+      <sesa-skeleton width="80%" height="3rem" />
+      <sesa-skeleton width="60%" height="2rem" />
+    </div>
+  } @else if (error()) {
+    <p class="ebs-inicio__error">{{ error() }}</p>
+  } @else {
+    <!-- Supervisor APS: vista dashboard -->
+    @if (isSupervisor() && dashboard(); as d) {
+      <div class="ebs-inicio__dashboard">
+        <div class="ebs-inicio__kpis">
+          <div class="ebs-inicio__kpi">
+            <span class="ebs-inicio__kpi-value">{{ d.totalTerritorios }}</span>
+            <span class="ebs-inicio__kpi-label">Microterritorios</span>
+          </div>
+          <div class="ebs-inicio__kpi">
+            <span class="ebs-inicio__kpi-value">{{ d.totalHogares }}</span>
+            <span class="ebs-inicio__kpi-label">Hogares</span>
+          </div>
+          <div class="ebs-inicio__kpi ebs-inicio__kpi--highlight">
+            <span class="ebs-inicio__kpi-value">{{ d.porcentajeCobertura | number: '1.1-1' }}%</span>
+            <span class="ebs-inicio__kpi-label">Cobertura visitada</span>
+          </div>
+          <div class="ebs-inicio__kpi">
+            <span class="ebs-inicio__kpi-value">{{ d.visitasEnPeriodo }}</span>
+            <span class="ebs-inicio__kpi-label">Visitas (30 días)</span>
+          </div>
+          <div class="ebs-inicio__kpi ebs-inicio__kpi--alert">
+            <span class="ebs-inicio__kpi-value">{{ d.hogaresAltoRiesgo }}</span>
+            <span class="ebs-inicio__kpi-label">Alto riesgo</span>
+          </div>
+        </div>
+        <a routerLink="/ebs/dashboard-supervisor" class="ebs-inicio__link">Ver dashboard completo →</a>
+      </div>
+    }
+
+    <!-- Coordinador / Profesional EBS: resumen de territorios -->
+    @if ((isCoordinador() || isProfesionalEbs()) && territories().length > 0) {
+      <sesa-card title="Mis microterritorios" subtitle="Territorios asignados al equipo" alignHeader="start">
+        <ul class="ebs-inicio__territory-list">
+          @for (t of territories(); track t.id) {
+            <li class="ebs-inicio__territory-item">
+              <a [routerLink]="['/ebs/territorios']" [queryParams]="{ territorio: t.id }" class="ebs-inicio__territory-link">
+                <span class="ebs-inicio__territory-name">{{ t.name }}</span>
+                <span class="ebs-inicio__territory-meta">{{ t.visitedHouseholdsCount }}/{{ t.householdsCount }} hogares visitados</span>
+                @if (t.highRiskHouseholdsCount > 0) {
+                  <span class="ebs-inicio__territory-risk">{{ t.highRiskHouseholdsCount }} alto riesgo</span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+        <a routerLink="/ebs/territorios" class="ebs-inicio__link">Ir a territorios y hogares →</a>
+      </sesa-card>
+    }
+
+    <!-- Accesos rápidos comunes -->
+    <sesa-card title="Accesos rápidos" subtitle="Acciones frecuentes del módulo EBS" alignHeader="start">
+      <div class="ebs-inicio__actions">
+        <a routerLink="/ebs/territorios" class="ebs-inicio__action">
+          <span class="ebs-inicio__action-icon">🗺️</span>
+          <span>Territorios y hogares</span>
+        </a>
+        <a routerLink="/ebs/visitas" class="ebs-inicio__action">
+          <span class="ebs-inicio__action-icon">📋</span>
+          <span>Historial de visitas</span>
+        </a>
+        <a routerLink="/ebs/visita/nueva" class="ebs-inicio__action ebs-inicio__action--primary">
+          <span class="ebs-inicio__action-icon">➕</span>
+          <span>Nueva visita domiciliaria</span>
+        </a>
+        @if (isCoordinador()) {
+          <a routerLink="/ebs/asignacion" class="ebs-inicio__action">
+            <span class="ebs-inicio__action-icon">👥</span>
+            <span>Asignación territorial</span>
+          </a>
+        }
+        @if (isSupervisor()) {
+          <a routerLink="/ebs/dashboard-supervisor" class="ebs-inicio__action">
+            <span class="ebs-inicio__action-icon">📊</span>
+            <span>Dashboard gerencial</span>
+          </a>
+        }
+      </div>
+    </sesa-card>
+  }
+</section>

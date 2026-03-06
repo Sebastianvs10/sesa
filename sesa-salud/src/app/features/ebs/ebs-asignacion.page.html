@@ -1,0 +1,133 @@
+<section class="ebs-asignacion">
+  <header class="ebs-asignacion__header">
+    <h1 class="ebs-asignacion__title">Asignación territorial</h1>
+    <p class="ebs-asignacion__subtitle">
+      Asigna equipos a microterritorios y gestiona brigadas por territorio.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="ebs-asignacion__loading-wrap">
+      <div class="ebs-asignacion__loading-shimmer"></div>
+      <p class="ebs-asignacion__loading-text">Cargando territorios…</p>
+    </div>
+  } @else if (territories().length === 0) {
+    <sesa-card>
+      <sesa-empty-state
+        icon="search"
+        title="Sin territorios"
+        message="No hay microterritorios. Crea uno desde Territorios y hogares."
+        [compact]="true"
+      />
+      <a routerLink="/ebs/territorios/crear" class="ebs-asignacion__cta">Crear territorio</a>
+    </sesa-card>
+  } @else {
+    <div class="ebs-asignacion__grid">
+      @for (t of territories(); track t.id) {
+        <sesa-card class="ebs-asignacion__card">
+          <div class="ebs-asignacion__card-head">
+            <div>
+              <h3 class="ebs-asignacion__card-title">{{ t.name }}</h3>
+              <span class="ebs-asignacion__card-code">{{ t.code }}</span>
+            </div>
+            <span class="ebs-asignacion__card-badge">{{ t.visitedHouseholdsCount }}/{{ t.householdsCount }} visitados</span>
+          </div>
+          <div class="ebs-asignacion__card-meta">
+            @if (t.highRiskHouseholdsCount > 0) {
+              <span class="ebs-asignacion__risk">{{ t.highRiskHouseholdsCount }} alto riesgo</span>
+            }
+          </div>
+
+          <div class="ebs-asignacion__card-actions">
+            @if (editingTeamTerritoryId() === t.id) {
+              <div class="ebs-asignacion__team-editor">
+                <p class="ebs-asignacion__team-label">Selecciona el equipo para este territorio</p>
+                <div class="ebs-asignacion__team-list">
+                  @for (p of personalList(); track p.id) {
+                    <label class="ebs-asignacion__team-item">
+                      <input
+                        type="checkbox"
+                        [checked]="selectedTeamIds().has(p.id)"
+                        (change)="toggleTeamMember(p.id)"
+                      />
+                      <span>{{ fullName(p) }}</span>
+                    </label>
+                  }
+                </div>
+                @if (personalList().length === 0) {
+                  <p class="ebs-asignacion__team-empty">No hay personal cargado.</p>
+                }
+                <div class="ebs-asignacion__team-buttons">
+                  <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--secondary" (click)="closeTeamEditor()">Cancelar</button>
+                  <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--primary" (click)="saveTerritoryTeam()" [disabled]="savingTeam()">
+                    {{ savingTeam() ? 'Guardando…' : 'Guardar equipo' }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--primary" (click)="openTeamEditor(t.id)">
+                Asignar equipo
+              </button>
+            }
+          </div>
+
+          <div class="ebs-asignacion__brigades">
+            <h4 class="ebs-asignacion__brigades-title">Brigadas</h4>
+            @if (showNewBrigadeForTerritoryId() === t.id) {
+              <div class="ebs-asignacion__new-brigade">
+                <input type="text" class="ebs-asignacion__input" [(ngModel)]="newBrigadeName" placeholder="Ej.: Brigada vereda Norte" />
+                <div class="ebs-asignacion__new-brigade-dates">
+                  <input type="date" class="ebs-asignacion__input" [(ngModel)]="newBrigadeDateStart" />
+                  <span>a</span>
+                  <input type="date" class="ebs-asignacion__input" [(ngModel)]="newBrigadeDateEnd" />
+                </div>
+                <p class="ebs-asignacion__new-brigade-hint">Las fechas definen el período de la brigada. Puedes asignar el equipo después de crearla.</p>
+                <div class="ebs-asignacion__new-brigade-btns">
+                  <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--secondary" (click)="closeNewBrigade()">Cancelar</button>
+                  <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--primary" (click)="createBrigade(t.id)" [disabled]="savingBrigade() || !newBrigadeName.trim()">
+                    {{ savingBrigade() ? 'Creando…' : 'Crear brigada' }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--outline" (click)="openNewBrigade(t.id)">+ Nueva brigada</button>
+            }
+            <ul class="ebs-asignacion__brigades-list">
+              @for (b of brigadesFor(t.id); track b.id!) {
+                <li class="ebs-asignacion__brigade-item">
+                  <div class="ebs-asignacion__brigade-info">
+                    <strong>{{ b.name }}</strong>
+                    <span class="ebs-asignacion__brigade-dates">{{ b.dateStart }} — {{ b.dateEnd }}</span>
+                    <span class="ebs-asignacion__brigade-status" [attr.data-status]="(b.status || '').toLowerCase()">{{ b.status }}</span>
+                  </div>
+                  @if (editingBrigadeId() === b.id) {
+                    <div class="ebs-asignacion__team-editor ebs-asignacion__team-editor--small">
+                      @for (p of personalList(); track p.id) {
+                        <label class="ebs-asignacion__team-item">
+                          <input type="checkbox" [checked]="selectedBrigadeTeamIds().has(p.id)" (change)="toggleBrigadeTeamMember(p.id)" />
+                          <span>{{ fullName(p) }}</span>
+                        </label>
+                      }
+                      <div class="ebs-asignacion__team-buttons">
+                        <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--secondary" (click)="closeBrigadeTeamEditor()">Cerrar</button>
+                        <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--primary" (click)="saveBrigadeTeam()" [disabled]="savingTeam()">Guardar equipo</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="ebs-asignacion__brigade-actions">
+                      <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--small" (click)="openBrigadeTeamEditor(b.id!)">Equipo</button>
+                      <button type="button" class="ebs-asignacion__btn ebs-asignacion__btn--danger" (click)="deleteBrigade(b)">Eliminar</button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+            @if (brigadesFor(t.id).length === 0 && showNewBrigadeForTerritoryId() !== t.id) {
+              <p class="ebs-asignacion__brigades-empty">Sin brigadas. Crea una para programar salidas.</p>
+            }
+          </div>
+        </sesa-card>
+      }
+    </div>
+  }
+</section>

@@ -1,29 +1,61 @@
 /**
- * Gestión de Notificaciones — envío individual, broadcast por rol y SUPERADMIN.
+ * Bandeja de Notificaciones — UX/UI premium, cliente de correo moderno.
+ * Sidebar, búsqueda, acciones masivas, panel Redactar con editor rich text y adjuntos.
  * Autor: Ing. J Sebastian Vargas S
  */
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faInbox,
   faPaperPlane,
-  faPenToSquare,
   faPaperclip,
   faBullhorn,
+  faSearch,
+  faPlus,
+  faTimes,
+  faFlag,
+  faEnvelopeOpen,
+  faBold,
+  faItalic,
+  faListUl,
+  faListOl,
+  faLink,
+  faCheckDouble,
+  faArrowLeft,
+  faEnvelope,
+  faTrashCan,
+  faSortDown,
+  faSortUp,
+  faFilter,
+  faEllipsisVertical,
+  faExpand,
+  faStar,
+  faArchive,
 } from '@fortawesome/free-solid-svg-icons';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { interval, Subscription } from 'rxjs';
 import {
   NotificacionService,
   NotificacionDto,
   NotificacionCreateRequest,
   DestinatarioDisponible,
   NotificacionBroadcastResult,
+  PageResponse,
 } from '../../core/services/notificacion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
-type Tab = 'recibidas' | 'enviadas' | 'redactar';
+type MenuId = 'inbox' | 'important' | 'sent';
+type CategoryId = 'GENERAL' | 'URGENTE' | 'INFORMATIVO' | '';
+
+interface CategoryFilter {
+  id: CategoryId;
+  label: string;
+  icon: IconDefinition;
+  count: number;
+}
 
 @Component({
   standalone: true,
@@ -32,123 +64,522 @@ type Tab = 'recibidas' | 'enviadas' | 'redactar';
   templateUrl: './notificaciones.page.html',
   styleUrl: './notificaciones.page.scss',
 })
-export class NotificacionesPageComponent implements OnInit {
+export class NotificacionesPageComponent implements OnInit, OnDestroy {
   private readonly notificacionService = inject(NotificacionService);
-  private readonly authService         = inject(AuthService);
-  private readonly fb                  = inject(FormBuilder);
-  private readonly toast               = inject(SesaToastService);
+  private readonly authService = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
+  private readonly toast = inject(SesaToastService);
 
-  faInbox       = faInbox;
-  faPaperPlane  = faPaperPlane;
-  faPenToSquare = faPenToSquare;
-  faPaperclip   = faPaperclip;
-  faBullhorn    = faBullhorn;
+  faInbox = faInbox;
+  faPaperPlane = faPaperPlane;
+  faPaperclip = faPaperclip;
+  faBullhorn = faBullhorn;
+  faSearch = faSearch;
+  faPlus = faPlus;
+  faTimes = faTimes;
+  faFlag = faFlag;
+  faEnvelopeOpen = faEnvelopeOpen;
+  faBold = faBold;
+  faItalic = faItalic;
+  faListUl = faListUl;
+  faListOl = faListOl;
+  faLink = faLink;
+  faCheckDouble = faCheckDouble;
+  faArrowLeft = faArrowLeft;
+  faEnvelope = faEnvelope;
+  faTrashCan = faTrashCan;
+  faSortDown = faSortDown;
+  faSortUp = faSortUp;
+  faFilter = faFilter;
+  faEllipsisVertical = faEllipsisVertical;
+  faExpand = faExpand;
+  faStar = faStar;
+  faArchive = faArchive;
 
-  // ── Estado de tabs y listas ──────────────────────────────────────────────
-  tab          = signal<Tab>('recibidas');
-  recibidas    = signal<NotificacionDto[]>([]);
-  enviadas     = signal<NotificacionDto[]>([]);
+  menuActive = signal<MenuId>('inbox');
+  categoryActive = signal<CategoryId>('');
+  searchQuery = '';
+  composeOpen = signal(false);
+  /** Orden: 'fecha-desc' | 'fecha-asc' */
+  sortOrder = signal<'fecha-desc' | 'fecha-asc'>('fecha-desc');
+  /** Filtro por tipo en header (vacío = todos) */
+  headerFilterType = signal<CategoryId>('');
+  filterDropdownOpen = signal(false);
+  sortDropdownOpen = signal(false);
+  estadoDropdownOpen = signal(false);
+  /** Filtro por estado: todos | leídas | no leídas (solo en bandeja/importantes) */
+  stateFilter = signal<'all' | 'read' | 'unread'>('all');
+
+  recibidas = signal<NotificacionDto[]>([]);
+  enviadas = signal<NotificacionDto[]>([]);
+  totalRecibidas = signal(0);
+  totalEnviadas = signal(0);
   destinatarios = signal<DestinatarioDisponible[]>([]);
-  loading      = signal(false);
-  error        = signal<string | null>(null);
-  success      = signal<string | null>(null);
+  loading = signal(false);
+  error = signal<string | null>(null);
+  success = signal<string | null>(null);
   selectedNotif = signal<NotificacionDto | null>(null);
-  noLeidas     = signal(0);
+  noLeidas = signal(0);
 
-  // ── Roles ────────────────────────────────────────────────────────────────
+  currentPage = signal(0);
+  readonly pageSize = 20;
+
   isSuperAdmin = false;
-  isAdmin      = false;
+  isAdmin = false;
 
-  // ── Formulario de redacción ───────────────────────────────────────────────
   form: FormGroup;
-
-  /** Archivos adjuntos seleccionados */
   adjuntos: File[] = [];
-
-  /** Modo broadcast todos (ADMIN) */
   broadcastTodos = false;
-
-  /** Búsqueda y selección de destinatarios individuales */
   searchDestinatarios = '';
   selectedIds = new Set<number>();
 
+  /** Selección en la lista (checkboxes) */
+  selectedListIds = new Set<number>();
+
+  /** Si el formulario de redacción tiene contenido sin enviar (para confirmar cierre) */
+  composeDirty = false;
+
+  private currentUserId: number | null = null;
+  private refreshCountSubscription?: Subscription;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selectedNotif()) {
+      this.closeDetail();
+    } else if (this.composeOpen()) {
+      this.closeComposeWithConfirm();
+    }
+  }
+
   filteredDestinatarios = computed(() => {
-    const q   = this.searchDestinatarios.toLowerCase();
+    const q = this.searchDestinatarios.toLowerCase();
     const all = this.destinatarios();
     if (!q) return all;
-    return all.filter(u =>
-      u.email?.toLowerCase().includes(q) ||
-      u.nombre?.toLowerCase().includes(q)
+    return all.filter(
+      (u) =>
+        u.email?.toLowerCase().includes(q) ||
+        u.nombre?.toLowerCase().includes(q)
     );
+  });
+
+  categoryFilters = computed((): CategoryFilter[] => {
+    const rec = this.recibidas();
+    const env = this.enviadas();
+    const menu = this.menuActive();
+    const list = menu === 'sent' ? env : rec;
+    const general = list.filter((n) => n.tipo === 'GENERAL').length;
+    const urgente = list.filter((n) => n.tipo === 'URGENTE').length;
+    const informativo = list.filter((n) => n.tipo === 'INFORMATIVO').length;
+    return [
+      { id: 'GENERAL', label: 'General', icon: faInbox, count: general },
+      { id: 'URGENTE', label: 'Urgente', icon: faFlag, count: urgente },
+      { id: 'INFORMATIVO', label: 'Informativo', icon: faPaperPlane, count: informativo },
+    ];
+  });
+
+  filteredList = computed(() => {
+    const menu = this.menuActive();
+    const cat = this.categoryActive();
+    const headerType = this.headerFilterType();
+    const q = this.searchQuery.trim().toLowerCase();
+    let list: NotificacionDto[] =
+      menu === 'sent' ? this.enviadas() : this.recibidas();
+    if (menu === 'important') {
+      list = list.filter((n) => n.tipo === 'URGENTE');
+    }
+    if (cat) {
+      list = list.filter((n) => n.tipo === cat);
+    }
+    if (headerType) {
+      list = list.filter((n) => n.tipo === headerType);
+    }
+    const state = this.stateFilter();
+    if ((menu === 'inbox' || menu === 'important') && state !== 'all') {
+      list = list.filter((n) => (state === 'unread' ? this.isUnread(n) : !this.isUnread(n)));
+    }
+    if (q) {
+      list = list.filter(
+        (n) =>
+          n.titulo?.toLowerCase().includes(q) ||
+          this.stripHtml(n.contenido || '').toLowerCase().includes(q) ||
+          n.remitenteNombre?.toLowerCase().includes(q)
+      );
+    }
+    const order = this.sortOrder();
+    const sorted = [...list].sort((a, b) => {
+      const ta = new Date(a.fechaEnvio).getTime();
+      const tb = new Date(b.fechaEnvio).getTime();
+      return order === 'fecha-desc' ? tb - ta : ta - tb;
+    });
+    return sorted;
+  });
+
+  /** Agrupación por fecha: Hoy, Ayer, Esta semana, Anterior */
+  groupedByDate = computed(() => {
+    const list = this.filteredList();
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    const groups: { label: string; key: string; items: NotificacionDto[] }[] = [];
+    const hoy: NotificacionDto[] = [];
+    const ayer: NotificacionDto[] = [];
+    const estaSemana: NotificacionDto[] = [];
+    const anterior: NotificacionDto[] = [];
+
+    for (const n of list) {
+      const d = new Date(n.fechaEnvio);
+      if (d >= todayStart) hoy.push(n);
+      else if (d >= yesterdayStart) ayer.push(n);
+      else if (d >= weekStart) estaSemana.push(n);
+      else anterior.push(n);
+    }
+
+    if (hoy.length) groups.push({ label: 'Hoy', key: 'hoy', items: hoy });
+    if (ayer.length) groups.push({ label: 'Ayer', key: 'ayer', items: ayer });
+    if (estaSemana.length) groups.push({ label: 'Esta semana', key: 'semana', items: estaSemana });
+    if (anterior.length) groups.push({ label: 'Anteriores', key: 'anterior', items: anterior });
+    return groups;
+  });
+
+  totalElements = computed(() => {
+    return this.menuActive() === 'sent'
+      ? this.totalEnviadas()
+      : this.totalRecibidas();
+  });
+
+  totalPages = computed(() => {
+    const t = this.totalElements();
+    const s = this.pageSize;
+    return t <= 0 ? 1 : Math.ceil(t / s);
   });
 
   constructor() {
     this.form = this.fb.group({
-      titulo:   ['', [Validators.required, Validators.maxLength(255)]],
+      titulo: ['', [Validators.required, Validators.maxLength(255)]],
       contenido: ['', [Validators.required]],
-      tipo:     ['GENERAL'],
+      tipo: ['GENERAL'],
     });
   }
 
   ngOnInit(): void {
-    const user       = this.authService.currentUser();
+    const user = this.authService.currentUser();
+    this.currentUserId = user?.userId ?? null;
     this.isSuperAdmin = user?.role === 'SUPERADMINISTRADOR';
-    this.isAdmin      = user?.role === 'ADMIN' || this.isSuperAdmin;
+    this.isAdmin = user?.role === 'ADMIN' || this.isSuperAdmin;
 
     this.loadRecibidas();
+    this.loadEnviadas();
     this.loadNoLeidas();
     this.loadDestinatarios();
+    // Refrescar contador de no leídas cada 15 s para que el badge se actualice al recibir
+    this.refreshCountSubscription = interval(15_000).subscribe(() => this.loadNoLeidas());
   }
 
-  // ── Navegación ────────────────────────────────────────────────────────────
+  ngOnDestroy(): void {
+    this.refreshCountSubscription?.unsubscribe();
+  }
 
-  switchTab(t: Tab): void {
-    this.tab.set(t);
+  setMenu(menu: MenuId): void {
+    this.menuActive.set(menu);
     this.selectedNotif.set(null);
     this.error.set(null);
     this.success.set(null);
-    if (t === 'recibidas') this.loadRecibidas();
-    if (t === 'enviadas')  this.loadEnviadas();
+    this.currentPage.set(0);
+    if (menu === 'inbox' || menu === 'important') this.loadRecibidas();
+    if (menu === 'sent') this.loadEnviadas();
   }
 
-  // ── Carga de datos ────────────────────────────────────────────────────────
+  setCategory(cat: CategoryId): void {
+    this.categoryActive.set(this.categoryActive() === cat ? '' : cat);
+  }
+
+  setSortOrder(order: 'fecha-desc' | 'fecha-asc'): void {
+    this.sortOrder.set(order);
+  }
+
+  setHeaderFilterType(tipo: CategoryId): void {
+    this.headerFilterType.set(this.headerFilterType() === tipo ? '' : tipo);
+    this.filterDropdownOpen.set(false);
+  }
+
+  setSortOrderAndClose(order: 'fecha-desc' | 'fecha-asc'): void {
+    this.sortOrder.set(order);
+    this.sortDropdownOpen.set(false);
+  }
+
+  closeDropdowns(): void {
+    this.filterDropdownOpen.set(false);
+    this.sortDropdownOpen.set(false);
+    this.estadoDropdownOpen.set(false);
+  }
+
+  toggleFilterDropdown(): void {
+    this.filterDropdownOpen.update((v) => !v);
+    this.sortDropdownOpen.set(false);
+    this.estadoDropdownOpen.set(false);
+  }
+
+  toggleSortDropdown(): void {
+    this.sortDropdownOpen.update((v) => !v);
+    this.filterDropdownOpen.set(false);
+    this.estadoDropdownOpen.set(false);
+  }
+
+  toggleEstadoDropdown(): void {
+    this.estadoDropdownOpen.update((v) => !v);
+    this.filterDropdownOpen.set(false);
+    this.sortDropdownOpen.set(false);
+  }
+
+  setEstadoFilter(value: 'all' | 'read' | 'unread'): void {
+    this.stateFilter.set(value);
+    this.estadoDropdownOpen.set(false);
+  }
+
+  onSearchChange(): void {
+    // Filtrado es vía computed filteredList
+  }
+
+  /** Acción rápida: marcar como leída sin abrir (solo en bandeja/importantes) */
+  quickMarkAsRead(notif: NotificacionDto, ev: Event): void {
+    ev.stopPropagation();
+    if (this.menuActive() !== 'inbox' && this.menuActive() !== 'important') return;
+    if (!this.isUnread(notif)) return;
+    this.notificacionService.marcarLeida(notif.id).subscribe({
+      next: () => {
+        this.loadRecibidas();
+        this.loadNoLeidas();
+        this.toast.success('Marcada como leída', 'Listo');
+      },
+      error: () => {},
+    });
+  }
+
+  /** Acción rápida: marcar como importante (placeholder; el tipo Urgente se gestiona al crear) */
+  quickMarkImportant(notif: NotificacionDto, ev: Event): void {
+    ev.stopPropagation();
+    this.toast.info('Próximamente podrás marcar como importante desde aquí.', 'Acción');
+  }
+
+  /** Acción rápida: eliminar (placeholder si el backend no expone eliminación) */
+  quickDelete(notif: NotificacionDto, ev: Event): void {
+    ev.stopPropagation();
+    if (!window.confirm('¿Eliminar esta notificación? Esta acción no está disponible aún.')) return;
+    this.toast.info('Eliminación de notificaciones no disponible en esta versión.', 'Info');
+  }
+
+  countImportant(): number {
+    return this.recibidas().filter((n) => n.tipo === 'URGENTE').length;
+  }
 
   loadRecibidas(): void {
     this.loading.set(true);
-    this.notificacionService.listRecibidas(0, 50).subscribe({
-      next: (page) => { this.recibidas.set(page.content); this.loading.set(false); },
-      error: (e) => {
-        const msg = e.error?.error || 'Error cargando notificaciones';
-        this.error.set(msg);
+    const page = this.currentPage();
+    this.notificacionService.listRecibidas(page, this.pageSize).subscribe({
+      next: (p: PageResponse<NotificacionDto>) => {
+        this.recibidas.set(p.content);
+        this.totalRecibidas.set(p.totalElements);
         this.loading.set(false);
-        this.toast.error(msg, 'Error');
+      },
+      error: (e) => {
+        this.error.set(e.error?.error || 'Error cargando notificaciones');
+        this.loading.set(false);
+        this.toast.error(this.error()!, 'Error');
       },
     });
   }
 
   loadEnviadas(): void {
     this.loading.set(true);
-    this.notificacionService.listEnviadas(0, 50).subscribe({
-      next: (page) => { this.enviadas.set(page.content); this.loading.set(false); },
-      error: (e) => { this.error.set(e.error?.error || 'Error'); this.loading.set(false); },
+    const page = this.currentPage();
+    this.notificacionService.listEnviadas(page, this.pageSize).subscribe({
+      next: (p: PageResponse<NotificacionDto>) => {
+        this.enviadas.set(p.content);
+        this.totalEnviadas.set(p.totalElements);
+        this.loading.set(false);
+      },
+      error: (e) => {
+        this.error.set(e.error?.error || 'Error');
+        this.loading.set(false);
+      },
     });
   }
 
   loadNoLeidas(): void {
     this.notificacionService.countNoLeidas().subscribe({
-      next:  (n) => this.noLeidas.set(n),
-      error: ()  => {},
+      next: (n) => this.noLeidas.set(n),
+      error: () => {},
     });
   }
 
   loadDestinatarios(): void {
     this.notificacionService.getDestinatariosDisponibles().subscribe({
-      next:  (list) => this.destinatarios.set(list),
-      error: ()     => {},
+      next: (list) => this.destinatarios.set(list),
+      error: () => {},
     });
   }
 
-  // ── Selección de destinatarios ────────────────────────────────────────────
+  goToPage(page: number): void {
+    this.currentPage.set(Math.max(0, Math.min(page, this.totalPages() - 1)));
+    if (this.menuActive() === 'sent') this.loadEnviadas();
+    else this.loadRecibidas();
+  }
+
+  isAllSelected(): boolean {
+    const list = this.filteredList();
+    if (list.length === 0) return false;
+    return list.every((n) => this.selectedListIds.has(n.id));
+  }
+
+  toggleSelectAll(ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    const list = this.filteredList();
+    if (checked) list.forEach((n) => this.selectedListIds.add(n.id));
+    else list.forEach((n) => this.selectedListIds.delete(n.id));
+  }
+
+  toggleSelect(id: number, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    if (checked) this.selectedListIds.add(id);
+    else this.selectedListIds.delete(id);
+  }
+
+  isListSelected(id: number): boolean {
+    return this.selectedListIds.has(id);
+  }
+
+  hasSelection(): boolean {
+    return this.selectedListIds.size > 0;
+  }
+
+  selectedCount(): number {
+    return this.selectedListIds.size;
+  }
+
+  /** Marcar como leídas las notificaciones seleccionadas (solo en bandeja/importantes) */
+  markSelectedAsRead(): void {
+    const ids = Array.from(this.selectedListIds);
+    if (ids.length === 0) return;
+    this.notificacionService.marcarLeidas(ids).subscribe({
+      next: () => {
+        this.selectedListIds.clear();
+        this.loadRecibidas();
+        this.loadNoLeidas();
+        this.toast.success(`${ids.length} notificación(es) marcada(s) como leída(s)`, 'Listo');
+      },
+      error: (e) => {
+        this.toast.error(e.error?.error || 'Error al marcar como leídas', 'Error');
+      },
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedListIds.clear();
+  }
+
+  /** Archivar selección (placeholder si el backend no lo soporta) */
+  archiveSelected(): void {
+    if (this.selectedListIds.size === 0) return;
+    this.toast.info('Archivado no disponible en esta versión.', 'Próximamente');
+    this.clearSelection();
+  }
+
+  /** Eliminar selección (placeholder si el backend no lo soporta) */
+  deleteSelected(): void {
+    if (this.selectedListIds.size === 0) return;
+    if (!window.confirm(`¿Eliminar ${this.selectedListIds.size} notificación(es)? Esta acción no está disponible aún.`)) return;
+    this.toast.info('Eliminación masiva no disponible en esta versión.', 'Info');
+    this.clearSelection();
+  }
+
+  /** Marcar como no leídas las notificaciones seleccionadas (solo en bandeja/importantes) */
+  markSelectedAsUnread(): void {
+    const ids = Array.from(this.selectedListIds);
+    if (ids.length === 0) return;
+    this.notificacionService.marcarNoLeidas(ids).subscribe({
+      next: () => {
+        this.selectedListIds.clear();
+        this.loadRecibidas();
+        this.loadNoLeidas();
+        this.toast.success(`${ids.length} notificación(es) marcada(s) como no leída(s)`, 'Listo');
+      },
+      error: (e) => {
+        this.toast.error(e.error?.error || 'Error al marcar como no leídas', 'Error');
+      },
+    });
+  }
+
+  /** Marcar una notificación como no leída (desde el detalle) */
+  markAsUnread(notif: NotificacionDto): void {
+    this.notificacionService.marcarNoLeida(notif.id).subscribe({
+      next: () => {
+        this.loadRecibidas();
+        this.loadNoLeidas();
+        this.notificacionService.get(notif.id).subscribe({
+          next: (updated) => this.selectedNotif.set(updated),
+          error: () => {},
+        });
+        this.toast.success('Marcada como no leída', 'Listo');
+      },
+      error: () => this.toast.error('No se pudo marcar como no leída', 'Error'),
+    });
+  }
+
+  /** Indica si el usuario actual es el remitente de la notificación (puede eliminar adjuntos) */
+  isRemitente(notif: NotificacionDto): boolean {
+    return this.currentUserId != null && notif.remitenteId === this.currentUserId;
+  }
+
+  /** Eliminar adjunto (solo remitente). Refresca el detalle tras eliminar. */
+  deleteAdjunto(notifId: number, adj: { id: number; nombreArchivo: string }): void {
+    if (!confirm(`¿Eliminar el archivo "${adj.nombreArchivo}"?`)) return;
+    this.notificacionService.deleteAdjunto(notifId, adj.id).subscribe({
+      next: () => {
+        this.notificacionService.get(notifId).subscribe({
+          next: (updated) => this.selectedNotif.set(updated),
+          error: () => {},
+        });
+        this.toast.success('Adjunto eliminado', 'Listo');
+      },
+      error: (e) => this.toast.error(e.error?.error || 'No se pudo eliminar el adjunto', 'Error'),
+    });
+  }
+
+  /** Longitud del asunto (para contador en compose) */
+  subjectLength(): number {
+    return (this.form.get('titulo')?.value ?? '').length;
+  }
+
+  readonly subjectMaxLength = 255;
+
+  openCompose(): void {
+    this.composeOpen.set(true);
+    this.composeDirty = false;
+    this.error.set(null);
+  }
+
+  closeCompose(): void {
+    this.composeOpen.set(false);
+    this.composeDirty = false;
+  }
+
+  closeComposeWithConfirm(): void {
+    if (this.composeDirty && (this.form.value.titulo?.trim() || this.form.value.contenido?.trim() || this.adjuntos.length > 0)) {
+      if (window.confirm('¿Descartar el borrador? Los cambios no se guardarán.')) {
+        this.closeCompose();
+      }
+    } else {
+      this.closeCompose();
+    }
+  }
+
+  onComposeFormChange(): void {
+    this.composeDirty = true;
+  }
 
   toggleDestinatario(id: number): void {
     if (this.selectedIds.has(id)) this.selectedIds.delete(id);
@@ -171,12 +602,27 @@ export class NotificacionesPageComponent implements OnInit {
     if (this.broadcastTodos) this.selectedIds.clear();
   }
 
-  // ── Adjuntos ──────────────────────────────────────────────────────────────
-
   onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      for (let i = 0; i < input.files.length; i++) this.adjuntos.push(input.files[i]);
+      for (let i = 0; i < input.files.length; i++)
+        this.adjuntos.push(input.files[i]);
+      this.composeDirty = true;
+    }
+    input.value = '';
+  }
+
+  onDragOver(ev: DragEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+
+  onDrop(ev: DragEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const files = ev.dataTransfer?.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) this.adjuntos.push(files[i]);
     }
   }
 
@@ -190,12 +636,37 @@ export class NotificacionesPageComponent implements OnInit {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  // ── Envío normal ──────────────────────────────────────────────────────────
+  execCmd(cmd: string, value?: string): void {
+    if (cmd === 'createLink') {
+      const url = value || window.prompt('URL del enlace:', 'https://');
+      if (url) document.execCommand(cmd, false, url);
+    } else {
+      document.execCommand(cmd, false, value ?? undefined);
+    }
+  }
+
+  onEditorInput(_ev: Event): void {
+    this.syncEditorToForm();
+  }
+
+  syncEditorToForm(): void {
+    const el = document.querySelector('.notif-editor-content');
+    if (el instanceof HTMLElement) {
+      this.form.patchValue({ contenido: el.innerHTML || '' });
+      this.composeDirty = true;
+    }
+  }
 
   send(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.syncEditorToForm();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     if (!this.broadcastTodos && this.selectedIds.size === 0) {
-      this.error.set('Seleccione al menos un destinatario o active «Enviar a todos».');
+      this.error.set(
+        'Seleccione al menos un destinatario o active «Enviar a todos».'
+      );
       return;
     }
 
@@ -204,16 +675,17 @@ export class NotificacionesPageComponent implements OnInit {
     this.success.set(null);
 
     const req: NotificacionCreateRequest = {
-      titulo:         this.form.value.titulo,
-      contenido:      this.form.value.contenido,
-      tipo:           this.form.value.tipo,
+      titulo: this.form.value.titulo,
+      contenido: this.form.value.contenido,
+      tipo: this.form.value.tipo,
       broadcastTodos: this.broadcastTodos,
       destinatarioIds: this.broadcastTodos ? [] : Array.from(this.selectedIds),
     };
 
     this.notificacionService.create(req).subscribe({
       next: (notif) => {
-        if (this.adjuntos.length > 0) this.uploadAdjuntosSecuencial(notif.id, 0);
+        if (this.adjuntos.length > 0)
+          this.uploadAdjuntosSecuencial(notif.id, 0);
         else this.onSendSuccess('Notificación enviada correctamente.');
       },
       error: (e) => {
@@ -223,47 +695,54 @@ export class NotificacionesPageComponent implements OnInit {
     });
   }
 
-  // ── Broadcast SUPERADMIN → admins ─────────────────────────────────────────
-
   broadcastAdmins(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.syncEditorToForm();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     this.loading.set(true);
     this.error.set(null);
     this.success.set(null);
 
     const req: NotificacionCreateRequest = {
-      titulo:    this.form.value.titulo,
+      titulo: this.form.value.titulo,
       contenido: this.form.value.contenido,
-      tipo:      this.form.value.tipo,
+      tipo: this.form.value.tipo,
     };
 
     this.notificacionService.broadcastAdmins(req).subscribe({
       next: (result: NotificacionBroadcastResult) => {
         const msg = `Enviado a ${result.totalDestinatarios} administrador(es) en ${result.schemasProcessados} empresa(s).`;
         this.onSendSuccess(msg);
-        if (result.errores && result.errores.length > 0) {
-          this.toast.error('Algunos schemas fallaron: ' + result.errores.join(', '), 'Advertencia');
+        if (result.errores?.length) {
+          this.toast.error(
+            'Algunos schemas fallaron: ' + result.errores.join(', '),
+            'Advertencia'
+          );
         }
       },
       error: (e) => {
-        this.error.set(e.error?.error || e.message || 'Error al enviar broadcast');
+        this.error.set(
+          e.error?.error || e.message || 'Error al enviar broadcast'
+        );
         this.loading.set(false);
       },
     });
   }
-
-  // ── Helpers privados ──────────────────────────────────────────────────────
 
   private uploadAdjuntosSecuencial(notifId: number, index: number): void {
     if (index >= this.adjuntos.length) {
       this.onSendSuccess('Notificación enviada correctamente.');
       return;
     }
-    this.notificacionService.uploadAdjunto(notifId, this.adjuntos[index]).subscribe({
-      next:  () => this.uploadAdjuntosSecuencial(notifId, index + 1),
-      error: () => this.uploadAdjuntosSecuencial(notifId, index + 1),
-    });
+    this.notificacionService
+      .uploadAdjunto(notifId, this.adjuntos[index])
+      .subscribe({
+        next: () => this.uploadAdjuntosSecuencial(notifId, index + 1),
+        error: () => this.uploadAdjuntosSecuencial(notifId, index + 1),
+      });
   }
 
   private onSendSuccess(msg: string): void {
@@ -272,31 +751,77 @@ export class NotificacionesPageComponent implements OnInit {
     this.toast.success(msg, 'Enviada');
     this.form.reset({ tipo: 'GENERAL' });
     this.selectedIds.clear();
-    this.adjuntos      = [];
+    this.adjuntos = [];
     this.broadcastTodos = false;
+    this.composeDirty = false;
+    this.composeOpen.set(false);
+    this.loadNoLeidas();
+    // Refrescar bandeja de entrada y enviados tras un breve delay para que el backend persista
+    setTimeout(() => {
+      this.loadRecibidas();
+      this.loadEnviadas();
+    }, 150);
     setTimeout(() => this.success.set(null), 5000);
   }
 
-  // ── Detalle ───────────────────────────────────────────────────────────────
-
   viewNotif(notif: NotificacionDto): void {
     this.selectedNotif.set(notif);
-    if (this.tab() === 'recibidas') {
+    if (this.menuActive() === 'inbox' || this.menuActive() === 'important') {
       this.notificacionService.marcarLeida(notif.id).subscribe({
-        next:  () => this.loadNoLeidas(),
+        next: () => this.loadNoLeidas(),
         error: () => {},
       });
     }
   }
 
-  closeDetail(): void { this.selectedNotif.set(null); }
+  closeDetail(): void {
+    this.selectedNotif.set(null);
+  }
 
-  downloadFile(notifId: number, adj: { id: number; nombreArchivo: string }): void {
+  isUnread(n: NotificacionDto): boolean {
+    if (this.menuActive() !== 'inbox' && this.menuActive() !== 'important')
+      return false;
+    if (this.currentUserId == null) return true;
+    const d = n.destinatarios?.find((x) => x.usuarioId === this.currentUserId);
+    return d ? !d.leido : true;
+  }
+
+  contentPreview(n: NotificacionDto, maxLen = 80): string {
+    const text = this.stripHtml(n.contenido || '');
+    if (text.length <= maxLen) return text;
+    return text.slice(0, maxLen) + '…';
+  }
+
+  emptyMessage(): string {
+    if (this.menuActive() === 'sent') return 'No ha enviado notificaciones.';
+    if (this.menuActive() === 'important')
+      return 'No tiene notificaciones importantes.';
+    return 'No tiene notificaciones en la bandeja de entrada.';
+  }
+
+  min(a: number, b: number): number {
+    return Math.min(a, b);
+  }
+
+  getInitial(name: string): string {
+    return (name || '?').charAt(0).toUpperCase();
+  }
+
+  private stripHtml(html: string): string {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return (div.textContent || div.innerText || '').trim();
+  }
+
+  downloadFile(
+    notifId: number,
+    adj: { id: number; nombreArchivo: string }
+  ): void {
     this.notificacionService.downloadAdjunto(notifId, adj.id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href     = url;
+        const a = document.createElement('a');
+        a.href = url;
         a.download = adj.nombreArchivo;
         a.click();
         URL.revokeObjectURL(url);
@@ -304,8 +829,12 @@ export class NotificacionesPageComponent implements OnInit {
     });
   }
 
-  isImageType(ct?: string): boolean { return !!ct && ct.startsWith('image/'); }
-  isVideoType(ct?: string): boolean  { return !!ct && ct.startsWith('video/'); }
+  isImageType(ct?: string): boolean {
+    return !!ct && ct.startsWith('image/');
+  }
+  isVideoType(ct?: string): boolean {
+    return !!ct && ct.startsWith('video/');
+  }
 
   adjuntoPreviewUrl(notifId: number, adjId: number): string {
     return this.notificacionService.adjuntoUrl(notifId, adjId);

@@ -102,6 +102,10 @@ public class Paciente {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** Usuario del portal/móvil vinculado (para notificaciones y firma de consentimientos). */
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
     @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<HistoriaClinica> historiasClinicas = new ArrayList<>();

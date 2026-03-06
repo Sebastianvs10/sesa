@@ -80,7 +80,7 @@ public class RdaController {
             @PathVariable Long atencionId,
             @RequestParam(defaultValue = "CONSULTA_EXTERNA") RdaEnvio.TipoRda tipoRda) {
         RdaStatusDto dto = rdaService.obtenerUltimo(atencionId, tipoRda);
-        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+        return ResponseEntity.ok(dto);
     }
 
     // ─── Descargar Bundle FHIR (JSON) ──────────────────────────────────────

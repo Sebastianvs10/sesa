@@ -35,6 +35,22 @@ public class PdfController {
         return buildPdfResponse(pdf, "historia-clinica-paciente-" + pacienteId + ".pdf");
     }
 
+    /** PDF de órdenes clínicas y resultados del paciente. */
+    @GetMapping("/ordenes/paciente/{pacienteId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','USER','FACTURACION','SUPERADMINISTRADOR','BACTERIOLOGO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<byte[]> ordenesPorPaciente(@PathVariable("pacienteId") Long pacienteId) {
+        byte[] pdf = pdfService.generarPdfOrdenesPaciente(pacienteId);
+        return buildPdfResponse(pdf, "ordenes-resultados-paciente-" + pacienteId + ".pdf");
+    }
+
+    /** PDF de una sola orden clínica (con datos del paciente y resultado si existe). */
+    @GetMapping("/orden/{ordenId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','USER','FACTURACION','SUPERADMINISTRADOR','BACTERIOLOGO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<byte[]> ordenIndividual(@PathVariable("ordenId") Long ordenId) {
+        byte[] pdf = pdfService.generarPdfOrdenIndividual(ordenId);
+        return buildPdfResponse(pdf, "orden-" + ordenId + ".pdf");
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(byte[] pdf, String filename) {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)

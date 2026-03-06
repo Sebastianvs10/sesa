@@ -73,7 +73,45 @@
       }
     </div>
 
-    @if (!hasAnyData) {
+    <!-- Tablero de calidad Res. 0256/2016 -->
+    <sesa-card title="Tablero de calidad" subtitle="Res. 0256/2016 — Sistema de Información para la Calidad en Salud" alignHeader="start" class="sesa-report-card sesa-report-card-full">
+      @if (loadingCalidad) {
+        <div class="sesa-calidad-loading"><span class="sesa-spinner"></span> Cargando indicadores…</div>
+      } @else if (indicadoresCalidad.length) {
+        <div class="sesa-calidad-table-wrap">
+          <table class="sesa-calidad-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Indicador</th>
+                <th>Categoría</th>
+                <th>Valor</th>
+                <th>Meta</th>
+                <th>Unidad</th>
+                <th>Interpretación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ind of indicadoresCalidad; track ind.codigo) {
+                <tr>
+                  <td class="sesa-calidad-code">{{ ind.codigo }}</td>
+                  <td class="sesa-calidad-name">{{ ind.nombre }}</td>
+                  <td>{{ ind.categoria }}</td>
+                  <td><strong>{{ ind.valor }}</strong></td>
+                  <td>{{ ind.meta }}</td>
+                  <td>{{ ind.unidad }}</td>
+                  <td class="sesa-calidad-interp">{{ ind.interpretacion }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="sesa-calidad-empty">No hay indicadores de calidad disponibles.</p>
+      }
+    </sesa-card>
+
+    @if (!hasAnyData && !indicadoresCalidad.length) {
       <div class="sesa-reportes-empty">
         <p>No hay datos disponibles para generar reportes aún.</p>
       </div>

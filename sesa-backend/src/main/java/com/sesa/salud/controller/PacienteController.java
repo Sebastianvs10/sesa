@@ -30,8 +30,12 @@ public class PacienteController {
                   "'REGENTE_FARMACIA','RECEPCIONISTA','COORDINADOR_MEDICO')")
     public Page<PacienteDto> list(
             @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "activo", required = false) Boolean activo,
             @PageableDefault(size = 20) Pageable pageable) {
-        return q != null && !q.isBlank() ? pacienteService.search(q, pageable) : pacienteService.findAll(pageable);
+        if (q != null && !q.isBlank()) {
+            return pacienteService.search(q, pageable);
+        }
+        return pacienteService.findAll(pageable, activo);
     }
 
     @GetMapping("/{id}")

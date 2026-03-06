@@ -3,6 +3,8 @@ import { authGuard } from './core/guards/auth.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 import { medicoGuard } from './core/guards/medico.guard';
 import { roleGuard, rolesManagementGuard } from './core/guards/role.guard';
+import { portalGuard } from './core/guards/portal.guard';
+import { videoconsultaGuard } from './core/guards/videoconsulta.guard';
 
 export const routes: Routes = [
   {
@@ -10,11 +12,77 @@ export const routes: Routes = [
     pathMatch: 'full',
     redirectTo: 'login',
   },
+
+  // ── Portal del Paciente ─────────────────────────────────────────────
+  {
+    path: 'portal',
+    canActivate: [portalGuard],
+    loadComponent: () =>
+      import('./features/portal/portal-layout.component').then(
+        (m) => m.PortalLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'inicio',
+      },
+      {
+        path: 'inicio',
+        loadComponent: () =>
+          import('./features/portal/portal-dashboard.page').then(
+            (m) => m.PortalDashboardPageComponent,
+          ),
+      },
+      {
+        path: 'historia-clinica',
+        loadComponent: () =>
+          import('./features/portal/portal-historia-clinica.page').then(
+            (m) => m.PortalHistoriaClinicaPageComponent,
+          ),
+      },
+      {
+        path: 'laboratorios',
+        loadComponent: () =>
+          import('./features/portal/portal-laboratorios.page').then(
+            (m) => m.PortalLaboratoriosPageComponent,
+          ),
+      },
+      {
+        path: 'ordenes',
+        loadComponent: () =>
+          import('./features/portal/portal-ordenes.page').then(
+            (m) => m.PortalOrdenesPageComponent,
+          ),
+      },
+      {
+        path: 'consentimientos',
+        loadComponent: () =>
+          import('./features/portal/portal-consentimientos.page').then(
+            (m) => m.PortalConsentimientosPageComponent,
+          ),
+      },
+      {
+        path: 'perfil',
+        loadComponent: () =>
+          import('./features/portal/portal-perfil.page').then(
+            (m) => m.PortalPerfilPageComponent,
+          ),
+      },
+    ],
+  },
   {
     path: 'login',
     loadComponent: () =>
       import('./features/auth/login.page').then(
         (m) => m.LoginPageComponent,
+      ),
+  },
+  {
+    path: 'verificar-receta',
+    loadComponent: () =>
+      import('./features/receta-electronica/verificar-receta.page').then(
+        (m) => m.VerificarRecetaPageComponent,
       ),
   },
   {
@@ -223,12 +291,109 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'videoconsulta/asistente',
+    canActivate: [videoconsultaGuard],
+    loadComponent: () =>
+      import('./features/videoconsulta/videoconsulta-asistente.page').then(
+        (m) => m.VideoconsultaAsistentePageComponent,
+      ),
+  },
+  {
+    path: 'videoconsulta',
+    canActivate: [videoconsultaGuard],
+    loadComponent: () =>
+      import('./features/videoconsulta/videoconsulta-sala.page').then(
+        (m) => m.VideoconsultaSalaPageComponent,
+      ),
+  },
+  {
     path: 'odontologia',
     canActivate: [authGuard, roleGuard('ODONTOLOGIA')],
     loadComponent: () =>
       import('./features/odontologia/odontologia.page').then(
         (m) => m.OdontologiaPageComponent,
       ),
+  },
+  {
+    path: 'ebs',
+    canActivate: [authGuard, roleGuard('EBS')],
+    loadComponent: () =>
+      import('./features/ebs/ebs-layout.component').then(
+        (m) => m.EbsLayoutComponent,
+      ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      {
+        path: 'inicio',
+        loadComponent: () =>
+          import('./features/ebs/ebs-inicio.page').then(
+            (m) => m.EbsInicioPageComponent,
+          ),
+      },
+      {
+        path: 'territorios',
+        loadComponent: () =>
+          import('./features/ebs/ebs-territorios.page').then(
+            (m) => m.EbsTerritoriosPageComponent,
+          ),
+      },
+      {
+        path: 'visitas',
+        loadComponent: () =>
+          import('./features/ebs/ebs-visitas.page').then(
+            (m) => m.EbsVisitasPageComponent,
+          ),
+      },
+      {
+        path: 'visita/nueva',
+        loadComponent: () =>
+          import('./features/ebs/ebs-visita-nueva.page').then(
+            (m) => m.EbsVisitaNuevaPageComponent,
+          ),
+      },
+      {
+        path: 'territorios/crear',
+        loadComponent: () =>
+          import('./features/ebs/ebs-territorio-crear.page').then(
+            (m) => m.EbsTerritorioCrearPageComponent,
+          ),
+      },
+      {
+        path: 'asignacion',
+        loadComponent: () =>
+          import('./features/ebs/ebs-asignacion.page').then(
+            (m) => m.EbsAsignacionPageComponent,
+          ),
+      },
+      {
+        path: 'brigadas',
+        loadComponent: () =>
+          import('./features/ebs/ebs-brigadas.page').then(
+            (m) => m.EbsBrigadasPageComponent,
+          ),
+      },
+      {
+        path: 'reportes',
+        loadComponent: () =>
+          import('./features/ebs/ebs-reportes.page').then(
+            (m) => m.EbsReportesPageComponent,
+          ),
+      },
+      {
+        path: 'alertas',
+        loadComponent: () =>
+          import('./features/ebs/ebs-alertas.page').then(
+            (m) => m.EbsAlertasPageComponent,
+          ),
+      },
+      {
+        path: 'dashboard-supervisor',
+        loadComponent: () =>
+          import('./features/ebs/ebs-dashboard-supervisor.page').then(
+            (m) => m.EbsDashboardSupervisorPageComponent,
+          ),
+      },
+    ],
   },
   {
     path: '**',

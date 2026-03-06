@@ -668,13 +668,82 @@ body {
                 <td>
                   <span class="f-label">EPS / Aseguradora</span>
                   <span th:if="${data.epsNombre != null}" class="eps-chip" th:text="${data.epsNombre}">EPS Sura</span>
-                  <span th:unless="${data.epsNombre != null}" class="f-value f-value--muted">Particular</span>
+                  <span th:unless="${data.epsNombre != null}" class="f-value f-value--muted">N/D</span>
                 </td>
               </tr>
-              <tr th:if="${data.pacienteDireccion != null}">
+              <tr>
                 <td colspan="3">
                   <span class="f-label">Direccion</span>
-                  <span class="f-value" th:text="${data.pacienteDireccion}">Cra 10 # 20-30</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteDireccion != null ? data.pacienteDireccion : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Email</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEmail != null ? data.pacienteEmail : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Regimen</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteRegimenAfiliacion != null ? data.pacienteRegimenAfiliacion : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Tipo usuario</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteTipoUsuario != null ? data.pacienteTipoUsuario : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Municipio</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteMunicipioResidencia != null ? data.pacienteMunicipioResidencia : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Departamento</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteDepartamentoResidencia != null ? data.pacienteDepartamentoResidencia : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Zona residencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteZonaResidencia != null ? data.pacienteZonaResidencia : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Estado civil</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEstadoCivil != null ? data.pacienteEstadoCivil : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Escolaridad</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEscolaridad != null ? data.pacienteEscolaridad : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Ocupacion</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteOcupacion != null ? data.pacienteOcupacion : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Pertenencia etnica</span>
+                  <span class="f-value"
+                        th:text="${data.pacientePertenenciaEtnica != null ? data.pacientePertenenciaEtnica : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Contacto emergencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteContactoEmergenciaNombre != null ? data.pacienteContactoEmergenciaNombre : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Tel. emergencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteContactoEmergenciaTelefono != null ? data.pacienteContactoEmergenciaTelefono : 'N/D'}">—</span>
                 </td>
               </tr>
             </table>
@@ -752,17 +821,23 @@ body {
             </div>
           </td>
         </tr>
-        <tr th:if="${data.antecedentesGinecoobstetricos != null or data.antecedentesTraumaticos != null}">
+        <tr>
           <td>
-            <div class="ant-item" th:if="${data.antecedentesGinecoobstetricos != null}">
+            <div class="ant-item">
               <span class="ant-label">Antecedentes Ginecobstetricos</span>
-              <span class="ant-value" th:text="${data.antecedentesGinecoobstetricos}"></span>
+              <span th:if="${data.antecedentesGinecoobstetricos != null}"
+                    class="ant-value" th:text="${data.antecedentesGinecoobstetricos}"></span>
+              <span th:unless="${data.antecedentesGinecoobstetricos != null}"
+                    class="ant-empty">No registrado</span>
             </div>
           </td>
           <td>
-            <div class="ant-item" th:if="${data.antecedentesTraumaticos != null}">
+            <div class="ant-item">
               <span class="ant-label">Antecedentes Traumaticos</span>
-              <span class="ant-value" th:text="${data.antecedentesTraumaticos}"></span>
+              <span th:if="${data.antecedentesTraumaticos != null}"
+                    class="ant-value" th:text="${data.antecedentesTraumaticos}"></span>
+              <span th:unless="${data.antecedentesTraumaticos != null}"
+                    class="ant-empty">No registrado</span>
             </div>
           </td>
         </tr>
@@ -782,6 +857,121 @@ body {
              th:text="${data.habitosDetalles}"></div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ──────────────── ÚLTIMA ATENCIÓN SOAP ──────────────── -->
+  <div th:if="${ultimaConsultaSoap != null}" class="card no-break" style="margin-bottom:18px;">
+    <div class="sec-hdr sec-hdr--teal" style="padding:10px 16px;">
+      <span class="sec-hdr-text">Última atención SOAP (nota de consulta)</span>
+    </div>
+    <div class="card-body" style="padding:14px 16px;">
+      <table class="consult-hdr-table" style="margin-bottom:12px;">
+        <tr>
+          <td>
+            <span class="consult-num">Fecha de consulta</span>
+            <span class="consult-title" th:text="${ultimaConsultaSoap.fechaConsulta}">—</span>
+          </td>
+        </tr>
+      </table>
+
+      <div class="sub">
+        <span class="sub-label">Motivo de consulta</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.motivoConsulta != null}" th:text="${ultimaConsultaSoap.motivoConsulta}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.motivoConsulta != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Enfermedad actual</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.enfermedadActual != null}" th:text="${ultimaConsultaSoap.enfermedadActual}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.enfermedadActual != null}">—</span>
+      </div>
+
+      <span class="sub-label sub-label--teal" style="display:block; margin-bottom:6px;">Signos vitales</span>
+      <table class="vitals-table">
+        <tr>
+          <td class="vital-cell"><span class="vital-lbl">T.A.</span><span class="vital-val" th:text="${ultimaConsultaSoap.presionArterial != null ? ultimaConsultaSoap.presionArterial : '—'}">—</span><span class="vital-unit">mmHg</span></td>
+          <td class="vital-cell"><span class="vital-lbl">FC</span><span class="vital-val" th:text="${ultimaConsultaSoap.frecuenciaCardiaca != null ? ultimaConsultaSoap.frecuenciaCardiaca : '—'}">—</span><span class="vital-unit">lpm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">FR</span><span class="vital-val" th:text="${ultimaConsultaSoap.frecuenciaRespiratoria != null ? ultimaConsultaSoap.frecuenciaRespiratoria : '—'}">—</span><span class="vital-unit">rpm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Temp.</span><span class="vital-val" th:text="${ultimaConsultaSoap.temperatura != null ? ultimaConsultaSoap.temperatura : '—'}">—</span><span class="vital-unit">°C</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Peso</span><span class="vital-val" th:text="${ultimaConsultaSoap.peso != null ? ultimaConsultaSoap.peso : '—'}">—</span><span class="vital-unit">kg</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Talla</span><span class="vital-val" th:text="${ultimaConsultaSoap.talla != null ? ultimaConsultaSoap.talla : '—'}">—</span><span class="vital-unit">cm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">IMC</span><span class="vital-val" th:text="${ultimaConsultaSoap.imc != null ? ultimaConsultaSoap.imc : '—'}">—</span><span class="vital-unit">kg/m²</span></td>
+          <td class="vital-cell"><span class="vital-lbl">SpO2</span><span class="vital-val" th:text="${ultimaConsultaSoap.saturacionO2 != null ? ultimaConsultaSoap.saturacionO2 : '—'}">—</span><span class="vital-unit">%</span></td>
+        </tr>
+      </table>
+
+      <div class="sub">
+        <span class="sub-label">Hallazgos al examen</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.hallazgosExamen != null}" th:text="${ultimaConsultaSoap.hallazgosExamen}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.hallazgosExamen != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Diagnóstico / CIE-10</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.diagnostico != null}" th:text="${ultimaConsultaSoap.diagnostico}"></span>
+        <span th:if="${ultimaConsultaSoap.codigoCie10 != null}" class="sub-text" th:text="'Código: ' + ${ultimaConsultaSoap.codigoCie10}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.diagnostico != null or ultimaConsultaSoap.codigoCie10 != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Plan de tratamiento</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.planTratamiento != null}" th:text="${ultimaConsultaSoap.planTratamiento}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.planTratamiento != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Tratamiento farmacológico</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.tratamientoFarmacologico != null}" th:text="${ultimaConsultaSoap.tratamientoFarmacologico}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.tratamientoFarmacologico != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Recomendaciones</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.recomendaciones != null}" th:text="${ultimaConsultaSoap.recomendaciones}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.recomendaciones != null}">—</span>
+      </div>
+
+      <!-- Órdenes de la consulta -->
+      <div class="sub">
+        <span class="sub-label sub-label--purple">Órdenes de la atención</span>
+        <table th:if="${ultimaConsultaSoap.ordenes != null and !ultimaConsultaSoap.ordenes.isEmpty()}" class="data-table data-table--teal">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th style="width:90px;">Estado</th>
+              <th style="width:90px;">Fecha resultado</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="ord : ${ultimaConsultaSoap.ordenes}">
+              <td class="td-name" th:text="${ord.tipo}">—</td>
+              <td th:text="${ord.detalle != null ? ord.detalle : '—'}">—</td>
+              <td th:text="${ord.estado != null ? ord.estado : 'PENDIENTE'}">—</td>
+              <td th:text="${ord.fechaResultado != null ? ord.fechaResultado : '—'}">—</td>
+              <td th:text="${ord.resultado != null ? ord.resultado : '—'}">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <span th:unless="${ultimaConsultaSoap.ordenes != null and !ultimaConsultaSoap.ordenes.isEmpty()}" class="sub-empty">No hay órdenes registradas para esta consulta.</span>
+      </div>
+
+      <!-- Profesional tratante con firma -->
+      <div class="firma-section">
+        <span class="sub-label" style="display:block; margin-bottom:8px;">Profesional que atendió</span>
+        <div class="firma-box">
+          <img th:if="${ultimaConsultaSoap.firmaBase64 != null}"
+               class="firma-img"
+               th:src="'data:' + ${ultimaConsultaSoap.firmaContentType} + ';base64,' + ${ultimaConsultaSoap.firmaBase64}"
+               alt="Firma"/>
+          <div th:unless="${ultimaConsultaSoap.firmaBase64 != null}" class="firma-line-placeholder"></div>
+          <div class="firma-border">
+            <div class="firma-name" th:text="${ultimaConsultaSoap.profesionalNombre != null ? ultimaConsultaSoap.profesionalNombre : '—'}">—</div>
+            <div class="firma-role" th:if="${ultimaConsultaSoap.profesionalRol != null}" th:text="${ultimaConsultaSoap.profesionalRol}"></div>
+            <div class="firma-role" th:if="${ultimaConsultaSoap.profesionalEspecialidad != null}" th:text="${ultimaConsultaSoap.profesionalEspecialidad}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalIdentificacion != null}" th:text="'ID: ' + ${ultimaConsultaSoap.profesionalIdentificacion}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalTarjetaProfesional != null}" th:text="'Tarjeta Prof.: ' + ${ultimaConsultaSoap.profesionalTarjetaProfesional}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalNumeroRethus != null}" th:text="'RETHUS: ' + ${ultimaConsultaSoap.profesionalNumeroRethus}"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -819,78 +1009,119 @@ body {
 
       <div class="consult-body">
 
-        <!-- Motivo y Enfermedad actual -->
+        <!-- Motivo, Enfermedad actual y Version (siempre visibles) -->
         <table class="two-col-table">
           <tr>
             <td class="two-col-left">
-              <div class="sub" th:if="${atencion.motivoConsulta != null}">
+              <div class="sub">
                 <span class="sub-label">Motivo de Consulta</span>
-                <span class="sub-text" th:text="${atencion.motivoConsulta}"></span>
+                <span class="sub-text" th:if="${atencion.motivoConsulta != null}" th:text="${atencion.motivoConsulta}"></span>
+                <span class="sub-empty" th:unless="${atencion.motivoConsulta != null}">No consignado</span>
               </div>
             </td>
             <td class="two-col-right">
-              <div class="sub" th:if="${atencion.enfermedadActual != null}">
+              <div class="sub">
                 <span class="sub-label">Enfermedad Actual</span>
-                <span class="sub-text" th:text="${atencion.enfermedadActual}"></span>
+                <span class="sub-text" th:if="${atencion.enfermedadActual != null}" th:text="${atencion.enfermedadActual}"></span>
+                <span class="sub-empty" th:unless="${atencion.enfermedadActual != null}">No consignado</span>
               </div>
             </td>
           </tr>
         </table>
-
-        <!-- Signos Vitales -->
-        <div th:if="${atencion.presionArterial != null or atencion.frecuenciaCardiaca != null or atencion.temperatura != null or atencion.peso != null}">
-          <span class="sub-label sub-label--teal" style="display:block; margin-bottom:6px;">Signos Vitales</span>
-          <table class="vitals-table">
-            <tr>
-              <td class="vital-cell" th:if="${atencion.presionArterial != null}">
-                <span class="vital-lbl">T.A.</span>
-                <span class="vital-val" th:text="${atencion.presionArterial}"></span>
-                <span class="vital-unit">mmHg</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.frecuenciaCardiaca != null}">
-                <span class="vital-lbl">Frec. Card.</span>
-                <span class="vital-val" th:text="${atencion.frecuenciaCardiaca}"></span>
-                <span class="vital-unit">lpm</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.frecuenciaRespiratoria != null}">
-                <span class="vital-lbl">Frec. Resp.</span>
-                <span class="vital-val" th:text="${atencion.frecuenciaRespiratoria}"></span>
-                <span class="vital-unit">rpm</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.temperatura != null}">
-                <span class="vital-lbl">Temperatura</span>
-                <span class="vital-val" th:text="${atencion.temperatura}"></span>
-                <span class="vital-unit">&#176;C</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.peso != null}">
-                <span class="vital-lbl">Peso</span>
-                <span class="vital-val" th:text="${atencion.peso}"></span>
-                <span class="vital-unit">kg</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.talla != null}">
-                <span class="vital-lbl">Talla</span>
-                <span class="vital-val" th:text="${atencion.talla}"></span>
-                <span class="vital-unit">cm</span>
-              </td>
-              <td class="vital-cell" th:if="${atencion.imc != null}">
-                <span class="vital-lbl">IMC</span>
-                <span class="vital-val" th:text="${atencion.imc}"></span>
-                <span class="vital-unit">kg/m&#178;</span>
-              </td>
-            </tr>
-          </table>
+        <div class="sub">
+          <span class="sub-label">Version de la Enfermedad</span>
+          <span class="sub-text" th:if="${atencion.versionEnfermedad != null}" th:text="${atencion.versionEnfermedad}"></span>
+          <span class="sub-empty" th:unless="${atencion.versionEnfermedad != null}">No consignado</span>
         </div>
 
-        <!-- Examen fisico -->
-        <div th:if="${atencion.hallazgos != null}" class="sub">
+        <!-- Sintomas, Factores, Revision sistemas (siempre visibles) -->
+        <div class="sub">
+          <span class="sub-label">Sintomas Asociados</span>
+          <span class="sub-text" th:if="${atencion.sintomasAsociados != null}" th:text="${atencion.sintomasAsociados}"></span>
+          <span class="sub-empty" th:unless="${atencion.sintomasAsociados != null}">—</span>
+        </div>
+        <table class="two-col-table">
+          <tr>
+            <td class="two-col-left">
+              <div class="sub">
+                <span class="sub-label">Factores que Mejoran</span>
+                <span class="sub-text" th:if="${atencion.factoresMejoran != null}" th:text="${atencion.factoresMejoran}"></span>
+                <span class="sub-empty" th:unless="${atencion.factoresMejoran != null}">—</span>
+              </div>
+            </td>
+            <td class="two-col-right">
+              <div class="sub">
+                <span class="sub-label">Factores que Empeoran</span>
+                <span class="sub-text" th:if="${atencion.factoresEmpeoran != null}" th:text="${atencion.factoresEmpeoran}"></span>
+                <span class="sub-empty" th:unless="${atencion.factoresEmpeoran != null}">—</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="sub">
+          <span class="sub-label">Revision por Sistemas</span>
+          <span class="sub-text" th:if="${atencion.revisionSistemas != null}" th:text="${atencion.revisionSistemas}"></span>
+          <span class="sub-empty" th:unless="${atencion.revisionSistemas != null}">—</span>
+        </div>
+
+        <!-- Signos Vitales (siempre visible, todas las celdas) -->
+        <span class="sub-label sub-label--teal" style="display:block; margin-bottom:6px;">Signos Vitales</span>
+        <table class="vitals-table">
+          <tr>
+            <td class="vital-cell">
+              <span class="vital-lbl">T.A.</span>
+              <span class="vital-val" th:text="${atencion.presionArterial != null ? atencion.presionArterial : '—'}">—</span>
+              <span class="vital-unit">mmHg</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Frec. Card.</span>
+              <span class="vital-val" th:text="${atencion.frecuenciaCardiaca != null ? atencion.frecuenciaCardiaca : '—'}">—</span>
+              <span class="vital-unit">lpm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Frec. Resp.</span>
+              <span class="vital-val" th:text="${atencion.frecuenciaRespiratoria != null ? atencion.frecuenciaRespiratoria : '—'}">—</span>
+              <span class="vital-unit">rpm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Temperatura</span>
+              <span class="vital-val" th:text="${atencion.temperatura != null ? atencion.temperatura : '—'}">—</span>
+              <span class="vital-unit">&#176;C</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Peso</span>
+              <span class="vital-val" th:text="${atencion.peso != null ? atencion.peso : '—'}">—</span>
+              <span class="vital-unit">kg</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Talla</span>
+              <span class="vital-val" th:text="${atencion.talla != null ? atencion.talla : '—'}">—</span>
+              <span class="vital-unit">cm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">IMC</span>
+              <span class="vital-val" th:text="${atencion.imc != null ? atencion.imc : '—'}">—</span>
+              <span class="vital-unit">kg/m&#178;</span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Evaluacion general y Hallazgos (siempre visibles) -->
+        <div class="sub">
+          <span class="sub-label">Evaluacion General</span>
+          <span class="sub-text" th:if="${atencion.evaluacionGeneral != null}" th:text="${atencion.evaluacionGeneral}"></span>
+          <span class="sub-empty" th:unless="${atencion.evaluacionGeneral != null}">—</span>
+        </div>
+        <div class="sub">
           <span class="sub-label">Examen Fisico / Hallazgos</span>
-          <span class="sub-text" th:text="${atencion.hallazgos}"></span>
+          <span class="sub-text" th:if="${atencion.hallazgos != null}" th:text="${atencion.hallazgos}"></span>
+          <span class="sub-empty" th:unless="${atencion.hallazgos != null}">No consignado</span>
         </div>
 
-        <!-- Diagnósticos CIE-10 -->
-        <div th:if="${atencion.diagnosticos != null and !atencion.diagnosticos.isEmpty()}" class="sub">
+        <!-- Diagnósticos CIE-10 (siempre visible) -->
+        <div class="sub">
           <span class="sub-label">Diagnostico(s) CIE-10</span>
-          <table class="diag-table">
+          <table th:if="${atencion.diagnosticos != null and !atencion.diagnosticos.isEmpty()}" class="diag-table">
             <tr class="diag-row" th:each="diag : ${atencion.diagnosticos}">
               <td class="diag-code-cell" th:text="${diag.codigoCie10}">J00</td>
               <td class="diag-desc-cell" th:text="${diag.descripcion}">Rinofaringitis aguda</td>
@@ -902,22 +1133,21 @@ body {
               </td>
             </tr>
           </table>
-        </div>
-        <div th:if="${atencion.diagnosticoTexto != null and (atencion.diagnosticos == null or atencion.diagnosticos.isEmpty())}" class="sub">
-          <span class="sub-label">Diagnostico</span>
-          <span class="sub-text" th:text="${atencion.diagnosticoTexto}"></span>
+          <span th:if="${atencion.diagnosticoTexto != null and (atencion.diagnosticos == null or atencion.diagnosticos.isEmpty())}" class="sub-text" th:text="${atencion.diagnosticoTexto}"></span>
+          <span th:if="${(atencion.diagnosticos == null or atencion.diagnosticos.isEmpty()) and atencion.diagnosticoTexto == null}" class="sub-empty">No consignado</span>
         </div>
 
-        <!-- Plan de tratamiento -->
-        <div th:if="${atencion.planTratamiento != null}" class="sub">
+        <!-- Plan de tratamiento (siempre visible) -->
+        <div class="sub">
           <span class="sub-label">Plan de Tratamiento</span>
-          <span class="sub-text" th:text="${atencion.planTratamiento}"></span>
+          <span class="sub-text" th:if="${atencion.planTratamiento != null}" th:text="${atencion.planTratamiento}"></span>
+          <span class="sub-empty" th:unless="${atencion.planTratamiento != null}">—</span>
         </div>
 
-        <!-- Formula medica -->
-        <div th:if="${atencion.formulasMedicas != null and !atencion.formulasMedicas.isEmpty()}" class="sub">
-          <span class="sub-label sub-label--green">Formula Medica — Medicamentos</span>
-          <table class="data-table">
+        <!-- Formula medica / Tratamiento farmacologico (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label sub-label--green">Formula Medica / Medicamentos</span>
+          <table th:if="${atencion.formulasMedicas != null and !atencion.formulasMedicas.isEmpty()}" class="data-table">
             <thead>
               <tr>
                 <th>Medicamento</th>
@@ -935,16 +1165,14 @@ body {
               </tr>
             </tbody>
           </table>
-        </div>
-        <div th:if="${atencion.tratamientoFarmacologico != null and (atencion.formulasMedicas == null or atencion.formulasMedicas.isEmpty())}" class="sub">
-          <span class="sub-label sub-label--green">Tratamiento Farmacologico</span>
-          <span class="sub-text" th:text="${atencion.tratamientoFarmacologico}"></span>
+          <span th:if="${atencion.tratamientoFarmacologico != null and (atencion.formulasMedicas == null or atencion.formulasMedicas.isEmpty())}" class="sub-text" th:text="${atencion.tratamientoFarmacologico}"></span>
+          <span th:if="${(atencion.formulasMedicas == null or atencion.formulasMedicas.isEmpty()) and atencion.tratamientoFarmacologico == null}" class="sub-empty">—</span>
         </div>
 
-        <!-- Laboratorios -->
-        <div th:if="${atencion.laboratorios != null and !atencion.laboratorios.isEmpty()}" class="sub">
+        <!-- Laboratorios / Examenes (siempre visible) -->
+        <div class="sub">
           <span class="sub-label sub-label--purple">Laboratorios / Examenes</span>
-          <table class="data-table data-table--teal">
+          <table th:if="${atencion.laboratorios != null and !atencion.laboratorios.isEmpty()}" class="data-table data-table--teal">
             <thead>
               <tr>
                 <th>Tipo de Examen</th>
@@ -960,31 +1188,36 @@ body {
               </tr>
             </tbody>
           </table>
-        </div>
-        <div th:if="${atencion.examenesSolicitados != null and (atencion.laboratorios == null or atencion.laboratorios.isEmpty())}" class="sub">
-          <span class="sub-label sub-label--purple">Examenes Solicitados</span>
-          <span class="sub-text" th:text="${atencion.examenesSolicitados}"></span>
+          <span th:if="${atencion.examenesSolicitados != null and (atencion.laboratorios == null or atencion.laboratorios.isEmpty())}" class="sub-text" th:text="${atencion.examenesSolicitados}"></span>
+          <span th:if="${(atencion.laboratorios == null or atencion.laboratorios.isEmpty()) and atencion.examenesSolicitados == null}" class="sub-empty">—</span>
         </div>
 
-        <!-- Ordenes medicas -->
-        <div th:if="${atencion.ordenesMedicas != null}" class="sub">
+        <!-- Ordenes medicas (siempre visible) -->
+        <div class="sub">
           <span class="sub-label">Ordenes Medicas</span>
-          <span class="sub-text" th:text="${atencion.ordenesMedicas}"></span>
+          <span class="sub-text" th:if="${atencion.ordenesMedicas != null}" th:text="${atencion.ordenesMedicas}"></span>
+          <span class="sub-empty" th:unless="${atencion.ordenesMedicas != null}">—</span>
         </div>
 
-        <!-- Recomendaciones -->
-        <div th:if="${atencion.recomendaciones != null}" class="sub">
+        <!-- Recomendaciones (siempre visible) -->
+        <div class="sub">
           <span class="sub-label">Recomendaciones</span>
-          <span class="sub-text" th:text="${atencion.recomendaciones}"></span>
+          <span class="sub-text" th:if="${atencion.recomendaciones != null}" th:text="${atencion.recomendaciones}"></span>
+          <span class="sub-empty" th:unless="${atencion.recomendaciones != null}">—</span>
         </div>
 
-        <!-- Incapacidad -->
-        <div th:if="${atencion.incapacidad != null}" class="incapacidad-box">
-          <strong>Incapacidad Medica: </strong><span th:text="${atencion.incapacidad}"></span>
+        <!-- Incapacidad (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Incapacidad Medica</span>
+          <div th:if="${atencion.incapacidad != null}" class="incapacidad-box">
+            <span th:text="${atencion.incapacidad}"></span>
+          </div>
+          <span th:unless="${atencion.incapacidad != null}" class="sub-empty">No consignada</span>
         </div>
 
-        <!-- Firma del profesional -->
-        <div th:if="${atencion.profesionalNombre != null}" class="firma-section">
+        <!-- Bloque profesional con firma (siempre visible por atencion) -->
+        <div class="firma-section">
+          <span class="sub-label" style="display:block; margin-bottom:8px;">Profesional tratante</span>
           <div class="firma-box">
             <img th:if="${atencion.firmaBase64 != null}"
                  class="firma-img"
@@ -993,11 +1226,12 @@ body {
             <div th:unless="${atencion.firmaBase64 != null}"
                  class="firma-line-placeholder"></div>
             <div class="firma-border">
-              <div class="firma-name" th:text="${atencion.profesionalNombre}"></div>
-              <div class="firma-role" th:if="${atencion.profesionalRol != null}"
-                   th:text="${atencion.profesionalRol}"></div>
-              <div class="firma-reg" th:if="${atencion.profesionalIdentificacion != null}"
-                   th:text="'Reg. Prof: ' + ${atencion.profesionalIdentificacion}"></div>
+              <div class="firma-name" th:text="${atencion.profesionalNombre != null ? atencion.profesionalNombre : 'Profesional'}">—</div>
+              <div class="firma-role" th:if="${atencion.profesionalRol != null}" th:text="${atencion.profesionalRol}"></div>
+              <div class="firma-role" th:if="${atencion.profesionalEspecialidad != null}" th:text="${atencion.profesionalEspecialidad}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalIdentificacion != null}" th:text="'ID: ' + ${atencion.profesionalIdentificacion}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalTarjetaProfesional != null}" th:text="'Tarjeta Prof.: ' + ${atencion.profesionalTarjetaProfesional}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalNumeroRethus != null}" th:text="'RETHUS: ' + ${atencion.profesionalNumeroRethus}"></div>
             </div>
           </div>
         </div>

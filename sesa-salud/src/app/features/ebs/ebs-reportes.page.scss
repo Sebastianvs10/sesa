@@ -1,0 +1,135 @@
+/* Reportes EBS — premium */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-reportes {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ebs-reportes__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-reportes__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.ebs-reportes__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-reportes__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.ebs-reportes__select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.9rem;
+}
+
+.ebs-reportes__btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  cursor: pointer;
+}
+.ebs-reportes__btn:hover {
+  background: var(--sesa-surface-hover);
+}
+.ebs-reportes__btn--primary {
+  background: var(--sesa-secondary);
+  color: #fff;
+  border-color: var(--sesa-secondary);
+}
+.ebs-reportes__btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.ebs-reportes__card {
+  border-radius: var(--sesa-radius-lg);
+  box-shadow: var(--sesa-shadow-md);
+  border: 1px solid var(--sesa-border-light);
+}
+
+.ebs-reportes__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.ebs-reportes__kpi {
+  text-align: center;
+}
+.ebs-reportes__kpi-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-secondary);
+}
+.ebs-reportes__kpi-label {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-reportes__table-wrap {
+  overflow-x: auto;
+}
+
+.ebs-reportes__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.ebs-reportes__table th,
+.ebs-reportes__table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sesa-border);
+}
+.ebs-reportes__table th {
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  background: var(--sesa-surface-hover);
+}
+.ebs-reportes__table tbody tr:hover {
+  background: var(--sesa-surface-hover);
+}
+
+.ebs-reportes__empty {
+  text-align: center;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .ebs-reportes__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ebs-reportes__table-wrap {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+}

@@ -149,6 +149,8 @@ export class CitasPageComponent implements OnInit, OnDestroy {
   citasLista    = signal<CitaDto[]>([]);
   loadingCitas  = signal(false);
   filterEstado  = signal<string>('');
+  filterServicio   = signal<string>('');   // Especialidad
+  filterProfesionalId = signal<number | null>(null);   // Especialista
   actioningId   = signal<number | null>(null);   // ID de cita en proceso de acción
 
   /* ── Reprogramar ─────────────────────────────────────────────────────── */
@@ -160,14 +162,26 @@ export class CitasPageComponent implements OnInit, OnDestroy {
 
   /* ── Computed ─────────────────────────────────────────────────────────── */
   citasListaFiltradas = computed(() => {
+    let lista = this.citasLista();
     const estado = this.filterEstado();
-    const lista  = this.citasLista();
-    return estado ? lista.filter(c => c.estado === estado) : lista;
+    if (estado) lista = lista.filter(c => c.estado === estado);
+    const servicio = this.filterServicio();
+    if (servicio) lista = lista.filter(c => (c.servicio || '') === servicio);
+    const profId = this.filterProfesionalId();
+    if (profId != null && profId > 0) lista = lista.filter(c => c.profesionalId === profId);
+    return lista;
   });
 
   totalCitas = computed(() => this.citasLista().length);
   citasPendientes = computed(() => this.citasLista().filter(c => c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA').length);
   citasAtendidas  = computed(() => this.citasLista().filter(c => c.estado === 'ATENDIDO').length);
+
+  /** Profesionales para el desplegable Especialista en Agenda: filtrados por la especialidad seleccionada. */
+  get profesionalesParaFiltroAgenda(): PersonalDto[] {
+    const esp = this.filterServicio();
+    if (!esp) return this.todosProfesionales;
+    return this._getProfesionalesPorEspecialidad(esp);
+  }
 
   wizardComplete = computed(() => {
     return !!this.selectedPatient() && !!this.selectedEspecialidad() &&
@@ -283,34 +297,56 @@ export class CitasPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 1. Filtro por mapa de roles (más preciso)
+    // 1. Filtro por mapa especialidad → roles (solo profesionales de esa especialidad)
     const rolesEsp = this._espRolMap[esp] ?? [];
     if (rolesEsp.length > 0) {
-      const porRol = this.todosProfesionales.filter(p =>
-        rolesEsp.includes((p.rol ?? '').toUpperCase())
-      );
-      if (porRol.length > 0) {
-        this.profesionalesFiltrados.set(porRol);
-        return;
-      }
+      const porRol = this.todosProfesionales.filter(p => {
+        const rolPrincipal = (p.rol ?? '').toUpperCase();
+        const todosLosRoles = p.roles?.map(r => r.toUpperCase()) ?? [rolPrincipal];
+        return rolesEsp.some(r => todosLosRoles.includes(r));
+      });
+      this.profesionalesFiltrados.set(porRol);
+      return;
     }
 
-    // 2. Fallback: búsqueda textual en rol
+    // 2. Especialidad sin mapa: fallback por coincidencia en nombre del rol
     const espLower = esp.toLowerCase();
     const porTexto = this.todosProfesionales.filter(p =>
       (p.rol || '').toLowerCase().includes(espLower)
     );
-
-    // 3. Si aún sin resultados → mostrar todos (el profesional se elige manualmente)
-    this.profesionalesFiltrados.set(
-      porTexto.length > 0 ? porTexto : this.todosProfesionales
-    );
+    this.profesionalesFiltrados.set(porTexto);
   }
 
   selectEspecialidad(id: string): void {
     this.selectedEspecialidad.set(id === this.selectedEspecialidad() ? '' : id);
     this._filtrarProfesionales();
     if (this.wizardStep() < 2) this.wizardStep.set(2);
+  }
+
+  /** Filtra profesionales por especialidad (misma lógica que wizard). Usado en Agenda y en Nueva Cita. */
+  private _getProfesionalesPorEspecialidad(esp: string): PersonalDto[] {
+    const rolesEsp = this._espRolMap[esp] ?? [];
+    if (rolesEsp.length > 0) {
+      return this.todosProfesionales.filter(p => {
+        const rolPrincipal = (p.rol ?? '').toUpperCase();
+        const todosLosRoles = p.roles?.map(r => r.toUpperCase()) ?? [rolPrincipal];
+        return rolesEsp.some(r => todosLosRoles.includes(r));
+      });
+    }
+    const espLower = esp.toLowerCase();
+    return this.todosProfesionales.filter(p =>
+      (p.rol || '').toLowerCase().includes(espLower)
+    );
+  }
+
+  /** Al cambiar Especialidad en la pestaña Agenda, actualizar filtro y limpiar Especialista si ya no aplica. */
+  onFilterServicioChange(value: string): void {
+    this.filterServicio.set(value);
+    const list = value ? this._getProfesionalesPorEspecialidad(value) : this.todosProfesionales;
+    const id = this.filterProfesionalId();
+    if (id != null && !list.some(p => p.id === id)) {
+      this.filterProfesionalId.set(null);
+    }
   }
 
   selectProfesional(p: PersonalDto): void {
@@ -375,12 +411,13 @@ export class CitasPageComponent implements OnInit, OnDestroy {
     return this.calendarDate.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
   }
 
-  /* ── Time slots ─────────────────────────────────────────────────────── */
+  /* ── Time slots (solo por profesional: misma hora puede usarse en otra especialidad) ───────────────── */
   private _loadSlots(day: Date): void {
     this.loadingSlots.set(true);
     const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+    const profId = this.selectedProfesional()?.id;
 
-    this.citaService.list(dateStr).subscribe({
+    this.citaService.list(dateStr, profId ?? undefined).subscribe({
       next: (citas) => {
         const booked = new Set((citas ?? []).map(c => this._extractTime(c.fechaHora)));
         const slots  = this._generateSlots(booked, day);

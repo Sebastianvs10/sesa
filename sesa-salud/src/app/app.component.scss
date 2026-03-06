@@ -422,6 +422,7 @@
 /* Icono de notificaciones y dropdown */
 .sesa-topbar-notifications {
   position: relative;
+  overflow: visible;
 }
 
 .sesa-topbar-notifications-btn {
@@ -437,6 +438,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: visible;
   transition:
     background-color var(--sesa-transition),
     border-color var(--sesa-transition),

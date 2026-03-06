@@ -44,6 +44,8 @@ import {
   faRotateRight,
   faBell,
   faCircleInfo,
+  faVideo,
+  faFilePrescription,
 } from '@fortawesome/free-solid-svg-icons';
 import { Subscription, interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -56,6 +58,7 @@ import {
 } from '../../core/services/cita.service';
 import { SesaCalendarComponent } from '../../shared/components/sesa-calendar/sesa-calendar.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { RecetaElectronicaModalComponent } from '../receta-electronica/receta-electronica-modal.component';
 
 @Component({
   selector: 'sesa-consulta-medica',
@@ -66,6 +69,7 @@ import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.
     FormsModule,
     FontAwesomeModule,
     SesaCalendarComponent,
+    RecetaElectronicaModalComponent,
   ],
   templateUrl: './consulta-medica.page.html',
   styleUrl: './consulta-medica.page.scss',
@@ -97,6 +101,8 @@ export class ConsultaMedicaPageComponent implements OnInit, OnDestroy {
   readonly faRotateRight       = faRotateRight;
   readonly faBell              = faBell;
   readonly faCircleInfo        = faCircleInfo;
+  readonly faVideo             = faVideo;
+  readonly faFilePrescription  = faFilePrescription;
 
   // ── Servicios ──────────────────────────────────────────────────────────
   private readonly citaService   = inject(CitaService);
@@ -166,6 +172,10 @@ export class ConsultaMedicaPageComponent implements OnInit, OnDestroy {
   // ── Modal detalle ─────────────────────────────────────────────────────
   showDetalleModal  = signal(false);
   citaDetalle       = signal<ConsultaMedicaDto | null>(null);
+
+  // ── Modal receta electrónica ──────────────────────────────────────────
+  showRecetaModal   = signal(false);
+  citaParaReceta    = signal<ConsultaMedicaDto | null>(null);
 
   // ── ID del personal logueado (para rol Médico/Jefe) ──────────────────
   private miPersonalId: number | null = null;
@@ -317,6 +327,22 @@ export class ConsultaMedicaPageComponent implements OnInit, OnDestroy {
     this.router.navigate(['/facturacion'], {
       queryParams: { pacienteId: cita.pacienteId },
     });
+  }
+
+  iniciarVideoconsulta(cita: ConsultaMedicaDto): void {
+    this.router.navigate(['/videoconsulta'], {
+      queryParams: { citaId: cita.id },
+    });
+  }
+
+  abrirRecetaElectronica(cita: ConsultaMedicaDto): void {
+    this.citaParaReceta.set(cita);
+    this.showRecetaModal.set(true);
+  }
+
+  cerrarRecetaModal(): void {
+    this.showRecetaModal.set(false);
+    this.citaParaReceta.set(null);
   }
 
   exportarExcel(): void {

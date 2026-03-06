@@ -21,6 +21,9 @@ public interface CitaService {
 
     List<CitaDto> findByFecha(LocalDate fecha);
 
+    /** Citas de una fecha opcionalmente filtradas por profesional (para slots por especialista). */
+    List<CitaDto> findByFechaAndProfesionalId(LocalDate fecha, Long profesionalId);
+
     List<CitaDto> findByPacienteId(Long pacienteId, Pageable pageable);
 
     CitaDto findById(Long id);

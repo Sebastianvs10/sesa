@@ -73,9 +73,11 @@ export class PacienteService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/pacientes`;
 
-  list(page = 0, size = 20, q?: string): Observable<PageResponse<PacienteDto>> {
+  list(page = 0, size = 20, q?: string, activo?: boolean | null): Observable<PageResponse<PacienteDto>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (q?.trim()) params = params.set('q', q.trim());
+    if (activo === true) params = params.set('activo', 'true');
+    if (activo === false) params = params.set('activo', 'false');
     return this.http.get<PageResponse<PacienteDto>>(this.apiUrl, { params });
   }
 

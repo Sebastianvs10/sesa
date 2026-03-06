@@ -20,7 +20,6 @@ import {
   faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 import { EmpresaService, EmpresaCreateRequest, AdminUserRequest, ModuloDto } from '../../core/services/empresa.service';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
 
 /** Departamentos de Colombia (DANE) */
@@ -40,7 +39,6 @@ const DEPARTAMENTOS_COLOMBIA = [
     ReactiveFormsModule,
     RouterLink,
     FontAwesomeModule,
-    SesaCardComponent,
     SesaFormFieldComponent,
   ],
   templateUrl: './empresa-wizard.page.html',
@@ -266,6 +264,20 @@ export class EmpresaWizardPageComponent implements OnInit {
 
   collapseAllModulos(): void {
     this.expandedModulos.clear();
+  }
+
+  /** Seleccionar todos los módulos y sus submódulos (desde BD). */
+  seleccionarTodosModulos(): void {
+    this.moduloCodigos = this.modulos.map(m => m.codigo);
+    this.submoduloCodigos = this.modulos.flatMap(m => m.submodulos.map(s => s.codigo));
+    this.expandAllModulos();
+  }
+
+  /** Deseleccionar todos los módulos y submódulos. */
+  deseleccionarTodosModulos(): void {
+    this.moduloCodigos = [];
+    this.submoduloCodigos = [];
+    this.collapseAllModulos();
   }
 
   /* ========== Helpers de selección ========== */

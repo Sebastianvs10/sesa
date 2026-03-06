@@ -1,6 +1,8 @@
 /* Estilos universales SESA - Premium Design System */
 /* Autor: Ing. J Sebastian Vargas S */
 
+@import 'leaflet/dist/leaflet.css';
+
 :root {
   /* Brand */
   --sesa-primary: #0a2e4f;
@@ -62,11 +64,23 @@
   --sesa-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --sesa-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --sesa-transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Alias para compatibilidad interna */
+  --sesa-transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Odontograma — aspecto real */
   --sesa-odontograma-arcada-fill: #f8f8f0;
   --sesa-odontograma-arcada-stroke: #e8e4dc;
   --sesa-odontograma-tooth-stroke: #d4cfc4;
+
+  /* ── Portal del Paciente ───────────────────────────────────────────── */
+  /* Acento principal del portal (azul-teal premium) */
+  --portal-accent:        #0a6abf;
+  --portal-accent-2:      #0d4f8c;
+  --portal-accent-alpha:  rgba(10, 106, 191, 0.1);
+  --portal-accent-shadow: rgba(10, 106, 191, 0.25);
+  /* Morado para órdenes médicas */
+  --portal-purple:        #7c3aed;
+  --portal-purple-alpha:  rgba(124, 58, 237, 0.1);
 }
 
 /* Tema oscuro */
@@ -111,6 +125,14 @@
   --sesa-odontograma-arcada-fill: #252420;
   --sesa-odontograma-arcada-stroke: #3a3630;
   --sesa-odontograma-tooth-stroke: #3a3630;
+
+  /* ── Portal del Paciente — tema oscuro ─────────────────────────────── */
+  --portal-accent:        #3b8bd9;
+  --portal-accent-2:      #1a5fa8;
+  --portal-accent-alpha:  rgba(59, 139, 217, 0.12);
+  --portal-accent-shadow: rgba(59, 139, 217, 0.3);
+  --portal-purple:        #a78bfa;
+  --portal-purple-alpha:  rgba(167, 139, 250, 0.12);
 }
 
 *,

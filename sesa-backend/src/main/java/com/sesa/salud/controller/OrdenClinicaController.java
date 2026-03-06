@@ -6,6 +6,7 @@ package com.sesa.salud.controller;
 
 import com.sesa.salud.dto.OrdenClinicaDto;
 import com.sesa.salud.dto.OrdenClinicaRequestDto;
+import com.sesa.salud.dto.ResultadoOrdenDto;
 import com.sesa.salud.service.OrdenClinicaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,14 @@ public class OrdenClinicaController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
     public ResponseEntity<OrdenClinicaDto> update(@PathVariable("id") Long id, @Valid @RequestBody OrdenClinicaRequestDto dto) {
         return ResponseEntity.ok(ordenClinicaService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}/resultado")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<OrdenClinicaDto> registrarResultado(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ResultadoOrdenDto dto) {
+        return ResponseEntity.ok(ordenClinicaService.registrarResultado(id, dto));
     }
 
     @DeleteMapping("/{id}")

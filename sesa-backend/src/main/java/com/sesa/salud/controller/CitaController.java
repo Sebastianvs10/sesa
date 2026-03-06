@@ -38,11 +38,13 @@ public class CitaController {
     @GetMapping
     @PreAuthorize(ROLES_LECTURA_CITAS)
     public List<CitaDto> listByFecha(
-            @RequestParam(value = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        if (fecha != null) {
-            return citaService.findByFecha(fecha);
+            @RequestParam(value = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam(value = "profesionalId", required = false) Long profesionalId) {
+        LocalDate f = fecha != null ? fecha : LocalDate.now();
+        if (profesionalId != null) {
+            return citaService.findByFechaAndProfesionalId(f, profesionalId);
         }
-        return citaService.findByFecha(LocalDate.now());
+        return citaService.findByFecha(f);
     }
 
     @GetMapping("/paciente/{pacienteId}")

@@ -9,6 +9,7 @@ import com.sesa.salud.dto.HistoriaClinicaDto;
 import com.sesa.salud.dto.HistoriaClinicaRequestDto;
 import com.sesa.salud.entity.HistoriaClinica;
 import com.sesa.salud.entity.Paciente;
+import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.HistoriaClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.repository.PersonalRepository;
@@ -30,12 +31,27 @@ public class HistoriaClinicaServiceImpl implements HistoriaClinicaService {
     private final PacienteRepository pacienteRepository;
     private final PersonalRepository personalRepository;
     private final AtencionService atencionService;
+    private final ConsultaRepository consultaRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Optional<HistoriaClinicaDto> findByPacienteId(Long pacienteId) {
         return historiaClinicaRepository.findByPacienteId(pacienteId)
                 .map(this::toDto);
+    }
+
+    @Override
+    @Transactional
+    public Optional<HistoriaClinicaDto> findOrCreateMinimalIfHasConsultas(Long pacienteId) {
+        Optional<HistoriaClinicaDto> existing = findByPacienteId(pacienteId);
+        if (existing.isPresent()) {
+            return existing;
+        }
+        if (!consultaRepository.existsByPaciente_Id(pacienteId)) {
+            return Optional.empty();
+        }
+        HistoriaClinicaDto created = createForPaciente(pacienteId, new HistoriaClinicaRequestDto());
+        return Optional.of(created);
     }
 
     @Override

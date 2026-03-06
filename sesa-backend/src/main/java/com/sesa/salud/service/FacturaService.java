@@ -24,4 +24,7 @@ public interface FacturaService {
     String exportRipsCsv(Instant desde, Instant hasta);
     Map<String, String> exportRipsEstructurado(Instant desde, Instant hasta);
     ResumenFacturacionDto resumen();
+
+    /** Emite una factura como electrónica DIAN (si la empresa tiene la opción activa). */
+    FacturaDto emitirElectronica(Long id);
 }

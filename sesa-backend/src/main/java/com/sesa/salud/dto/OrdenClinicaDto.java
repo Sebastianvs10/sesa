@@ -23,6 +23,12 @@ public class OrdenClinicaDto {
     private String tipo;
     private String detalle;
     private String estado;
+    private String resultado;
+    private Instant fechaResultado;
+    /** Nombre del profesional que registró el resultado (ej. bacteriólogo). */
+    private String resultadoRegistradoPorNombre;
+    /** Rol del profesional que registró el resultado. */
+    private String resultadoRegistradoPorRol;
     private BigDecimal valorEstimado;
     private Instant createdAt;
 }

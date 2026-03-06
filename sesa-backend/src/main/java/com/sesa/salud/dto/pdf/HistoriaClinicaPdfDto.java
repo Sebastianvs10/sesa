@@ -43,6 +43,17 @@ public class HistoriaClinicaPdfDto {
     private String pacienteDireccion;
     private String epsNombre;
     private String epsCodigo;
+    private String pacienteMunicipioResidencia;
+    private String pacienteDepartamentoResidencia;
+    private String pacienteZonaResidencia;
+    private String pacienteRegimenAfiliacion;
+    private String pacienteTipoUsuario;
+    private String pacienteContactoEmergenciaNombre;
+    private String pacienteContactoEmergenciaTelefono;
+    private String pacienteEstadoCivil;
+    private String pacienteEscolaridad;
+    private String pacienteOcupacion;
+    private String pacientePertenenciaEtnica;
 
     /* ── Antecedentes ─────────────────────────────────── */
     private String grupoSanguineo;
@@ -58,6 +69,9 @@ public class HistoriaClinicaPdfDto {
     private Boolean habitosSustancias;
     private String habitosDetalles;
 
-    /* ── Atenciones ───────────────────────────────────── */
+    /* ── Atenciones (modelo Atencion) ─────────────────── */
     private List<AtencionPdfDto> atenciones;
+
+    /* ── Última consulta SOAP (modelo Consulta) ────────── */
+    private ConsultaSoapPdfDto ultimaConsultaSoap;
 }

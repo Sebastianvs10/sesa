@@ -48,6 +48,8 @@ export class PacientesListPageComponent implements OnInit {
   page = 0;
   size = 20;
   searchQ = '';
+  /** Filtro por estado: null = todos, true = solo activos, false = solo inactivos */
+  filterActivo: boolean | null = null;
   loading = false;
   deleting = signal<number | null>(null);
   error: string | null = null;
@@ -75,8 +77,8 @@ export class PacientesListPageComponent implements OnInit {
     this.loading = true;
     this.error = null;
     const obs = this.searchQ.trim()
-      ? this.pacienteService.list(this.page, this.size, this.searchQ)
-      : this.pacienteService.list(this.page, this.size);
+      ? this.pacienteService.list(this.page, this.size, this.searchQ, this.filterActivo)
+      : this.pacienteService.list(this.page, this.size, undefined, this.filterActivo);
     obs.subscribe({
       next: (res: PageResponse<PacienteDto>) => {
         this.pacientes = res.content ?? [];
@@ -92,6 +94,11 @@ export class PacientesListPageComponent implements OnInit {
   }
 
   onSearch(): void {
+    this.page = 0;
+    this.load();
+  }
+
+  onFilterActivoChange(): void {
     this.page = 0;
     this.load();
   }

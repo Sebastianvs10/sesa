@@ -11,9 +11,16 @@ import {
   OrdenClinicaLabDto,
   LaboratorioSolicitudRequestDto,
 } from '../../core/services/laboratorio-solicitud.service';
+import { OrdenClinicaService } from '../../core/services/orden-clinica.service';
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import {
+  getPlantillaParaPrueba,
+  serializarResultadoPlantilla,
+  type PlantillaLab,
+} from './lab-plantillas';
+import { parseResultadoToItems } from '../../core/utils/resultado-display.util';
 
 export type TabActiva = 'solicitudes' | 'ordenes-hc';
 export type FiltroEstado = 'TODOS' | 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADO';
@@ -32,6 +39,8 @@ export interface ItemUnificado {
   observaciones?: string;
   bacteriologoNombre?: string;
   fechaResultado?: string;
+  resultadoRegistradoPorNombre?: string;
+  resultadoRegistradoPorRol?: string;
   raw?: LaboratorioSolicitudDto | OrdenClinicaLabDto;
 }
 
@@ -43,7 +52,11 @@ export interface ItemUnificado {
   styleUrl: './laboratorios.page.scss',
 })
 export class LaboratoriosPageComponent implements OnInit {
+  /** Expuesto para la plantilla: resultado por ítem (etiqueta en negrita + valor). */
+  protected readonly parseResultadoToItems = parseResultadoToItems;
+
   private readonly labService = inject(LaboratorioSolicitudService);
+  private readonly ordenService = inject(OrdenClinicaService);
   private readonly pacienteService = inject(PacienteService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(SesaToastService);
@@ -60,8 +73,12 @@ export class LaboratoriosPageComponent implements OnInit {
   readonly ordenesHC = signal<OrdenClinicaLabDto[]>([]);
   readonly itemSeleccionado = signal<ItemUnificado | null>(null);
 
-  // form resultado
-  readonly formResultado = signal({ resultado: '', observaciones: '' });
+  // form resultado (resultado/observaciones para texto libre; templateValues cuando hay plantilla)
+  readonly formResultado = signal<{
+    resultado: string;
+    observaciones: string;
+    templateValues: Record<string, string>;
+  }>({ resultado: '', observaciones: '', templateValues: {} });
 
   // form nueva solicitud
   readonly formNuevo = signal<{ pacienteQuery: string; tipoPrueba: string; pacienteId: number | null; pacienteOpciones: PacienteDto[]; buscandoPaciente: boolean }>({
@@ -92,15 +109,26 @@ export class LaboratoriosPageComponent implements OnInit {
     });
   });
 
-  readonly statTotal = computed(() => this.solicitudes().length);
-  readonly statPendiente = computed(
-    () => this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length
+  readonly statTotal = computed(() =>
+    this.tabActiva() === 'solicitudes' ? this.solicitudes().length : this.ordenesHC().length
   );
-  readonly statEnProceso = computed(
-    () => this.solicitudes().filter((s) => s.estado === 'EN_PROCESO').length
+  readonly statPendiente = computed(() =>
+    this.tabActiva() === 'solicitudes'
+      ? this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length
+      : this.ordenesHC().filter((o) => (o.estado ?? '').toUpperCase() === 'PENDIENTE').length
   );
-  readonly statCompletado = computed(
-    () => this.solicitudes().filter((s) => s.estado === 'COMPLETADO').length
+  readonly statEnProceso = computed(() =>
+    this.tabActiva() === 'solicitudes'
+      ? this.solicitudes().filter((s) => s.estado === 'EN_PROCESO').length
+      : this.ordenesHC().filter((o) => (o.estado ?? '').toUpperCase() === 'EN_PROCESO').length
+  );
+  readonly statCompletado = computed(() =>
+    this.tabActiva() === 'solicitudes'
+      ? this.solicitudes().filter((s) => s.estado === 'COMPLETADO').length
+      : this.ordenesHC().filter((o) => {
+          const e = (o.estado ?? '').toUpperCase();
+          return e === 'COMPLETADO' || e === 'COMPLETADA';
+        }).length
   );
 
   // tipos de prueba comunes en Colombia
@@ -156,9 +184,15 @@ export class LaboratoriosPageComponent implements OnInit {
 
   seleccionarItem(item: ItemUnificado): void {
     this.itemSeleccionado.set(item);
+    const plantilla = getPlantillaParaPrueba(item.tipoPrueba);
+    const templateValues: Record<string, string> = {};
+    if (plantilla) {
+      for (const c of plantilla.campos) templateValues[c.id] = '';
+    }
     this.formResultado.set({
       resultado: item.resultado ?? '',
       observaciones: item.observaciones ?? '',
+      templateValues,
     });
   }
 
@@ -184,34 +218,78 @@ export class LaboratoriosPageComponent implements OnInit {
     });
   }
 
+  /** Obtiene la plantilla para el ítem seleccionado (según tipo de prueba). */
+  getPlantilla(item: ItemUnificado | null): PlantillaLab | null {
+    return item ? getPlantillaParaPrueba(item.tipoPrueba) : null;
+  }
+
+  setTemplateValue(campoId: string, value: string): void {
+    this.formResultado.update((f) => ({
+      ...f,
+      templateValues: { ...f.templateValues, [campoId]: value },
+    }));
+  }
+
+  /** Resultado listo para enviar: texto libre o serializado desde plantilla. */
+  getResultadoParaGuardar(): string {
+    const form = this.formResultado();
+    const item = this.itemSeleccionado();
+    const plantilla = item ? getPlantillaParaPrueba(item.tipoPrueba) : null;
+    if (plantilla && Object.keys(form.templateValues).length > 0) {
+      const texto = serializarResultadoPlantilla(plantilla, form.templateValues);
+      if (texto.trim()) return texto;
+    }
+    return form.resultado.trim();
+  }
+
+  tieneResultadoValido(): boolean {
+    return this.getResultadoParaGuardar().length > 0;
+  }
+
   guardarResultado(): void {
     const item = this.itemSeleccionado();
-    if (!item || item._tipo !== 'solicitud') return;
-    const form = this.formResultado();
-    if (!form.resultado.trim()) {
-      this.toast.error('El resultado no puede estar vacío', 'Validación');
+    if (!item) return;
+    const resultadoTexto = this.getResultadoParaGuardar();
+    if (!resultadoTexto) {
+      this.toast.error('Complete al menos el resultado o los campos de la plantilla.', 'Validación');
       return;
     }
     this.guardando.set(true);
-    const personalId = this.auth.currentUser()?.userId ?? undefined;
-    this.labService
-      .registrarResultado(item.id, {
-        resultado: form.resultado,
-        observaciones: form.observaciones,
-        bacteriologoId: personalId,
-      })
-      .subscribe({
+    if (item._tipo === 'solicitud') {
+      const personalId = this.auth.currentUser()?.userId ?? undefined;
+      this.labService
+        .registrarResultado(item.id, {
+          resultado: resultadoTexto,
+          observaciones: this.formResultado().observaciones,
+          bacteriologoId: personalId,
+        })
+        .subscribe({
+          next: (updated) => {
+            this.actualizarSolicitudEnLista(updated);
+            this.itemSeleccionado.set(this.solicitudAItem(updated));
+            this.guardando.set(false);
+            this.toast.success('Resultado registrado correctamente', 'Laboratorios');
+          },
+          error: () => {
+            this.toast.error('No se pudo guardar el resultado', 'Error');
+            this.guardando.set(false);
+          },
+        });
+    } else {
+      this.ordenService.registrarResultado(item.id, resultadoTexto).subscribe({
         next: (updated) => {
-          this.actualizarSolicitudEnLista(updated);
-          this.itemSeleccionado.set(this.solicitudAItem(updated));
+          const asLab = { ...updated } as OrdenClinicaLabDto;
+          this.actualizarOrdenHCEnLista(asLab);
+          this.itemSeleccionado.set(this.ordenAItem(asLab));
           this.guardando.set(false);
-          this.toast.success('Resultado registrado correctamente', 'Laboratorios');
+          this.toast.success('Resultado asociado a la orden de HC. Se verá en la Historia Clínica del paciente.', 'Laboratorios');
         },
         error: () => {
-          this.toast.error('No se pudo guardar el resultado', 'Error');
+          this.toast.error('No se pudo guardar el resultado en la orden', 'Error');
           this.guardando.set(false);
         },
       });
+    }
   }
 
   buscarPaciente(): void {
@@ -267,7 +345,8 @@ export class LaboratoriosPageComponent implements OnInit {
     switch (estado?.toUpperCase()) {
       case 'PENDIENTE': return 'badge-pendiente';
       case 'EN_PROCESO': return 'badge-en-proceso';
-      case 'COMPLETADO': return 'badge-completado';
+      case 'COMPLETADO':
+      case 'COMPLETADA': return 'badge-completado';
       case 'RECHAZADO': return 'badge-rechazado';
       default: return 'badge-pendiente';
     }
@@ -277,9 +356,10 @@ export class LaboratoriosPageComponent implements OnInit {
     switch (estado?.toUpperCase()) {
       case 'PENDIENTE': return 'Pendiente';
       case 'EN_PROCESO': return 'En proceso';
-      case 'COMPLETADO': return 'Completado';
+      case 'COMPLETADO':
+      case 'COMPLETADA': return 'Completado';
       case 'RECHAZADO': return 'Rechazado';
-      default: return estado;
+      default: return estado ?? 'Pendiente';
     }
   }
 
@@ -366,10 +446,20 @@ export class LaboratoriosPageComponent implements OnInit {
       pacienteId: o.pacienteId,
       pacienteNombre: o.pacienteNombre,
       tipoPrueba: o.detalle ?? o.tipo,
-      estado: o.estado,
+      estado: o.estado ?? 'PENDIENTE',
       fecha: o.createdAt ?? '',
+      resultado: o.resultado,
+      fechaResultado: o.fechaResultado,
+      resultadoRegistradoPorNombre: o.resultadoRegistradoPorNombre,
+      resultadoRegistradoPorRol: o.resultadoRegistradoPorRol,
       raw: o,
     };
+  }
+
+  private actualizarOrdenHCEnLista(updated: OrdenClinicaLabDto): void {
+    this.ordenesHC.update((list) =>
+      list.map((o) => (o.id === updated.id ? updated : o))
+    );
   }
 
   private actualizarSolicitudEnLista(updated: LaboratorioSolicitudDto): void {

@@ -1,0 +1,90 @@
+<div class="ebs-layout-shell">
+  <header class="ebs-layout-header">
+    <div class="ebs-layout-header__inner">
+      <a routerLink="/ebs/inicio" class="ebs-layout-brand">
+        <span class="ebs-layout-brand__icon" aria-hidden="true">APS</span>
+        <div class="ebs-layout-brand__text">
+          <h1 class="ebs-layout-brand__title">EBS — APS</h1>
+          <p class="ebs-layout-brand__sub">Equipos Básicos de Salud</p>
+        </div>
+      </a>
+      <a routerLink="/dashboard" class="ebs-layout-back">Volver al inicio</a>
+    </div>
+  </header>
+
+  <div class="ebs-layout-body">
+    <nav class="ebs-layout-nav" role="navigation" aria-label="Módulo EBS">
+      <ul class="ebs-layout-nav__list">
+        @for (item of visibleNavItems(); track item.route) {
+          <li>
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="ebs-layout-nav__link--active"
+              [routerLinkActiveOptions]="{ exact: item.route === '/ebs/inicio' }"
+              class="ebs-layout-nav__link"
+            >
+              <span class="ebs-layout-nav__icon" [attr.data-icon]="item.icon"></span>
+              <span class="ebs-layout-nav__label">{{ item.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <main class="ebs-layout-main">
+      <router-outlet />
+    </main>
+  </div>
+
+  <!-- Navegación inferior para móvil: 3 tabs + Más -->
+  <nav class="ebs-layout-tabs" role="navigation" aria-label="EBS móvil">
+    @for (item of mobileMainTabs(); track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="ebs-layout-tabs__item--active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/ebs/inicio' }"
+        class="ebs-layout-tabs__item"
+      >
+        <span class="ebs-layout-tabs__icon" [attr.data-icon]="item.icon"></span>
+        <span class="ebs-layout-tabs__label">{{ item.labelShort ?? item.label }}</span>
+      </a>
+    }
+    @if (mobileMoreTabs().length > 0) {
+      <button
+        type="button"
+        class="ebs-layout-tabs__item ebs-layout-tabs__item--more"
+        [class.ebs-layout-tabs__item--active]="showMoreMenu()"
+        (click)="toggleMoreMenu()"
+        aria-expanded="showMoreMenu()"
+        aria-haspopup="true"
+      >
+        <span class="ebs-layout-tabs__icon" data-icon="more"></span>
+        <span class="ebs-layout-tabs__label">Más</span>
+      </button>
+    }
+  </nav>
+
+  <!-- Overlay menú Más (móvil) -->
+  @if (showMoreMenu()) {
+    <div class="ebs-layout-overlay" role="dialog" aria-label="Más opciones EBS" (click)="closeMoreMenu()">
+      <div class="ebs-layout-more" (click)="$event.stopPropagation()">
+        <div class="ebs-layout-more__header">
+          <span class="ebs-layout-more__title">Más opciones</span>
+          <button type="button" class="ebs-layout-more__close" (click)="closeMoreMenu()" aria-label="Cerrar">×</button>
+        </div>
+        <div class="ebs-layout-more__list">
+          @for (item of mobileMoreTabs(); track item.route) {
+            <a
+              [routerLink]="item.route"
+              class="ebs-layout-more__link"
+              (click)="closeMoreMenu()"
+            >
+              <span class="ebs-layout-more__icon" [attr.data-icon]="item.icon"></span>
+              {{ item.label }}
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
