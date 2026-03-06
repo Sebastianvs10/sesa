@@ -69,6 +69,10 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .consulta(consulta)
                 .tipo(dto.getTipo())
                 .detalle(dto.getDetalle())
+                .cantidadPrescrita(dto.getCantidadPrescrita())
+                .unidadMedida(dto.getUnidadMedida())
+                .frecuencia(dto.getFrecuencia())
+                .duracionDias(dto.getDuracionDias())
                 .estado(dto.getEstado() != null ? dto.getEstado() : "PENDIENTE")
                 .valorEstimado(dto.getValorEstimado())
                 .build();
@@ -82,6 +86,10 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + id));
         if (dto.getTipo() != null) orden.setTipo(dto.getTipo());
         if (dto.getDetalle() != null) orden.setDetalle(dto.getDetalle());
+        if (dto.getCantidadPrescrita() != null) orden.setCantidadPrescrita(dto.getCantidadPrescrita());
+        if (dto.getUnidadMedida() != null) orden.setUnidadMedida(dto.getUnidadMedida());
+        if (dto.getFrecuencia() != null) orden.setFrecuencia(dto.getFrecuencia());
+        if (dto.getDuracionDias() != null) orden.setDuracionDias(dto.getDuracionDias());
         if (dto.getEstado() != null) orden.setEstado(dto.getEstado());
         if (dto.getValorEstimado() != null) orden.setValorEstimado(dto.getValorEstimado());
         return toDto(ordenClinicaRepository.save(orden));
@@ -128,6 +136,10 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .consultaId(o.getConsulta().getId())
                 .tipo(o.getTipo())
                 .detalle(o.getDetalle())
+                .cantidadPrescrita(o.getCantidadPrescrita())
+                .unidadMedida(o.getUnidadMedida())
+                .frecuencia(o.getFrecuencia())
+                .duracionDias(o.getDuracionDias())
                 .estado(o.getEstado())
                 .resultado(o.getResultado())
                 .fechaResultado(o.getFechaResultado())

@@ -22,6 +22,10 @@ public class OrdenClinicaRequestDto {
     @NotBlank(message = "Tipo de orden es obligatorio")
     private String tipo;
     private String detalle;
+    private Integer cantidadPrescrita;
+    private String unidadMedida;
+    private String frecuencia;
+    private Integer duracionDias;
     private String estado;
     private BigDecimal valorEstimado;
 }

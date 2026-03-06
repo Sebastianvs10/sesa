@@ -1,4 +1,5 @@
 /**
+ * Servicio del módulo de Farmacia — inventario, dispensación y órdenes médicas.
  * Autor: Ing. J Sebastian Vargas S
  */
 package com.sesa.salud.service;
@@ -16,4 +17,9 @@ public interface FarmaciaService {
 
     List<FarmaciaDispensacionDto> listDispensacionesByPaciente(Long pacienteId, Pageable pageable);
     FarmaciaDispensacionDto dispensar(FarmaciaDispensacionRequestDto dto);
+
+    /** Órdenes clínicas tipo MEDICAMENTO pendientes o parciales de dispensar (para regente). */
+    List<OrdenFarmaciaPendienteDto> listOrdenesPendientes(Pageable pageable);
+    /** Dispensar una orden médica: varias líneas (medicamento, lote, cantidad); descuenta stock y vincula a la orden. */
+    List<FarmaciaDispensacionDto> dispensarOrden(DispensarOrdenRequestDto dto);
 }

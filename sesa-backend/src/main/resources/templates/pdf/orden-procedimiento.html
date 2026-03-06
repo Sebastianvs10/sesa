@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title th:text="${data.empresaNombre} + ' — Orden de procedimiento'">Orden de procedimiento</title>
+<style>/*<![CDATA[*/
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e293b; background: #f1f5f9; line-height: 1.5; }
+@page { size: A4; margin: 0 0 20mm 0; }
+.hdr { background: #0c2340; width: 100%; padding: 12px 20px; }
+.hdr-company-name { font-size: 14pt; font-weight: 800; color: #ffffff; }
+.hdr-sub { font-size: 8pt; color: #93c5fd; margin-top: 2px; }
+.hdr-badge { display: inline-block; background: #7c3aed; color: #fff; font-size: 9pt; font-weight: 800; padding: 5px 12px; border-radius: 6px; margin-top: 8px; }
+.hdr-tagline { font-size: 7.5pt; color: #93c5fd; margin-top: 4px; letter-spacing: 0.5px; }
+.hdr-accent { height: 4px; background: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%); width: 100%; }
+.content { padding: 18px 20px; }
+.card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.card-hdr { background: #7c3aed; padding: 8px 14px; font-size: 9pt; font-weight: 800; color: #fff; text-transform: uppercase; }
+.orden-num { font-size: 11pt; font-weight: 800; color: #0c2340; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #7c3aed; }
+.info-block { padding: 14px 16px; font-size: 9.5pt; line-height: 1.7; color: #1e293b; background: #f5f3ff; border: 1px solid #c4b5fd; border-radius: 8px; margin-top: 8px; white-space: pre-wrap; }
+.pro-signature { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.pro-signature img { max-height: 48px; max-width: 160px; object-fit: contain; }
+.badge-ok { background: #d1fae5; color: #065f46; font-size: 7pt; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.badge-pend { background: #fef3c7; color: #92400e; font-size: 7pt; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+/*]]>*/</style>
+</head>
+<body>
+<div class="hdr">
+  <table style="width:100%;">
+    <tr>
+      <td>
+        <img th:if="${data.logoBase64 != null}" th:src="'data:' + ${data.logoContentType} + ';base64,' + ${data.logoBase64}" alt="Logo" style="max-height:56px;"/>
+        <div th:unless="${data.logoBase64 != null}" style="width:56px;height:56px;background:#7c3aed;border-radius:8px;color:#fff;font-size:22pt;font-weight:800;text-align:center;line-height:56px;" th:text="${data.empresaNombre != null ? #strings.substring(data.empresaNombre, 0, 1) : 'S'}">S</div>
+      </td>
+      <td style="padding-left:14px;">
+        <div class="hdr-company-name" th:text="${data.empresaNombre}">IPS SESA Salud</div>
+        <div class="hdr-sub" th:if="${data.empresaIdentificacion != null}" th:text="'NIT: ' + ${data.empresaIdentificacion}"></div>
+      </td>
+      <td style="text-align:right;">
+        <div class="hdr-badge">Orden de procedimiento</div>
+        <div class="hdr-tagline">Información del procedimiento · SESA Salud</div>
+        <div class="hdr-sub" th:text="'Generado: ' + ${data.fechaGeneracion}"></div>
+      </td>
+    </tr>
+  </table>
+</div>
+<div class="hdr-accent"></div>
+<div class="content">
+  <div class="card">
+    <div class="card-hdr">Paciente</div>
+    <div style="padding:12px 14px;">
+      <div style="margin-bottom:6px;">
+        <strong th:text="${data.pacienteNombre}">—</strong>
+        <span th:if="${data.pacienteDocumento != null}" th:text="${(pacienteTipoDocumento != null and !#strings.isEmpty(pacienteTipoDocumento)) ? ' · ' + pacienteTipoDocumento + ' ' + data.pacienteDocumento : ' · ' + data.pacienteDocumento}">—</span>
+      </div>
+      <div th:if="${pacienteFechaNacimiento != null or pacienteEdad != null or pacienteSexo != null}" style="font-size:8.5pt;color:#475569;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0;">
+        <span th:if="${pacienteFechaNacimiento != null}" th:text="'Fecha nac.: ' + ${pacienteFechaNacimiento}">—</span>
+        <span th:if="${pacienteEdad != null}" th:text="' · Edad: ' + ${pacienteEdad} + ' años'">—</span>
+        <span th:if="${pacienteSexo != null}" th:text="' · Sexo: ' + ${pacienteSexo}">—</span>
+      </div>
+      <div th:if="${pacienteTelefono != null or pacienteEmail != null}" style="font-size:8.5pt;color:#475569;margin-top:4px;">
+        <span th:if="${pacienteTelefono != null}" th:text="'Tel: ' + ${pacienteTelefono}">—</span>
+        <span th:if="${pacienteEmail != null}" th:text="' · Email: ' + ${pacienteEmail}">—</span>
+      </div>
+      <div th:if="${pacienteDireccion != null}" style="font-size:8.5pt;color:#475569;margin-top:2px;" th:text="'Dirección: ' + ${pacienteDireccion}">—</div>
+    </div>
+  </div>
+  <th:block th:if="${data.ordenes != null and !data.ordenes.isEmpty()}" th:with="ord=${data.ordenes[0]}">
+    <div class="card">
+      <div class="card-hdr">Orden de procedimiento</div>
+      <div style="padding:12px 14px;">
+        <div class="orden-num">Nº Orden: <span th:text="${ord.idOrden != null ? '#' + ord.idOrden : '—'}">—</span></div>
+        <div style="margin-bottom:8px;">
+          <span th:if="${ord.estado != null and (ord.estado == 'COMPLETADO' or ord.estado == 'COMPLETADA')}" class="badge-ok" th:text="${ord.estado}">COMPLETADO</span>
+          <span th:unless="${ord.estado != null and (ord.estado == 'COMPLETADO' or ord.estado == 'COMPLETADA')}" class="badge-pend" th:text="${ord.estado != null ? ord.estado : 'PENDIENTE'}">PENDIENTE</span>
+        </div>
+        <h4 style="font-size:9pt;color:#0f172a;margin:10px 0 6px 0;">Descripción e información del procedimiento</h4>
+        <div class="info-block" th:text="${ord.detalle != null and !#strings.isEmpty(ord.detalle) ? ord.detalle : 'Sin descripción registrada.'}">—</div>
+        <div th:if="${ord.fechaResultado != null}" style="font-size:8.5pt;color:#475569;margin-top:10px;" th:text="'Fecha de resultado: ' + ${ord.fechaResultado}">—</div>
+      </div>
+    </div>
+  </th:block>
+  <div th:if="${profesionalNombre != null}" class="card">
+    <div class="card-hdr" style="background:#0c2340;">Profesional que ordena</div>
+    <div style="padding:12px 14px;font-size:9pt;">
+      <strong th:text="${profesionalNombre}">—</strong>
+      <span th:if="${profesionalRol != null}" th:text="' · ' + ${profesionalRol}">—</span>
+      <span th:if="${profesionalIdentificacion != null}" th:text="' · Identificación: ' + ${profesionalIdentificacion}">—</span>
+      <div th:if="${profesionalTarjetaProfesional != null and !#strings.isEmpty(profesionalTarjetaProfesional)}" style="margin-top:6px;font-size:8.5pt;color:#475569;" th:text="'Tarjeta Profesional / Ocupacional: ' + ${profesionalTarjetaProfesional}">—</div>
+      <div th:if="${profesionalFirmaBase64 != null}" class="pro-signature">
+        <img th:src="'data:' + ${profesionalFirmaContentType} + ';base64,' + ${profesionalFirmaBase64}" alt="Firma del profesional" />
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

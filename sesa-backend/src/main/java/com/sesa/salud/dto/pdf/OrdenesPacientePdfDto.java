@@ -26,9 +26,14 @@ public class OrdenesPacientePdfDto {
     private String pacienteEmail;
     private String pacienteDireccion;
     private String fechaGeneracion;
-    /** Profesional que registró el resultado (para orden individual). */
+    /** Profesional que registró el resultado (para orden individual o última orden con resultado). */
     private String profesionalNombre;
     private String profesionalRol;
     private String profesionalIdentificacion;
+    /** Tarjeta Profesional / Ocupacional del profesional. */
+    private String profesionalTarjetaProfesional;
+    /** Firma del profesional en base64 para incrustar en PDF. */
+    private String profesionalFirmaBase64;
+    private String profesionalFirmaContentType;
     private List<OrdenPdfDto> ordenes;
 }

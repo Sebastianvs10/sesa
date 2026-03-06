@@ -11,4 +11,5 @@ import java.util.List;
 
 public interface FarmaciaDispensacionRepository extends JpaRepository<FarmaciaDispensacion, Long> {
     List<FarmaciaDispensacion> findByPaciente_IdOrderByFechaDispensacionDesc(Long pacienteId, Pageable pageable);
+    List<FarmaciaDispensacion> findByOrdenClinica_IdOrderByCreatedAtAsc(Long ordenClinicaId);
 }

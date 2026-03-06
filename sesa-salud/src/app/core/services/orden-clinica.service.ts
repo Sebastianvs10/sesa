@@ -10,6 +10,10 @@ export interface OrdenClinicaDto {
   consultaId: number;
   tipo: string;
   detalle?: string;
+  cantidadPrescrita?: number;
+  unidadMedida?: string;
+  frecuencia?: string;
+  duracionDias?: number;
   estado?: string;
   resultado?: string;
   fechaResultado?: string;
@@ -24,6 +28,10 @@ export interface OrdenClinicaRequestDto {
   consultaId: number;
   tipo: string;
   detalle?: string;
+  cantidadPrescrita?: number;
+  unidadMedida?: string;
+  frecuencia?: string;
+  duracionDias?: number;
   estado?: string;
   valorEstimado?: number;
 }

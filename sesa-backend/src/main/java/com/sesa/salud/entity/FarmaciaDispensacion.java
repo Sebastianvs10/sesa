@@ -40,6 +40,10 @@ public class FarmaciaDispensacion {
     @Column(name = "entregado_por", length = 150)
     private String entregadoPor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "orden_clinica_id")
+    private OrdenClinica ordenClinica;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

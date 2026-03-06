@@ -1,5 +1,100 @@
-/* Farmacia */
+/* Módulo Farmacia — Órdenes médicas, inventario, dispensación */
 /* Autor: Ing. J Sebastian Vargas S */
+
+.farmacia-page {
+  .farmacia-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--sesa-border);
+    padding-bottom: 0.5rem;
+  }
+  .farmacia-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--sesa-text-secondary);
+    font-size: 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    &:hover { background: var(--sesa-surface); color: var(--sesa-text-primary); }
+    &.active { background: var(--sesa-surface); color: var(--sesa-text-primary); font-weight: 600; }
+  }
+  .farmacia-tab-badge {
+    background: var(--sesa-primary, #2563eb);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+  }
+  .farmacia-loading, .farmacia-empty {
+    padding: 1.5rem;
+    color: var(--sesa-text-secondary);
+    text-align: center;
+  }
+  .detalle-cell { max-width: 280px; white-space: pre-wrap; word-break: break-word; }
+  .prescripcion-cell { white-space: nowrap; font-size: 0.875rem; }
+  .farmacia-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: #fef3c7;
+    color: #92400e;
+    &.parcial { background: #dbeafe; color: #1e40af; }
+  }
+  .farmacia-btn-dispensar {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    color: var(--sesa-text-primary);
+    cursor: pointer;
+    &:hover { background: var(--sesa-primary, #2563eb); color: #fff; border-color: transparent; }
+  }
+  .farmacia-orden-dosis {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--sesa-primary, #2563eb);
+  }
+  .farmacia-orden-detalle, .farmacia-orden-medico {
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--sesa-text-primary);
+  }
+  .farmacia-lineas {
+    margin: 1rem 0;
+    h4 { margin-bottom: 0.75rem; font-size: 0.95rem; }
+  }
+  .farmacia-linea {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    select { min-width: 220px; }
+    input[type="number"] { width: 80px; }
+  }
+  .farmacia-btn-quitar {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    border: none;
+    background: transparent;
+    color: var(--sesa-text-secondary);
+    cursor: pointer;
+    &:hover { color: #b91c1c; }
+  }
+  .farmacia-orden-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sesa-border);
+  }
+}
 
 .sesa-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
 .sesa-form-field { display: flex; flex-direction: column; gap: 0.35rem; }

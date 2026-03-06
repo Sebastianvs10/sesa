@@ -42,6 +42,34 @@ export interface FarmaciaDispensacionRequestDto {
   entregadoPor?: string;
 }
 
+/** Orden clínica tipo MEDICAMENTO pendiente o parcial de dispensar */
+export interface OrdenFarmaciaPendienteDto {
+  id: number;
+  pacienteId: number;
+  pacienteNombre: string;
+  pacienteDocumento?: string;
+  tipoDocumentoPaciente?: string;
+  detalle?: string;
+  cantidadPrescrita?: number;
+  unidadMedida?: string;
+  frecuencia?: string;
+  duracionDias?: number;
+  fechaOrden?: string;
+  medicoNombre?: string;
+  estadoDispensacionFarmacia: string;
+}
+
+export interface LineaDispensacionDto {
+  medicamentoId: number;
+  lote?: string;
+  cantidad: number;
+}
+
+export interface DispensarOrdenRequestDto {
+  ordenId: number;
+  lineas: LineaDispensacionDto[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class FarmaciaService {
   private readonly http = inject(HttpClient);
@@ -63,5 +91,16 @@ export class FarmaciaService {
   listDispensacionesByPaciente(pacienteId: number): Observable<FarmaciaDispensacionDto[]> {
     const params = new HttpParams().set('page', '0').set('size', '50');
     return this.http.get<FarmaciaDispensacionDto[]>(`${this.apiUrl}/dispensaciones/paciente/${pacienteId}`, { params });
+  }
+
+  /** Órdenes clínicas tipo MEDICAMENTO pendientes o parciales de dispensar (desde Historia Clínica) */
+  getOrdenesPendientes(): Observable<OrdenFarmaciaPendienteDto[]> {
+    const params = new HttpParams().set('page', '0').set('size', '100');
+    return this.http.get<OrdenFarmaciaPendienteDto[]>(`${this.apiUrl}/ordenes-pendientes`, { params });
+  }
+
+  /** Dispensar una orden médica por ID con varias líneas (medicamento, cantidad) */
+  dispensarOrden(request: DispensarOrdenRequestDto): Observable<FarmaciaDispensacionDto[]> {
+    return this.http.post<FarmaciaDispensacionDto[]>(`${this.apiUrl}/dispensar-orden`, request);
   }
 }

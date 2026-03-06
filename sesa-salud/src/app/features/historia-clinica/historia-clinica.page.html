@@ -839,6 +839,35 @@
             </div>
           </div>
 
+          @if (ordenForm.tipo === 'MEDICAMENTO') {
+            <div class="hc-form-row hc-form-row--4">
+              <div class="hc-field">
+                <label class="hc-label">Cantidad</label>
+                <input type="number" class="hc-input" min="1" [(ngModel)]="ordenForm.cantidadPrescrita"
+                  placeholder="Ej. 50" />
+              </div>
+              <div class="hc-field">
+                <label class="hc-label">Unidad</label>
+                <select class="hc-select" [(ngModel)]="ordenForm.unidadMedida">
+                  <option value="">Seleccione...</option>
+                  @for (u of unidadesMedida; track u.id) { <option [value]="u.id">{{ u.label }}</option> }
+                </select>
+              </div>
+              <div class="hc-field">
+                <label class="hc-label">Frecuencia</label>
+                <select class="hc-select" [(ngModel)]="ordenForm.frecuencia">
+                  <option value="">Seleccione o escriba...</option>
+                  @for (f of frecuenciasComunes; track f) { <option [value]="f">{{ f }}</option> }
+                </select>
+              </div>
+              <div class="hc-field">
+                <label class="hc-label">Duración (días)</label>
+                <input type="number" class="hc-input" min="1" [(ngModel)]="ordenForm.duracionDias"
+                  placeholder="Ej. 7" />
+              </div>
+            </div>
+          }
+
           <div class="hc-form-row hc-form-row--2">
             <div class="hc-field">
               <label class="hc-label">Detalle de la orden</label>
@@ -896,19 +925,21 @@
                   <span class="hc-orden-icon">{{ tipoOrdenIcon(o.tipo) }}</span>
                   <div class="hc-orden-info">
                     <span class="hc-orden-tipo">{{ o.tipo }}</span>
+                    @if (o.tipo === 'MEDICAMENTO' && formatoOrdenMedicamento(o)) {
+                      <p class="hc-orden-dosis"><strong>{{ formatoOrdenMedicamento(o) }}</strong></p>
+                    }
                     <p class="hc-orden-detalle">{{ o.detalle || 'Sin detalle' }}</p>
                     @if (o.resultado) {
                       <div class="hc-orden-resultado">
-                        <ng-container *ngIf="parseResultadoToItems(o.resultado).length > 0">
+                        @if (parseResultadoToItems(o.resultado).length > 0) {
                           <div class="hc-orden-resultado-items">
                             @for (ri of parseResultadoToItems(o.resultado); track ri.etiqueta + ri.valor) {
                               <div class="hc-orden-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
                             }
                           </div>
-                        </ng-container>
-                        <ng-container *ngIf="parseResultadoToItems(o.resultado).length === 0">
+                        } @else {
                           <pre class="hc-orden-resultado-pre">{{ o.resultado }}</pre>
-                        </ng-container>
+                        }
                         <div class="hc-orden-resultado-meta">
                           @if (o.resultadoRegistradoPorNombre) {
                             <span>Registrado por: <strong>{{ o.resultadoRegistradoPorNombre }}</strong></span>

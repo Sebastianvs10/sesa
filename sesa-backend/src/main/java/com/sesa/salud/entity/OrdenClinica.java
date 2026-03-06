@@ -37,6 +37,22 @@ public class OrdenClinica {
     @Column(columnDefinition = "TEXT")
     private String detalle;
 
+    /** Cantidad prescrita (ej. 50 para 50 tabletas). Solo órdenes tipo MEDICAMENTO. */
+    @Column(name = "cantidad_prescrita")
+    private Integer cantidadPrescrita;
+
+    /** Unidad de medida: TAB, ML, GOTAS, FRASCO, SOBRE, UNIDAD, etc. */
+    @Column(name = "unidad_medida", length = 30)
+    private String unidadMedida;
+
+    /** Frecuencia de toma: cada 8 horas, cada 12 horas, cada 24 horas, etc. */
+    @Column(length = 120)
+    private String frecuencia;
+
+    /** Duración del tratamiento en días (ej. 7). */
+    @Column(name = "duracion_dias")
+    private Integer duracionDias;
+
     @Column(length = 30)
     @Builder.Default
     private String estado = "PENDIENTE";
@@ -55,6 +71,10 @@ public class OrdenClinica {
 
     @Column(name = "valor_estimado", precision = 14, scale = 2)
     private BigDecimal valorEstimado;
+
+    /** Estado de dispensación en farmacia: PENDIENTE, PARCIAL, COMPLETADA, CANCELADA. */
+    @Column(name = "estado_dispensacion_farmacia", length = 30)
+    private String estadoDispensacionFarmacia;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

@@ -156,12 +156,35 @@ export class HistoriaClinicaPageComponent implements OnInit {
 
   /* ── Orden clínica ────────────────────────────────────────────────── */
   ordenForm = {
-    consultaId:    null as number | null,
-    tipo:          'LABORATORIO' as string,
-    plantilla:     '',
-    detalle:       '',
-    valorEstimado: '',
+    consultaId:        null as number | null,
+    tipo:              'LABORATORIO' as string,
+    plantilla:         '',
+    detalle:           '',
+    cantidadPrescrita: null as number | null,
+    unidadMedida:      '',
+    frecuencia:        '',
+    duracionDias:      null as number | null,
+    valorEstimado:     '',
   };
+
+  /** Unidades de medida para órdenes de medicamento (presentación profesional). */
+  readonly unidadesMedida = [
+    { id: 'TAB', label: 'Tabletas' },
+    { id: 'CAP', label: 'Cápsulas' },
+    { id: 'ML', label: 'ml (líquido)' },
+    { id: 'GOTAS', label: 'Gotas' },
+    { id: 'FRASCO', label: 'Frasco(s)' },
+    { id: 'SOBRE', label: 'Sobre(s)' },
+    { id: 'UNIDAD', label: 'Unidad(es)' },
+    { id: 'APLIC', label: 'Aplicación(es)' },
+  ];
+
+  /** Opciones de frecuencia habituales para prescripción. */
+  readonly frecuenciasComunes = [
+    'Cada 6 horas', 'Cada 8 horas', 'Cada 12 horas', 'Cada 24 horas (1 vez al día)',
+    'Cada 12 h por 7 días', 'Cada 8 h por 5 días', 'En ayunas', 'Con las comidas',
+    'Cada noche al acostarse', 'Cada 8 h si hay dolor',
+  ];
 
   /* ── Factura ──────────────────────────────────────────────────────── */
   facturaForm = {
@@ -490,6 +513,24 @@ export class HistoriaClinicaPageComponent implements OnInit {
   onTipoOrdenChange(): void {
     this.ordenForm.plantilla = '';
     this.ordenForm.detalle = '';
+    if (this.ordenForm.tipo !== 'MEDICAMENTO') {
+      this.ordenForm.cantidadPrescrita = null;
+      this.ordenForm.unidadMedida = '';
+      this.ordenForm.frecuencia = '';
+      this.ordenForm.duracionDias = null;
+    }
+  }
+
+  /** Texto resumido para orden tipo MEDICAMENTO: cantidad + unidad + frecuencia + duración. */
+  formatoOrdenMedicamento(o: OrdenClinicaDto): string {
+    if (o.tipo !== 'MEDICAMENTO') return '';
+    const parts: string[] = [];
+    if (o.cantidadPrescrita != null) {
+      parts.push(o.unidadMedida ? `${o.cantidadPrescrita} ${o.unidadMedida}` : `${o.cantidadPrescrita}`);
+    }
+    if (o.frecuencia?.trim()) parts.push(o.frecuencia.trim());
+    if (o.duracionDias != null) parts.push(`${o.duracionDias} días`);
+    return parts.join(' · ');
   }
 
   aplicarPlantillaOrden(): void {
@@ -510,12 +551,16 @@ export class HistoriaClinicaPageComponent implements OnInit {
     }
     this.savingOrden.set(true);
     this.ordenService.create({
-      pacienteId:     this.selectedPatient()!.id,
-      consultaId:     this.ordenForm.consultaId,
-      tipo:           this.ordenForm.tipo,
-      detalle:        (this.ordenForm.detalle.trim() || this.ordenForm.plantilla.trim()) || undefined,
-      estado:         'PENDIENTE',
-      valorEstimado:  this.ordenForm.valorEstimado ? Number(this.ordenForm.valorEstimado) : undefined,
+      pacienteId:       this.selectedPatient()!.id,
+      consultaId:       this.ordenForm.consultaId,
+      tipo:             this.ordenForm.tipo,
+      detalle:          (this.ordenForm.detalle.trim() || this.ordenForm.plantilla.trim()) || undefined,
+      cantidadPrescrita: this.ordenForm.cantidadPrescrita ?? undefined,
+      unidadMedida:     this.ordenForm.unidadMedida?.trim() || undefined,
+      frecuencia:       this.ordenForm.frecuencia?.trim() || undefined,
+      duracionDias:     this.ordenForm.duracionDias ?? undefined,
+      estado:           'PENDIENTE',
+      valorEstimado:    this.ordenForm.valorEstimado ? Number(this.ordenForm.valorEstimado) : undefined,
     }).subscribe({
       next: (orden) => {
         this.savingOrden.set(false);
@@ -523,6 +568,10 @@ export class HistoriaClinicaPageComponent implements OnInit {
         this.facturaForm.ordenId = orden.id;
         this.ordenForm.plantilla = '';
         this.ordenForm.detalle = '';
+        this.ordenForm.cantidadPrescrita = null;
+        this.ordenForm.unidadMedida = '';
+        this.ordenForm.frecuencia = '';
+        this.ordenForm.duracionDias = null;
         this.ordenForm.valorEstimado = '';
         this.loadFlujoClinico(this.selectedPatient()!.id);
       },

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
 <meta charset="UTF-8"/>
-<title th:text="${data.empresaNombre} + ' - Ordenes y Resultados'">Ordenes y Resultados</title>
+<title th:text="${data.empresaNombre} + ' — Informe de Órdenes y Resultados'">Informe de Órdenes y Resultados</title>
 <style>/*<![CDATA[*/
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e293b; background: #f1f5f9; line-height: 1.5; }
@@ -11,10 +11,13 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
 .hdr-company-name { font-size: 14pt; font-weight: 800; color: #ffffff; }
 .hdr-sub { font-size: 8pt; color: #93c5fd; margin-top: 2px; }
 .hdr-badge { display: inline-block; background: #1a56db; color: #fff; font-size: 9pt; font-weight: 800; padding: 5px 12px; border-radius: 6px; margin-top: 8px; }
-.hdr-accent { height: 4px; background: #1a56db; width: 100%; }
+.hdr-tagline { font-size: 7.5pt; color: #93c5fd; margin-top: 4px; letter-spacing: 0.5px; }
+.hdr-accent { height: 4px; background: linear-gradient(90deg, #1a56db 0%, #0e7490 100%); width: 100%; }
 .content { padding: 18px 20px; }
-.card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px; overflow: hidden; }
+.card { background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .card-hdr { background: #0e7490; padding: 8px 14px; font-size: 9pt; font-weight: 800; color: #fff; text-transform: uppercase; }
+.pro-signature { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.pro-signature img { max-height: 48px; max-width: 160px; object-fit: contain; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
 .tbl thead tr { background: #1e3a5f; }
 .tbl th { padding: 6px 10px; text-align: left; font-size: 7.5pt; font-weight: 700; color: #fff; text-transform: uppercase; }
@@ -46,7 +49,8 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
         <div class="hdr-sub" th:if="${data.empresaIdentificacion != null}" th:text="'NIT: ' + ${data.empresaIdentificacion}"></div>
       </td>
       <td style="text-align:right;">
-        <div class="hdr-badge">Ordenes y Resultados</div>
+        <div class="hdr-badge">Informe de Órdenes y Resultados</div>
+        <div class="hdr-tagline">Documento clínico · SESA Salud</div>
         <div class="hdr-sub" th:text="'Generado: ' + ${data.fechaGeneracion}"></div>
       </td>
     </tr>
@@ -73,22 +77,15 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
       <div th:if="${pacienteDireccion != null}" style="font-size:8.5pt;color:#475569;margin-top:2px;" th:text="'Dirección: ' + ${pacienteDireccion}">—</div>
     </div>
   </div>
-  <div th:if="${profesionalNombre != null}" class="card">
-    <div class="card-hdr" style="background:#0c2340;">Profesional que registró el resultado</div>
-    <div style="padding:12px 14px;font-size:9pt;">
-      <strong th:text="${profesionalNombre}">—</strong>
-      <span th:if="${profesionalRol != null}" th:text="' · ' + ${profesionalRol}">—</span>
-      <span th:if="${profesionalIdentificacion != null}" th:text="' · ID: ' + ${profesionalIdentificacion}">—</span>
-    </div>
-  </div>
   <div class="card">
     <div class="card-hdr">Ordenes clinicas y resultados</div>
     <div style="padding:0;">
       <table th:if="${data.ordenes != null and !data.ordenes.isEmpty()}" class="tbl">
         <thead>
           <tr>
+            <th style="width:10%;">Nº Orden</th>
             <th style="width:12%;">Tipo</th>
-            <th style="width:28%;">Detalle</th>
+            <th style="width:26%;">Detalle</th>
             <th style="width:10%;">Estado</th>
             <th style="width:14%;">Fecha resultado</th>
           </tr>
@@ -96,6 +93,7 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
         <tbody>
           <th:block th:each="ord : ${data.ordenes}">
             <tr>
+              <td th:text="${ord.idOrden != null ? '#' + ord.idOrden : '—'}">—</td>
               <td th:text="${ord.tipo}">—</td>
               <td th:text="${ord.detalle != null ? ord.detalle : '—'}">—</td>
               <td>
@@ -105,7 +103,7 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
               <td th:text="${ord.fechaResultado != null ? ord.fechaResultado : '—'}">—</td>
             </tr>
             <tr class="result-row">
-              <td colspan="4">
+              <td colspan="5">
                 <div th:if="${ord.resultadoItems != null and !ord.resultadoItems.isEmpty()}" class="result-block">
                   <div th:each="item : ${ord.resultadoItems}" class="result-item">
                     <strong th:text="${item.etiqueta}">—</strong><span th:if="${item.valor != null and !#strings.isEmpty(item.valor)}" th:text="' ' + ${item.valor}">—</span>
@@ -118,6 +116,18 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1e29
         </tbody>
       </table>
       <div th:unless="${data.ordenes != null and !data.ordenes.isEmpty()}" class="empty-msg">No hay ordenes registradas para este paciente.</div>
+    </div>
+  </div>
+  <div th:if="${profesionalNombre != null}" class="card">
+    <div class="card-hdr" style="background:#0c2340;">Profesional que registró el resultado</div>
+    <div style="padding:12px 14px;font-size:9pt;">
+      <strong th:text="${profesionalNombre}">—</strong>
+      <span th:if="${profesionalRol != null}" th:text="' · ' + ${profesionalRol}">—</span>
+      <span th:if="${profesionalIdentificacion != null}" th:text="' · Identificación: ' + ${profesionalIdentificacion}">—</span>
+      <div th:if="${profesionalTarjetaProfesional != null and !#strings.isEmpty(profesionalTarjetaProfesional)}" style="margin-top:6px;font-size:8.5pt;color:#475569;" th:text="'Tarjeta Profesional / Ocupacional: ' + ${profesionalTarjetaProfesional}">—</div>
+      <div th:if="${profesionalFirmaBase64 != null}" class="pro-signature">
+        <img th:src="'data:' + ${profesionalFirmaContentType} + ';base64,' + ${profesionalFirmaBase64}" alt="Firma del profesional" />
+      </div>
     </div>
   </div>
 </div>

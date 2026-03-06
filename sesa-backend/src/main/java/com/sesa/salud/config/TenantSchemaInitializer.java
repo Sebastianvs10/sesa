@@ -313,6 +313,15 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_registrado_por_id BIGINT REFERENCES personal(id)"
     );
 
+    private static final List<String> DDL_FARMACIA_ORDENES_MIGRATIONS = List.of(
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS estado_dispensacion_farmacia VARCHAR(30) DEFAULT 'PENDIENTE'",
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS cantidad_prescrita INT",
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(30)",
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(120)",
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS duracion_dias INT",
+            "ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id)"
+    );
+
     private static final List<String> DDL_EBS_VISIT_MIGRATIONS = List.of(
             "ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS brigade_id BIGINT REFERENCES ebs_brigades(id)",
             "ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS tipo_intervencion VARCHAR(80)",
@@ -458,6 +467,9 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                     stmt.execute(migration);
                 }
                 for (String migration : DDL_ORDENES_RESULTADO_MIGRATIONS) {
+                    stmt.execute(migration);
+                }
+                for (String migration : DDL_FARMACIA_ORDENES_MIGRATIONS) {
                     stmt.execute(migration);
                 }
                 for (String migration : DDL_EBS_IGAC_MIGRATIONS) {

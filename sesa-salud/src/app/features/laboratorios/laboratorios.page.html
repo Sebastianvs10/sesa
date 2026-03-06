@@ -269,16 +269,15 @@
                 Resultado registrado
               </h3>
               <div class="lab-resultado-display">
-                <ng-container *ngIf="parseResultadoToItems(item.resultado).length > 0">
+                @if (parseResultadoToItems(item.resultado).length > 0) {
                   <div class="lab-resultado-items">
                     @for (ri of parseResultadoToItems(item.resultado); track ri.etiqueta + ri.valor) {
                       <div class="lab-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
                     }
                   </div>
-                </ng-container>
-                <ng-container *ngIf="parseResultadoToItems(item.resultado).length === 0">
+                } @else {
                   <pre class="lab-resultado-text lab-resultado-pre">{{ item.resultado }}</pre>
-                </ng-container>
+                }
                 @if (item.observaciones) {
                   <p class="lab-observaciones-text">
                     <strong>Observaciones:</strong> {{ item.observaciones }}
@@ -381,16 +380,15 @@
                   Resultado registrado (visible en Historia Clínica)
                 </h3>
                 <div class="lab-resultado-display">
-                  <ng-container *ngIf="parseResultadoToItems(item.resultado).length > 0">
+                  @if (parseResultadoToItems(item.resultado).length > 0) {
                     <div class="lab-resultado-items">
                       @for (ri of parseResultadoToItems(item.resultado); track ri.etiqueta + ri.valor) {
                         <div class="lab-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
                       }
                     </div>
-                  </ng-container>
-                  <ng-container *ngIf="parseResultadoToItems(item.resultado).length === 0">
+                  } @else {
                     <pre class="lab-resultado-text lab-resultado-pre">{{ item.resultado }}</pre>
-                  </ng-container>
+                  }
                   <div class="lab-resultado-meta">
                     @if (item.resultadoRegistradoPorNombre) {
                       <span>Registrado por: <strong>{{ item.resultadoRegistradoPorNombre }}</strong></span>

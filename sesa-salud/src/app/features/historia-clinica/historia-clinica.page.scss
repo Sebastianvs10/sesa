@@ -770,6 +770,10 @@
   letter-spacing: .04em; color: var(--sesa-text-secondary);
 }
 
+.hc-orden-dosis {
+  margin: 0 0 .25rem 0;
+  font-size: .8125rem; font-weight: 600; color: var(--sesa-primary);
+}
 .hc-orden-detalle {
   margin: 0;
   font-size: .875rem; font-weight: 500; color: var(--sesa-text-primary);
@@ -945,6 +949,7 @@
   display: grid; gap: .875rem;
   &.hc-form-row--2 { grid-template-columns: 1fr 1fr; }
   &.hc-form-row--3 { grid-template-columns: 1fr 1fr 1fr; }
+  &.hc-form-row--4 { grid-template-columns: repeat(4, 1fr); }
 }
 
 .hc-field { display: flex; flex-direction: column; gap: .35rem; }
@@ -1209,7 +1214,8 @@
   .hc-patient-stats    { width: 100%; justify-content: flex-start; }
   .hc-banner-footer    { flex-direction: column; align-items: flex-start; }
   .hc-form-row--2,
-  .hc-form-row--3      { grid-template-columns: 1fr; }
+  .hc-form-row--3,
+  .hc-form-row--4       { grid-template-columns: 1fr; }
   .hc-sv-grid          { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
   .hc-tabs             { gap: 0; }
 }
