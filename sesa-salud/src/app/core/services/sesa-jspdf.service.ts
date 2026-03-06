@@ -1,0 +1,865 @@
+/**
+ * Servicio de generación de PDF con jsPDF — Historias clínicas, órdenes (lab, medicamento, procedimiento).
+ * Tema SESA: profesional, completo, legible.
+ * Autor: Ing. J Sebastian Vargas S
+ */
+import { Injectable } from '@angular/core';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type {
+  PacienteDto,
+} from './paciente.service';
+import type { HistoriaClinicaDto } from './historia-clinica.service';
+import type { ConsultaDto } from './consulta.service';
+import type { OrdenClinicaDto } from './orden-clinica.service';
+import { parseResultadoToItems } from '../utils/resultado-display.util';
+
+const MARGIN = 18;
+const PAGE_W = 210;
+const PAGE_H = 297;
+/** Zona reservada para el pie: no dibujar contenido por debajo de este Y. */
+const FOOTER_TOP = 282;
+/** Altura de la cabecera: contenido debe empezar por debajo de este Y (evitar solapamiento). */
+const HEADER_H = 44;
+const LINE_HEIGHT = 5;
+const SECTION_GAP = 8;
+const LABEL_WIDTH = 38;
+const BRAND_PRIMARY: [number, number, number] = [12, 35, 64];   // #0c2340
+const BRAND_ACCENT: [number, number, number] = [5, 150, 105];    // #059669
+const TEXT_PRIMARY: [number, number, number] = [15, 23, 42];      // #0f172a
+const TEXT_SECONDARY: [number, number, number] = [71, 85, 105];   // #475569
+const BORDER: [number, number, number] = [226, 232, 240];        // #e2e8f0
+const BG_SOFT: [number, number, number] = [240, 253, 244];        // #f0fdf4
+
+export interface SesaPdfPaciente {
+  id: number;
+  nombres: string;
+  apellidos?: string;
+  documento?: string;
+  tipoDocumento?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  telefono?: string;
+  email?: string;
+  direccion?: string;
+  grupoSanguineo?: string;
+}
+
+export interface SesaPdfHistoriaClinica {
+  id: number;
+  pacienteNombre?: string;
+  pacienteDocumento?: string;
+  fechaApertura?: string;
+  estado?: string;
+  grupoSanguineo?: string;
+  alergiasGenerales?: string;
+  antecedentesPersonales?: string;
+  antecedentesFamiliares?: string;
+  antecedentesQuirurgicos?: string;
+  antecedentesFarmacologicos?: string;
+  antecedentesTraumaticos?: string;
+  antecedentesGinecoobstetricos?: string;
+  habitosTabaco?: boolean;
+  habitosAlcohol?: boolean;
+  habitosSustancias?: boolean;
+  habitosDetalles?: string;
+}
+
+/** Branding para cabecera y pie de los PDF (logo + nombre de la empresa). */
+export interface SesaPdfBranding {
+  empresaNombre?: string;
+  empresaIdentificacion?: string;
+  logoDataUrl?: string;
+  /** Usuario que imprime (pie: "Impreso por ..."). */
+  printedBy?: string;
+  /** Profesional que atiende (bloque final). */
+  profesionalNombre?: string;
+  profesionalRol?: string;
+  profesionalTarjeta?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class SesaJspdfService {
+
+  private getY(doc: jsPDF): number {
+    return (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? MARGIN;
+  }
+
+  private addHeader(doc: jsPDF, title: string, subtitle?: string, branding?: SesaPdfBranding): number {
+    const headerH = 32;
+    doc.setFillColor(...BRAND_PRIMARY);
+    doc.rect(0, 0, PAGE_W, headerH, 'F');
+    let textX = MARGIN;
+    const logoW = 26;
+    const logoH = 20;
+    const logoTop = (headerH - logoH) / 2;
+    if (branding?.logoDataUrl) {
+      try {
+        const fmt = branding.logoDataUrl.includes('image/jpeg') || branding.logoDataUrl.includes('image/jpg') ? 'JPEG' : 'PNG';
+        doc.addImage(branding.logoDataUrl, fmt, MARGIN, logoTop, logoW, logoH);
+      } catch {
+        // Si falla (formato no soportado, etc.) se omite el logo
+      }
+      textX = MARGIN + logoW + 6;
+    }
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(branding?.logoDataUrl ? 14 : 16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(branding?.empresaNombre?.trim() || 'SESA Salud', textX, 12);
+    doc.setFontSize(11);
+    doc.text(title, textX, 20);
+    if (subtitle) {
+      doc.setFontSize(8);
+      doc.setTextColor(147, 197, 253);
+      doc.text(subtitle, textX, 26);
+    }
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.setDrawColor(...BRAND_ACCENT);
+    doc.setLineWidth(0.8);
+    doc.line(0, headerH, PAGE_W, headerH);
+    return headerH + 6;
+  }
+
+  private addPacienteBlock(doc: jsPDF, paciente: SesaPdfPaciente, startY: number): number {
+    const nombre = [paciente.nombres, paciente.apellidos].filter(Boolean).join(' ');
+    const docLine = [paciente.tipoDocumento, paciente.documento].filter(Boolean).join(' ');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente', MARGIN, startY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(nombre || '—', MARGIN, startY + 5);
+    if (docLine) doc.text(`Documento: ${docLine}`, MARGIN, startY + 10);
+    let y = startY + 14;
+    const line = (label: string, value: string | undefined) => {
+      if (!value) return;
+      doc.setFontSize(9);
+      doc.setTextColor(...TEXT_SECONDARY);
+      doc.text(`${label}: ${value}`, MARGIN, y);
+      y += 5;
+    };
+    doc.setTextColor(...TEXT_PRIMARY);
+    line('Fecha nac.', paciente.fechaNacimiento);
+    line('Sexo', paciente.sexo);
+    line('Teléfono', paciente.telefono);
+    line('Email', paciente.email);
+    line('Dirección', paciente.direccion);
+    line('Grupo sanguíneo', paciente.grupoSanguineo);
+    doc.setTextColor(...TEXT_PRIMARY);
+    return y + 6;
+  }
+
+  private addSectionTitle(doc: jsPDF, title: string, y: number): number {
+    doc.setFillColor(...BRAND_ACCENT);
+    doc.rect(0, y - 5, PAGE_W, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, MARGIN, y + 1);
+    doc.setTextColor(...TEXT_PRIMARY);
+    return y + 12;
+  }
+
+  private addFooter(doc: jsPDF, pageNum?: number, branding?: SesaPdfBranding): void {
+    const total = pageNum ?? doc.getNumberOfPages();
+    const nombre = branding?.empresaNombre?.trim() || 'SESA Salud';
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_SECONDARY);
+    doc.text(
+      `Documento generado por ${nombre} · Página ${total}`,
+      PAGE_W / 2,
+      PAGE_H - 10,
+      { align: 'center' }
+    );
+  }
+
+  /** Cabecera estilo NOTA DE EVOLUCIÓN: logo, nombre institución, NIT, título documento, Página X/Y. */
+  private addHeaderDocumento(doc: jsPDF, tituloDoc: string, branding: SesaPdfBranding | undefined, pageNum: number, totalPages: number): number {
+    const headerH = 40;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, PAGE_W, headerH, 'F');
+    const logoW = 24;
+    const logoH = 18;
+    const logoTop = 5;
+    if (branding?.logoDataUrl) {
+      try {
+        const fmt = branding.logoDataUrl.includes('image/jpeg') || branding.logoDataUrl.includes('image/jpg') ? 'JPEG' : 'PNG';
+        doc.addImage(branding.logoDataUrl, fmt, MARGIN, logoTop, logoW, logoH);
+      } catch {
+        // omitir logo si falla
+      }
+    }
+    const nombreEmp = (branding?.empresaNombre?.trim() || 'SESA Salud').toUpperCase();
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text(nombreEmp, PAGE_W / 2, 13, { align: 'center' });
+    if (branding?.empresaIdentificacion?.trim()) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...TEXT_SECONDARY);
+      doc.text(`NIT: ${branding.empresaIdentificacion.trim()}`, PAGE_W / 2, 18, { align: 'center' });
+      doc.setTextColor(...TEXT_PRIMARY);
+    }
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(tituloDoc.toUpperCase(), PAGE_W / 2, 28, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...TEXT_SECONDARY);
+    doc.text(`Página ${pageNum}/${totalPages}`, PAGE_W - MARGIN, 11, { align: 'right' });
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(0, headerH - 2, PAGE_W, headerH - 2);
+    return headerH + 4;
+  }
+
+  /** Título de sección estilo hospitalario: barra lateral, mayúsculas, negrita, subrayado. */
+  private addSeccionSubrayada(doc: jsPDF, titulo: string, y: number): number {
+    doc.setFillColor(...BRAND_ACCENT);
+    doc.rect(MARGIN, y - 3.5, 2, 5, 'F');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text(titulo.toUpperCase(), MARGIN + 4, y);
+    const tw = doc.getTextWidth(titulo.toUpperCase());
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(...TEXT_PRIMARY);
+    doc.line(MARGIN + 4, y + 1.5, MARGIN + 4 + Math.min(tw, PAGE_W - 2 * MARGIN - 4), y + 1.5);
+    return y + 8;
+  }
+
+  /** Línea horizontal separadora. */
+  private addLineaSeparadora(doc: jsPDF, y: number): number {
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    return y + 5;
+  }
+
+  /** Pie estilo NOTA DE EVOLUCIÓN: línea separadora, impreso/fecha, institución, página. Siempre en zona fija. */
+  private addFooterNotaEvolucion(doc: jsPDF, pageNum: number, totalPages: number, branding?: SesaPdfBranding): void {
+    const yLine = FOOTER_TOP - 4;
+    const yLine1 = FOOTER_TOP + 4;
+    const yLine2 = FOOTER_TOP + 11;
+
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, yLine, PAGE_W - MARGIN, yLine);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...TEXT_SECONDARY);
+    const now = new Date();
+    const fechaStr = now.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    doc.text(`Impreso el ${fechaStr}${branding?.printedBy ? ' por ' + branding.printedBy : ''}`, MARGIN, yLine1);
+    const nombre = branding?.empresaNombre?.trim() || 'SESA Salud';
+    const nit = branding?.empresaIdentificacion?.trim() ? ` NIT: ${branding.empresaIdentificacion.trim()}` : '';
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`SESA Salud - ${nombre}${nit}`, PAGE_W / 2, yLine2, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...TEXT_SECONDARY);
+    doc.text(`Página ${pageNum}/${totalPages}`, PAGE_W - MARGIN, yLine1, { align: 'right' });
+    doc.setTextColor(...TEXT_PRIMARY);
+  }
+
+  private checkPageBreak(doc: jsPDF, needed: number): void {
+    if (doc.getNumberOfPages() > 0 && (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY != null) {
+      const y = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable!.finalY!;
+      if (y + needed > FOOTER_TOP - 15) {
+        doc.addPage();
+        (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable = { finalY: MARGIN };
+      }
+    }
+  }
+
+  /** Genera PDF completo de Historia Clínica estilo NOTA DE EVOLUCIÓN. Sin solapamientos, espaciado fijo, toque auténtico. */
+  generarHistoriaClinicaPdf(
+    paciente: SesaPdfPaciente,
+    historia: SesaPdfHistoriaClinica | null,
+    ultimaConsulta: ConsultaDto | null,
+    ordenes: OrdenClinicaDto[],
+    branding?: SesaPdfBranding
+  ): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    let y = HEADER_H;
+    const contentW = PAGE_W - 2 * MARGIN;
+    const midX = MARGIN + contentW / 2;
+    const colW = contentW / 3;
+
+    const fechaHistoria = ultimaConsulta?.fechaConsulta || historia?.fechaApertura || '—';
+    const identif = paciente.documento || '—';
+    const nombres = paciente.nombres || '—';
+    const apellidos = paciente.apellidos ?? '—';
+    const folio = historia?.id ? String(historia.id) : '1';
+
+    // ——— Resumen del encuentro (grid, texto cortado para no solapar) ———
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT_PRIMARY);
+    doc.text('Fecha historia:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(doc.splitTextToSize(fechaHistoria, colW - LABEL_WIDTH)[0] || '—', MARGIN + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Identificación:', MARGIN + colW, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(doc.splitTextToSize(identif, colW - LABEL_WIDTH)[0] || '—', MARGIN + colW + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nº folio:', MARGIN + 2 * colW, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(folio, MARGIN + 2 * colW + 22, y);
+    y += LINE_HEIGHT + 2;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nombres:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(doc.splitTextToSize(nombres, colW - 20)[0] || '—', MARGIN + 22, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Apellidos:', MARGIN + colW, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(doc.splitTextToSize(apellidos, colW - 22)[0] || '—', MARGIN + colW + 24, y);
+    y += SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    // ——— IDENTIFICACIÓN (dos columnas, valores con wrap para no solapar) ———
+    y = this.addSeccionSubrayada(doc, 'Identificación', y);
+    const leftW = contentW / 2 - 6;
+    const rightW = contentW / 2 - 6;
+    let yL = y;
+    let yR = y;
+    const lineLeft = (label: string, value: string | undefined) => {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, MARGIN, yL);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(String(value ?? '—'), leftW - LABEL_WIDTH);
+      lines.forEach((line: string) => { doc.text(line, MARGIN + LABEL_WIDTH, yL); yL += LINE_HEIGHT; });
+      yL += 2;
+    };
+    const lineRight = (label: string, value: string | undefined) => {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, midX, yR);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(String(value ?? '—'), rightW - 26);
+      lines.forEach((line: string) => { doc.text(line, midX + 26, yR); yR += LINE_HEIGHT; });
+      yR += 2;
+    };
+    lineLeft('Apellidos:', apellidos);
+    lineLeft('Nombres:', nombres);
+    lineLeft('Dirección:', paciente.direccion);
+    lineLeft('Teléfono:', paciente.telefono);
+    lineRight('Tipo doc.:', paciente.tipoDocumento);
+    lineRight('Número:', paciente.documento);
+    lineRight('Edad / F. nac.', [paciente.fechaNacimiento].filter(Boolean).join(' ') || '—');
+    lineRight('Sexo:', paciente.sexo);
+    lineRight('Grupo RH:', paciente.grupoSanguineo);
+    y = Math.max(yL, yR) + SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    if (y > FOOTER_TOP - 55) { doc.addPage(); y = HEADER_H; }
+    // ——— ANAMNESIS (etiqueta arriba, valor debajo para no solapar) ———
+    y = this.addSeccionSubrayada(doc, 'Anamnesis', y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Motivo de consulta:', MARGIN, y);
+    y += LINE_HEIGHT;
+    doc.setFont('helvetica', 'normal');
+    const linesMotivo = doc.splitTextToSize(ultimaConsulta?.motivoConsulta || '—', contentW);
+    linesMotivo.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Enfermedad actual:', MARGIN, y);
+    y += LINE_HEIGHT;
+    doc.setFont('helvetica', 'normal');
+    const linesEnf = doc.splitTextToSize(ultimaConsulta?.enfermedadActual || '—', contentW);
+    linesEnf.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    // ——— IMPRESIÓN DIAGNÓSTICA ———
+    y = this.addSeccionSubrayada(doc, 'Impresión diagnóstica', y);
+    const diag = ultimaConsulta?.diagnostico?.trim();
+    const codigoCie = ultimaConsulta?.codigoCie10;
+    if (diag || codigoCie) {
+      autoTable(doc, {
+        startY: y,
+        head: [['CIE10', 'Diagnóstico', 'Observaciones', 'Principal']],
+        body: [[codigoCie || '—', diag || '—', '—', 'X']],
+        theme: 'plain',
+        headStyles: { fillColor: [248, 250, 252], textColor: TEXT_PRIMARY, fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        margin: { top: HEADER_H, left: MARGIN, right: MARGIN, bottom: PAGE_H - FOOTER_TOP + 5 },
+        columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 68 }, 2: { cellWidth: 35 }, 3: { cellWidth: 15 } },
+      });
+      y = this.getY(doc) + SECTION_GAP;
+    } else {
+      doc.setFontSize(9);
+      doc.text('Sin registro.', MARGIN, y);
+      y += LINE_HEIGHT + 4;
+    }
+    y = this.addLineaSeparadora(doc, y);
+
+    if (y > FOOTER_TOP - 55) { doc.addPage(); y = HEADER_H; }
+    // ——— ANÁLISIS ———
+    y = this.addSeccionSubrayada(doc, 'Análisis', y);
+    if (ultimaConsulta?.motivoConsulta?.trim()) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MC:', MARGIN, y);
+      y += LINE_HEIGHT;
+      doc.setFont('helvetica', 'normal');
+      const linesMc = doc.splitTextToSize(ultimaConsulta.motivoConsulta, contentW - 10);
+      linesMc.forEach((line: string) => { doc.text(line, MARGIN + 10, y); y += LINE_HEIGHT; });
+      y += 4;
+    }
+    const analisis = [ultimaConsulta?.hallazgosExamen, ultimaConsulta?.recomendaciones].filter(Boolean).join(' ');
+    const linesAnal = doc.splitTextToSize(analisis || '—', contentW);
+    doc.setFont('helvetica', 'normal');
+    linesAnal.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    if (y > FOOTER_TOP - 70) { doc.addPage(); y = HEADER_H; }
+    // ——— ANTECEDENTES ———
+    y = this.addSeccionSubrayada(doc, 'Antecedentes', y);
+    const h = historia;
+    const antPers = h?.antecedentesPersonales?.trim() ? h.antecedentesPersonales : 'NIEGA';
+    const antAlerg = h?.alergiasGenerales?.trim() ? h.alergiasGenerales : 'NIEGA';
+    const antQx = h?.antecedentesQuirurgicos?.trim() ? h.antecedentesQuirurgicos : 'NIEGA';
+    doc.setFontSize(9);
+    doc.text(`ANTECEDENTES: ${antPers}`, MARGIN, y);
+    y += LINE_HEIGHT;
+    doc.text(`ALÉRGICO: ${antAlerg}`, MARGIN, y);
+    y += LINE_HEIGHT;
+    doc.text(`QX: ${antQx}`, MARGIN, y);
+    y += LINE_HEIGHT + 2;
+    if (h?.antecedentesFamiliares?.trim() || h?.antecedentesFarmacologicos?.trim() || h?.antecedentesTraumaticos?.trim() || h?.antecedentesGinecoobstetricos?.trim()) {
+      if (h.antecedentesFamiliares) { doc.text(`Familiar: ${h.antecedentesFamiliares}`, MARGIN, y); y += LINE_HEIGHT; }
+      if (h.antecedentesFarmacologicos) { doc.text(`Farmacológico: ${h.antecedentesFarmacologicos}`, MARGIN, y); y += LINE_HEIGHT; }
+      if (h.antecedentesTraumaticos) { doc.text(`Traumático: ${h.antecedentesTraumaticos}`, MARGIN, y); y += LINE_HEIGHT; }
+      if (h.antecedentesGinecoobstetricos) { doc.text(`Ginecoobstétrico: ${h.antecedentesGinecoobstetricos}`, MARGIN, y); y += LINE_HEIGHT; }
+      y += 2;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.text('Hábitos:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...TEXT_SECONDARY);
+    doc.text(`Tabaco: ${h?.habitosTabaco ? 'Sí' : 'No'}  ·  Alcohol: ${h?.habitosAlcohol ? 'Sí' : 'No'}  ·  Sustancias: ${h?.habitosSustancias ? 'Sí' : 'No'}`, MARGIN + 20, y);
+    doc.setTextColor(...TEXT_PRIMARY);
+    y += LINE_HEIGHT;
+    if (h?.habitosDetalles?.trim()) {
+      const linesHab = doc.splitTextToSize(h.habitosDetalles, contentW - 20);
+      linesHab.forEach((line: string) => { doc.text(line, MARGIN + 20, y); y += LINE_HEIGHT; });
+      y += 2;
+    }
+    y += SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    if (y > FOOTER_TOP - 55) { doc.addPage(); y = HEADER_H; }
+    // ——— PLAN ———
+    y = this.addSeccionSubrayada(doc, 'Plan', y);
+    const plan = ultimaConsulta?.planTratamiento || ultimaConsulta?.tratamientoFarmacologico || ultimaConsulta?.recomendaciones || '—';
+    const linesPlan = doc.splitTextToSize(plan, contentW);
+    doc.setFontSize(9);
+    linesPlan.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+    y = this.addLineaSeparadora(doc, y);
+
+    if (y > FOOTER_TOP - 40) { doc.addPage(); y = HEADER_H; }
+    // ——— ÓRDENES CLÍNICAS ———
+    y = this.addSeccionSubrayada(doc, 'Órdenes clínicas emitidas', y);
+    if (ordenes.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [['Nº', 'Servicio / Detalle', 'Cant.', 'Estado', 'Resultado']],
+        body: ordenes.map((o) => {
+          const detalle = this.resumenOrden(o);
+          const resultado = (o.resultado && o.resultado.length > 50) ? o.resultado.substring(0, 50) + '…' : (o.resultado ?? '—');
+          return ['#' + o.id, detalle || o.detalle || '—', (o.cantidadPrescrita != null ? String(o.cantidadPrescrita) : '1'), o.estado ?? 'PENDIENTE', resultado];
+        }),
+        theme: 'striped',
+        headStyles: { fillColor: [248, 250, 252], textColor: TEXT_PRIMARY, fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        margin: { top: HEADER_H, left: MARGIN, right: MARGIN, bottom: PAGE_H - FOOTER_TOP + 5 },
+        columnStyles: { 0: { cellWidth: 14 }, 1: { cellWidth: 72 }, 2: { cellWidth: 14 }, 3: { cellWidth: 22 }, 4: { cellWidth: 38 } },
+      });
+      y = this.getY(doc) + SECTION_GAP;
+    } else {
+      doc.setFontSize(9);
+      doc.text('Sin órdenes registradas.', MARGIN, y);
+      y += LINE_HEIGHT + 4;
+    }
+
+    // ——— Bloque profesional ———
+    if (y + 45 > FOOTER_TOP - 15) {
+      doc.addPage();
+      y = HEADER_H;
+      (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable = { finalY: y };
+    }
+    y = this.addLineaSeparadora(doc, y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Profesional:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalNombre?.trim() || ultimaConsulta?.profesionalNombre || '—', MARGIN + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Especialidad:', MARGIN, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalRol?.trim() || '—', MARGIN + LABEL_WIDTH, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tarjeta Prof.:', MARGIN, y + 2 * LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalTarjeta?.trim() || '—', MARGIN + LABEL_WIDTH, y + 2 * LINE_HEIGHT);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Identificación:', midX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(identif, midX + 26, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nombre:', midX, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(nombres, midX + 26, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Apellido:', midX, y + 2 * LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(apellidos, midX + 26, y + 2 * LINE_HEIGHT);
+
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.addHeaderDocumento(doc, 'Historia clínica', branding, i, totalPages);
+      this.addFooterNotaEvolucion(doc, i, totalPages, branding);
+    }
+    return doc.output('blob');
+  }
+
+  /** Genera PDF con listado de órdenes del paciente. Mismo estilo que HC: cabecera institucional, secciones subrayadas, pie. */
+  generarOrdenesPacientePdf(paciente: SesaPdfPaciente, ordenes: OrdenClinicaDto[], branding?: SesaPdfBranding): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const contentW = PAGE_W - 2 * MARGIN;
+    let y = HEADER_H;
+
+    const nombre = [paciente.nombres, paciente.apellidos].filter(Boolean).join(' ');
+    const docLine = [paciente.tipoDocumento, paciente.documento].filter(Boolean).join(' ');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(nombre || '—', MARGIN + 22, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Documento:', MARGIN + contentW / 2, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docLine || '—', MARGIN + contentW / 2 + 24, y);
+    y += LINE_HEIGHT + 4;
+    y = this.addLineaSeparadora(doc, y);
+
+    y = this.addSeccionSubrayada(doc, 'Resumen de órdenes', y);
+    autoTable(doc, {
+      startY: y,
+      head: [['Nº Orden', 'Tipo', 'Detalle / Posología', 'Estado', 'Resultado']],
+      body: ordenes.map((o) => {
+        const detalle = this.resumenOrden(o);
+        const resultado = (o.resultado && o.resultado.length > 80) ? o.resultado.substring(0, 80) + '…' : (o.resultado ?? '—');
+        return ['#' + o.id, o.tipo, detalle, o.estado ?? 'PENDIENTE', resultado];
+      }),
+      theme: 'striped',
+      headStyles: { fillColor: [248, 250, 252], textColor: TEXT_PRIMARY, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      margin: { top: HEADER_H, left: MARGIN, right: MARGIN, bottom: PAGE_H - FOOTER_TOP + 5 },
+      columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 26 }, 2: { cellWidth: 62 }, 3: { cellWidth: 22 }, 4: { cellWidth: 42 } },
+    });
+    let finalY = this.getY(doc) + SECTION_GAP;
+
+    ordenes.forEach((o) => {
+      if (finalY > FOOTER_TOP - 20) {
+        doc.addPage();
+        finalY = HEADER_H;
+        (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable = { finalY: HEADER_H };
+      }
+      finalY = this.addSeccionSubrayada(doc, `Orden #${o.id} — ${o.tipo}`, finalY);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const linesDet = doc.splitTextToSize(this.resumenOrden(o), contentW);
+      linesDet.forEach((line: string) => { doc.text(line, MARGIN, finalY); finalY += LINE_HEIGHT; });
+      finalY += 4;
+      if (o.resultado) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resultado:', MARGIN, finalY);
+        finalY += LINE_HEIGHT;
+        doc.setFont('helvetica', 'normal');
+        const items = parseResultadoToItems(o.resultado);
+        if (items.length) {
+          items.forEach((it) => {
+            doc.text(`${it.etiqueta}: ${it.valor}`, MARGIN + 4, finalY);
+            finalY += LINE_HEIGHT;
+          });
+        } else {
+          const lines = doc.splitTextToSize(o.resultado, contentW);
+          lines.forEach((line: string) => { doc.text(line, MARGIN, finalY); finalY += LINE_HEIGHT; });
+        }
+        finalY += 2;
+      }
+      if (o.resultadoRegistradoPorNombre) {
+        doc.setFontSize(8);
+        doc.setTextColor(...TEXT_SECONDARY);
+        doc.text(`Registrado por: ${o.resultadoRegistradoPorNombre}${o.resultadoRegistradoPorRol ? ' (' + o.resultadoRegistradoPorRol + ')' : ''}`, MARGIN, finalY);
+        doc.setTextColor(...TEXT_PRIMARY);
+        finalY += LINE_HEIGHT;
+      }
+      finalY += SECTION_GAP;
+    });
+
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.addHeaderDocumento(doc, 'Órdenes y resultados', branding, i, totalPages);
+      this.addFooterNotaEvolucion(doc, i, totalPages, branding);
+    }
+    return doc.output('blob');
+  }
+
+  /** Genera PDF de una sola orden (laboratorio con/sin resultados, medicamento o procedimiento). */
+  generarOrdenIndividualPdf(paciente: SesaPdfPaciente, orden: OrdenClinicaDto, branding?: SesaPdfBranding): Blob {
+    const tipo = (orden.tipo || '').toUpperCase();
+    if (tipo === 'LABORATORIO') return this.generarOrdenLaboratorioPdf(paciente, orden, branding);
+    if (tipo === 'MEDICAMENTO') return this.generarOrdenMedicamentoPdf(paciente, orden, branding);
+    return this.generarOrdenProcedimientoPdf(paciente, orden, branding);
+  }
+
+  /** PDF orden de laboratorio (con o sin resultados). Mismo estilo institucional que HC. */
+  generarOrdenLaboratorioPdf(paciente: SesaPdfPaciente, orden: OrdenClinicaDto, branding?: SesaPdfBranding): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const contentW = PAGE_W - 2 * MARGIN;
+    const midX = MARGIN + contentW / 2;
+    let y = HEADER_H;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.nombres, paciente.apellidos].filter(Boolean).join(' ') || '—', MARGIN + 22, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Documento:', midX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.tipoDocumento, paciente.documento].filter(Boolean).join(' ') || '—', midX + 24, y);
+    y += LINE_HEIGHT + 4;
+    y = this.addLineaSeparadora(doc, y);
+
+    y = this.addSeccionSubrayada(doc, 'Orden de laboratorio', y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Nº Orden: #${orden.id}`, MARGIN, y);
+    y += LINE_HEIGHT + 2;
+    doc.setFont('helvetica', 'normal');
+    const linesDet = doc.splitTextToSize(orden.detalle || 'Sin detalle.', contentW);
+    linesDet.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+
+    if (orden.resultado) {
+      y = this.addSeccionSubrayada(doc, 'Resultados', y);
+      const items = parseResultadoToItems(orden.resultado);
+      if (items.length) {
+        items.forEach((it) => {
+          doc.setFont('helvetica', 'bold');
+          doc.text(it.etiqueta + ':', MARGIN, y);
+          doc.setFont('helvetica', 'normal');
+          const vLines = doc.splitTextToSize(it.valor, contentW - 40);
+          vLines.forEach((line: string) => { doc.text(line, MARGIN + 38, y); y += LINE_HEIGHT; });
+          if (vLines.length <= 1) y += 2;
+        });
+        y += 2;
+      } else {
+        const lines = doc.splitTextToSize(orden.resultado, contentW);
+        lines.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+        y += 2;
+      }
+      if (orden.resultadoRegistradoPorNombre) {
+        doc.setFontSize(8);
+        doc.setTextColor(...TEXT_SECONDARY);
+        doc.text(`Registrado por: ${orden.resultadoRegistradoPorNombre}${orden.resultadoRegistradoPorRol ? ' · ' + orden.resultadoRegistradoPorRol : ''}`, MARGIN, y);
+        doc.setTextColor(...TEXT_PRIMARY);
+        y += LINE_HEIGHT;
+      }
+    } else {
+      doc.setFontSize(9);
+      doc.setTextColor(...TEXT_SECONDARY);
+      doc.text('Resultado pendiente de registrar.', MARGIN, y);
+      doc.setTextColor(...TEXT_PRIMARY);
+      y += LINE_HEIGHT + 4;
+    }
+
+    y = this.addLineaSeparadora(doc, y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Profesional:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(orden.resultadoRegistradoPorNombre || branding?.profesionalNombre || '—', MARGIN + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tarjeta Prof.:', MARGIN, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalTarjeta || '—', MARGIN + LABEL_WIDTH, y + LINE_HEIGHT);
+
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.addHeaderDocumento(doc, 'Orden de laboratorio', branding, i, totalPages);
+      this.addFooterNotaEvolucion(doc, i, totalPages, branding);
+    }
+    return doc.output('blob');
+  }
+
+  /** PDF orden de medicamento (posología completa). Mismo estilo institucional que HC. */
+  generarOrdenMedicamentoPdf(paciente: SesaPdfPaciente, orden: OrdenClinicaDto, branding?: SesaPdfBranding): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const contentW = PAGE_W - 2 * MARGIN;
+    const midX = MARGIN + contentW / 2;
+    let y = HEADER_H;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.nombres, paciente.apellidos].filter(Boolean).join(' ') || '—', MARGIN + 22, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Documento:', midX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.tipoDocumento, paciente.documento].filter(Boolean).join(' ') || '—', midX + 24, y);
+    y += LINE_HEIGHT + 4;
+    y = this.addLineaSeparadora(doc, y);
+
+    y = this.addSeccionSubrayada(doc, 'Orden de medicamento', y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Nº Orden: #${orden.id}`, MARGIN, y);
+    y += LINE_HEIGHT + 4;
+
+    const posologia = [
+      ['Cantidad a dispensar', orden.cantidadPrescrita != null && orden.unidadMedida ? `${orden.cantidadPrescrita} ${orden.unidadMedida}` : (orden.cantidadPrescrita != null ? String(orden.cantidadPrescrita) : 'No especificado')],
+      ['Frecuencia', orden.frecuencia || 'No especificado'],
+      ['Duración', orden.duracionDias != null ? `${orden.duracionDias} días` : 'No especificado'],
+    ];
+    autoTable(doc, {
+      startY: y,
+      head: [['Concepto', 'Valor']],
+      body: posologia,
+      theme: 'plain',
+      headStyles: { fillColor: [248, 250, 252], textColor: TEXT_PRIMARY, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      margin: { top: HEADER_H, left: MARGIN, right: MARGIN, bottom: PAGE_H - FOOTER_TOP + 5 },
+      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: contentW - 50 } },
+    });
+    y = this.getY(doc) + SECTION_GAP;
+
+    y = this.addSeccionSubrayada(doc, 'Indicaciones y especificaciones', y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(orden.detalle || 'Sin indicaciones adicionales.', contentW);
+    lines.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+
+    y = this.addLineaSeparadora(doc, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Profesional:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalNombre || '—', MARGIN + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tarjeta Prof.:', MARGIN, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalTarjeta || '—', MARGIN + LABEL_WIDTH, y + LINE_HEIGHT);
+
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.addHeaderDocumento(doc, 'Orden de medicamento', branding, i, totalPages);
+      this.addFooterNotaEvolucion(doc, i, totalPages, branding);
+    }
+    return doc.output('blob');
+  }
+
+  /** PDF orden de procedimiento o imagen. Mismo estilo institucional que HC. */
+  generarOrdenProcedimientoPdf(paciente: SesaPdfPaciente, orden: OrdenClinicaDto, branding?: SesaPdfBranding): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const titulo = orden.tipo === 'IMAGEN' ? 'Orden de imagen diagnóstica' : 'Orden de procedimiento';
+    const contentW = PAGE_W - 2 * MARGIN;
+    const midX = MARGIN + contentW / 2;
+    let y = HEADER_H;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.nombres, paciente.apellidos].filter(Boolean).join(' ') || '—', MARGIN + 22, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Documento:', midX, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text([paciente.tipoDocumento, paciente.documento].filter(Boolean).join(' ') || '—', midX + 24, y);
+    y += LINE_HEIGHT + 4;
+    y = this.addLineaSeparadora(doc, y);
+
+    y = this.addSeccionSubrayada(doc, titulo, y);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Nº Orden: #${orden.id}`, MARGIN, y);
+    y += LINE_HEIGHT + 2;
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(orden.detalle || 'Sin descripción.', contentW);
+    lines.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+    y += SECTION_GAP;
+
+    y = this.addLineaSeparadora(doc, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Profesional:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalNombre || '—', MARGIN + LABEL_WIDTH, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tarjeta Prof.:', MARGIN, y + LINE_HEIGHT);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding?.profesionalTarjeta || '—', MARGIN + LABEL_WIDTH, y + LINE_HEIGHT);
+
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.addHeaderDocumento(doc, titulo, branding, i, totalPages);
+      this.addFooterNotaEvolucion(doc, i, totalPages, branding);
+    }
+    return doc.output('blob');
+  }
+
+  private resumenOrden(o: OrdenClinicaDto): string {
+    const parts: string[] = [];
+    if (o.cantidadPrescrita != null) {
+      parts.push(o.unidadMedida ? `${o.cantidadPrescrita} ${o.unidadMedida}` : String(o.cantidadPrescrita));
+    }
+    if (o.frecuencia) parts.push(o.frecuencia);
+    if (o.duracionDias != null) parts.push(`${o.duracionDias} días`);
+    const resumen = parts.length ? parts.join(' · ') + (o.detalle ? ' — ' : '') : '';
+    return (resumen + (o.detalle || '')).trim() || '—';
+  }
+
+  /** Descarga un Blob como archivo PDF. */
+  triggerDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Abre el PDF en nueva ventana y dispara impresión. */
+  openForPrint(blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (w) {
+      w.onload = () => {
+        w.print();
+        w.onafterprint = () => {
+          w.close();
+          URL.revokeObjectURL(url);
+        };
+      };
+    } else {
+      URL.revokeObjectURL(url);
+    }
+  }
+}

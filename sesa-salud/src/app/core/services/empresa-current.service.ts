@@ -1,7 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { EmpresaService } from './empresa.service';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, from, map, Observable, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface CurrentEmpresa {
@@ -15,6 +16,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 @Injectable({ providedIn: 'root' })
 export class EmpresaCurrentService {
   private readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly empresaService = inject(EmpresaService);
 
   /**
@@ -158,6 +160,34 @@ export class EmpresaCurrentService {
    */
   static buildArchivoUrl(uuid: string): string {
     return `${environment.apiUrl}/archivos/${uuid}`;
+  }
+
+  /**
+   * Obtiene el logo actual como Data URL (data:image/...;base64,...) para incrustar en PDF.
+   * Si no hay logo o falla la carga, emite null.
+   */
+  getLogoDataUrl(): Observable<string | null> {
+    const logoUrl = this.state().logoUrl;
+    if (!logoUrl) return of(null);
+    const blob$ = logoUrl.startsWith('blob:')
+      ? from(fetch(logoUrl).then((r) => r.blob()))
+      : this.http.get(logoUrl, { responseType: 'blob' });
+    return blob$.pipe(
+      switchMap((blob) => this.blobToDataUrl(blob)),
+      catchError(() => of(null))
+    );
+  }
+
+  private blobToDataUrl(blob: Blob): Observable<string> {
+    return new Observable((sub) => {
+      const r = new FileReader();
+      r.onload = () => {
+        sub.next(r.result as string);
+        sub.complete();
+      };
+      r.onerror = () => sub.error(r.error);
+      r.readAsDataURL(blob);
+    });
   }
 
   private revokePrevBlobUrl(newUrl: string | null): void {

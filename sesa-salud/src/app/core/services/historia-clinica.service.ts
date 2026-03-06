@@ -23,7 +23,15 @@ export interface HistoriaClinicaDto {
   grupoSanguineo?: string;
   alergiasGenerales?: string;
   antecedentesPersonales?: string;
+  antecedentesQuirurgicos?: string;
+  antecedentesFarmacologicos?: string;
+  antecedentesTraumaticos?: string;
+  antecedentesGinecoobstetricos?: string;
   antecedentesFamiliares?: string;
+  habitosTabaco?: boolean;
+  habitosAlcohol?: boolean;
+  habitosSustancias?: boolean;
+  habitosDetalles?: string;
 }
 
 export interface HistoriaClinicaRequestDto {

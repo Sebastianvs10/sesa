@@ -9,7 +9,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { HistoriaClinicaService, HistoriaClinicaDto } from '../../core/services/historia-clinica.service';
-import { PdfService } from '../../core/services/pdf.service';
+import { SesaJspdfService, SesaPdfPaciente, SesaPdfHistoriaClinica, SesaPdfBranding } from '../../core/services/sesa-jspdf.service';
+import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CitaDto, CitaService } from '../../core/services/cita.service';
 import { ConsultaDto, ConsultaService } from '../../core/services/consulta.service';
@@ -62,7 +63,8 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private readonly personalService   = inject(PersonalService);
   private readonly toast             = inject(SesaToastService);
   private readonly confirmDialog     = inject(SesaConfirmDialogService);
-  private readonly pdfService        = inject(PdfService);
+  private readonly sesaJspdf         = inject(SesaJspdfService);
+  private readonly empresaCurrent   = inject(EmpresaCurrentService);
 
   descargandoPdf = signal(false);
 
@@ -784,29 +786,28 @@ export class HistoriaClinicaPageComponent implements OnInit {
   }
 
   descargarPdfOrdenes(): void {
-    const pacienteId = this.selectedPatient()?.id;
-    if (!pacienteId) {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
       this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
       return;
     }
     this.descargandoPdfOrdenes.set(true);
-    this.pdfService.descargarOrdenesPaciente(pacienteId).subscribe({
-      next: (blob) => {
-        const nombre = this.selectedPatient()?.nombres ?? 'paciente';
-        this.pdfService.triggerDownload(blob, `ordenes-resultados-${String(nombre).replace(/\s+/g, '-')}.pdf`);
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarOrdenesPacientePdf(this.toSesaPaciente(paciente), this.ordenesPaciente, branding);
+        const nombre = (paciente.nombres ?? 'paciente').replace(/\s+/g, '-');
+        this.sesaJspdf.triggerDownload(blob, `ordenes-resultados-${nombre}.pdf`);
         this.toast.success('PDF de órdenes y resultados descargado.', 'PDF generado');
-        this.descargandoPdfOrdenes.set(false);
-      },
-      error: () => {
+      } catch (e) {
         this.toast.error('No se pudo generar el PDF.', 'Error PDF');
-        this.descargandoPdfOrdenes.set(false);
-      },
+      }
+      this.descargandoPdfOrdenes.set(false);
     });
   }
 
   imprimirPdfOrdenes(): void {
-    const pacienteId = this.selectedPatient()?.id;
-    if (!pacienteId) {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
       this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
       return;
     }
@@ -815,48 +816,85 @@ export class HistoriaClinicaPageComponent implements OnInit {
       return;
     }
     this.imprimiendoPdfOrdenes.set(true);
-    this.pdfService.descargarOrdenesPaciente(pacienteId).subscribe({
-      next: (blob) => {
-        this.pdfService.openForPrint(blob);
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarOrdenesPacientePdf(this.toSesaPaciente(paciente), this.ordenesPaciente, branding);
+        this.sesaJspdf.openForPrint(blob);
         this.toast.success('Use el diálogo de impresión para imprimir órdenes y resultados.', 'Imprimir');
-        this.imprimiendoPdfOrdenes.set(false);
-      },
-      error: () => {
+      } catch (e) {
         this.toast.error('No se pudo generar el documento para imprimir.', 'Error');
-        this.imprimiendoPdfOrdenes.set(false);
-      },
+      }
+      this.imprimiendoPdfOrdenes.set(false);
     });
   }
 
-  descargarPdfOrdenIndividual(o: { id: number; detalle?: string }): void {
+  descargarPdfOrdenIndividual(o: OrdenClinicaDto): void {
+    const paciente = this.selectedPatient();
+    if (!paciente) {
+      this.toast.error('No hay paciente seleccionado.', 'Error');
+      return;
+    }
     this.ordenPdfIndividualId.set(o.id);
-    this.pdfService.descargarOrdenIndividual(o.id).subscribe({
-      next: (blob) => {
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarOrdenIndividualPdf(this.toSesaPaciente(paciente), o, branding);
         const nombre = (o.detalle ?? 'orden').replace(/\s+/g, '-').slice(0, 40);
-        this.pdfService.triggerDownload(blob, `orden-${o.id}-${nombre}.pdf`);
+        this.sesaJspdf.triggerDownload(blob, `orden-${o.id}-${nombre}.pdf`);
         this.toast.success('PDF de la orden descargado.', 'PDF');
-        this.ordenPdfIndividualId.set(null);
-      },
-      error: () => {
+      } catch (e) {
         this.toast.error('No se pudo generar el PDF de la orden.', 'Error');
-        this.ordenPdfIndividualId.set(null);
-      },
+      }
+      this.ordenPdfIndividualId.set(null);
     });
   }
 
-  imprimirPdfOrdenIndividual(o: { id: number }): void {
+  imprimirPdfOrdenIndividual(o: OrdenClinicaDto): void {
+    const paciente = this.selectedPatient();
+    if (!paciente) {
+      this.toast.error('No hay paciente seleccionado.', 'Error');
+      return;
+    }
     this.ordenPdfIndividualId.set(o.id);
-    this.pdfService.descargarOrdenIndividual(o.id).subscribe({
-      next: (blob) => {
-        this.pdfService.openForPrint(blob);
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarOrdenIndividualPdf(this.toSesaPaciente(paciente), o, branding);
+        this.sesaJspdf.openForPrint(blob);
         this.toast.success('Use el diálogo de impresión para esta orden.', 'Imprimir');
-        this.ordenPdfIndividualId.set(null);
-      },
-      error: () => {
+      } catch (e) {
         this.toast.error('No se pudo generar el documento para imprimir.', 'Error');
-        this.ordenPdfIndividualId.set(null);
-      },
+      }
+      this.ordenPdfIndividualId.set(null);
     });
+  }
+
+  /** Obtiene branding (logo + nombre empresa) y ejecuta el callback; si falla la carga del logo, pasa branding sin logo. */
+  private withBranding(fn: (branding: SesaPdfBranding) => void): void {
+    this.empresaCurrent.getLogoDataUrl().subscribe({
+      next: (logoDataUrl) => {
+        const branding: SesaPdfBranding = {
+          empresaNombre: this.empresaCurrent.displayName(),
+          logoDataUrl: logoDataUrl ?? undefined,
+        };
+        fn(branding);
+      },
+      error: () => fn({ empresaNombre: this.empresaCurrent.displayName() }),
+    });
+  }
+
+  private toSesaPaciente(p: PacienteDto): SesaPdfPaciente {
+    return {
+      id: p.id,
+      nombres: p.nombres,
+      apellidos: p.apellidos,
+      documento: p.documento,
+      tipoDocumento: p.tipoDocumento,
+      fechaNacimiento: p.fechaNacimiento,
+      sexo: p.sexo,
+      telefono: p.telefono,
+      email: p.email,
+      direccion: p.direccion,
+      grupoSanguineo: p.grupoSanguineo,
+    };
   }
 
   tipoOrdenIcon(tipo: string): string {
@@ -882,27 +920,62 @@ export class HistoriaClinicaPageComponent implements OnInit {
     );
   }
 
-  /** Descarga el PDF premium de la historia clínica del paciente actual. */
+  /** Descarga el PDF premium de la historia clínica del paciente actual (jsPDF). */
   descargarPdf(): void {
-    const pacienteId = this.selectedPatient()?.id;
-    if (!pacienteId) {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
       this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
       return;
     }
     this.descargandoPdf.set(true);
-    this.pdfService.descargarHistoriaClinicaPorPaciente(pacienteId).subscribe({
-      next: (blob) => {
-        const nombre = this.selectedPatient()?.nombres ?? 'paciente';
-        this.pdfService.triggerDownload(blob, `historia-clinica-${nombre.replace(/\s+/g, '-')}.pdf`);
+    this.withBranding((branding) => {
+      try {
+        const ultimaConsulta = this.consultasOrdenadas[0] ?? null;
+        const historia = this.historiaClinica();
+        const user = this.authService.currentUser();
+        const brandingHC: SesaPdfBranding = {
+          ...branding,
+          printedBy: user?.nombreCompleto,
+          profesionalNombre: ultimaConsulta?.profesionalNombre,
+          profesionalRol: (ultimaConsulta as { profesionalRol?: string })?.profesionalRol,
+          profesionalTarjeta: ultimaConsulta?.profesionalTarjetaProfesional,
+        };
+        const blob = this.sesaJspdf.generarHistoriaClinicaPdf(
+          this.toSesaPaciente(paciente),
+          historia ? this.toSesaHistoria(historia) : null,
+          ultimaConsulta,
+          this.ordenesPaciente,
+          brandingHC
+        );
+        const nombre = (paciente.nombres ?? 'paciente').replace(/\s+/g, '-');
+        this.sesaJspdf.triggerDownload(blob, `historia-clinica-${nombre}.pdf`);
         this.toast.success('Historia clínica descargada en PDF.', 'PDF generado');
-        this.descargandoPdf.set(false);
-      },
-      error: (err: unknown) => {
-        const msg = (err as { error?: { message?: string } })?.error?.message
-            ?? 'No se pudo generar el PDF.';
-        this.toast.error(msg, 'Error PDF');
-        this.descargandoPdf.set(false);
-      },
+      } catch (e) {
+        this.toast.error('No se pudo generar el PDF.', 'Error PDF');
+      }
+      this.descargandoPdf.set(false);
     });
+  }
+
+  private toSesaHistoria(h: HistoriaClinicaDto): SesaPdfHistoriaClinica {
+    return {
+      id: h.id,
+      pacienteNombre: h.pacienteNombre,
+      pacienteDocumento: h.pacienteDocumento,
+      fechaApertura: h.fechaApertura,
+      estado: h.estado,
+      grupoSanguineo: h.grupoSanguineo,
+      alergiasGenerales: h.alergiasGenerales,
+      antecedentesPersonales: h.antecedentesPersonales,
+      antecedentesFamiliares: h.antecedentesFamiliares,
+      antecedentesQuirurgicos: h.antecedentesQuirurgicos,
+      antecedentesFarmacologicos: h.antecedentesFarmacologicos,
+      antecedentesTraumaticos: h.antecedentesTraumaticos,
+      antecedentesGinecoobstetricos: h.antecedentesGinecoobstetricos,
+      habitosTabaco: h.habitosTabaco,
+      habitosAlcohol: h.habitosAlcohol,
+      habitosSustancias: h.habitosSustancias,
+      habitosDetalles: h.habitosDetalles,
+    };
   }
 }
