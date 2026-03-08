@@ -10,7 +10,7 @@ import { RouterLink } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faChartBar, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { faChartBar, faArrowLeft, faFileCsv } from '@fortawesome/free-solid-svg-icons';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { DashboardChartBarComponent } from '../../shared/components/dashboard-chart-bar/dashboard-chart-bar.component';
 import { DashboardChartDoughnutComponent } from '../../shared/components/dashboard-chart-doughnut/dashboard-chart-doughnut.component';
@@ -57,6 +57,71 @@ export class ReportesPageComponent implements OnInit {
 
   faChartBar = faChartBar;
   faArrowLeft = faArrowLeft;
+  faFileCsv = faFileCsv;
+
+  /** Exporta reportes a CSV (Res. 5521/2013 — auditoría y gestión). */
+  exportarCsv(): void {
+    const rows: string[] = [];
+    const esc = (v: string | number): string => {
+      const s = String(v ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    rows.push('Reportes SESA - Exportación');
+    rows.push(`Fecha exportación,${new Date().toISOString()}`);
+    rows.push('');
+
+    if (this.chartCitasPorDia.labels.length) {
+      rows.push('Citas por día');
+      rows.push('Fecha,Total');
+      this.chartCitasPorDia.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartCitasPorDia.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartConsultasPorMes.labels.length) {
+      rows.push('Consultas por mes');
+      rows.push('Mes,Total');
+      this.chartConsultasPorMes.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartConsultasPorMes.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartFacturacionPorMes.labels.length) {
+      rows.push('Facturación por mes (COP)');
+      rows.push('Mes,Valor total');
+      this.chartFacturacionPorMes.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartFacturacionPorMes.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartCitasPorEstado.labels.length) {
+      rows.push('Citas por estado');
+      rows.push('Estado,Total');
+      this.chartCitasPorEstado.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartCitasPorEstado.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.indicadoresCalidad.length) {
+      rows.push('Indicadores de calidad (Res. 0256/2016)');
+      rows.push('Código,Nombre,Categoría,Valor,Meta,Unidad,Interpretación');
+      this.indicadoresCalidad.forEach((ind) => {
+        rows.push(
+          [ind.codigo, ind.nombre, ind.categoria, ind.valor, ind.meta, ind.unidad, ind.interpretacion]
+            .map(esc)
+            .join(',')
+        );
+      });
+    }
+    const csv = '\uFEFF' + rows.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reportes-sesa-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.toast.success('Exportación descargada.', 'CSV');
+  }
 
   ngOnInit(): void {
     this.loadStats();

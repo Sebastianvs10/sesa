@@ -4,6 +4,7 @@
 
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.OrdenClinicaBatchRequestDto;
 import com.sesa.salud.dto.OrdenClinicaDto;
 import com.sesa.salud.dto.OrdenClinicaRequestDto;
 import com.sesa.salud.dto.ResultadoOrdenDto;
@@ -49,6 +50,12 @@ public class OrdenClinicaController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
     public ResponseEntity<OrdenClinicaDto> create(@Valid @RequestBody OrdenClinicaRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ordenClinicaService.create(dto));
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
+    public ResponseEntity<OrdenClinicaDto> createBatch(@Valid @RequestBody OrdenClinicaBatchRequestDto batch) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ordenClinicaService.createBatch(batch));
     }
 
     @PutMapping("/{id}")

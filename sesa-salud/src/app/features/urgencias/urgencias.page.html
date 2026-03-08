@@ -239,6 +239,68 @@
             </section>
           }
 
+          <!-- Signos vitales seriados (Res. 5596/2015) -->
+          <section class="urg-section">
+            <h3 class="urg-section__title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Signos vitales seriados
+              <span class="urg-norm-badge">Res. 5596/2015</span>
+            </h3>
+            <p class="urg-section__sub">Registro al ingreso (arriba) y tomas durante la espera o atención.</p>
+            @if (signosVitalesSeriados().length > 0) {
+              <div class="urg-sv-table-wrap">
+                <table class="urg-sv-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha / Hora</th>
+                      <th>PA</th>
+                      <th>FC</th>
+                      <th>FR</th>
+                      <th>Temp</th>
+                      <th>SpO₂</th>
+                      <th>Peso</th>
+                      <th>EVA</th>
+                      <th>Glasgow</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (sv of signosVitalesSeriados(); track sv.id) {
+                      <tr>
+                        <td>{{ formatFechaHora(sv.fechaHora) }}</td>
+                        <td>{{ sv.presionArterial ?? '—' }}</td>
+                        <td>{{ sv.frecuenciaCardiaca ?? '—' }}</td>
+                        <td>{{ sv.frecuenciaRespiratoria ?? '—' }}</td>
+                        <td>{{ sv.temperatura ?? '—' }}</td>
+                        <td>{{ sv.saturacionO2 ?? '—' }}</td>
+                        <td>{{ sv.peso ?? '—' }}</td>
+                        <td>{{ sv.dolorEva ?? '—' }}</td>
+                        <td>{{ sv.glasgowOcular != null || sv.glasgowVerbal != null || sv.glasgowMotor != null ? (sv.glasgowOcular ?? '-') + '/' + (sv.glasgowVerbal ?? '-') + '/' + (sv.glasgowMotor ?? '-') : '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+            <div class="urg-sv-form">
+              <div class="urg-sv-form-row">
+                <div class="urg-form-group urg-sv-field"><label>PA</label><input type="text" placeholder="120/80" [value]="formSignosVitales().presionArterial" (input)="setFormSignosVitales('presionArterial', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>FC</label><input type="text" placeholder="lpm" [value]="formSignosVitales().frecuenciaCardiaca" (input)="setFormSignosVitales('frecuenciaCardiaca', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>FR</label><input type="text" placeholder="rpm" [value]="formSignosVitales().frecuenciaRespiratoria" (input)="setFormSignosVitales('frecuenciaRespiratoria', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>Temp</label><input type="text" placeholder="°C" [value]="formSignosVitales().temperatura" (input)="setFormSignosVitales('temperatura', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>SpO₂</label><input type="text" placeholder="%" [value]="formSignosVitales().saturacionO2" (input)="setFormSignosVitales('saturacionO2', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>Peso</label><input type="text" placeholder="kg" [value]="formSignosVitales().peso" (input)="setFormSignosVitales('peso', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>EVA</label><input type="text" placeholder="0-10" [value]="formSignosVitales().dolorEva" (input)="setFormSignosVitales('dolorEva', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Ocular</label><input type="number" min="1" max="4" placeholder="1-4" [value]="formSignosVitales().glasgowOcular" (input)="setFormSignosVitales('glasgowOcular', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Verbal</label><input type="number" min="1" max="5" placeholder="1-5" [value]="formSignosVitales().glasgowVerbal" (input)="setFormSignosVitales('glasgowVerbal', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Motor</label><input type="number" min="1" max="6" placeholder="1-6" [value]="formSignosVitales().glasgowMotor" (input)="setFormSignosVitales('glasgowMotor', $any($event.target).value)" /></div>
+              </div>
+              <button type="button" class="urg-btn urg-btn--primary urg-btn--sm" [disabled]="guardando()" (click)="guardarSignosVitales()">
+                @if (guardando()) { <span class="urg-spinner-sm"></span> }
+                Registrar nuevo registro de SV
+              </button>
+            </div>
+          </section>
+
           <!-- Tabs médico / enfermería -->
           <div class="urg-tabs">
             @if (esMedico()) {

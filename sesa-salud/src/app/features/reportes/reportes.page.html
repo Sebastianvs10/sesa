@@ -10,6 +10,16 @@
       <h1 class="sesa-reportes-title">Reportes</h1>
       <p class="sesa-reportes-subtitle">Indicadores clínicos y operativos de la empresa</p>
     </div>
+    <button
+      type="button"
+      class="sesa-btn sesa-btn-outline sesa-reportes-export"
+      (click)="exportarCsv()"
+      [disabled]="loading || (!hasAnyData && indicadoresCalidad.length === 0)"
+      title="Exportar a CSV"
+    >
+      <fa-icon [icon]="faFileCsv"></fa-icon>
+      Exportar CSV
+    </button>
   </header>
 
   @if (loading) {

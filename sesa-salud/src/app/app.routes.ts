@@ -315,6 +315,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'evolucion-enfermeria',
+    canActivate: [authGuard, roleGuard('EVOLUCION_ENFERMERIA')],
+    loadComponent: () =>
+      import('./features/evolucion-enfermeria/evolucion-enfermeria.page').then(
+        (m) => m.EvolucionEnfermeriaPageComponent,
+      ),
+  },
+  {
     path: 'ebs',
     canActivate: [authGuard, roleGuard('EBS')],
     loadComponent: () =>

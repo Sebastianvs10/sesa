@@ -9,6 +9,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "ordenes_clinicas")
@@ -30,6 +32,8 @@ public class OrdenClinica {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "consulta_id", nullable = false)
     private Consulta consulta;
+
+    /** Tipo/detalle en cabecera: usado para órdenes legacy de un solo ítem. Si hay ítems en orden_clinica_items, puede ser null o "COMPUESTA". */
 
     @Column(nullable = false, length = 50)
     private String tipo;
@@ -78,6 +82,11 @@ public class OrdenClinica {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("ordenItemIndex ASC")
+    @Builder.Default
+    private List<OrdenClinicaItem> items = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

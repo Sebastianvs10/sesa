@@ -12,6 +12,7 @@ import {
   FarmaciaMedicamentoDto,
   FarmaciaDispensacionDto,
   OrdenFarmaciaPendienteDto,
+  OrdenFarmaciaPendienteItemDto,
   LineaDispensacionDto,
 } from '../../core/services/farmacia.service';
 import { PacienteDto, PacienteService } from '../../core/services/paciente.service';
@@ -65,6 +66,36 @@ export class FarmaciaPageComponent implements OnInit {
     this.medicamentos().filter((m) => m.cantidad > 0)
   );
 
+  /** Medicamentos con cantidad ≤ stock mínimo (alerta de reposición). */
+  readonly medicamentosStockBajo = computed(() =>
+    this.medicamentos().filter((m) => m.stockMinimo != null && m.cantidad <= m.stockMinimo)
+  );
+
+  /** Medicamentos que vencen en los próximos 30 días (alerta de vencimiento). */
+  readonly medicamentosProximosVencer = computed(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const en30 = new Date(hoy);
+    en30.setDate(en30.getDate() + 30);
+    return this.medicamentos().filter((m) => {
+      if (!m.fechaVencimiento?.trim()) return false;
+      const v = new Date(m.fechaVencimiento.trim());
+      if (isNaN(v.getTime())) return false;
+      v.setHours(0, 0, 0, 0);
+      return v >= hoy && v <= en30;
+    });
+  });
+
+  /** Texto para alerta de stock bajo (nombres separados por coma). */
+  readonly medicamentosStockBajoNombres = computed(() =>
+    this.medicamentosStockBajo().map((m) => m.nombre).join(', ')
+  );
+
+  /** Texto para alerta de vencimiento (nombre + fecha). */
+  readonly medicamentosProximosVencerNombres = computed(() =>
+    this.medicamentosProximosVencer().map((m) => m.nombre + ' (' + (m.fechaVencimiento || '') + ')').join(', ')
+  );
+
   ngOnInit(): void {
     this.recargar();
     this.cargarOrdenesPendientes();
@@ -114,12 +145,61 @@ export class FarmaciaPageComponent implements OnInit {
     return parts.join(' · ');
   }
 
+  /** Prescripción para un ítem (órdenes con varios medicamentos). */
+  formatoPrescripcionItem(item: OrdenFarmaciaPendienteItemDto): string {
+    const parts: string[] = [];
+    if (item.cantidadPrescrita != null) {
+      parts.push(item.unidadMedida ? `${item.cantidadPrescrita} ${item.unidadMedida}` : `${item.cantidadPrescrita}`);
+    }
+    if (item.frecuencia?.trim()) parts.push(item.frecuencia.trim());
+    if (item.duracionDias != null) parts.push(`${item.duracionDias} días`);
+    return parts.join(' · ');
+  }
+
+  /** Si la orden tiene varios ítems de medicamento (compuesta). */
+  ordenConVariosItems(orden: OrdenFarmaciaPendienteDto): boolean {
+    return !!orden.items && orden.items.length > 1;
+  }
+
+  /**
+   * Busca en el inventario un medicamento cuyo nombre coincida con el detalle prescrito
+   * (ej. detalle "Medicamento indicado: Azitromicina 500 mg" → coincide con nombre "Azitromicina 500 mg").
+   */
+  buscarMedicamentoPorDetalle(detalle: string | undefined): number {
+    if (!detalle?.trim()) return 0;
+    const list = this.medicamentosConStock();
+    if (list.length === 0) return 0;
+    const texto = detalle
+      .replace(/^Medicamento\s+indicado:\s*/i, '')
+      .replace(/^Indicado:\s*/i, '')
+      .replace(/^Orden[:\s]*/i, '')
+      .trim();
+    if (!texto) return 0;
+    const encontrado = list.find(
+      (m) =>
+        m.nombre.trim().toLowerCase() === texto.toLowerCase() ||
+        texto.toLowerCase().includes(m.nombre.trim().toLowerCase()) ||
+        m.nombre.trim().toLowerCase().includes(texto.toLowerCase())
+    );
+    return encontrado ? encontrado.id : 0;
+  }
+
   abrirDispensarOrden(orden: OrdenFarmaciaPendienteDto): void {
     this.ordenSeleccionada.set(orden);
-    const cantidadInicial = orden.cantidadPrescrita != null && orden.cantidadPrescrita > 0
-      ? orden.cantidadPrescrita
-      : 1;
-    this.lineasDispensacion.set([{ medicamentoId: 0, cantidad: cantidadInicial }]);
+    if (orden.items && orden.items.length > 0) {
+      const lineas: LineaDispensacionDto[] = orden.items.map((it) => {
+        const medicamentoId = this.buscarMedicamentoPorDetalle(it.detalle);
+        const cantidad = it.cantidadPrescrita != null && it.cantidadPrescrita > 0 ? it.cantidadPrescrita : 1;
+        return { medicamentoId: medicamentoId || 0, cantidad };
+      });
+      this.lineasDispensacion.set(lineas);
+    } else {
+      const cantidadInicial = orden.cantidadPrescrita != null && orden.cantidadPrescrita > 0
+        ? orden.cantidadPrescrita
+        : 1;
+      const medicamentoId = this.buscarMedicamentoPorDetalle(orden.detalle);
+      this.lineasDispensacion.set([{ medicamentoId: medicamentoId || 0, cantidad: cantidadInicial }]);
+    }
   }
 
   cerrarDispensarOrden(): void {

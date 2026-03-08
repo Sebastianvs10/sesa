@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,6 +21,7 @@ public class OrdenClinicaDto {
     private Long pacienteId;
     private String pacienteNombre;
     private Long consultaId;
+    /** Tipo/detalle en cabecera (órdenes legacy de un solo ítem). */
     private String tipo;
     private String detalle;
     private Integer cantidadPrescrita;
@@ -35,4 +37,6 @@ public class OrdenClinicaDto {
     private String resultadoRegistradoPorRol;
     private BigDecimal valorEstimado;
     private Instant createdAt;
+    /** Ítems de la orden (varios medicamentos/labs/procedimientos en una sola orden). */
+    private List<OrdenClinicaItemDto> items;
 }

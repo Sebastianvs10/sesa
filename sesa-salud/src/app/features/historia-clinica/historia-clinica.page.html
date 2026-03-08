@@ -14,7 +14,64 @@
       </div>
     </header>
 
+    <!-- Resumen según datos del usuario/empresa (sin paciente seleccionado) -->
+    @if (resumen != null) {
+      <div class="hc-patient-stats hc-patient-stats--resumen">
+        <div class="hc-stat-item">
+          <span class="hc-stat-val">{{ resumen.totalConsultas }}</span>
+          <span class="hc-stat-lbl">Consultas</span>
+        </div>
+        <div class="hc-stat-item">
+          <span class="hc-stat-val">{{ resumen.totalOrdenes }}</span>
+          <span class="hc-stat-lbl">Órdenes</span>
+        </div>
+        <div class="hc-stat-item">
+          <span class="hc-stat-val">{{ resumen.totalFacturas }}</span>
+          <span class="hc-stat-lbl">Facturas</span>
+        </div>
+      </div>
+    }
+
     <div class="hc-mis-consultas">
+      <!-- Búsqueda multi-criterio de pacientes -->
+      <div class="hc-search-card">
+        <label for="hc-search-paciente" class="hc-search-label">Buscar paciente por nombre o documento</label>
+        <div class="hc-search-row">
+          <input id="hc-search-paciente" type="text" class="hc-input hc-search-input"
+            placeholder="Nombre o número de documento..."
+            [ngModel]="searchPacienteQuery()"
+            (ngModelChange)="searchPacienteQuery.set($event)"
+            (keydown.enter)="buscarPacientes()" />
+          <button type="button" class="hc-btn hc-btn--primary"
+            [disabled]="searchPacienteLoading()"
+            (click)="buscarPacientes()">
+            @if (searchPacienteLoading()) {
+              <span class="hc-btn-spinner"></span> Buscando...
+            } @else {
+              <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+              </svg>
+              Buscar
+            }
+          </button>
+        </div>
+        @if (searchPacienteResults().length > 0) {
+          <ul class="hc-search-results" role="list">
+            @for (p of searchPacienteResults(); track p.id) {
+              <li>
+                <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: p.id }" class="hc-search-result-item">
+                  <span class="hc-search-result-avatar">{{ (p.nombres.charAt(0)) + (p.apellidos?.charAt(0) ?? '') }}</span>
+                  <span class="hc-search-result-name">{{ p.nombres }} {{ p.apellidos }}</span>
+                  <span class="hc-search-result-doc">{{ p.tipoDocumento || '' }} {{ p.documento }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        } @else if (searchPacienteQuery().trim().length >= 2 && !searchPacienteLoading() && searchPacienteSearched()) {
+          <p class="hc-search-empty">No se encontraron pacientes con ese criterio.</p>
+        }
+      </div>
+
       @if (loadingMisConsultas()) {
         <div class="hc-skeleton-card">
           @for (s of skeletonRows; track s) {
@@ -149,7 +206,7 @@
 
         <!-- Indicadores rápidos -->
         <div class="hc-patient-stats">
-          @if (historiaClinica()) {
+          @if (selectedPatient()) {
             <div class="hc-stat-item">
               <span class="hc-stat-val">{{ totalConsultas() }}</span>
               <span class="hc-stat-lbl">Consultas</span>
@@ -162,10 +219,12 @@
               <span class="hc-stat-val">{{ totalFacturas() }}</span>
               <span class="hc-stat-lbl">Facturas</span>
             </div>
-            <div class="hc-stat-item">
-              <span class="hc-stat-val hc-gs">{{ historiaClinica()!.grupoSanguineo || '—' }}</span>
-              <span class="hc-stat-lbl">Grupo Sang.</span>
-            </div>
+            @if (historiaClinica()) {
+              <div class="hc-stat-item">
+                <span class="hc-stat-val hc-gs">{{ historiaClinica()!.grupoSanguineo || '—' }}</span>
+                <span class="hc-stat-lbl">Grupo Sang.</span>
+              </div>
+            }
           }
         </div>
       </div>
@@ -229,17 +288,77 @@
       </div>
     </div>
 
+    <!-- ── FLUJO DE CONSULTA (una sola vista, menos clics) ───────────────── -->
+    @if (historiaClinica()) {
+      <div class="hc-flujo-card" role="region" aria-label="Flujo de consulta">
+        <div class="hc-flujo-header">
+          <svg class="hc-flujo-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
+          </svg>
+          <div class="hc-flujo-title-wrap">
+            <h3 class="hc-flujo-title">Flujo de consulta</h3>
+            <p class="hc-flujo-subtitle">Atención del día y acceso rápido a registro y antecedentes</p>
+          </div>
+        </div>
+        <div class="hc-flujo-body">
+            @if (consultaHoy) {
+            <div class="hc-flujo-atencion hc-flujo-atencion--registrada">
+              <span class="hc-flujo-badge hc-flujo-badge--success">Atención de hoy registrada</span>
+              <p class="hc-flujo-motivo">{{ consultaHoy.motivoConsulta || 'Sin motivo' }} · {{ formatFechaHora(consultaHoy.fechaConsulta) }}</p>
+              @if (consultaHoy.codigoCie10 || consultaHoy.tipoConsulta) {
+                <p class="hc-flujo-rips">Datos RIPS: CIE-10 {{ consultaHoy.codigoCie10 || '—' }}, Tipo {{ tipoConsultaLabel(consultaHoy.tipoConsulta) }}</p>
+              }
+              <div class="hc-flujo-actions">
+                <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('historia')">Ver en Historia</button>
+                <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTabAndSoapSection('soap', 'S')">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                  Registrar otra nota
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="hc-flujo-atencion hc-flujo-atencion--sin-registro">
+              <span class="hc-flujo-badge hc-flujo-badge--warning">Sin atención registrada hoy</span>
+              <p class="hc-flujo-motivo">Registre la nota SOAP para esta consulta.</p>
+              <button type="button" class="hc-btn hc-btn--primary" (click)="setTabAndSoapSection('soap', 'S')">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                Registrar nota SOAP ahora
+              </button>
+            </div>
+          }
+          <div class="hc-flujo-quick">
+            <span class="hc-flujo-quick-lbl">Acceso rápido:</span>
+            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('historia')">Antecedentes y alergias</button>
+            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('soap')">Nota SOAP</button>
+            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('ordenes')">Órdenes</button>
+            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('documentos')">Documentos</button>
+            @if (consultasOrdenadas.length > 0) {
+              <button type="button" class="hc-flujo-quick-btn hc-flujo-quick-btn--pdf" (click)="descargarResumenAltaConsulta()">Resumen de alta / Referencia (PDF)</button>
+            }
+            <a routerLink="/reportes" class="hc-flujo-quick-btn hc-flujo-quick-link">Indicadores de calidad</a>
+          </div>
+          @if (ordenesPendientesResultadoCount > 0) {
+            <div class="hc-flujo-pendientes">
+              <span class="hc-flujo-pendientes-lbl">Órdenes pendientes de resultado: {{ ordenesPendientesResultadoCount }}</span>
+              <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('ordenes')">Ir a Órdenes</button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     <!-- ── TABS DE NAVEGACIÓN ────────────────────────────────────── -->
-    <div class="hc-tabs" role="tablist">
-      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'historia'" (click)="setTab('historia')">
+    <div class="hc-tabs-wrap">
+      <div class="hc-tabs" role="tablist">
+        <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'historia'" (click)="setTab('historia')">
         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
         Historia
       </button>
       <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'soap'" (click)="setTab('soap')">
         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
         Nota SOAP
-        @if (consultasPaciente.length > 0) {
-          <span class="hc-tab-badge">{{ consultasPaciente.length }}</span>
+        @if (totalConsultas() > 0) {
+          <span class="hc-tab-badge">{{ totalConsultas() }}</span>
         }
       </button>
       <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'ordenes'" (click)="setTab('ordenes')">
@@ -249,18 +368,18 @@
           <span class="hc-tab-badge">{{ ordenesPaciente.length }}</span>
         }
       </button>
-      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'documentos'" (click)="setTab('documentos')">
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z"/></svg>
-        Documentos
+      <button role="tab" class="hc-tab hc-tab--mas" [class.hc-tab--active]="activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento'" (click)="setTab('documentos')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+        Más
       </button>
-      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'dolores'" (click)="setTab('dolores')">
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
-        Mapa de Dolor
-      </button>
-      <button role="tab" class="hc-tab" [class.hc-tab--active]="activeTab() === 'consentimiento'" (click)="setTab('consentimiento')">
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-        Consentimiento
-      </button>
+    </div>
+      @if (activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento') {
+        <div class="hc-tabs-sub">
+          <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'documentos'" (click)="setTab('documentos')">Documentos</button>
+          <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'dolores'" (click)="setTab('dolores')">Mapa de Dolor</button>
+          <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'consentimiento'" (click)="setTab('consentimiento')">Consentimiento</button>
+        </div>
+      }
     </div>
 
     <!-- Barra fija: Crear HC cuando el paciente no tiene historia (siempre visible al hacer scroll) -->
@@ -370,16 +489,16 @@
             </div>
           </div>
 
-          <!-- Columna derecha: timeline de consultas -->
+          <!-- Columna derecha: timeline de consultas (vista unificada: todas las atenciones) -->
           <div class="hc-col-right">
             <div class="hc-section-card hc-timeline-card">
               <div class="hc-section-card-header">
                 <h3 class="hc-section-title">
                   <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/></svg>
-                  Evolución clínica
+                  Línea de tiempo — Todas las atenciones
                 </h3>
                 <div class="hc-section-card-header-actions">
-                  <span class="hc-count-badge">{{ consultasPaciente.length }} consultas</span>
+                  <span class="hc-count-badge">{{ totalConsultas() }}</span>
                   <button type="button" class="hc-btn hc-btn--pdf hc-btn--sm"
                     [disabled]="descargandoPdfEvolucion() || consultasOrdenadas.length === 0"
                     (click)="descargarPdfEvolucion()" title="Descargar PDF de evolución clínica">
@@ -402,6 +521,18 @@
                   </button>
                 </div>
               </div>
+              <!-- Filtro por tipo de atención (vista unificada) -->
+              @if (timelineItems.length > 0) {
+                <div class="hc-timeline-filters">
+                  @for (opt of TIPOS_ATENCION; track opt.value) {
+                    <button type="button" class="hc-filter-chip" [class.hc-filter-chip--active]="filterTipoAtencion() === opt.value"
+                      (click)="filterTipoAtencion.set(opt.value)">
+                      {{ opt.label }}
+                    </button>
+                  }
+                </div>
+                <p class="hc-timeline-resumen">{{ resumenTipoAtencion }}</p>
+              }
 
               @if (loadingFlujo()) {
                 @for (s of [1,2,3]; track s) {
@@ -413,27 +544,47 @@
                     </div>
                   </div>
                 }
-              } @else if (consultasOrdenadas.length === 0) {
-                <p class="hc-empty-text">Sin consultas registradas aún.</p>
+              } @else if (timelineItems.length === 0) {
+                <p class="hc-empty-text">Sin consultas ni evoluciones registradas aún.</p>
                 <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTab('soap')">
                   + Registrar primera consulta
                 </button>
+              } @else if (timelineItemsFiltrados.length === 0) {
+                <p class="hc-empty-text">No hay atenciones con el filtro «{{ tipoConsultaLabel(filterTipoAtencion()) }}».</p>
+                <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="filterTipoAtencion.set('TODAS')">Ver todas</button>
               } @else {
                 <div class="hc-timeline">
-                  @for (c of consultasOrdenadas; track c.id) {
+                  @for (it of timelineItemsFiltrados; track it.tipo + '-' + it.data.id) {
                     <div class="hc-timeline-item">
                       <div class="hc-timeline-dot"></div>
                       <div class="hc-timeline-content">
-                        <div class="hc-timeline-header">
-                          <span class="hc-timeline-date">{{ formatFecha(c.fechaConsulta) }}</span>
-                          <span class="hc-timeline-serv">{{ getServicioCita(c.citaId) }}</span>
-                        </div>
-                        <p class="hc-timeline-motivo">{{ c.motivoConsulta || 'Sin motivo registrado' }}</p>
-                        @if (c.profesionalNombre) {
-                          <span class="hc-timeline-prof">Dr(a). {{ c.profesionalNombre }}</span>
-                        }
-                        @if (c.enfermedadActual) {
-                          <p class="hc-timeline-nota">{{ c.enfermedadActual | slice:0:120 }}{{ c.enfermedadActual.length > 120 ? '...' : '' }}</p>
+                        @if (it.tipo === 'consulta') {
+                          <div class="hc-timeline-header">
+                            <span class="hc-timeline-date">{{ formatFecha(it.data.fechaConsulta) }}</span>
+                            <span class="hc-timeline-tipo-badge" [class.hc-timeline-tipo--urgencia]="(it.data.tipoConsulta || '').toUpperCase() === 'URGENCIA'">
+                              {{ tipoConsultaLabel(it.data.tipoConsulta) }}
+                            </span>
+                            <span class="hc-timeline-serv">{{ getServicioCita(it.data.citaId) }}</span>
+                          </div>
+                          @if (it.data.profesionalNombre || it.data.fechaConsulta) {
+                            <p class="hc-timeline-trazabilidad">Registrado por: {{ it.data.profesionalNombre ? 'Dr(a). ' + it.data.profesionalNombre : '—' }} — {{ formatFechaHora(it.data.fechaConsulta) }}</p>
+                          }
+                          <p class="hc-timeline-motivo">{{ it.data.motivoConsulta || 'Sin motivo registrado' }}</p>
+                          @if (it.data.enfermedadActual) {
+                            <p class="hc-timeline-nota">{{ it.data.enfermedadActual | slice:0:120 }}{{ it.data.enfermedadActual.length > 120 ? '...' : '' }}</p>
+                          }
+                        } @else {
+                          <div class="hc-timeline-header">
+                            <span class="hc-timeline-date">{{ formatFecha(it.data.fecha) }}</span>
+                            <span class="hc-timeline-tipo-badge hc-timeline-tipo--urgencia">Evolución (Urgencias)</span>
+                          </div>
+                          @if (it.data.profesionalNombre || it.data.fecha) {
+                            <p class="hc-timeline-trazabilidad">Registrado por: {{ it.data.profesionalNombre ? 'Dr(a). ' + it.data.profesionalNombre : '—' }} — {{ formatFechaHora(it.data.fecha) }}</p>
+                          }
+                          <p class="hc-timeline-motivo">Nota de evolución</p>
+                          @if (it.data.notaEvolucion) {
+                            <p class="hc-timeline-nota">{{ it.data.notaEvolucion | slice:0:120 }}{{ it.data.notaEvolucion.length > 120 ? '...' : '' }}</p>
+                          }
                         }
                       </div>
                     </div>
@@ -468,6 +619,36 @@
       <div class="hc-soap-layout">
         <!-- Formulario SOAP -->
         <div class="hc-soap-form">
+          @if (historiaClinica() && (historiaClinica()!.alergiasGenerales?.trim() || historiaClinica()!.antecedentesPersonales?.trim() || historiaClinica()!.antecedentesFamiliares?.trim())) {
+            <div class="hc-soap-seguridad" role="region" aria-label="Datos de seguridad del paciente">
+              <div class="hc-soap-seguridad-header">
+                <svg class="hc-soap-seguridad-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                </svg>
+                <span class="hc-soap-seguridad-title">Datos de seguridad — Alergias y antecedentes (solo lectura desde HC)</span>
+              </div>
+              <div class="hc-soap-seguridad-body">
+                @if (historiaClinica()!.alergiasGenerales?.trim()) {
+                  <div class="hc-soap-seguridad-block">
+                    <span class="hc-soap-seguridad-lbl">Alergias:</span>
+                    <span class="hc-soap-seguridad-text">{{ historiaClinica()!.alergiasGenerales }}</span>
+                  </div>
+                }
+                @if (historiaClinica()!.antecedentesPersonales?.trim()) {
+                  <div class="hc-soap-seguridad-block">
+                    <span class="hc-soap-seguridad-lbl">Antecedentes personales:</span>
+                    <span class="hc-soap-seguridad-text">{{ historiaClinica()!.antecedentesPersonales }}</span>
+                  </div>
+                }
+                @if (historiaClinica()!.antecedentesFamiliares?.trim()) {
+                  <div class="hc-soap-seguridad-block">
+                    <span class="hc-soap-seguridad-lbl">Antecedentes familiares:</span>
+                    <span class="hc-soap-seguridad-text">{{ historiaClinica()!.antecedentesFamiliares }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
           <div class="hc-soap-header">
             <div class="hc-soap-header-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -492,6 +673,19 @@
               </button>
             </div>
           </div>
+
+          <!-- Selector plantilla SOAP (Res. 1995/1999) -->
+          @if (plantillasSoap.length > 0) {
+            <div class="hc-soap-plantilla-row">
+              <label class="hc-label" for="hc-plantilla-soap">Usar plantilla</label>
+              <select id="hc-plantilla-soap" class="hc-select" [ngModel]="selectedPlantillaSoapId" (ngModelChange)="onPlantillaSoapChange($event)">
+                <option [ngValue]="null">— Seleccione plantilla —</option>
+                @for (p of plantillasSoap; track p.id) {
+                  <option [ngValue]="p.id">{{ p.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
 
           <!-- S: Subjetivo -->
           <div class="hc-soap-section" [class.hc-soap-section--open]="soapSectionOpen() === 'S'">
@@ -694,12 +888,15 @@
                       Código CIE-10 principal <span class="hc-required">*</span>
                     </label>
                     <input type="text" class="hc-input" [(ngModel)]="soapA.codigoCie10"
-                      placeholder="Ej: J06.9, I10, E11, K59.0..."
-                      pattern="[A-Z][0-9]{2}\.?[0-9]?"
-                      title="Formato CIE-10: letra + 2 dígitos (ej: J06, I10, E11.9)"
-                      style="text-transform:uppercase"
-                      (input)="soapA.codigoCie10 = $any($event.target).value.toUpperCase()" />
-                    <span class="hc-field-hint">Formato: [A-Z][00-99][.0-9] — Obligatorio en RIPS</span>
+                      list="hc-cie10-datalist"
+                      placeholder="Buscar o escribir código (ej: J06.9, I10, E11...)"
+                      (input)="onCie10Input($any($event.target).value)" />
+                    <datalist id="hc-cie10-datalist">
+                      @for (item of cie10Frecuentes; track item.code) {
+                        <option [value]="item.code + ' - ' + item.desc">{{ item.code }} — {{ item.desc }}</option>
+                      }
+                    </datalist>
+                    <span class="hc-field-hint">Escriba código o elija de la lista. Formato: [A-Z][00-99][.0-9] — Obligatorio en RIPS</span>
                   </div>
                 </div>
                 <div class="hc-field">
@@ -764,13 +961,21 @@
           </div>
         </div>
 
-        <!-- Timeline de consultas previas -->
+        <!-- Timeline de consultas previas (vista unificada) -->
         <div class="hc-soap-sidebar">
           <div class="hc-section-card">
             <div class="hc-section-card-header">
               <h3 class="hc-section-title">Consultas anteriores</h3>
               <span class="hc-count-badge">{{ consultasPaciente.length }}</span>
             </div>
+            @if (consultasOrdenadas.length > 0) {
+              <div class="hc-prev-filters">
+                @for (opt of TIPOS_ATENCION; track opt.value) {
+                  <button type="button" class="hc-filter-chip hc-filter-chip--sm" [class.hc-filter-chip--active]="filterTipoAtencion() === opt.value"
+                    (click)="filterTipoAtencion.set(opt.value)">{{ opt.label }}</button>
+                }
+              </div>
+            }
             @if (loadingFlujo()) {
               @for (s of [1,2,3]; track s) {
                 <div class="hc-prev-sk">
@@ -780,15 +985,19 @@
               }
             } @else if (consultasOrdenadas.length === 0) {
               <p class="hc-empty-text">Sin consultas previas.</p>
+            } @else if (consultasFiltradasPorTipo.length === 0) {
+              <p class="hc-empty-text">No hay atenciones con el filtro actual.</p>
+              <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="filterTipoAtencion.set('TODAS')">Ver todas</button>
             } @else {
               <div class="hc-prev-list">
-                @for (c of consultasOrdenadas; track c.id) {
+                @for (c of consultasFiltradasPorTipo; track c.id) {
                   <div class="hc-prev-item">
                     <span class="hc-prev-date">{{ formatFecha(c.fechaConsulta) }}</span>
-                    <p class="hc-prev-motivo">{{ c.motivoConsulta || 'Sin motivo' }}</p>
-                    @if (c.profesionalNombre) {
-                      <span class="hc-prev-prof">{{ c.profesionalNombre }}</span>
+                    <span class="hc-prev-tipo" [class.hc-prev-tipo--urgencia]="(c.tipoConsulta || '').toUpperCase() === 'URGENCIA'">{{ tipoConsultaLabel(c.tipoConsulta) }}</span>
+                    @if (c.profesionalNombre || c.fechaConsulta) {
+                      <span class="hc-prev-trazabilidad">Registrado por: {{ c.profesionalNombre ? 'Dr(a). ' + c.profesionalNombre : '—' }} — {{ formatFechaHora(c.fechaConsulta) }}</span>
                     }
+                    <p class="hc-prev-motivo">{{ c.motivoConsulta || 'Sin motivo' }}</p>
                   </div>
                 }
               </div>
@@ -868,6 +1077,16 @@
           </div>
 
           @if (ordenForm.tipo === 'MEDICAMENTO') {
+            <div class="hc-interacciones-aviso">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92z"/></svg>
+              <div>
+                <strong>Interacciones medicamentosas (Decreto 1011/2006)</strong>
+                <p>Verifique interacciones con la medicación actual del paciente antes de emitir la orden.</p>
+                @if (medicacionRecientePaciente) {
+                  <p class="hc-medicacion-reciente">Medicación reciente según última consulta: {{ medicacionRecientePaciente }}</p>
+                }
+              </div>
+            </div>
             <div class="hc-form-row hc-form-row--4">
               <div class="hc-field">
                 <label class="hc-label">Cantidad</label>
@@ -908,11 +1127,40 @@
             </div>
           </div>
 
+          @if (ordenItems.length > 0) {
+            <div class="hc-orden-items-pendientes">
+              <h4 class="hc-orden-items-title">Ítems en esta orden ({{ ordenItems.length }})</h4>
+              <ul class="hc-orden-items-list" role="list">
+                @for (item of ordenItems; track $index) {
+                  <li class="hc-orden-item-pendiente">
+                    <span class="hc-orden-item-icon">{{ tipoOrdenIcon(item.tipo) }}</span>
+                    <span class="hc-orden-item-detalle">{{ item.detalle || item.tipo }}</span>
+                    @if (item.tipo === 'MEDICAMENTO' && (item.cantidadPrescrita || item.frecuencia || item.duracionDias)) {
+                      <span class="hc-orden-item-extra">
+                        {{ item.cantidadPrescrita }} {{ item.unidadMedida || '' }}
+                        {{ item.frecuencia ? ' · ' + item.frecuencia : '' }}
+                        {{ item.duracionDias ? ' · ' + item.duracionDias + ' días' : '' }}
+                      </span>
+                    }
+                    <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm hc-orden-item-quitar"
+                      (click)="quitarOrdenItem($index)" title="Quitar ítem">
+                      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           <div class="hc-form-actions">
+            <button type="button" class="hc-btn hc-btn--outline" (click)="agregarItemOrden()">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              Agregar ítem a la orden
+            </button>
             <button type="button" class="hc-btn hc-btn--primary" [disabled]="savingOrden()" (click)="crearOrden()">
               @if (savingOrden()) { <span class="hc-btn-spinner"></span> Creando... } @else {
                 <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
-                Emitir orden
+                Emitir orden@if (totalOrdenItemsCount > 1) { ({{ totalOrdenItemsCount }} ítems) }
               }
             </button>
           </div>
@@ -949,16 +1197,37 @@
           @else {
             <div class="hc-orden-list">
               @for (o of ordenesFiltradas(); track o.id) {
-                <div class="hc-orden-item" [class.hc-orden-item--expand]="ordenResultadoEditId() === o.id">
-                  <span class="hc-orden-icon">{{ tipoOrdenIcon(o.tipo) }}</span>
-                  <div class="hc-orden-info">
-                    <span class="hc-orden-tipo">{{ o.tipo }}</span>
-                    @if (o.tipo === 'MEDICAMENTO' && formatoOrdenMedicamento(o)) {
-                      <p class="hc-orden-dosis"><strong>{{ formatoOrdenMedicamento(o) }}</strong></p>
+                <div class="hc-orden-card" [ngClass]="'hc-orden-card--' + (getOrdenDisplayItems(o)[0]?.tipo || o.tipo)">
+                  <div class="hc-orden-card-header">
+                    <span class="hc-orden-icon">{{ tipoOrdenIcon(getOrdenDisplayItems(o)[0]?.tipo || o.tipo) }}</span>
+                    <span class="hc-orden-tipo">{{ o.tipo === 'COMPUESTA' ? 'Orden con ' + getOrdenDisplayItems(o).length + ' ítem(s)' : (getOrdenDisplayItems(o)[0]?.tipo || o.tipo) }}</span>
+                    <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
+                    <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm hc-orden-ver-detalle"
+                            (click)="abrirModalOrden(o)" title="Ver detalle de la orden">
+                      Ver detalle
+                    </button>
+                  </div>
+                  <div class="hc-orden-card-body">
+                    @for (item of getOrdenDisplayItems(o); track $index) {
+                      <div class="hc-orden-item">
+                        <span class="hc-orden-icon hc-orden-icon--item">{{ tipoOrdenIcon(item.tipo) }}</span>
+                        <div class="hc-orden-info">
+                          @if (getOrdenDisplayItems(o).length > 1) {
+                            <span class="hc-orden-tipo">{{ item.tipo }}</span>
+                          }
+                          @if (item.tipo === 'MEDICAMENTO' && formatoOrdenMedicamentoFromItem(item)) {
+                            <p class="hc-orden-dosis"><strong>{{ formatoOrdenMedicamentoFromItem(item) }}</strong></p>
+                          }
+                          <p class="hc-orden-detalle">{{ item.detalle || 'Sin detalle' }}</p>
+                          @if (item.valorEstimado && getOrdenDisplayItems(o).length === 1) {
+                            <span class="hc-orden-valor">$ {{ item.valorEstimado | number }}</span>
+                          }
+                        </div>
+                      </div>
                     }
-                    <p class="hc-orden-detalle">{{ o.detalle || 'Sin detalle' }}</p>
                     @if (o.resultado) {
                       <div class="hc-orden-resultado">
+                        <h4 class="hc-orden-resultado-titulo">Resultado</h4>
                         @if (parseResultadoToItems(o.resultado).length > 0) {
                           <div class="hc-orden-resultado-items">
                             @for (ri of parseResultadoToItems(o.resultado); track ri.etiqueta + ri.valor) {
@@ -981,33 +1250,83 @@
                         </div>
                       </div>
                     }
-                    @if (o.valorEstimado) {
+                    @if (!o.resultado && o.valorEstimado && getOrdenDisplayItems(o).length > 1) {
                       <span class="hc-orden-valor">$ {{ o.valorEstimado | number }}</span>
                     }
-                  </div>
-                  <div class="hc-orden-actions">
-                    @if (!ordenCompletada(o)) {
-                      <button type="button" class="hc-btn hc-btn--sm hc-btn--outline" (click)="openSubirResultado(o)">
-                        Subir resultado
+                    <div class="hc-orden-actions">
+                      @if (ordenAceptaResultado(o) && !ordenCompletada(o)) {
+                        <button type="button" class="hc-btn hc-btn--sm hc-btn--outline" (click)="openSubirResultado(o)">
+                          Subir resultado
+                        </button>
+                      }
+                      @if (ordenEsEditable(o)) {
+                        <button type="button" class="hc-btn hc-btn--sm hc-btn--outline" (click)="abrirEditarOrden(o)" title="Editar orden">
+                          Editar
+                        </button>
+                      }
+                      <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
+                              (click)="descargarPdfOrdenIndividual(o)" title="Descargar PDF de esta orden">
+                        @if (ordenPdfIndividualId() === o.id) {
+                          <span class="hc-btn-spinner"></span>
+                        } @else {
+                          <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        }
                       </button>
+                      <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
+                              (click)="imprimirPdfOrdenIndividual(o)" title="Imprimir esta orden">
+                        @if (ordenPdfIndividualId() === o.id) {
+                          <span class="hc-btn-spinner"></span>
+                        } @else {
+                          <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H5zm3 10a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                        }
+                      </button>
+                    </div>
+                    @if (ordenEditandoId() === o.id) {
+                      <div class="hc-orden-editar-form">
+                        <h4 class="hc-orden-editar-title">Editar orden</h4>
+                        <div class="hc-form-row hc-form-row--2">
+                          <div class="hc-field">
+                            <label class="hc-label">Detalle</label>
+                            <textarea class="hc-textarea" rows="2" [(ngModel)]="ordenEditandoForm.detalle" placeholder="Detalle de la orden"></textarea>
+                          </div>
+                          <div class="hc-field">
+                            <label class="hc-label">Valor estimado (COP)</label>
+                            <input type="number" class="hc-input" [(ngModel)]="ordenEditandoForm.valorEstimado" placeholder="0" />
+                          </div>
+                        </div>
+                        @if (ordenEditandoForm.tipo === 'MEDICAMENTO') {
+                          <div class="hc-form-row hc-form-row--4">
+                            <div class="hc-field">
+                              <label class="hc-label">Cantidad</label>
+                              <input type="number" class="hc-input" min="1" [(ngModel)]="ordenEditandoForm.cantidadPrescrita" />
+                            </div>
+                            <div class="hc-field">
+                              <label class="hc-label">Unidad</label>
+                              <select class="hc-select" [(ngModel)]="ordenEditandoForm.unidadMedida">
+                                <option value="">Seleccione...</option>
+                                @for (u of unidadesMedida; track u.id) { <option [value]="u.id">{{ u.label }}</option> }
+                              </select>
+                            </div>
+                            <div class="hc-field">
+                              <label class="hc-label">Frecuencia</label>
+                              <input type="text" class="hc-input" [(ngModel)]="ordenEditandoForm.frecuencia" placeholder="Ej. Cada 8 horas" />
+                            </div>
+                            <div class="hc-field">
+                              <label class="hc-label">Duración (días)</label>
+                              <input type="number" class="hc-input" min="1" [(ngModel)]="ordenEditandoForm.duracionDias" />
+                            </div>
+                          </div>
+                        }
+                        <div class="hc-form-actions">
+                          <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" [disabled]="savingOrdenEdit()" (click)="guardarEditarOrden()">
+                            {{ savingOrdenEdit() ? 'Guardando…' : 'Guardar' }}
+                          </button>
+                          <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" [disabled]="savingOrdenEdit()" (click)="cancelarEditarOrden()">
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
                     }
-                    <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
-                            (click)="descargarPdfOrdenIndividual(o)" title="Descargar PDF de esta orden">
-                      @if (ordenPdfIndividualId() === o.id) {
-                        <span class="hc-btn-spinner"></span>
-                      } @else {
-                        <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                      }
-                    </button>
-                    <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null"
-                            (click)="imprimirPdfOrdenIndividual(o)" title="Imprimir esta orden">
-                      @if (ordenPdfIndividualId() === o.id) {
-                        <span class="hc-btn-spinner"></span>
-                      } @else {
-                        <svg viewBox="0 0 20 20" fill="currentColor" class="hc-icon-sm"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H5zm3 10a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
-                      }
-                    </button>
-                    <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
                   </div>
                 </div>
                 @if (ordenResultadoEditId() === o.id) {
@@ -1027,6 +1346,80 @@
                 }
               }
             </div>
+
+            <!-- Drawer detalle de orden (al hacer clic en "Ver detalle") — panel lateral premium -->
+            @if (ordenParaModal(); as ordenModal) {
+              <div class="hc-drawer-backdrop" (click)="cerrarModalOrden()" role="dialog" aria-modal="true" aria-labelledby="hc-drawer-orden-title"></div>
+              <aside class="hc-drawer" (click)="$event.stopPropagation()">
+                <div class="hc-drawer-header">
+                  <span class="hc-orden-icon hc-drawer-icon">{{ tipoOrdenIcon(getOrdenDisplayItems(ordenModal)[0]?.tipo || ordenModal.tipo) }}</span>
+                  <div class="hc-drawer-header-text">
+                    <h2 id="hc-drawer-orden-title" class="hc-drawer-title">Orden #{{ ordenModal.id }}</h2>
+                    <p class="hc-drawer-subtitle">{{ ordenModal.tipo === 'COMPUESTA' ? getOrdenDisplayItems(ordenModal).length + ' ítem(s)' : (getOrdenDisplayItems(ordenModal)[0]?.tipo || ordenModal.tipo) }} · {{ ordenModal.estado }}</p>
+                  </div>
+                  <button class="hc-drawer-close" type="button" (click)="cerrarModalOrden()" aria-label="Cerrar">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                  </button>
+                </div>
+                <div class="hc-drawer-body">
+                  @for (item of getOrdenDisplayItems(ordenModal); track $index) {
+                    <div class="hc-orden-item">
+                      <span class="hc-orden-icon hc-orden-icon--item">{{ tipoOrdenIcon(item.tipo) }}</span>
+                      <div class="hc-orden-info">
+                        @if (getOrdenDisplayItems(ordenModal).length > 1) {
+                          <span class="hc-orden-tipo">{{ item.tipo }}</span>
+                        }
+                        @if (item.tipo === 'MEDICAMENTO' && formatoOrdenMedicamentoFromItem(item)) {
+                          <p class="hc-orden-dosis"><strong>{{ formatoOrdenMedicamentoFromItem(item) }}</strong></p>
+                        }
+                        <p class="hc-orden-detalle">{{ item.detalle || 'Sin detalle' }}</p>
+                        @if (item.valorEstimado) {
+                          <span class="hc-orden-valor">$ {{ item.valorEstimado | number }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (ordenModal.resultado) {
+                    <div class="hc-orden-resultado">
+                      <h4 class="hc-orden-resultado-titulo">Resultado</h4>
+                      @if (parseResultadoToItems(ordenModal.resultado).length > 0) {
+                        <div class="hc-orden-resultado-items">
+                          @for (ri of parseResultadoToItems(ordenModal.resultado); track ri.etiqueta + ri.valor) {
+                            <div class="hc-orden-resultado-item"><strong>{{ ri.etiqueta }}:</strong> {{ ri.valor }}</div>
+                          }
+                        </div>
+                      } @else {
+                        <pre class="hc-orden-resultado-pre">{{ ordenModal.resultado }}</pre>
+                      }
+                      @if (ordenModal.resultadoRegistradoPorNombre || ordenModal.fechaResultado) {
+                        <div class="hc-orden-resultado-meta">
+                          @if (ordenModal.resultadoRegistradoPorNombre) {
+                            <span>Registrado por: <strong>{{ ordenModal.resultadoRegistradoPorNombre }}</strong></span>
+                            @if (ordenModal.resultadoRegistradoPorRol) {
+                              <span class="hc-orden-rol">({{ ordenModal.resultadoRegistradoPorRol }})</span>
+                            }
+                          }
+                          @if (ordenModal.fechaResultado) {
+                            <span> · {{ ordenModal.fechaResultado | date:'short' }}</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="hc-drawer-footer">
+                  @if (ordenAceptaResultado(ordenModal) && !ordenCompletada(ordenModal)) {
+                    <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" (click)="cerrarModalOrden(); openSubirResultado(ordenModal)">Subir resultado</button>
+                  }
+                  @if (ordenEsEditable(ordenModal)) {
+                    <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" (click)="cerrarModalOrden(); abrirEditarOrden(ordenModal)">Editar</button>
+                  }
+                  <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null" (click)="descargarPdfOrdenIndividual(ordenModal)" title="Descargar PDF">PDF</button>
+                  <button type="button" class="hc-btn hc-btn--icon hc-btn--sm" [disabled]="ordenPdfIndividualId() !== null" (click)="imprimirPdfOrdenIndividual(ordenModal)" title="Imprimir">Imprimir</button>
+                  <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="cerrarModalOrden()">Cerrar</button>
+                </div>
+              </aside>
+            }
           }
         </div>
       </div>
@@ -1069,7 +1462,7 @@
               <select class="hc-select" [(ngModel)]="facturaForm.ordenId">
                 <option [ngValue]="null">Sin orden</option>
                 @for (o of ordenesPaciente; track o.id) {
-                  <option [ngValue]="o.id">#{{ o.id }} — {{ tipoOrdenIcon(o.tipo) }} {{ o.tipo }}</option>
+                  <option [ngValue]="o.id">#{{ o.id }} — {{ o.tipo === 'COMPUESTA' ? 'Compuesta (' + (o.items?.length ?? 0) + ' ítems)' : tipoOrdenIcon(o.tipo) + ' ' + o.tipo }}</option>
                 }
               </select>
             </div>

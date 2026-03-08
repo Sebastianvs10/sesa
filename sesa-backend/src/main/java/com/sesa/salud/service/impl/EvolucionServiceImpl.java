@@ -39,6 +39,13 @@ public class EvolucionServiceImpl implements EvolucionService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<EvolucionDto> findByPacienteId(Long pacienteId, Pageable pageable) {
+        return evolucionRepository.findByAtencion_HistoriaClinica_Paciente_IdOrderByFechaDesc(pacienteId, pageable)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public EvolucionDto findById(Long id) {
         return toDto(evolucionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Evolución no encontrada: " + id)));

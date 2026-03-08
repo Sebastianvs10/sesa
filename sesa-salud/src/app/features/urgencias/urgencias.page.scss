@@ -542,6 +542,55 @@ $triage-v:   #1e88e5; // Azul — No urgente
     color: var(--sesa-text-primary);
     margin: 0;
     svg { width: 15px; height: 15px; color: #c62828; }
+    .urg-norm-badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(198, 40, 40, 0.12);
+      color: #c62828;
+      margin-left: 0.25rem;
+    }
+  }
+
+  &__sub {
+    margin: -0.25rem 0 0;
+    font-size: 0.8rem;
+    color: var(--sesa-text-secondary);
+  }
+}
+
+// Signos vitales seriados (Res. 5596/2015)
+.urg-sv-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sesa-border);
+  border-radius: 8px;
+}
+.urg-sv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  th, td { padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid var(--sesa-border); }
+  th { background: var(--sesa-surface); color: var(--sesa-text-secondary); font-weight: 600; }
+  td { color: var(--sesa-text-primary); }
+  tr:last-child td { border-bottom: none; }
+}
+.urg-sv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  .urg-sv-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  .urg-sv-field {
+    min-width: 70px;
+    input { width: 100%; max-width: 80px; padding: 0.35rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--sesa-input-border); background: var(--sesa-input-bg); color: var(--sesa-text-primary); border-radius: 6px; }
+    label { display: block; font-size: 0.7rem; margin-bottom: 0.2rem; color: var(--sesa-text-secondary); }
+    &.urg-sv-field--gl input { max-width: 48px; }
   }
 }
 

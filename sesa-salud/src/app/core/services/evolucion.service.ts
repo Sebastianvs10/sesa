@@ -37,6 +37,13 @@ export class EvolucionService {
     return this.http.get<EvolucionDto[]>(this.apiUrl, { params });
   }
 
+  /** Evoluciones del paciente (urgencias y otras atenciones) para timeline en Historia Clínica. */
+  listarPorPaciente(pacienteId: number): Observable<EvolucionDto[]> {
+    return this.http.get<EvolucionDto[]>(`${this.apiUrl}/paciente/${pacienteId}`, {
+      params: new HttpParams().set('size', '100')
+    });
+  }
+
   crear(dto: EvolucionRequestDto): Observable<EvolucionDto> {
     return this.http.post<EvolucionDto>(this.apiUrl, dto);
   }

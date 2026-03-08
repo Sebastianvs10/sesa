@@ -10,6 +10,7 @@ import com.sesa.salud.dto.ConsultaMedicaDto;
 import com.sesa.salud.dto.ConsultasStatsDto;
 import com.sesa.salud.entity.Personal;
 import com.sesa.salud.service.CitaService;
+import com.sesa.salud.service.RecordatorioCitaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class CitaController {
 
     private final CitaService citaService;
+    private final RecordatorioCitaService recordatorioCitaService;
 
     /** Todos los roles clínicos y administrativos pueden consultar citas por fecha. */
     private static final String ROLES_LECTURA_CITAS =
@@ -141,5 +143,17 @@ public class CitaController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(citaService.cambiarEstado(id, estado));
+    }
+
+    /**
+     * Ejecuta manualmente el envío de recordatorios de citas (24h y 1h) para el tenant actual.
+     * Crea notificaciones in-app y marca recordatorio_24h_enviado_at / recordatorio_1h_enviado_at.
+     * El job programado también ejecuta esto cada hora (configurable con sesa.recordatorios.cron).
+     */
+    @PostMapping("/recordatorios/ejecutar")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR_MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<Map<String, Integer>> ejecutarRecordatorios() {
+        int enviados = recordatorioCitaService.procesarRecordatoriosDelTenant();
+        return ResponseEntity.ok(Map.of("enviados", enviados));
     }
 }

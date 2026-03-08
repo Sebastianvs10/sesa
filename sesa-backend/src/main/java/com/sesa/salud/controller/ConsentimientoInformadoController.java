@@ -13,6 +13,7 @@ import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.repository.PersonalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -20,8 +21,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/consentimientos")
+@RequestMapping("/consentimientos")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ConsentimientoInformadoController {
 
     private final ConsentimientoInformadoRepository repo;
@@ -35,6 +37,7 @@ public class ConsentimientoInformadoController {
     }
 
     @PostMapping
+    @Transactional(readOnly = false)
     public ResponseEntity<ConsentimientoInformadoDto> create(@RequestBody ConsentimientoInformadoDto dto) {
         if (dto.getPacienteId() == null) {
             throw new IllegalArgumentException("pacienteId es obligatorio");
@@ -58,6 +61,7 @@ public class ConsentimientoInformadoController {
     }
 
     @PatchMapping("/{id}/firmar")
+    @Transactional(readOnly = false)
     public ResponseEntity<ConsentimientoInformadoDto> firmar(
             @PathVariable Long id,
             @RequestBody ConsentimientoInformadoDto dto) {
@@ -71,6 +75,7 @@ public class ConsentimientoInformadoController {
     }
 
     @PatchMapping("/{id}/rechazar")
+    @Transactional(readOnly = false)
     public ResponseEntity<ConsentimientoInformadoDto> rechazar(
             @PathVariable Long id,
             @RequestBody(required = false) ConsentimientoInformadoDto dto) {
@@ -82,6 +87,7 @@ public class ConsentimientoInformadoController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional(readOnly = false)
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repo.deleteById(id);
         return ResponseEntity.noContent().build();
@@ -92,11 +98,11 @@ public class ConsentimientoInformadoController {
         Personal prof = c.getProfesional();
         return ConsentimientoInformadoDto.builder()
                 .id(c.getId())
-                .pacienteId(p.getId())
-                .pacienteNombre((p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim())
-                .pacienteDocumento(p.getDocumento())
-                .profesionalId(prof.getId())
-                .profesionalNombre((prof.getNombres() + " " + (prof.getApellidos() != null ? prof.getApellidos() : "")).trim())
+                .pacienteId(p != null ? p.getId() : null)
+                .pacienteNombre(p != null ? (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim() : null)
+                .pacienteDocumento(p != null ? p.getDocumento() : null)
+                .profesionalId(prof != null ? prof.getId() : null)
+                .profesionalNombre(prof != null ? (prof.getNombres() + " " + (prof.getApellidos() != null ? prof.getApellidos() : "")).trim() : null)
                 .tipo(c.getTipo())
                 .estado(c.getEstado())
                 .procedimiento(c.getProcedimiento())

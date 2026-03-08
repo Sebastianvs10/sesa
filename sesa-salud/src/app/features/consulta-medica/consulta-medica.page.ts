@@ -273,7 +273,7 @@ export class ConsultaMedicaPageComponent implements OnInit, OnDestroy {
 
   irAHistoriaClinica(cita: ConsultaMedicaDto): void {
     this.router.navigate(['/historia-clinica'], {
-      queryParams: { pacienteId: cita.pacienteId },
+      queryParams: { pacienteId: cita.pacienteId, consultaRapida: 'true' },
     });
   }
 

@@ -13,4 +13,7 @@
 .sesa-table { width: 100%; border-collapse: collapse; }
 .sesa-table th, .sesa-table td { border-bottom: 1px solid var(--sesa-border); padding: 0.5rem; text-align: left; }
 .sesa-error { color: #b91c1c; }
+.img-global-filters { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.img-global-loading { margin: 1rem 0; color: var(--sesa-text-secondary); }
+.img-global-pagination { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
 @media (max-width: 960px) { .sesa-form-grid { grid-template-columns: 1fr; } }

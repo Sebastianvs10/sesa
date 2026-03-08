@@ -1,0 +1,70 @@
+<!-- Evolución de Enfermería — Res. 1995/1999, Decreto 1011/2006 -->
+<section class="sesa-page evolucion-enfermeria-page">
+  <header class="sesa-page-header">
+    <h1 class="sesa-page-title">Evolución de Enfermería</h1>
+    <p class="sesa-page-subtitle">Registro de notas de enfermería por atención. Trazabilidad y seguridad del paciente.</p>
+  </header>
+
+  <sesa-card title="Consultar y registrar notas por atención">
+    <p class="evolucion-enfermeria-instruction">Ingrese el <strong>ID de la atención</strong> (obtenido desde Urgencias, Historia Clínica o Consulta) para cargar las notas existentes y registrar nuevas.</p>
+    <div class="evolucion-enfermeria-buscar">
+      <div class="sesa-form-field">
+        <label for="atencion-id">ID de atención</label>
+        <input
+          id="atencion-id"
+          type="number"
+          min="1"
+          placeholder="Ej.: 42"
+          [ngModel]="atencionIdInput()"
+          (ngModelChange)="atencionIdInput.set($event)"
+        />
+      </div>
+      <button type="button" class="sesa-btn sesa-btn-primary" [disabled]="cargando()" (click)="cargarNotas()">
+        {{ cargando() ? 'Cargando…' : 'Cargar notas' }}
+      </button>
+    </div>
+
+    @if (error()) {
+      <p class="sesa-error">{{ error() }}</p>
+    }
+
+    @if (notas().length > 0) {
+      <h3 class="evolucion-enfermeria-list-title">Notas registradas ({{ notas().length }})</h3>
+      <div class="evolucion-enfermeria-list">
+        @for (n of notas(); track n.id) {
+          <div class="evolucion-enfermeria-item">
+            <div class="evolucion-enfermeria-item-meta">
+              <span class="evolucion-enfermeria-fecha">{{ formatFecha(n.fechaNota) }}</span>
+              @if (n.profesionalNombre) {
+                <span class="evolucion-enfermeria-prof">Registrado por: {{ n.profesionalNombre }}</span>
+              }
+            </div>
+            <div class="evolucion-enfermeria-item-nota">{{ n.nota }}</div>
+          </div>
+        }
+      </div>
+    }
+
+    <hr class="evolucion-enfermeria-hr" />
+
+    <h3 class="evolucion-enfermeria-form-title">Nueva nota de evolución</h3>
+    <div class="sesa-form-field">
+      <label for="nueva-nota">Contenido de la nota</label>
+      <textarea
+        id="nueva-nota"
+        rows="4"
+        placeholder="Registre hallazgos, intervenciones, signos vitales, cuidados realizados..."
+        [ngModel]="nuevaNotaTexto()"
+        (ngModelChange)="nuevaNotaTexto.set($event)"
+     ></textarea>
+    </div>
+    <button
+      type="button"
+      class="sesa-btn sesa-btn-primary"
+      [disabled]="guardando() || !atencionIdInput().trim() || !nuevaNotaTexto().trim()"
+      (click)="registrarNota()"
+    >
+      {{ guardando() ? 'Guardando…' : 'Registrar nota' }}
+    </button>
+  </sesa-card>
+</section>

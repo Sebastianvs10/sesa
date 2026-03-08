@@ -12,6 +12,8 @@ import {
   UrgenciaRegistroService,
   UrgenciaRegistroDto,
   UrgenciaDashboardDto,
+  SignosVitalesUrgenciaDto,
+  SignosVitalesUrgenciaRequestDto,
 } from '../../core/services/urgencia-registro.service';
 import { EvolucionService, EvolucionDto, EvolucionRequestDto } from '../../core/services/evolucion.service';
 import { NotaEnfermeriaService, NotaEnfermeriaDto, NotaEnfermeriaRequestDto } from '../../core/services/nota-enfermeria.service';
@@ -69,6 +71,8 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   // Evoluciones y notas
   evoluciones = signal<EvolucionDto[]>([]);
   notas = signal<NotaEnfermeriaDto[]>([]);
+  /** Signos vitales seriados (Res. 5596/2015) — múltiples tomas durante espera/atención */
+  signosVitalesSeriados = signal<SignosVitalesUrgenciaDto[]>([]);
 
   // Formulario nueva evolución SOAP estructurada
   formEvolucion = signal({
@@ -80,6 +84,19 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   });
   // Formulario nueva nota
   formNota = signal({ nota: '' });
+  /** Formulario nuevo registro de signos vitales seriados */
+  formSignosVitales = signal({
+    presionArterial: '',
+    frecuenciaCardiaca: '',
+    frecuenciaRespiratoria: '',
+    temperatura: '',
+    saturacionO2: '',
+    peso: '',
+    dolorEva: '',
+    glasgowOcular: '' as string,
+    glasgowVerbal: '' as string,
+    glasgowMotor: '' as string,
+  });
 
   // Formulario nuevo ingreso
   pacienteQuery = signal('');
@@ -208,13 +225,27 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
     this.seleccionada.set(u);
     this.evoluciones.set([]);
     this.notas.set([]);
+    this.signosVitalesSeriados.set([]);
     this.formEvolucion.set({ subjetivo: '', objetivo: '', analisis: '', plan: '', codigoCie10: '' });
     this.formNota.set({ nota: '' });
+    this.formSignosVitales.set({
+      presionArterial: '', frecuenciaCardiaca: '', frecuenciaRespiratoria: '',
+      temperatura: '', saturacionO2: '', peso: '', dolorEva: '',
+      glasgowOcular: '', glasgowVerbal: '', glasgowMotor: '',
+    });
 
     if (u.atencionId) {
       this.cargarEvoluciones(u.atencionId);
       this.cargarNotas(u.atencionId);
     }
+    this.cargarSignosVitales(u.id);
+  }
+
+  private cargarSignosVitales(urgenciaId: number): void {
+    this.urgenciaService.listSignosVitales(urgenciaId).subscribe({
+      next: (list) => this.signosVitalesSeriados.set(list ?? []),
+      error: () => this.signosVitalesSeriados.set([]),
+    });
   }
 
   private cargarEvoluciones(atencionId: number): void {
@@ -353,7 +384,7 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
       atencionId: sel.atencionId,
       notaEvolucion: notaEstructurada,
     };
-    if (user?.userId) dto.profesionalId = user.userId;
+    if (user?.personalId != null || user?.userId != null) dto.profesionalId = user.personalId ?? user.userId;
     this.guardando.set(true);
     this.evolucionService.crear(dto).subscribe({
       next: (nueva) => {
@@ -382,7 +413,7 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
       atencionId: sel.atencionId,
       nota: form.nota.trim(),
     };
-    if (user?.userId) dto.profesionalId = user.userId;
+    if (user?.personalId != null || user?.userId != null) dto.profesionalId = user.personalId ?? user.userId;
     this.guardando.set(true);
     this.notaService.crear(dto).subscribe({
       next: (nueva) => {
@@ -396,6 +427,55 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
         this.guardando.set(false);
       },
     });
+  }
+
+  /** Registra un nuevo registro de signos vitales seriados (Res. 5596/2015). */
+  guardarSignosVitales(): void {
+    const sel = this.seleccionada();
+    const f = this.formSignosVitales();
+    if (!sel) return;
+    const hasAlgunValor = [
+      f.presionArterial, f.frecuenciaCardiaca, f.frecuenciaRespiratoria,
+      f.temperatura, f.saturacionO2, f.peso, f.dolorEva,
+      f.glasgowOcular, f.glasgowVerbal, f.glasgowMotor,
+    ].some((v) => v != null && String(v).trim() !== '');
+    if (!hasAlgunValor) {
+      this.toast.warning('Ingrese al menos un signo vital', 'Signos vitales');
+      return;
+    }
+    const dto: SignosVitalesUrgenciaRequestDto = {
+      presionArterial: f.presionArterial?.trim() || undefined,
+      frecuenciaCardiaca: f.frecuenciaCardiaca?.trim() || undefined,
+      frecuenciaRespiratoria: f.frecuenciaRespiratoria?.trim() || undefined,
+      temperatura: f.temperatura?.trim() || undefined,
+      saturacionO2: f.saturacionO2?.trim() || undefined,
+      peso: f.peso?.trim() || undefined,
+      dolorEva: f.dolorEva?.trim() || undefined,
+      glasgowOcular: f.glasgowOcular ? parseInt(f.glasgowOcular, 10) : undefined,
+      glasgowVerbal: f.glasgowVerbal ? parseInt(f.glasgowVerbal, 10) : undefined,
+      glasgowMotor: f.glasgowMotor ? parseInt(f.glasgowMotor, 10) : undefined,
+    };
+    this.guardando.set(true);
+    this.urgenciaService.createSignosVitales(sel.id, dto).subscribe({
+      next: (nuevo) => {
+        this.signosVitalesSeriados.update((list) => [...list, nuevo]);
+        this.formSignosVitales.set({
+          presionArterial: '', frecuenciaCardiaca: '', frecuenciaRespiratoria: '',
+          temperatura: '', saturacionO2: '', peso: '', dolorEva: '',
+          glasgowOcular: '', glasgowVerbal: '', glasgowMotor: '',
+        });
+        this.guardando.set(false);
+        this.toast.success('Signos vitales registrados', 'Urgencias');
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.error || 'Error al registrar signos vitales', 'Error');
+        this.guardando.set(false);
+      },
+    });
+  }
+
+  setFormSignosVitales(field: string, value: string): void {
+    this.formSignosVitales.update((f) => ({ ...f, [field]: value }));
   }
 
   // ── Nuevo ingreso ────────────────────────────────────────────────────────

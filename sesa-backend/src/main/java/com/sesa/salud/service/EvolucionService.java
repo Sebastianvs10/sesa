@@ -14,6 +14,9 @@ public interface EvolucionService {
 
     List<EvolucionDto> findByAtencionId(Long atencionId, Pageable pageable);
 
+    /** Todas las evoluciones del paciente (desde atenciones de su historia clínica, ej. urgencias). */
+    List<EvolucionDto> findByPacienteId(Long pacienteId, Pageable pageable);
+
     EvolucionDto findById(Long id);
 
     EvolucionDto create(EvolucionRequestDto dto);

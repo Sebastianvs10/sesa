@@ -42,13 +42,14 @@ export interface FarmaciaDispensacionRequestDto {
   entregadoPor?: string;
 }
 
-/** Orden clínica tipo MEDICAMENTO pendiente o parcial de dispensar */
+/** Orden clínica tipo MEDICAMENTO (o COMPUESTA con ítems medicamento) pendiente o parcial de dispensar */
 export interface OrdenFarmaciaPendienteDto {
   id: number;
   pacienteId: number;
   pacienteNombre: string;
   pacienteDocumento?: string;
   tipoDocumentoPaciente?: string;
+  alergiasPaciente?: string;
   detalle?: string;
   cantidadPrescrita?: number;
   unidadMedida?: string;
@@ -57,6 +58,17 @@ export interface OrdenFarmaciaPendienteDto {
   fechaOrden?: string;
   medicoNombre?: string;
   estadoDispensacionFarmacia: string;
+  /** Ítems de medicamento en órdenes compuestas (varios en una sola orden). */
+  items?: OrdenFarmaciaPendienteItemDto[];
+}
+
+export interface OrdenFarmaciaPendienteItemDto {
+  id?: number;
+  detalle?: string;
+  cantidadPrescrita?: number;
+  unidadMedida?: string;
+  frecuencia?: string;
+  duracionDias?: number;
 }
 
 export interface LineaDispensacionDto {

@@ -3,11 +3,14 @@
  */
 package com.sesa.salud.service.impl;
 
+import com.sesa.salud.dto.OrdenClinicaBatchRequestDto;
 import com.sesa.salud.dto.OrdenClinicaDto;
+import com.sesa.salud.dto.OrdenClinicaItemDto;
 import com.sesa.salud.dto.OrdenClinicaRequestDto;
 import com.sesa.salud.dto.ResultadoOrdenDto;
 import com.sesa.salud.entity.Consulta;
 import com.sesa.salud.entity.OrdenClinica;
+import com.sesa.salud.entity.OrdenClinicaItem;
 import com.sesa.salud.entity.Paciente;
 import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,6 +85,43 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
 
     @Override
     @Transactional
+    public OrdenClinicaDto createBatch(OrdenClinicaBatchRequestDto batch) {
+        Paciente paciente = pacienteRepository.findById(batch.getPacienteId())
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + batch.getPacienteId()));
+        Consulta consulta = consultaRepository.findById(batch.getConsultaId())
+                .orElseThrow(() -> new RuntimeException("Consulta no encontrada: " + batch.getConsultaId()));
+
+        OrdenClinica orden = OrdenClinica.builder()
+                .paciente(paciente)
+                .consulta(consulta)
+                .tipo("COMPUESTA")
+                .detalle(null)
+                .estado("PENDIENTE")
+                .items(new ArrayList<>())
+                .build();
+        orden = ordenClinicaRepository.save(orden);
+
+        int index = 0;
+        for (var itemDto : batch.getItems()) {
+            OrdenClinicaItem item = OrdenClinicaItem.builder()
+                    .orden(orden)
+                    .tipo(itemDto.getTipo())
+                    .detalle(itemDto.getDetalle())
+                    .cantidadPrescrita(itemDto.getCantidadPrescrita())
+                    .unidadMedida(itemDto.getUnidadMedida())
+                    .frecuencia(itemDto.getFrecuencia())
+                    .duracionDias(itemDto.getDuracionDias())
+                    .valorEstimado(itemDto.getValorEstimado())
+                    .ordenItemIndex(index++)
+                    .build();
+            orden.getItems().add(item);
+        }
+        orden = ordenClinicaRepository.save(orden);
+        return toDto(orden);
+    }
+
+    @Override
+    @Transactional
     public OrdenClinicaDto update(Long id, OrdenClinicaRequestDto dto) {
         OrdenClinica orden = ordenClinicaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + id));
@@ -129,6 +170,33 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
             regPorNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
             regPorRol = p.getRol();
         }
+        List<OrdenClinicaItemDto> itemsDto = new ArrayList<>();
+        if (o.getItems() != null && !o.getItems().isEmpty()) {
+            for (OrdenClinicaItem it : o.getItems()) {
+                itemsDto.add(OrdenClinicaItemDto.builder()
+                        .id(it.getId())
+                        .tipo(it.getTipo())
+                        .detalle(it.getDetalle())
+                        .cantidadPrescrita(it.getCantidadPrescrita())
+                        .unidadMedida(it.getUnidadMedida())
+                        .frecuencia(it.getFrecuencia())
+                        .duracionDias(it.getDuracionDias())
+                        .valorEstimado(it.getValorEstimado())
+                        .build());
+            }
+        } else {
+            // Órden legacy de un solo ítem (datos en cabecera)
+            itemsDto.add(OrdenClinicaItemDto.builder()
+                    .id(null)
+                    .tipo(o.getTipo())
+                    .detalle(o.getDetalle())
+                    .cantidadPrescrita(o.getCantidadPrescrita())
+                    .unidadMedida(o.getUnidadMedida())
+                    .frecuencia(o.getFrecuencia())
+                    .duracionDias(o.getDuracionDias())
+                    .valorEstimado(o.getValorEstimado())
+                    .build());
+        }
         return OrdenClinicaDto.builder()
                 .id(o.getId())
                 .pacienteId(o.getPaciente().getId())
@@ -147,6 +215,7 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .resultadoRegistradoPorRol(regPorRol)
                 .valorEstimado(o.getValorEstimado())
                 .createdAt(o.getCreatedAt())
+                .items(itemsDto)
                 .build();
     }
 }

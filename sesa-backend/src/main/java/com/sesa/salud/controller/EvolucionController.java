@@ -33,6 +33,15 @@ public class EvolucionController {
         return ResponseEntity.ok(evolucionService.findByAtencionId(atencionId, pageable));
     }
 
+    /** Evoluciones del paciente (urgencias y otras atenciones) para timeline en Historia Clínica. */
+    @GetMapping("/paciente/{pacienteId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
+    public ResponseEntity<List<EvolucionDto>> listByPaciente(
+            @PathVariable("pacienteId") Long pacienteId,
+            @PageableDefault(size = 100) Pageable pageable) {
+        return ResponseEntity.ok(evolucionService.findByPacienteId(pacienteId, pageable));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
     public ResponseEntity<EvolucionDto> getById(@PathVariable("id") Long id) {

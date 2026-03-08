@@ -1,0 +1,79 @@
+/* Evolución de Enfermería — Res. 1995/1999, Decreto 1011/2006 */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.evolucion-enfermeria-page {
+  .evolucion-enfermeria-instruction {
+    margin-bottom: 1rem;
+    color: var(--sesa-text-secondary);
+    font-size: 0.95rem;
+  }
+  .evolucion-enfermeria-buscar {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    .sesa-form-field {
+      min-width: 140px;
+    }
+    input {
+      border: 1px solid var(--sesa-input-border);
+      background: var(--sesa-input-bg);
+      color: var(--sesa-text-primary);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      width: 100%;
+    }
+  }
+  .evolucion-enfermeria-list-title,
+  .evolucion-enfermeria-form-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--sesa-text-primary);
+  }
+  .evolucion-enfermeria-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .evolucion-enfermeria-item {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--sesa-border);
+    border-radius: 8px;
+    background: var(--sesa-surface);
+  }
+  .evolucion-enfermeria-item-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--sesa-text-secondary);
+  }
+  .evolucion-enfermeria-fecha {
+    font-weight: 600;
+  }
+  .evolucion-enfermeria-item-nota {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--sesa-text-primary);
+    font-size: 0.9rem;
+  }
+  .evolucion-enfermeria-hr {
+    border: none;
+    border-top: 1px solid var(--sesa-border);
+    margin: 1.5rem 0;
+  }
+  textarea {
+    border: 1px solid var(--sesa-input-border);
+    background: var(--sesa-input-bg);
+    color: var(--sesa-text-primary);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    width: 100%;
+    resize: vertical;
+  }
+  .sesa-error {
+    color: #b91c1c;
+    margin-bottom: 0.75rem;
+  }
+}

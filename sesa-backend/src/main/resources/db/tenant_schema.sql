@@ -236,6 +236,20 @@ CREATE TABLE IF NOT EXISTS notas_enfermeria (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Plantillas SOAP por motivo de consulta (Res. 1995/1999 — contenido mínimo HC)
+CREATE TABLE IF NOT EXISTS plantillas_soap (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    motivo_tipo VARCHAR(50),
+    contenido_subjetivo TEXT,
+    contenido_objetivo TEXT,
+    contenido_analisis TEXT,
+    contenido_plan TEXT,
+    codigo_cie10_sugerido VARCHAR(20),
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS consentimientos (
     id BIGSERIAL PRIMARY KEY,
     atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
@@ -352,6 +366,20 @@ CREATE TABLE IF NOT EXISTS ordenes_clinicas (
     valor_estimado NUMERIC(14,2),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS orden_clinica_items (
+    id BIGSERIAL PRIMARY KEY,
+    orden_id BIGINT NOT NULL REFERENCES ordenes_clinicas(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL,
+    detalle TEXT,
+    cantidad_prescrita INT,
+    unidad_medida VARCHAR(30),
+    frecuencia VARCHAR(120),
+    duracion_dias INT,
+    valor_estimado NUMERIC(14,2),
+    orden_item_index INT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_orden_clinica_items_orden ON orden_clinica_items (orden_id);
 
 CREATE TABLE IF NOT EXISTS facturas (
     id BIGSERIAL PRIMARY KEY,

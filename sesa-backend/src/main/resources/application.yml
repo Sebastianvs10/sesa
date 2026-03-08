@@ -39,6 +39,10 @@ sesa:
   upload:
     path: ./uploads
 
+  # Recordatorios de citas (24h y 1h antes): job programado. Cron cada hora en punto.
+  recordatorios:
+    cron: "0 0 * * * ?"
+
   # ── Interoperabilidad IHCE — Resolución 1888 de 2025 ──────────────────────
   fhir:
     ministerio:

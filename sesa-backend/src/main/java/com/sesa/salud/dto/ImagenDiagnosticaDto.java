@@ -14,6 +14,12 @@ import java.time.Instant;
 public class ImagenDiagnosticaDto {
     private Long id;
     private Long atencionId;
+    /** Para listado global: ID del paciente (historia clínica). */
+    private Long pacienteId;
+    /** Para listado global: nombres del paciente. */
+    private String pacienteNombres;
+    /** Para listado global: fecha de la atención. */
+    private Instant fechaAtencion;
     private String tipo;
     private String resultado;
     private String urlArchivo;

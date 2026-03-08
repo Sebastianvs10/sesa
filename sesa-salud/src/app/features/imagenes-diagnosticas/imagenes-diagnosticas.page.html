@@ -39,4 +39,52 @@
       </table>
     </div>
   </sesa-card>
+
+  <sesa-card title="Listado global">
+    <p class="sesa-page-subtitle">Filtros por paciente, atención, tipo y rango de fechas.</p>
+    <div class="sesa-form-grid img-global-filters">
+      <div class="sesa-form-field"><label>ID paciente</label><input type="number" [(ngModel)]="globalFilters.pacienteId" placeholder="Opcional" /></div>
+      <div class="sesa-form-field"><label>ID atención</label><input type="number" [(ngModel)]="globalFilters.atencionId" placeholder="Opcional" /></div>
+      <div class="sesa-form-field"><label>Tipo</label><input type="text" [(ngModel)]="globalFilters.tipo" placeholder="RX, TAC, RM..." /></div>
+      <div class="sesa-form-field"><label>Desde</label><input type="date" [(ngModel)]="globalFilters.fechaDesde" /></div>
+      <div class="sesa-form-field"><label>Hasta</label><input type="date" [(ngModel)]="globalFilters.fechaHasta" /></div>
+      <div class="sesa-form-actions">
+        <button type="button" class="sesa-btn sesa-btn-primary" [disabled]="globalLoading()" (click)="loadGlobal()">
+          @if (globalLoading()) { Cargando... } @else { Buscar }
+        </button>
+      </div>
+    </div>
+    @if (globalLoading()) {
+      <p class="img-global-loading">Cargando listado...</p>
+    } @else {
+      <div class="sesa-table-wrap">
+        <table class="sesa-table">
+          <thead>
+            <tr><th>Paciente</th><th>Atención</th><th>Tipo</th><th>Informe</th><th>Fecha atención</th><th>Registro</th></tr>
+          </thead>
+          <tbody>
+            @for (i of globalList(); track i.id) {
+              <tr>
+                <td>{{ i.pacienteNombres || ('#' + (i.pacienteId ?? '')) }}</td>
+                <td>#{{ i.atencionId }}</td>
+                <td>{{ i.tipo || '—' }}</td>
+                <td>{{ (i.resultado && i.resultado.length > 40) ? (i.resultado.slice(0, 40) + '…') : (i.resultado || '—') }}</td>
+                <td>{{ formatFecha(i.fechaAtencion) }}</td>
+                <td>{{ formatFecha(i.createdAt) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6">Sin resultados. Ajuste filtros y pulse Buscar.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (globalTotalPages() > 1) {
+        <div class="img-global-pagination">
+          <button type="button" class="sesa-btn sesa-btn-secondary" [disabled]="globalPage() === 0" (click)="setGlobalPage(globalPage() - 1)">Anterior</button>
+          <span>Pág. {{ globalPage() + 1 }} de {{ globalTotalPages() }} ({{ globalTotalElements() }} registros)</span>
+          <button type="button" class="sesa-btn sesa-btn-secondary" [disabled]="globalPage() >= globalTotalPages() - 1" (click)="setGlobalPage(globalPage() + 1)">Siguiente</button>
+        </div>
+      }
+    }
+  </sesa-card>
 </section>

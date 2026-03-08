@@ -8,9 +8,11 @@ import com.sesa.salud.dto.*;
 import com.sesa.salud.entity.FarmaciaDispensacion;
 import com.sesa.salud.entity.FarmaciaMedicamento;
 import com.sesa.salud.entity.OrdenClinica;
+import com.sesa.salud.entity.OrdenClinicaItem;
 import com.sesa.salud.entity.Paciente;
 import com.sesa.salud.repository.FarmaciaDispensacionRepository;
 import com.sesa.salud.repository.FarmaciaMedicamentoRepository;
+import com.sesa.salud.repository.HistoriaClinicaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.service.FarmaciaService;
@@ -33,6 +35,7 @@ public class FarmaciaServiceImpl implements FarmaciaService {
     private final FarmaciaDispensacionRepository dispensacionRepository;
     private final PacienteRepository pacienteRepository;
     private final OrdenClinicaRepository ordenClinicaRepository;
+    private final HistoriaClinicaRepository historiaClinicaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,8 +115,17 @@ public class FarmaciaServiceImpl implements FarmaciaService {
     @Transactional(readOnly = true)
     public List<OrdenFarmaciaPendienteDto> listOrdenesPendientes(Pageable pageable) {
         List<String> estados = List.of("PENDIENTE", "PARCIAL");
-        List<OrdenClinica> ordenes = ordenClinicaRepository.findOrdenesMedicamentoPendientesDispensar(TIPO_MEDICAMENTO, estados, pageable);
-        return ordenes.stream().map(this::toOrdenFarmaciaPendienteDto).collect(Collectors.toList());
+        List<OrdenClinica> ordenes = ordenClinicaRepository.findOrdenesFarmaciaPendientes(estados, pageable);
+        return ordenes.stream()
+                .filter(o -> {
+                    if ("MEDICAMENTO".equalsIgnoreCase(o.getTipo())) return true;
+                    if ("COMPUESTA".equalsIgnoreCase(o.getTipo()) && o.getItems() != null) {
+                        return o.getItems().stream().anyMatch(it -> "MEDICAMENTO".equalsIgnoreCase(it.getTipo()));
+                    }
+                    return false;
+                })
+                .map(this::toOrdenFarmaciaPendienteDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -124,8 +136,8 @@ public class FarmaciaServiceImpl implements FarmaciaService {
         }
         OrdenClinica orden = ordenClinicaRepository.findById(dto.getOrdenId())
                 .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + dto.getOrdenId()));
-        if (!TIPO_MEDICAMENTO.equalsIgnoreCase(orden.getTipo())) {
-            throw new RuntimeException("La orden no es de tipo MEDICAMENTO");
+        if (!TIPO_MEDICAMENTO.equalsIgnoreCase(orden.getTipo()) && !"COMPUESTA".equalsIgnoreCase(orden.getTipo())) {
+            throw new RuntimeException("La orden no es de tipo MEDICAMENTO ni COMPUESTA con medicamentos");
         }
         Paciente paciente = orden.getPaciente();
         if (paciente == null) throw new RuntimeException("Orden sin paciente asociado");
@@ -161,20 +173,53 @@ public class FarmaciaServiceImpl implements FarmaciaService {
             var p = o.getConsulta().getProfesional();
             medicoNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
         }
+        String alergiasPaciente = historiaClinicaRepository.findByPacienteId(o.getPaciente().getId())
+                .map(hc -> hc.getAlergiasGenerales())
+                .filter(a -> a != null && !a.isBlank())
+                .orElse(null);
+
+        List<OrdenFarmaciaPendienteItemDto> itemsDto = new ArrayList<>();
+        if (o.getItems() != null && !o.getItems().isEmpty()) {
+            for (OrdenClinicaItem it : o.getItems()) {
+                if (!TIPO_MEDICAMENTO.equalsIgnoreCase(it.getTipo())) continue;
+                itemsDto.add(OrdenFarmaciaPendienteItemDto.builder()
+                        .id(it.getId())
+                        .detalle(it.getDetalle())
+                        .cantidadPrescrita(it.getCantidadPrescrita())
+                        .unidadMedida(it.getUnidadMedida())
+                        .frecuencia(it.getFrecuencia())
+                        .duracionDias(it.getDuracionDias())
+                        .build());
+            }
+        }
+        if (itemsDto.isEmpty() && TIPO_MEDICAMENTO.equalsIgnoreCase(o.getTipo())) {
+            itemsDto.add(OrdenFarmaciaPendienteItemDto.builder()
+                    .id(null)
+                    .detalle(o.getDetalle())
+                    .cantidadPrescrita(o.getCantidadPrescrita())
+                    .unidadMedida(o.getUnidadMedida())
+                    .frecuencia(o.getFrecuencia())
+                    .duracionDias(o.getDuracionDias())
+                    .build());
+        }
+
+        OrdenFarmaciaPendienteItemDto first = itemsDto.isEmpty() ? null : itemsDto.get(0);
         return OrdenFarmaciaPendienteDto.builder()
                 .id(o.getId())
                 .pacienteId(o.getPaciente().getId())
                 .pacienteNombre(pacienteNombre)
                 .pacienteDocumento(o.getPaciente().getDocumento())
                 .tipoDocumentoPaciente(o.getPaciente().getTipoDocumento())
-                .detalle(o.getDetalle())
-                .cantidadPrescrita(o.getCantidadPrescrita())
-                .unidadMedida(o.getUnidadMedida())
-                .frecuencia(o.getFrecuencia())
-                .duracionDias(o.getDuracionDias())
+                .alergiasPaciente(alergiasPaciente)
+                .detalle(first != null ? first.getDetalle() : o.getDetalle())
+                .cantidadPrescrita(first != null ? first.getCantidadPrescrita() : o.getCantidadPrescrita())
+                .unidadMedida(first != null ? first.getUnidadMedida() : o.getUnidadMedida())
+                .frecuencia(first != null ? first.getFrecuencia() : o.getFrecuencia())
+                .duracionDias(first != null ? first.getDuracionDias() : o.getDuracionDias())
                 .fechaOrden(o.getCreatedAt())
                 .medicoNombre(medicoNombre)
                 .estadoDispensacionFarmacia(o.getEstadoDispensacionFarmacia() != null ? o.getEstadoDispensacionFarmacia() : "PENDIENTE")
+                .items(itemsDto.isEmpty() ? null : itemsDto)
                 .build();
     }
 

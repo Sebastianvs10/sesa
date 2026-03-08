@@ -280,6 +280,40 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             )
             """;
 
+    /** Plantillas SOAP para evolución HC (Res. 1995/1999). */
+    private static final String DDL_PLANTILLAS_SOAP = """
+            CREATE TABLE IF NOT EXISTS plantillas_soap (
+                id BIGSERIAL PRIMARY KEY,
+                nombre VARCHAR(150) NOT NULL,
+                motivo_tipo VARCHAR(50),
+                contenido_subjetivo TEXT,
+                contenido_objetivo TEXT,
+                contenido_analisis TEXT,
+                contenido_plan TEXT,
+                codigo_cie10_sugerido VARCHAR(20),
+                activo BOOLEAN NOT NULL DEFAULT true,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+
+    /** Consentimientos informados (Ley 23/1981, Res. 3380/1981). */
+    private static final String DDL_CONSENTIMIENTOS_INFORMADOS = """
+            CREATE TABLE IF NOT EXISTS consentimientos_informados (
+                id                  BIGSERIAL PRIMARY KEY,
+                paciente_id         BIGINT NOT NULL REFERENCES pacientes(id),
+                profesional_id      BIGINT NOT NULL REFERENCES personal(id),
+                tipo                VARCHAR(30) NOT NULL,
+                estado              VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+                procedimiento       VARCHAR(300),
+                fecha_solicitud     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                fecha_firma         TIMESTAMPTZ,
+                observaciones       TEXT,
+                firma_canvas_data   TEXT,
+                created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at          TIMESTAMPTZ DEFAULT NOW()
+            )
+            """;
+
     private static final List<String> DDL_EBS_IGAC_MIGRATIONS = List.of(
             "ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_departamento_codigo VARCHAR(2)",
             "ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_municipio_codigo VARCHAR(5)",
@@ -345,6 +379,21 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS duracion_dias INT",
             "ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id)"
     );
+
+    private static final String DDL_ORDEN_CLINICA_ITEMS = """
+            CREATE TABLE IF NOT EXISTS orden_clinica_items (
+                id BIGSERIAL PRIMARY KEY,
+                orden_id BIGINT NOT NULL REFERENCES ordenes_clinicas(id) ON DELETE CASCADE,
+                tipo VARCHAR(50) NOT NULL,
+                detalle TEXT,
+                cantidad_prescrita INT,
+                unidad_medida VARCHAR(30),
+                frecuencia VARCHAR(120),
+                duracion_dias INT,
+                valor_estimado NUMERIC(14,2),
+                orden_item_index INT NOT NULL DEFAULT 0
+            )
+            """;
 
     private static final List<String> DDL_EBS_VISIT_MIGRATIONS = List.of(
             "ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS brigade_id BIGINT REFERENCES ebs_brigades(id)",
@@ -494,12 +543,16 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                     stmt.execute(migration);
                 }
                 stmt.execute(DDL_SIGNOS_VITALES_URGENCIA);
+                stmt.execute(DDL_PLANTILLAS_SOAP);
+                stmt.execute(DDL_CONSENTIMIENTOS_INFORMADOS);
                 for (String migration : DDL_ORDENES_RESULTADO_MIGRATIONS) {
                     stmt.execute(migration);
                 }
                 for (String migration : DDL_FARMACIA_ORDENES_MIGRATIONS) {
                     stmt.execute(migration);
                 }
+                stmt.execute(DDL_ORDEN_CLINICA_ITEMS);
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_orden_clinica_items_orden ON orden_clinica_items (orden_id)");
                 for (String migration : DDL_EBS_IGAC_MIGRATIONS) {
                     stmt.execute(migration);
                 }

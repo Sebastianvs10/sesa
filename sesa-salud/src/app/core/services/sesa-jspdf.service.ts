@@ -1172,6 +1172,79 @@ export class SesaJspdfService {
     this.triggerDownload(blob, name);
   }
 
+  /**
+   * Resumen de alta / referencia desde consulta (Res. 1995/1999 — continuidad).
+   * Retorna Blob para descarga o impresión.
+   */
+  generarResumenAltaConsultaPdf(data: {
+    pacienteNombre: string;
+    pacienteDocumento: string;
+    fechaConsulta: string;
+    profesionalNombre?: string;
+    motivoConsulta?: string;
+    diagnostico?: string;
+    codigoCie10?: string;
+    planTratamiento?: string;
+    tratamientoFarmacologico?: string;
+    recomendaciones?: string;
+  }): Blob {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const contentW = PAGE_W - 2 * MARGIN;
+    let y = MARGIN + 10;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen de alta / Referencia — Consulta', MARGIN, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setDrawColor(...BW_LIGHT);
+    doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.pacienteNombre, MARGIN + 25, y);
+    y += LINE_HEIGHT;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Documento:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.pacienteDocumento, MARGIN + 28, y);
+    y += LINE_HEIGHT;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha de atención:', MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.fechaConsulta, MARGIN + 35, y);
+    y += LINE_HEIGHT;
+    if (data.profesionalNombre) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Profesional:', MARGIN, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(data.profesionalNombre, MARGIN + 28, y);
+      y += LINE_HEIGHT;
+    }
+    y += SECTION_GAP;
+    const sections: [string, string][] = [];
+    if (data.motivoConsulta) sections.push(['Motivo de consulta', data.motivoConsulta]);
+    if (data.diagnostico) sections.push(['Diagnóstico', data.diagnostico]);
+    if (data.codigoCie10) sections.push(['CIE-10', data.codigoCie10]);
+    if (data.planTratamiento) sections.push(['Plan de tratamiento', data.planTratamiento]);
+    if (data.tratamientoFarmacologico) sections.push(['Tratamiento farmacológico', data.tratamientoFarmacologico]);
+    if (data.recomendaciones) sections.push(['Recomendaciones', data.recomendaciones]);
+    for (const [label, text] of sections) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label + ':', MARGIN, y);
+      y += LINE_HEIGHT + 2;
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(text, contentW);
+      lines.forEach((line: string) => { doc.text(line, MARGIN, y); y += LINE_HEIGHT; });
+      y += SECTION_GAP;
+    }
+    doc.setFontSize(8);
+    doc.setTextColor(...BW_MID);
+    doc.text('Documento generado por SESA — Res. 1995/1999. Continuidad del cuidado.', MARGIN, FOOTER_TOP);
+    return doc.output('blob');
+  }
+
   /** Descarga un Blob como archivo PDF. */
   triggerDownload(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
