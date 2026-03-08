@@ -25,7 +25,6 @@ export interface EmpresaDto {
   adminPrimerApellido?: string;
   adminSegundoApellido?: string;
   adminCelular?: string;
-  adminProveedorServicio?: string;
   usuarioMovilLimit?: number;
   usuarioWebLimit?: number;
   activo?: boolean;
@@ -41,7 +40,6 @@ export interface AdminUserRequest {
   primerApellido: string;
   segundoApellido?: string;
   telefonoCelular: string;
-  proveedorServicio?: string;
   correo: string;
   contraseña: string;
 }

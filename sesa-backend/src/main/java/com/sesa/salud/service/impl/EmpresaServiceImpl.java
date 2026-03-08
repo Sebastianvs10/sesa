@@ -99,7 +99,6 @@ public class EmpresaServiceImpl implements EmpresaService {
                 .adminPrimerApellido(admin.getPrimerApellido() != null ? admin.getPrimerApellido().trim() : null)
                 .adminSegundoApellido(admin.getSegundoApellido() != null && !admin.getSegundoApellido().isBlank() ? admin.getSegundoApellido().trim() : null)
                 .adminCelular(admin.getTelefonoCelular() != null ? admin.getTelefonoCelular().trim() : null)
-                .adminProveedorServicio(admin.getProveedorServicio() != null && !admin.getProveedorServicio().isBlank() ? admin.getProveedorServicio().trim() : null)
                 .razonSocial(request.getRazonSocial())
                 .telefono(request.getTelefono())
                 .segundoTelefono(request.getSegundoTelefono())
@@ -189,7 +188,6 @@ public class EmpresaServiceImpl implements EmpresaService {
             e.setAdminPrimerApellido(admin.getPrimerApellido() != null ? admin.getPrimerApellido().trim() : null);
             e.setAdminSegundoApellido(admin.getSegundoApellido() != null && !admin.getSegundoApellido().isBlank() ? admin.getSegundoApellido().trim() : null);
             e.setAdminCelular(admin.getTelefonoCelular() != null ? admin.getTelefonoCelular().trim() : null);
-            e.setAdminProveedorServicio(admin.getProveedorServicio() != null && !admin.getProveedorServicio().isBlank() ? admin.getProveedorServicio().trim() : null);
         }
         e.setRazonSocial(request.getRazonSocial());
         e.setTelefono(request.getTelefono());
@@ -320,7 +318,6 @@ public class EmpresaServiceImpl implements EmpresaService {
                 .adminPrimerApellido(e.getAdminPrimerApellido())
                 .adminSegundoApellido(e.getAdminSegundoApellido())
                 .adminCelular(e.getAdminCelular())
-                .adminProveedorServicio(e.getAdminProveedorServicio())
                 .razonSocial(e.getRazonSocial())
                 .telefono(e.getTelefono())
                 .segundoTelefono(e.getSegundoTelefono())

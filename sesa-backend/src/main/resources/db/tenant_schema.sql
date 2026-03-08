@@ -445,6 +445,25 @@ ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS sv_dolor_eva VARCHAR(5);
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_ocular INT;
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_verbal INT;
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_motor INT;
+ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS fecha_hora_inicio_atencion TIMESTAMP;
+
+-- Signos vitales seriados por urgencia (sugerencia 5)
+CREATE TABLE IF NOT EXISTS signos_vitales_urgencia (
+    id BIGSERIAL PRIMARY KEY,
+    urgencia_registro_id BIGINT NOT NULL REFERENCES urgencias(id) ON DELETE CASCADE,
+    fecha_hora TIMESTAMP NOT NULL,
+    presion_arterial VARCHAR(20),
+    frecuencia_cardiaca VARCHAR(10),
+    frecuencia_respiratoria VARCHAR(10),
+    temperatura VARCHAR(10),
+    saturacion_o2 VARCHAR(10),
+    peso VARCHAR(10),
+    dolor_eva VARCHAR(5),
+    glasgow_ocular INT,
+    glasgow_verbal INT,
+    glasgow_motor INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE IF NOT EXISTS acceso_auditoria (
     id BIGSERIAL PRIMARY KEY,

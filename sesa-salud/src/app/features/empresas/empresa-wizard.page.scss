@@ -1,4 +1,5 @@
 /* Empresa Wizard - Interfaz premium (nueva/editar empresa) */
+/* Paleta SESA: solo variables del tema (--sesa-*) */
 /* Autor: Ing. J Sebastian Vargas S */
 
 $primary: var(--sesa-secondary);
@@ -9,6 +10,7 @@ $text2: var(--sesa-text-secondary);
 $border: var(--sesa-border);
 $bg: var(--sesa-bg);
 $surface: var(--sesa-surface);
+$on-primary: #fff;
 $radius-sm: var(--sesa-radius-sm, 6px);
 $radius-md: var(--sesa-radius-md, 10px);
 $radius-lg: var(--sesa-radius-lg, 14px);
@@ -17,192 +19,225 @@ $shadow-md: var(--sesa-shadow-md);
 $shadow-lg: var(--sesa-shadow-lg);
 $transition: var(--sesa-transition);
 
-/* Contenedor principal */
+/* Contenedor principal: rompe el padding del layout para que header y contenido lleguen a los bordes */
 .ewizard {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 1.25rem 2rem;
-}
-
-/* Header con breadcrumb */
-.ewizard-header {
-  margin-bottom: 2rem;
-}
-
-.ewizard-breadcrumb {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100vh;
+  width: calc(100% + 3.5rem);
+  max-width: none;
+  margin-top: 0;
+  margin-left: -1.75rem;
+  margin-right: -1.75rem;
+  overflow-x: visible;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  align-items: stretch;
+}
+
+/* Contenedor del contenido: más espacio en pantalla (max 1280px); menos espacio bajo el encabezado */
+.ewizard-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  box-sizing: border-box;
+}
+
+/* Menos espacio entre encabezado y bloque de pasos/formulario */
+.ewizard .sesa-page-header {
+  margin-bottom: 0.5rem;
+}
+
+/* ═══ Stepper y pasos del wizard — Premium SaaS Pro ═══ */
+.ewizard-stepper {
+  flex-shrink: 0;
   margin-bottom: 1rem;
-  font-size: 0.875rem;
-  color: $text2;
+}
 
-  a {
-    color: $primary;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color $transition;
+.ewizard-step-card {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  overflow: hidden;
 
-    &:hover {
-      color: $accent;
-      text-decoration: underline;
-    }
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--sesa-secondary), var(--sesa-accent), transparent);
+    opacity: 0.5;
   }
 }
 
-.ewizard-back {
-  display: inline-flex;
-  align-items: center;
+.ewizard-step-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.ewizard-step-block {
+  margin-bottom: 0.5rem;
+}
+
+.ewizard-step-info {
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
 }
 
-.ewizard-back-arrow {
-  font-size: 1rem;
-  transition: transform $transition;
-}
-
-.ewizard-back:hover .ewizard-back-arrow {
-  transform: translateX(-2px);
-}
-
-.ewizard-breadcrumb-sep {
-  opacity: 0.6;
-}
-
-.ewizard-breadcrumb-current {
-  color: $text;
-  font-weight: 600;
-}
-
-.ewizard-header-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  padding: 1.5rem 1.75rem;
-  background: linear-gradient(135deg, rgba($primary, 0.06) 0%, rgba($accent, 0.03) 100%);
-  border: 1px solid rgba($primary, 0.12);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
-}
-
-.ewizard-header-icon {
-  display: flex;
+.ewizard-step-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sesa-secondary);
+  text-transform: uppercase;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, $primary, $accent);
-  border-radius: $radius-md;
-  color: #fff;
-  flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba($primary, 0.35);
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(31, 106, 225, 0.08);
 
-  svg {
-    width: 1.5rem;
-    height: 1.5rem;
+  [data-theme='dark'] & {
+    background: rgba(31, 106, 225, 0.14);
   }
 }
 
-.ewizard-header-text {
-  min-width: 0;
-}
-
-.ewizard-title {
-  margin: 0 0 0.35rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: $text;
-  letter-spacing: -0.02em;
-}
-
-.ewizard-subtitle {
+.ewizard-step-title {
   margin: 0;
-  font-size: 0.9rem;
-  color: $text2;
-  line-height: 1.45;
-}
-
-/* Stepper y progreso */
-.ewizard-container {
-  width: 100%;
-}
-
-.ewizard-stepper {
-  margin-bottom: 1.75rem;
+  font-size: 1.3125rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .ewizard-progress {
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 0;
+  width: 100%;
 }
 
 .ewizard-progress-track {
-  width: 100%;
-  height: 6px;
-  background: rgba($border, 0.4);
+  flex: 1;
+  height: 10px;
+  background: var(--sesa-border);
   border-radius: 999px;
   overflow: hidden;
+  opacity: 0.6;
 }
 
 .ewizard-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, $primary, $accent);
+  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
   border-radius: 999px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(31, 106, 225, 0.25);
 }
 
 .ewizard-progress-label {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: $text2;
-  text-align: right;
+  color: var(--sesa-text-secondary);
+  white-space: nowrap;
+  margin-left: 0.85rem;
 }
 
+/* Tabs de pasos: estilo premium con estados claros */
 .ewizard-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .ewizard-tab {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: $radius-md;
-  border: 1px solid transparent;
-  background: rgba($text, 0.04);
-  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: $text2;
+  color: var(--sesa-text-secondary);
   cursor: pointer;
-  transition: background $transition, border-color $transition, color $transition;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    transform 0.15s ease, box-shadow 0.2s ease;
+
+  [data-theme='dark'] & {
+    background: rgba(255, 255, 255, 0.04);
+  }
 
   &:not(:disabled):hover {
-    background: rgba($primary, 0.06);
-    color: $text;
+    background: rgba(31, 106, 225, 0.08);
+    color: var(--sesa-text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(31, 106, 225, 0.12);
+
+    [data-theme='dark'] & {
+      background: rgba(31, 106, 225, 0.12);
+    }
   }
 
   &:disabled {
     cursor: default;
-    opacity: 0.7;
+    opacity: 0.65;
   }
 
   &--current {
-    background: rgba($primary, 0.1);
-    border-color: rgba($primary, 0.35);
-    color: $primary;
+    background: rgba(31, 106, 225, 0.1);
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    box-shadow: 0 0 0 1px rgba(31, 106, 225, 0.2);
+
+    [data-theme='dark'] & {
+      background: rgba(31, 106, 225, 0.15);
+      box-shadow: 0 0 0 1px rgba(31, 106, 225, 0.3);
+    }
 
     .ewizard-tab-num {
-      background: linear-gradient(135deg, $primary, $accent);
+      background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
       color: #fff;
+      box-shadow: 0 2px 8px rgba(31, 106, 225, 0.35);
     }
   }
 
-  &--done .ewizard-tab-num {
-    background: var(--sesa-success, #22c55e);
-    color: #fff;
+  &--done {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.2);
+    color: var(--sesa-text-primary);
+
+    [data-theme='dark'] & {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.25);
+    }
+
+    .ewizard-tab-num {
+      background: var(--sesa-success);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
   }
 }
 
@@ -210,34 +245,62 @@ $transition: var(--sesa-transition);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   font-size: 0.75rem;
   font-weight: 700;
-  background: rgba($text, 0.12);
-  transition: background $transition;
+  background: var(--sesa-border);
+  color: var(--sesa-text-muted);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
 }
 
 .ewizard-tab-text {
   white-space: nowrap;
+  letter-spacing: 0.01em;
 
   @media (max-width: 640px) {
     display: none;
   }
 }
 
-/* Tarjeta de contenido */
+/* Tarjeta de contenido principal */
 .ewizard-card {
-  background: $surface;
-  border: 1px solid rgba($border, 0.6);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-md;
-  padding: 2rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   animation: ewizardFadeIn 0.35s ease;
+  overflow: hidden;
 
   @media (max-width: 768px) {
-    padding: 1.5rem;
+    padding: 0;
+  }
+}
+
+/* Área del paso actual: altura dinámica, scroll solo si hace falta */
+.ewizard-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($primary, 0.3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.25);
+    border-radius: 3px;
   }
 }
 
@@ -254,89 +317,95 @@ $transition: var(--sesa-transition);
 
 /* Mensaje de error */
 .ewizard-error {
+  flex-shrink: 0;
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  border-radius: $radius-md;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: $radius-sm;
   background: rgba($err, 0.08);
   border: 1px solid rgba($err, 0.25);
   color: $err;
+  font-size: 0.85rem;
 
   strong {
     display: block;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
   }
 
   p {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     opacity: 0.95;
   }
 
   fa-icon {
     flex-shrink: 0;
-    margin-top: 0.1rem;
+    margin-top: 0.05rem;
   }
 }
 
-/* Sección Módulos (desde BD) */
+/* Sección Módulos (desde BD): ocupa altura disponible */
 .ewizard-modules {
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .ewizard-modules-head {
-  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
 }
 
 .ewizard-modules-title-block {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .ewizard-modules-icon {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, rgba($primary, 0.12), rgba($accent, 0.08));
-  border-radius: $radius-md;
+  border-radius: $radius-sm;
   color: $primary;
 
   svg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1rem;
+    height: 1rem;
   }
 }
 
 .ewizard-modules-title {
-  margin: 0 0 0.35rem;
-  font-size: 1.15rem;
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: $text;
 }
 
 .ewizard-modules-desc {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: $text2;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .ewizard-modules-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .ewizard-modules-btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   border-radius: $radius-sm;
   border: 1px solid rgba($primary, 0.35);
@@ -416,14 +485,15 @@ $transition: var(--sesa-transition);
 }
 
 .ewizard-modules-scroll {
-  max-height: 52vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding-right: 0.35rem;
   scrollbar-width: thin;
   scrollbar-color: rgba($primary, 0.35) transparent;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -438,7 +508,7 @@ $transition: var(--sesa-transition);
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .ewizard-module-item {
@@ -466,9 +536,9 @@ $transition: var(--sesa-transition);
 .ewizard-module-head {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  min-height: 48px;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 40px;
 
   &--clickable {
     cursor: pointer;
@@ -521,7 +591,7 @@ $transition: var(--sesa-transition);
       content: '';
       width: 10px;
       height: 2px;
-      background: #fff;
+      background: $on-primary;
       border-radius: 1px;
     }
   }
@@ -535,7 +605,7 @@ $transition: var(--sesa-transition);
 
     &::after {
       content: '✓';
-      color: #fff;
+      color: $on-primary;
       font-size: 12px;
       font-weight: 700;
       line-height: 1;
@@ -621,20 +691,101 @@ $transition: var(--sesa-transition);
   }
 }
 
-/* Botones de acción (Anterior / Siguiente) */
+/* ═══ Footer de acciones del wizard — Premium Pro ═══ */
+.sesa-wizard-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-top: 2rem;
+  background: var(--sesa-surface);
+  border-top: 1px solid var(--sesa-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04), 0 -1px 3px rgba(0, 0, 0, 0.02);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--sesa-secondary), var(--sesa-accent), transparent);
+    opacity: 0.4;
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    gap: 0.75rem;
+
+    .sesa-wizard-actions-right {
+      flex-direction: column;
+    }
+
+    .sesa-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+.sesa-btn-cancel {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sesa-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  transition: color var(--sesa-transition), background-color var(--sesa-transition),
+    border-color var(--sesa-transition), transform 0.15s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--sesa-text-primary);
+    background-color: rgba(0, 0, 0, 0.04);
+    border-color: var(--sesa-border);
+
+    [data-theme='dark'] & {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
+  }
+}
+
+.sesa-wizard-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .sesa-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: $radius-md;
-  font-size: 0.95rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all $transition;
-  box-shadow: $shadow-sm;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
   &:disabled {
     opacity: 0.6;
@@ -643,43 +794,49 @@ $transition: var(--sesa-transition);
 }
 
 .sesa-btn-primary {
-  background: linear-gradient(135deg, $primary, $accent);
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
   color: #fff;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.35), 0 2px 6px rgba(0, 0, 0, 0.06);
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: $shadow-md;
+    box-shadow: 0 6px 22px rgba(31, 106, 225, 0.4), 0 3px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(31, 106, 225, 0.3);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
   }
 }
 
 .sesa-btn-secondary {
-  background: rgba($text, 0.06);
-  color: $text;
-  border: 1.5px solid $border;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  border: 1.5px solid var(--sesa-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
   &:hover:not(:disabled) {
-    background: rgba($text, 0.1);
-    border-color: rgba($text, 0.3);
+    background: var(--sesa-bg);
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    box-shadow: 0 2px 8px rgba(31, 106, 225, 0.12);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
   }
 }
 
 .sesa-btn-icon {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-/* Formularios (pasos 0, 2, 3) */
-
-.sesa-wizard-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-
-  &--premium {
-    gap: 1.35rem;
-  }
+  gap: 0.4rem;
 }
 
 /* Selects premium con estilo consistente */
@@ -693,14 +850,21 @@ $transition: var(--sesa-transition);
   cursor: pointer;
 }
 
-/* ========== Secciones de Formulario ========== */
+/* ========== Secciones de Formulario con separador horizontal entre secciones ========== */
 
 .sesa-form-section {
-  padding: 1.15rem 1.25rem;
+  padding: 0.5rem 0.75rem;
   border-radius: $radius-md;
   background: rgba($text, 0.02);
   border: 1px solid rgba($border, 0.4);
   transition: border-color $transition, background $transition;
+
+  /* Línea separadora horizontal entre secciones (segunda y siguientes) */
+  & + .sesa-form-section {
+    border-top: 1px solid rgba($border, 0.55);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
 
   &:hover {
     border-color: rgba($primary, 0.3);
@@ -710,25 +874,26 @@ $transition: var(--sesa-transition);
   &--nested {
     background: rgba($primary, 0.03);
     border-color: rgba($primary, 0.2);
-    margin-top: 1rem;
+    margin-top: 0.35rem;
+    padding: 0.5rem 0.65rem;
   }
 }
 
 .sesa-form-section-header {
-  margin-bottom: 1rem;
-  padding-bottom: 0.65rem;
-  border-bottom: 2px solid rgba($border, 0.4);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba($border, 0.35);
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.6rem;
 
   .sesa-form-section-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    font-size: 1.25rem;
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
     background: linear-gradient(135deg, rgba($primary, 0.1), rgba($accent, 0.08));
     border-radius: $radius-sm;
     border: 1px solid rgba($primary, 0.15);
@@ -739,13 +904,38 @@ $transition: var(--sesa-transition);
       height: 1em;
     }
   }
+
+  &--card {
+    margin-bottom: 0;
+    padding: 1rem 1.75rem;
+    border-bottom: 1px solid rgba($border, 0.6);
+    background: linear-gradient(180deg, rgba($border, 0.12) 0%, rgba($border, 0.04) 100%);
+    align-items: center;
+    gap: 0.6rem;
+
+    .sesa-form-section-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 1.25rem;
+      background: transparent;
+      border: none;
+      color: $primary;
+    }
+
+    .sesa-form-section-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+  }
 }
 
 .sesa-form-section--premium {
-  background: linear-gradient(135deg, rgba($text, 0.015) 0%, rgba($primary, 0.03) 100%);
-  border: 1px solid rgba($border, 0.4);
-  padding: 1.2rem 1.35rem;
-  border-radius: $radius-lg;
+  background: linear-gradient(135deg, rgba($text, 0.012) 0%, rgba($primary, 0.025) 100%);
+  border: 1px solid rgba($border, 0.38);
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
   position: relative;
   overflow: hidden;
 
@@ -755,32 +945,32 @@ $transition: var(--sesa-transition);
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, rgba($primary, 0.25), transparent);
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba($primary, 0.22), transparent);
     opacity: 0.6;
   }
 
   &:hover {
-    border-color: rgba($primary, 0.25);
-    box-shadow: 0 4px 20px rgba($primary, 0.06);
+    border-color: rgba($primary, 0.22);
+    box-shadow: 0 2px 12px rgba($primary, 0.05);
   }
 }
 
 .sesa-form-section-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: $text;
   letter-spacing: -0.3px;
 
   &--small {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 }
 
 .sesa-form-section-description {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   color: $text2;
   font-weight: 400;
 }
@@ -789,18 +979,220 @@ $transition: var(--sesa-transition);
 
 .sesa-form-grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 
   &--two-cols {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+
+  &--three-cols {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 
   &--four-cols {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+  }
+
+  /* Campo que ocupa todas las columnas del grid */
+  &__full {
+    grid-column: 1 / -1;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr !important;
+    gap: 1rem;
+
+    &--three-cols,
+    &--four-cols {
+      grid-template-columns: 1fr !important;
+    }
+
+    &__full {
+      grid-column: 1;
+    }
+  }
+}
+
+/* Paso 0: secciones en columna, cada una en su propia card */
+.ewizard-step-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 0;
+}
+
+/* Campos del wizard: altura y radio tipo referencia; forzar que el control y el input se vean siempre */
+.ewizard ::ng-deep .sesa-field-control {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.ewizard ::ng-deep .sesa-field-control input,
+.ewizard ::ng-deep .sesa-field-control select,
+.ewizard ::ng-deep .sesa-field-control textarea {
+  min-height: 48px;
+  min-width: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Card contenedora de cada sección - premium; sin recorte del contenido (min-height, padding inferior) */
+.ewizard-section-card {
+  background: $surface;
+  border: 1px solid rgba($border, 0.85);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 12px rgba($text, 0.04), 0 1px 3px rgba($text, 0.02);
+  padding: 0;
+  overflow: hidden;
+  min-height: min-content;
+  transition: box-shadow $transition, border-color $transition;
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: 0 4px 20px rgba($primary, 0.06), 0 2px 8px rgba($text, 0.04);
+  }
+
+  .sesa-form-section {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .sesa-form-section-header + * {
+    padding: 1.5rem 1.75rem 2rem;
+  }
+
+  .sesa-form-grid {
+    gap: 1.5rem;
+  }
+
+  .sesa-form-section-header .sesa-form-section-icon {
+    background: transparent;
+    color: $primary;
+  }
+
+  /* Evitar que la sección recorte los controles */
+  .sesa-form-section--premium {
+    overflow: visible;
+  }
+}
+
+/* Cuerpo de la card (mismo padding que .sesa-form-section-header + *) */
+.ewizard-step-desc {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: $text2;
+  line-height: 1.5;
+}
+
+.sesa-form-section--card {
+  background: $surface;
+  border: 1px solid rgba($border, 0.5);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: 1rem 1.25rem;
+
+  .sesa-form-section-header .sesa-form-section-icon {
+    background: linear-gradient(135deg, rgba($primary, 0.12), rgba($accent, 0.1));
+    color: $primary;
+  }
+}
+
+/* Paso 0 (dos columnas): cards al lado, misma altura */
+.ewizard-step-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: start;
+  min-height: 0;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Columnas a la misma altura; cards dentro de cada columna.
+   align-items: start para que la altura la marque el contenido y no se recorten los campos. */
+.ewizard-step-cols--equal {
+  align-items: start;
+  gap: 1.5rem;
+
+  .ewizard-step-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 0;
+    padding: 0;
+    border-right: none;
+  }
+
+  .ewizard-step-col .ewizard-section-card {
+    flex: 0 1 auto;
+    min-height: min-content;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ewizard-step-col .ewizard-section-card .sesa-form-section {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: min-content;
+  }
+
+  .ewizard-step-col .ewizard-section-card .sesa-form-section-header + *,
+  .ewizard-step-col .ewizard-section-card .sesa-form-grid {
+    flex: 1 1 auto;
+    min-height: min-content;
+  }
+}
+
+.ewizard-step-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  padding: 0 0.75rem;
+
+  &:first-child {
+    padding-left: 0;
+  }
+
+  &:not(:last-child) {
+    border-right: 1px solid rgba($border, 0.55);
+    padding-right: 0.75rem;
+
+    @media (max-width: 900px) {
+      border-right: none;
+      border-bottom: 1px solid rgba($border, 0.55);
+      padding-right: 0;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  &:last-child {
+    padding-right: 0;
+  }
+}
+
+/* Paso 3: dos cards en columnas (Usuario Admin | Credenciales) */
+.ewizard-step3-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  min-height: 0;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -808,7 +1200,7 @@ $transition: var(--sesa-transition);
 /* Tarjetas de límite de usuarios */
 .sesa-user-limit-card {
   position: relative;
-  padding: 1.25rem;
+  padding: 0.75rem;
   border-radius: $radius-md;
   background: linear-gradient(135deg, rgba($primary, 0.05), rgba($accent, 0.05));
   border: 2px solid rgba($primary, 0.15);
@@ -821,10 +1213,28 @@ $transition: var(--sesa-transition);
   }
 }
 
+.sesa-form-grid--limit-cards {
+  max-width: 100%;
+}
+
+.sesa-user-limit-card {
+  background: linear-gradient(180deg, rgba($primary, 0.04) 0%, rgba($border, 0.06) 100%);
+  border: 1px solid rgba($border, 0.6);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  transition: border-color $transition, box-shadow $transition;
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: 0 2px 12px rgba($primary, 0.06);
+  }
+}
+
 .sesa-user-limit-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.8;
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+  opacity: 0.85;
+  color: $primary;
 
   svg {
     width: 1em;
@@ -832,22 +1242,21 @@ $transition: var(--sesa-transition);
   }
 }
 
-/* Acciones del wizard */
-.sesa-wizard-actions {
+/* Formularios: compactos para caber en viewport */
+.sesa-wizard-form {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding-top: 2rem;
-  border-top: 2px solid rgba($border, 0.4);
-  margin-top: 2rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
 
-  @media (max-width: 640px) {
-    flex-direction: column;
+  &--premium {
+    gap: 0.6rem;
+  }
 
-    .sesa-btn {
-      width: 100%;
-    }
+  &.ewizard-form-fit {
+    overflow-y: auto;
+    min-height: 0;
   }
 }
 
@@ -856,7 +1265,7 @@ $transition: var(--sesa-transition);
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: $on-primary;
   border-radius: 50%;
   animation: ewizardSpin 0.8s linear infinite;
 }
@@ -868,5 +1277,13 @@ $transition: var(--sesa-transition);
 
   .sesa-form-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .ewizard {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    margin-right: -1rem;
   }
 }

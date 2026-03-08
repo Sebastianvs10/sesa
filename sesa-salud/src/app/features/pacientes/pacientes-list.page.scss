@@ -8,60 +8,63 @@
 .plp-page {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+/* Encabezado compartido: sin márgenes salvo el inferior (muy mínimo) */
+.plp-page .sesa-page-header {
+  flex-shrink: 0;
+  margin: 0 0 0.2rem;
+  padding-top: 0;
+}
+
+.plp-page .sesa-page-header__row {
+  padding: 0.25rem 0.75rem 0.3rem;
+  min-height: 0;
+}
+
+.plp-page .sesa-page-header__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.plp-page .sesa-page-header__subtitle {
+  font-size: 0.75rem;
+}
+
+.plp-page .sesa-page-header__center .sesa-page-header__icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.05rem;
+}
+
+.plp-page .sesa-page-header__center .sesa-page-header__icon fa-icon {
+  font-size: 0.95rem;
+}
+
+.plp-btn--header {
+  flex-shrink: 0;
+}
+
+/* Contenido con el mismo padding horizontal que el resto de la app */
+.plp-content {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  padding: 1.75rem 2rem;
   max-width: 1280px;
   margin: 0 auto;
+  width: 100%;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════════════════════════════════ */
-
-.plp-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.plp-header-left {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.plp-header-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--sesa-accent), #22c55e);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: white;
-  font-size: 1.45rem;
-  line-height: 1;
-  box-shadow: 0 6px 20px rgba(43, 176, 166, 0.35);
-
-  svg { width: 1em; height: 1em; }
-}
-
-.plp-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--sesa-text-primary);
-  letter-spacing: -0.025em;
-  margin: 0 0 0.2rem;
-  line-height: 1.25;
-}
-
-.plp-subtitle {
-  font-size: 0.875rem;
-  color: var(--sesa-text-secondary);
-  margin: 0;
+@media (min-width: 960px) {
+  .plp-content {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -505,9 +508,8 @@
 ═══════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-  .plp-page { padding: 1rem; gap: 1rem; }
-  .plp-header { flex-direction: column; align-items: stretch; }
-  .plp-header .plp-btn { width: 100%; justify-content: center; }
+  .plp-page { padding: 0; gap: 1rem; }
+  .plp-content { padding-left: 1rem; padding-right: 1rem; }
   .plp-search-bar { flex-wrap: wrap; }
   .plp-filter-activo { width: 100%; }
   .plp-table th:nth-child(3),

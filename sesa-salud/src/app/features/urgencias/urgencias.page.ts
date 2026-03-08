@@ -4,14 +4,20 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { UrgenciaRegistroService, UrgenciaRegistroDto } from '../../core/services/urgencia-registro.service';
+import {
+  UrgenciaRegistroService,
+  UrgenciaRegistroDto,
+  UrgenciaDashboardDto,
+} from '../../core/services/urgencia-registro.service';
 import { EvolucionService, EvolucionDto, EvolucionRequestDto } from '../../core/services/evolucion.service';
 import { NotaEnfermeriaService, NotaEnfermeriaDto, NotaEnfermeriaRequestDto } from '../../core/services/nota-enfermeria.service';
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaJspdfService } from '../../core/services/sesa-jspdf.service';
 
 export type NivelTriage = 'I' | 'II' | 'III' | 'IV' | 'V' | 'TODOS';
 export type EstadoFiltro = 'TODOS' | 'EN_ESPERA' | 'EN_ATENCION' | 'EN_OBSERVACION' | 'ALTA' | 'HOSPITALIZADO' | 'REFERIDO';
@@ -33,6 +39,8 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   private readonly pacienteService = inject(PacienteService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(SesaToastService);
+  private readonly router = inject(Router);
+  private readonly sesaPdf = inject(SesaJspdfService);
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -44,11 +52,19 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   autoRefresh = signal(true);
   cargando = signal(false);
   guardando = signal(false);
+  mostrarModalRetriage = signal(false);
+  mostrarChecklistAtencion = signal(false);
+  checklistIdentificacion = signal(false);
+  checklistAlergias = signal(false);
+  resumenAlta = signal('');
+  instruccionesAlta = signal('');
 
   // Filtros
   filtroTriage = signal<NivelTriage>('TODOS');
   filtroEstado = signal<EstadoFiltro>('TODOS');
   busqueda = signal('');
+  dashboard = signal<UrgenciaDashboardDto | null>(null);
+  sonidoAlertas = signal(true);
 
   // Evoluciones y notas
   evoluciones = signal<EvolucionDto[]>([]);
@@ -134,12 +150,51 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.urgencias.set(res?.content ?? []);
         this.cargando.set(false);
+        this.cargarDashboard();
+        this.notificarCriticosSiAplica();
       },
       error: (err) => {
         this.toast.error(err?.error?.error || 'Error al cargar urgencias', 'Error');
         this.cargando.set(false);
       },
     });
+  }
+
+  private cargarDashboard(): void {
+    this.urgenciaService.dashboard().subscribe({
+      next: (d) => this.dashboard.set(d),
+      error: () => {},
+    });
+  }
+
+  private notificarCriticosSiAplica(): void {
+    const d = this.dashboard();
+    const fuera = d?.fueraDeTiempo?.length ?? 0;
+    const criticos = this.urgencias().filter((u) => (u.nivelTriage === 'I' || u.nivelTriage === 'II') && u.estado === 'EN_ESPERA').length;
+    if (fuera > 0) {
+      this.toast.warning(`${fuera} paciente(s) fuera de tiempo límite`, 'Alerta Res. 5596/2015');
+      if (this.sonidoAlertas()) this.reproducirSonidoAlerta();
+    }
+    if (criticos > 0 && fuera === 0) {
+      this.toast.info(`${criticos} paciente(s) crítico(s) en espera`, 'T I/II');
+      if (this.sonidoAlertas()) this.reproducirSonidoAlerta();
+    }
+  }
+
+  private reproducirSonidoAlerta(): void {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.frequency.value = 800;
+      g.gain.value = 0.15;
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.2);
+    } catch {
+      // Ignorar si el navegador no permite audio
+    }
   }
 
   private iniciarAutoRefresh(): void {
@@ -180,6 +235,37 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   cambiarEstado(nuevoEstado: string): void {
     const sel = this.seleccionada();
     if (!sel) return;
+    if (nuevoEstado === 'EN_ATENCION') {
+      this.checklistIdentificacion.set(false);
+      this.checklistAlergias.set(false);
+      this.mostrarChecklistAtencion.set(true);
+      this.estadoPendienteChecklist.set(nuevoEstado);
+      return;
+    }
+    this.ejecutarCambioEstado(nuevoEstado);
+  }
+
+  estadoPendienteChecklist = signal<string | null>(null);
+
+  confirmarChecklistAtencion(): void {
+    if (!this.checklistIdentificacion() || !this.checklistAlergias()) {
+      this.toast.warning('Marque las dos verificaciones de seguridad', 'Checklist');
+      return;
+    }
+    const estado = this.estadoPendienteChecklist();
+    this.mostrarChecklistAtencion.set(false);
+    this.estadoPendienteChecklist.set(null);
+    if (estado) this.ejecutarCambioEstado(estado);
+  }
+
+  cancelarChecklistAtencion(): void {
+    this.mostrarChecklistAtencion.set(false);
+    this.estadoPendienteChecklist.set(null);
+  }
+
+  private ejecutarCambioEstado(nuevoEstado: string): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
     this.guardando.set(true);
     this.urgenciaService.cambiarEstado(sel.id, nuevoEstado).subscribe({
       next: (updated) => {
@@ -196,6 +282,56 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
       },
     });
   }
+
+  abrirModalRetriage(): void {
+    this.nivelTriageRetriage.set(this.seleccionada()?.nivelTriage ?? 'III');
+    this.mostrarModalRetriage.set(true);
+  }
+
+  nivelTriageRetriage = signal<string>('III');
+
+  setNivelTriageRetriage(val: string): void {
+    this.nivelTriageRetriage.set(val);
+  }
+
+  guardarRetriage(): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
+    this.guardando.set(true);
+    this.urgenciaService.updateTriage(sel.id, { nivelTriage: this.nivelTriageRetriage() }).subscribe({
+      next: (updated) => {
+        this.urgencias.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
+        this.seleccionada.set(updated);
+        this.mostrarModalRetriage.set(false);
+        this.guardando.set(false);
+        this.toast.success('Triage actualizado', 'Re-clasificación');
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.error || 'Error al actualizar triage', 'Error');
+        this.guardando.set(false);
+      },
+    });
+  }
+
+  generarPdfAlta(): void {
+    const sel = this.seleccionada();
+    const resumen = this.resumenAlta().trim();
+    const instrucciones = this.instruccionesAlta().trim();
+    if (!sel) return;
+    this.sesaPdf.generarResumenAltaUrgenciasPdf({
+      pacienteNombre: sel.pacienteNombre ?? '',
+      pacienteDocumento: sel.pacienteDocumento ?? '',
+      fechaAlta: new Date().toLocaleDateString('es-CO'),
+      resumen: resumen || '—',
+      instrucciones: instrucciones || '—',
+    });
+    this.toast.success('PDF generado. Revisa las descargas.', 'Resumen de alta');
+  }
+
+  setResumenAlta(val: string): void { this.resumenAlta.set(val); }
+  setInstruccionesAlta(val: string): void { this.instruccionesAlta.set(val); }
+  setChecklistIdentificacion(val: boolean): void { this.checklistIdentificacion.set(val); }
+  setChecklistAlergias(val: boolean): void { this.checklistAlergias.set(val); }
 
   // ── Evoluciones SOAP ──────────────────────────────────────────────────────
   guardarEvolucion(): void {
@@ -423,6 +559,18 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
     return `${restante} min restantes`;
   }
 
+  /** Alerta por signos vitales fuera de rango (sugerencia 2.3). */
+  hasAlertaSV(u: UrgenciaRegistroDto): boolean {
+    const ta = u.svPresionArterial ?? '';
+    const sistolica = parseInt(ta.split('/')[0], 10);
+    if (!isNaN(sistolica) && (sistolica > 180 || sistolica < 90)) return true;
+    const spo2 = u.svSaturacionO2 != null ? parseInt(String(u.svSaturacionO2), 10) : NaN;
+    if (!isNaN(spo2) && spo2 < 92) return true;
+    const g = (u.glasgowOcular ?? 0) + (u.glasgowVerbal ?? 0) + (u.glasgowMotor ?? 0);
+    if (g > 0 && g < 15) return true;
+    return false;
+  }
+
   glasgowTotal(u: UrgenciaRegistroDto): string {
     const o = u.glasgowOcular ?? 0;
     const v = u.glasgowVerbal ?? 0;
@@ -447,8 +595,53 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Navega a Historia Clínica con el paciente seleccionado.
+   * Permite crear la HC o la atención si no existe, sin bloquear al profesional en urgencias.
+   */
+  irAHistoriaClinica(): void {
+    const u = this.seleccionada();
+    if (!u?.pacienteId) return;
+    this.router.navigate(['/historia-clinica'], { queryParams: { pacienteId: u.pacienteId } });
+  }
+
   readonly nivelesTriageOpciones: NivelTriage[] = ['TODOS', 'I', 'II', 'III', 'IV', 'V'];
   readonly estadosFiltroOpciones: EstadoFiltro[] = ['TODOS', 'EN_ESPERA', 'EN_ATENCION', 'EN_OBSERVACION', 'ALTA', 'HOSPITALIZADO', 'REFERIDO'];
   readonly estadosBotones: string[] = ['EN_ESPERA', 'EN_ATENCION', 'EN_OBSERVACION', 'ALTA', 'HOSPITALIZADO', 'REFERIDO'];
   readonly nivelesTriageIngreso = ['I', 'II', 'III', 'IV', 'V'];
+
+  /** Atajos de teclado (sugerencia 2.9): 1-5 triage, E/A estado, Enter detalle, Ctrl+N nuevo. */
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(e: KeyboardEvent): void {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) return;
+    const key = e.key.toUpperCase();
+    if (e.ctrlKey && key === 'N') {
+      e.preventDefault();
+      this.abrirIngreso();
+      return;
+    }
+    if (key >= '1' && key <= '5') {
+      const triage: NivelTriage = key === '1' ? 'I' : key === '2' ? 'II' : key === '3' ? 'III' : key === '4' ? 'IV' : 'V';
+      this.setFiltroTriage(triage);
+      return;
+    }
+    if (key === 'E') {
+      this.setFiltroEstado('EN_ESPERA');
+      return;
+    }
+    if (key === 'A') {
+      this.setFiltroEstado('EN_ATENCION');
+      return;
+    }
+    if (key === 'Enter') {
+      const list = this.urgenciasFiltradas();
+      if (list.length > 0 && this.seleccionada()?.id !== list[0].id) {
+        this.seleccionar(list[0]);
+      }
+    }
+  }
+
+  setSonidoAlertas(val: boolean): void {
+    this.sonidoAlertas.set(val);
+  }
 }

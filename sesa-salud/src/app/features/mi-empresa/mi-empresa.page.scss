@@ -1,30 +1,88 @@
-/* Mi empresa — diseño premium */
+/* Mi empresa — diseño premium; sin scroll de página (altura fija, scroll interno por sección) */
 /* Autor: Ing. J Sebastian Vargas S */
 
 // ── Variables locales ────────────────────────────────────────────────────────
-$hero-h: 220px;
+$hero-h: 160px;
 $radius-card: 18px;
 $radius-inner: 14px;
 $drop-radius: 16px;
 
-// ── Contenedor principal ─────────────────────────────────────────────────────
+// ── Host: ocupa el alto disponible del main ─────────────────────────────────
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+// ── Contenedor principal: flex column, sin scroll de página ───────────────────
 .emp-page {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  max-width: 780px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  max-width: none;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
+  padding: 0;
 }
 
-// ── HERO ─────────────────────────────────────────────────────────────────────
+/* Encabezado: sin márgenes salvo el inferior (muy mínimo) */
+.emp-page .sesa-page-header {
+  flex-shrink: 0;
+  margin: 0 0 0.2rem;
+  padding-top: 0;
+}
+
+/* Contenido (hero + cards) con el mismo padding horizontal */
+.emp-content {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 960px) {
+  .emp-content {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+/* Encabezado compacto: poco espacio interno, solo margen inferior mínimo */
+.emp-page .sesa-page-header__row {
+  padding: 0.25rem 0.75rem 0.3rem;
+  min-height: 0;
+}
+
+.emp-page .sesa-page-header__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.emp-page .sesa-page-header__subtitle {
+  font-size: 0.75rem;
+}
+
+.emp-page .sesa-page-header__center .sesa-page-header__icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.05rem;
+}
+
+.emp-page .sesa-page-header__center .sesa-page-header__icon fa-icon {
+  font-size: 0.95rem;
+}
+
+// ── HERO (mismo tamaño que las cards, bordes semirredondeados) ─────────────────
 .emp-hero {
   position: relative;
-  height: $hero-h;
-  border-radius: $radius-card $radius-card 0 0;
+  height: auto;
+  min-height: 72px;
+  flex-shrink: 0;
+  border-radius: $radius-card;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .emp-hero-bg {
@@ -62,10 +120,11 @@ $drop-radius: 16px;
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-end;
-  gap: 1.5rem;
-  padding: 1.75rem 2rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 // Logo en el hero
@@ -75,26 +134,25 @@ $drop-radius: 16px;
 }
 
 .emp-hero-logo-img {
-  width: 100px;
-  height: 100px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
-  border-radius: $radius-inner;
+  border-radius: 10px;
   background: rgba(255,255,255,.12);
   border: 2px solid rgba(255,255,255,.25);
-  box-shadow: 0 8px 32px rgba(0,0,0,.25), 0 0 0 4px rgba(255,255,255,.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,.2), 0 0 0 2px rgba(255,255,255,.06);
   backdrop-filter: blur(4px);
   transition: transform var(--sesa-transition), box-shadow var(--sesa-transition);
 
   &--local {
-    // Indica que es preview del archivo local (aún no subido)
-    box-shadow: 0 8px 32px rgba(43,176,166,.4), 0 0 0 4px rgba(43,176,166,.25);
+    box-shadow: 0 4px 16px rgba(43,176,166,.4), 0 0 0 2px rgba(43,176,166,.2);
   }
 }
 
 .emp-hero-logo-placeholder {
-  width: 100px;
-  height: 100px;
-  border-radius: $radius-inner;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   background: rgba(255,255,255,.1);
   border: 2px dashed rgba(255,255,255,.3);
   display: flex;
@@ -103,8 +161,8 @@ $drop-radius: 16px;
   color: rgba(255,255,255,.7);
 
   svg {
-    width: 48px;
-    height: 48px;
+    width: 24px;
+    height: 24px;
   }
 }
 
@@ -127,41 +185,69 @@ $drop-radius: 16px;
 
 .emp-hero-meta {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-bottom: 0.25rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0;
+  flex-wrap: wrap;
 }
 
 .emp-hero-name {
   margin: 0;
-  font-size: 1.625rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 700;
   color: #fff;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 12px rgba(0,0,0,.25);
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 6px rgba(0,0,0,.2);
 }
 
 .emp-hero-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.75rem;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 20px;
   background: rgba(255,255,255,.12);
   color: rgba(255,255,255,.9);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   border: 1px solid rgba(255,255,255,.18);
   width: fit-content;
 }
 
 .emp-hero-pill-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #4ade80;
   box-shadow: 0 0 0 2px rgba(74,222,128,.3);
   animation: pulse-dot 2s infinite;
+}
+
+/* Hasta 3 datos: NIT/Identificación, Teléfono, Dirección */
+.emp-hero-fields {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.emp-hero-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,.9);
+}
+
+.emp-hero-field-label {
+  color: rgba(255,255,255,.6);
+  font-weight: 500;
+}
+
+.emp-hero-field-value {
+  font-weight: 600;
 }
 
 @keyframes pulse-dot {
@@ -169,21 +255,70 @@ $drop-radius: 16px;
   50%       { box-shadow: 0 0 0 5px rgba(74,222,128,.1); }
 }
 
-// ── SECCIÓN ───────────────────────────────────────────────────────────────────
+// ── CONTENIDO: área que crece y hace scroll interno (sin scroll de página) ─────
+.emp-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0;
+
+  @media (min-width: 1200px) {
+    padding: 1rem 0;
+  }
+}
+
+/* Contenedor de las dos cards: en desktop en fila, mismo ancho que el hero */
+.emp-sections-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 1200px) {
+    flex-direction: row;
+  }
+}
+
+// ── SECCIÓN (Logo | Facturación electrónica) ─────────────────────────────────
 .emp-section {
   background: var(--sesa-surface);
   border: 1px solid var(--sesa-border);
-  border-top: none;
-  border-radius: 0 0 $radius-card $radius-card;
-  padding: 2rem;
+  border-radius: $radius-card;
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   box-shadow: var(--sesa-shadow-md);
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--sesa-border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--sesa-border);
+    border-radius: 3px;
+  }
+
+  @media (min-width: 1200px) {
+    flex: 1 1 50%;
+    padding: 1.25rem 1.5rem;
+  }
 }
 
 .emp-section--fe {
-  margin-top: 1.75rem;
+  @media (max-width: 1199px) {
+    margin-top: 0;
+  }
 }
 
 .emp-section-header {
@@ -267,15 +402,15 @@ $drop-radius: 16px;
 .emp-fe-grid {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .emp-fe-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1rem 1.25rem;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
   border-radius: $radius-inner;
   background: rgba(43,176,166,.04);
   border: 1px solid rgba(43,176,166,.18);
@@ -337,7 +472,7 @@ $drop-radius: 16px;
 .emp-fe-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
-  gap: 2rem;
+  gap: 1.25rem;
 }
 
 .emp-fe-columns--disabled {
@@ -348,7 +483,7 @@ $drop-radius: 16px;
 .emp-fe-col {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .emp-fe-col-title {
@@ -370,12 +505,12 @@ $drop-radius: 16px;
 
 .emp-input {
   width: 100%;
-  padding: 0.6875rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   border-radius: $radius-inner;
   border: 1px solid var(--sesa-input-border);
   background: var(--sesa-input-bg);
   color: var(--sesa-text-primary);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   outline: none;
   transition: border-color var(--sesa-transition), box-shadow var(--sesa-transition);
 
@@ -527,8 +662,8 @@ $drop-radius: 16px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2.5rem 2rem;
-  gap: 0.375rem;
+  padding: 1.5rem 1.5rem;
+  gap: 0.25rem;
   text-align: center;
 }
 

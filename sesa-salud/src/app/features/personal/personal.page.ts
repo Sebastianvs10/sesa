@@ -5,6 +5,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faUsers, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 import { forkJoin, Observable } from 'rxjs';
 import {
   PersonalService,
@@ -15,18 +18,19 @@ import {
 } from '../../core/services/personal.service';
 import { EmpresaService, EmpresaDto } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-personal-page',
-  imports: [CommonModule, FormsModule, SesaCardComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, SesaPageHeaderComponent],
   templateUrl: './personal.page.html',
   styleUrl: './personal.page.scss',
 })
 export class PersonalPageComponent implements OnInit {
+  readonly faUsers = faUsers;
+  readonly faPlus = faPlus;
   list: PersonalDto[] = [];
   totalElements = 0;
   page = 0;

@@ -256,6 +256,30 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS usuario_id BIGINT"
     );
 
+    /** Migraciones urgencias: fecha inicio atención para reporte de cumplimiento Res. 5596/2015. */
+    private static final List<String> DDL_URGENCIAS_MIGRATIONS = List.of(
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS fecha_hora_inicio_atencion TIMESTAMP"
+    );
+
+    private static final String DDL_SIGNOS_VITALES_URGENCIA = """
+            CREATE TABLE IF NOT EXISTS signos_vitales_urgencia (
+                id BIGSERIAL PRIMARY KEY,
+                urgencia_registro_id BIGINT NOT NULL REFERENCES urgencias(id) ON DELETE CASCADE,
+                fecha_hora TIMESTAMP NOT NULL,
+                presion_arterial VARCHAR(20),
+                frecuencia_cardiaca VARCHAR(10),
+                frecuencia_respiratoria VARCHAR(10),
+                temperatura VARCHAR(10),
+                saturacion_o2 VARCHAR(10),
+                peso VARCHAR(10),
+                dolor_eva VARCHAR(5),
+                glasgow_ocular INT,
+                glasgow_verbal INT,
+                glasgow_motor INT,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+
     private static final List<String> DDL_EBS_IGAC_MIGRATIONS = List.of(
             "ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_departamento_codigo VARCHAR(2)",
             "ALTER TABLE ebs_territories ADD COLUMN IF NOT EXISTS igac_municipio_codigo VARCHAR(5)",
@@ -466,6 +490,10 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 for (String migration : DDL_RECORDATORIOS_MIGRATIONS) {
                     stmt.execute(migration);
                 }
+                for (String migration : DDL_URGENCIAS_MIGRATIONS) {
+                    stmt.execute(migration);
+                }
+                stmt.execute(DDL_SIGNOS_VITALES_URGENCIA);
                 for (String migration : DDL_ORDENES_RESULTADO_MIGRATIONS) {
                     stmt.execute(migration);
                 }

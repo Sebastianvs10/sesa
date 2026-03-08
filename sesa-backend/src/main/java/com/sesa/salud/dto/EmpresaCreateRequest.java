@@ -64,7 +64,6 @@ public class EmpresaCreateRequest {
         private String segundoApellido;
         @NotBlank(message = "Teléfono celular es obligatorio")
         private String telefonoCelular;
-        private String proveedorServicio;
         @NotBlank(message = "Correo es obligatorio")
         private String correo;
         @NotBlank(message = "Contraseña es obligatoria")

@@ -1,29 +1,23 @@
 <section class="up-page">
 
-  <!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
-  <header class="up-header">
-    <div class="up-header-left">
-      <div class="up-header-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="up-title">Usuarios del sistema</h1>
-        <p class="up-subtitle">Administre cuentas de acceso, roles y permisos</p>
-      </div>
-    </div>
-    <button type="button" class="up-btn up-btn--primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
+  <!-- ═══ ENCABEZADO COMPARTIDO (sin márgenes, solo margen inferior mínimo) ═══ -->
+  <sesa-page-header
+    title="Usuarios del sistema"
+    subtitle="Administre cuentas de acceso, roles y permisos."
+    backLink="/inicio"
+    backLabel="Volver"
+    backAriaLabel="Volver al inicio">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="faUserShield"></fa-icon>
+    </span>
+    <button type="button" header-actions class="up-btn up-btn--primary up-btn--header" (click)="openCreate()">
+      <fa-icon [icon]="faPlus"></fa-icon>
       Nuevo usuario
     </button>
-  </header>
+  </sesa-page-header>
 
   <!-- ═══ STATS ═════════════════════════════════════════════════════════════ -->
+  <div class="up-content">
   <div class="up-stats-row">
     <div class="up-stat-card up-stat-card--purple">
       <span class="up-stat-value">{{ totalElements }}</span>
@@ -71,6 +65,7 @@
         </div>
       }
 
+      <div class="up-form-body">
       <!-- §1 Datos del usuario -->
       <div class="up-form-section">
         <div class="up-section-title">
@@ -199,7 +194,7 @@
       </div>
 
       <!-- §4 Estado -->
-      <div class="up-form-section up-form-section--row">
+      <div class="up-form-section up-form-section--row up-form-section--full">
         <div class="up-toggle-group">
           <label class="up-toggle">
             <input type="checkbox" [(ngModel)]="form.activo" />
@@ -211,6 +206,8 @@
           </div>
         </div>
       </div>
+
+      </div><!-- /.up-form-body -->
 
       <!-- Footer -->
       <div class="up-form-footer">
@@ -402,4 +399,5 @@
     }
   </div>
 
+  </div><!-- /.up-content -->
 </section>

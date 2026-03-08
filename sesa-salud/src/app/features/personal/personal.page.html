@@ -1,31 +1,23 @@
 <section class="pp-page">
 
-  <!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
-  <header class="pp-header">
-    <div class="pp-header-left">
-      <div class="pp-header-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="pp-title">Gestión de personal</h1>
-        <p class="pp-subtitle">Administre el equipo profesional y sus accesos al sistema</p>
-      </div>
-    </div>
-    <button type="button" class="pp-btn pp-btn--primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
+  <!-- ═══ ENCABEZADO COMPARTIDO (sin márgenes, solo margen inferior mínimo) ═══ -->
+  <sesa-page-header
+    title="Gestión de personal"
+    subtitle="Administre el equipo profesional y sus accesos al sistema."
+    backLink="/inicio"
+    backLabel="Volver"
+    backAriaLabel="Volver al inicio">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="faUsers"></fa-icon>
+    </span>
+    <button type="button" header-actions class="pp-btn pp-btn--primary pp-btn--header" (click)="openCreate()">
+      <fa-icon [icon]="faPlus"></fa-icon>
       Nuevo integrante
     </button>
-  </header>
+  </sesa-page-header>
 
   <!-- ═══ STATS ═════════════════════════════════════════════════════════════ -->
+  <div class="pp-content">
   <div class="pp-stats-row">
     <div class="pp-stat-card pp-stat-card--blue">
       <span class="pp-stat-value">{{ totalElements }}</span>
@@ -72,6 +64,7 @@
         </div>
       }
 
+      <div class="pp-form-body">
       <!-- §1 Identificación -->
       <div class="pp-form-section">
         <div class="pp-section-title">
@@ -109,7 +102,7 @@
             </div>
           </div>
         </div>
-        <div class="pp-fields pp-fields--4" style="margin-top:0.75rem">
+        <div class="pp-fields pp-fields--4 pp-fields--mt">
           <div class="pp-field">
             <label class="pp-label">Primer nombre <span class="pp-required">*</span></label>
             <input class="pp-input" id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
@@ -412,7 +405,7 @@
       </div>
 
       <!-- §10 Estado -->
-      <div class="pp-form-section pp-form-section--row">
+      <div class="pp-form-section pp-form-section--row pp-form-section--full">
         <div class="pp-toggle-group">
           <label class="pp-toggle">
             <input type="checkbox" [(ngModel)]="form.activo" />
@@ -424,6 +417,8 @@
           </div>
         </div>
       </div>
+
+      </div><!-- /.pp-form-body -->
 
       <!-- Footer del formulario -->
       <div class="pp-form-footer">
@@ -693,4 +688,5 @@
     }
   </div>
 
+  </div><!-- /.pp-content -->
 </section>

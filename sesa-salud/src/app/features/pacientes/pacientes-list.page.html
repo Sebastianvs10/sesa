@@ -1,25 +1,25 @@
 <section class="plp-page">
 
-  <!-- ═══ HEADER ════════════════════════════════════════════════════════════ -->
-  <header class="plp-header">
-    <div class="plp-header-left">
-      <div class="plp-header-icon">
-        <fa-icon [icon]="faUsers" aria-hidden="true"></fa-icon>
-      </div>
-      <div>
-        <h1 class="plp-title">Pacientes</h1>
-        <p class="plp-subtitle">Gestión de pacientes y acceso a historia clínica</p>
-      </div>
-    </div>
+  <!-- ═══ ENCABEZADO COMPARTIDO (sin márgenes, solo margen inferior mínimo) ═══ -->
+  <sesa-page-header
+    title="Pacientes"
+    subtitle="Gestión de pacientes y acceso a historia clínica."
+    backLink="/inicio"
+    backLabel="Volver"
+    backAriaLabel="Volver al inicio">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="faUsers" aria-hidden="true"></fa-icon>
+    </span>
     @if (canCreate) {
-      <a class="plp-btn plp-btn--primary" routerLink="/pacientes/nuevo">
+      <a header-actions class="plp-btn plp-btn--primary plp-btn--header" routerLink="/pacientes/nuevo">
         <fa-icon [icon]="faPlus" aria-hidden="true"></fa-icon>
         Nuevo paciente
       </a>
     }
-  </header>
+  </sesa-page-header>
 
   <!-- ═══ STATS ═════════════════════════════════════════════════════════════ -->
+  <div class="plp-content">
   <div class="plp-stats-row">
     <div class="plp-stat-card plp-stat-card--teal">
       @if (loading) {
@@ -289,4 +289,5 @@
     }
   </div>
 
+  </div><!-- /.plp-content -->
 </section>

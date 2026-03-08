@@ -19,7 +19,7 @@ public class FacturacionElectronicaConfigServiceImpl implements FacturacionElect
     private final FacturacionElectronicaConfigRepository repository;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public FacturacionElectronicaConfigDto getOrCreate() {
         FacturacionElectronicaConfig config = repository.findTopByOrderByIdAsc()
                 .orElseGet(() -> repository.save(FacturacionElectronicaConfig.builder().build()));

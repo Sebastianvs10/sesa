@@ -65,6 +65,80 @@ export interface PageResponse<T> {
   totalPages?: number;
 }
 
+export interface UrgenciaDashboardDto {
+  conteoPorEstado: Record<string, number>;
+  conteoPorTriage: Record<string, number>;
+  fueraDeTiempo: UrgenciaFueraDeTiempoItemDto[];
+  tiempoPromedioEsperaMinutos: number;
+  totalEnEspera: number;
+}
+
+export interface UrgenciaFueraDeTiempoItemDto {
+  id: number;
+  pacienteId: number;
+  pacienteNombre: string;
+  nivelTriage: string;
+  fechaHoraIngreso: string;
+  minutosEspera: number;
+  limiteMinutos: number;
+}
+
+export interface UrgenciaReporteCumplimientoDto {
+  desde: string;
+  hasta: string;
+  porTriage: CumplimientoTriageDto[];
+  totalRegistros: number;
+  totalAtendidos: number;
+  totalDentroTiempo: number;
+  totalFueraTiempo: number;
+  porcentajeCumplimiento: number;
+}
+
+export interface CumplimientoTriageDto {
+  nivelTriage: string;
+  total: number;
+  dentroTiempo: number;
+  fueraTiempo: number;
+  porcentajeCumplimiento: number;
+}
+
+export interface UrgenciaTriagePatchDto {
+  nivelTriage?: string;
+  profesionalTriageId?: number;
+}
+
+export interface SignosVitalesUrgenciaDto {
+  id: number;
+  urgenciaRegistroId: number;
+  fechaHora: string;
+  presionArterial?: string;
+  frecuenciaCardiaca?: string;
+  frecuenciaRespiratoria?: string;
+  temperatura?: string;
+  saturacionO2?: string;
+  peso?: string;
+  dolorEva?: string;
+  glasgowOcular?: number;
+  glasgowVerbal?: number;
+  glasgowMotor?: number;
+  createdAt?: string;
+}
+
+export interface SignosVitalesUrgenciaRequestDto {
+  urgenciaRegistroId?: number;
+  fechaHora?: string;
+  presionArterial?: string;
+  frecuenciaCardiaca?: string;
+  frecuenciaRespiratoria?: string;
+  temperatura?: string;
+  saturacionO2?: string;
+  peso?: string;
+  dolorEva?: string;
+  glasgowOcular?: number;
+  glasgowVerbal?: number;
+  glasgowMotor?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UrgenciaRegistroService {
   private readonly http = inject(HttpClient);
@@ -90,5 +164,27 @@ export class UrgenciaRegistroService {
 
   cambiarEstado(id: number, estado: string): Observable<UrgenciaRegistroDto> {
     return this.http.patch<UrgenciaRegistroDto>(`${this.apiUrl}/${id}/estado`, { estado });
+  }
+
+  dashboard(): Observable<UrgenciaDashboardDto> {
+    return this.http.get<UrgenciaDashboardDto>(`${this.apiUrl}/dashboard`);
+  }
+
+  reporteCumplimiento(desde: string, hasta: string): Observable<UrgenciaReporteCumplimientoDto> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    return this.http.get<UrgenciaReporteCumplimientoDto>(`${this.apiUrl}/reporte-cumplimiento`, { params });
+  }
+
+  updateTriage(id: number, dto: UrgenciaTriagePatchDto): Observable<UrgenciaRegistroDto> {
+    return this.http.patch<UrgenciaRegistroDto>(`${this.apiUrl}/${id}/triage`, dto);
+  }
+
+  listSignosVitales(urgenciaId: number): Observable<SignosVitalesUrgenciaDto[]> {
+    return this.http.get<SignosVitalesUrgenciaDto[]>(`${this.apiUrl}/${urgenciaId}/signos-vitales`);
+  }
+
+  createSignosVitales(urgenciaId: number, dto: SignosVitalesUrgenciaRequestDto): Observable<SignosVitalesUrgenciaDto> {
+    dto.urgenciaRegistroId = urgenciaId;
+    return this.http.post<SignosVitalesUrgenciaDto>(`${this.apiUrl}/${urgenciaId}/signos-vitales`, dto);
   }
 }

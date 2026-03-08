@@ -5,6 +5,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faBuilding } from '@fortawesome/free-solid-svg-icons';
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
@@ -18,11 +21,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 @Component({
   standalone: true,
   selector: 'sesa-mi-empresa-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, SesaPageHeaderComponent],
   templateUrl: './mi-empresa.page.html',
   styleUrl: './mi-empresa.page.scss',
 })
 export class MiEmpresaPageComponent implements OnInit {
+  readonly faBuilding = faBuilding;
   private readonly auth = inject(AuthService);
   private readonly empresaService = inject(EmpresaService);
   readonly empresaCurrent = inject(EmpresaCurrentService);
@@ -41,11 +45,18 @@ export class MiEmpresaPageComponent implements OnInit {
   empresas = signal<EmpresaDto[]>([]);
   /** ID de empresa seleccionada por el SUPERADMINISTRADOR para subir el logo. */
   selectedEmpresaId = signal<number | null>(null);
+  /** Empresa actual (cargada por getCurrent para ADMIN; usada en encabezado). */
+  currentEmpresa = signal<EmpresaDto | null>(null);
   /**
    * URL del logo de la empresa seleccionada en el dropdown (solo SUPERADMINISTRADOR).
    * Es un estado LOCAL del componente: no modifica el sidebar ni el estado global.
    */
   selectedEmpresaLogoUrl = signal<string | null>(null);
+
+  /** Empresa a mostrar en el hero: la actual (ADMIN) o la seleccionada (SUPERADMIN). */
+  readonly headerEmpresa = computed(() =>
+    this.isSuperAdmin() ? (this.selectedEmpresaId() ? this.empresas().find(e => e.id === this.selectedEmpresaId()!) ?? null : null) : this.currentEmpresa()
+  );
 
   readonly isSuperAdmin = computed(() =>
     this.auth.currentRoles().includes('SUPERADMINISTRADOR')
@@ -93,6 +104,11 @@ export class MiEmpresaPageComponent implements OnInit {
     this.empresaCurrent.load();
     if (this.isSuperAdmin()) {
       this.loadEmpresas();
+    } else {
+      this.empresaService.getCurrent().subscribe({
+        next: (e) => this.currentEmpresa.set(e),
+        error: () => {},
+      });
     }
     this.loadFeConfig();
   }

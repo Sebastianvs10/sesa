@@ -5,8 +5,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
-import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faUserShield, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 import {
@@ -20,11 +21,13 @@ import {
 @Component({
   standalone: true,
   selector: 'sesa-usuarios-page',
-  imports: [CommonModule, FormsModule, SesaCardComponent, SesaSkeletonComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, SesaPageHeaderComponent],
   templateUrl: './usuarios.page.html',
   styleUrl: './usuarios.page.scss',
 })
 export class UsuariosPageComponent implements OnInit {
+  readonly faUserShield = faUserShield;
+  readonly faPlus = faPlus;
   private readonly usuarioService = inject(UsuarioService);
   private readonly toast = inject(SesaToastService);
   private readonly confirmDialog = inject(SesaConfirmDialogService);

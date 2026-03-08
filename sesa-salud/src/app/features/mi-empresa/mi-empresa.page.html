@@ -1,6 +1,20 @@
 <div class="emp-page">
 
-  <!-- ── HERO ─────────────────────────────────────────────── -->
+  <!-- ── ENCABEZADO ───────────────────────────────────────── -->
+  <sesa-page-header
+    title="Mi empresa"
+    subtitle="Logo y facturación electrónica de la empresa actual."
+    backLink="/inicio"
+    backLabel="Volver"
+    backAriaLabel="Volver al inicio">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="faBuilding"></fa-icon>
+    </span>
+  </sesa-page-header>
+
+  <!-- ── CONTENIDO: hero + cards (mismo ancho, bordes semirredondeados) ── -->
+  <div class="emp-content">
+  <!-- ── HERO (mismo tamaño que las cards, bordes semirredondeados) ──────────── -->
   <div class="emp-hero">
     <div class="emp-hero-bg"></div>
     <div class="emp-hero-content">
@@ -27,9 +41,32 @@
           <span class="emp-hero-pill-dot"></span>Activa
         </span>
       </div>
+      @if (headerEmpresa(); as emp) {
+        <div class="emp-hero-fields">
+          @if (emp.identificacion) {
+            <div class="emp-hero-field">
+              <span class="emp-hero-field-label">NIT/Identificación:</span>
+              <span class="emp-hero-field-value">{{ emp.identificacion }}</span>
+            </div>
+          }
+          @if (emp.telefono) {
+            <div class="emp-hero-field">
+              <span class="emp-hero-field-label">Teléfono:</span>
+              <span class="emp-hero-field-value">{{ emp.telefono }}</span>
+            </div>
+          }
+          @if (emp.direccionEmpresa) {
+            <div class="emp-hero-field">
+              <span class="emp-hero-field-label">Dirección:</span>
+              <span class="emp-hero-field-value">{{ emp.direccionEmpresa }}</span>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 
+  <div class="emp-sections-wrap">
   <!-- ── SECCIÓN LOGO ───────────────────────────────────────── -->
   <div class="emp-section">
     <div class="emp-section-header">
@@ -412,4 +449,6 @@
     }
   </div>
 
+  </div><!-- /.emp-sections-wrap -->
+  </div><!-- /.emp-content -->
 </div>

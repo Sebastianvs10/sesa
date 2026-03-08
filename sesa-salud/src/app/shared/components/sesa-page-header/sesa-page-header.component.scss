@@ -1,0 +1,178 @@
+/* Encabezado de página compartido: ancho completo del contenedor, título centrado, Volver a la izquierda */
+/* Sin 100vw para que Volver no quede detrás del sidebar; el padre (.ewizard) rompe el padding. */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-page-header {
+  flex-shrink: 0;
+  width: 100%;
+  margin: 0;
+  margin-bottom: 1rem;
+  padding-top: 0;
+  box-sizing: border-box;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Refuerzo borde superior sutil (premium) */
+.sesa-page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(31, 106, 225, 0.12), transparent);
+  opacity: 0.8;
+}
+
+.sesa-page-header__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.75rem 1rem;
+  min-height: 3.75rem;
+  box-sizing: border-box;
+}
+
+.sesa-page-header__left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.sesa-page-header__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0 0.5rem;
+}
+
+.sesa-page-header__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.sesa-page-header__subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.4;
+}
+
+/* Icono proyectado (opcional) */
+.sesa-page-header__center .sesa-page-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.2rem;
+  background: rgba(31, 106, 225, 0.08);
+  color: var(--sesa-secondary);
+  border-radius: var(--sesa-radius-md, 10px);
+}
+
+.sesa-page-header__center .sesa-page-header__icon fa-icon {
+  font-size: 1.125rem;
+}
+
+/* Botón Volver: estilo SaaS premium (pill discreto, hover claro) */
+.sesa-page-header__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.sesa-page-header__back:hover {
+  background: rgba(31, 106, 225, 0.06);
+  color: var(--sesa-secondary);
+  border-color: rgba(31, 106, 225, 0.15);
+}
+
+[data-theme='dark'] .sesa-page-header__back:hover {
+  background: rgba(31, 106, 225, 0.12);
+  border-color: rgba(31, 106, 225, 0.25);
+}
+
+.sesa-page-header__back:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
+}
+
+.sesa-page-header__back-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.sesa-page-header__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.sesa-page-header__spacer {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: transparent;
+  padding: 0.45rem 0.85rem;
+  pointer-events: none;
+  user-select: none;
+  visibility: hidden;
+}
+
+/* Ocultar spacer cuando se proyectan acciones en la derecha */
+.sesa-page-header__right:has(> [header-actions]) .sesa-page-header__spacer {
+  display: none;
+}
+
+/* Línea azul a todo el ancho */
+.sesa-page-header__line {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .sesa-page-header__row {
+    padding: 0.6rem 0.75rem 0.85rem;
+  }
+
+  .sesa-page-header__title {
+    font-size: 1.2rem;
+  }
+
+  .sesa-page-header__subtitle {
+    font-size: 0.75rem;
+  }
+
+  .sesa-page-header__back {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+  }
+}

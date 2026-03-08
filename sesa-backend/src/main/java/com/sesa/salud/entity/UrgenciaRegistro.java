@@ -37,6 +37,10 @@ public class UrgenciaRegistro {
     @Column(name = "fecha_hora_ingreso", nullable = false)
     private LocalDateTime fechaHoraIngreso;
 
+    /** Registrada al pasar a EN_ATENCION; usada para reporte de cumplimiento de tiempos (Res. 5596/2015). */
+    @Column(name = "fecha_hora_inicio_atencion")
+    private LocalDateTime fechaHoraInicioAtencion;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 

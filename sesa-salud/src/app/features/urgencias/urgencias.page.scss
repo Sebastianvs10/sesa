@@ -78,6 +78,48 @@ $triage-v:   #1e88e5; // Azul — No urgente
   }
 }
 
+// ── Dashboard tiempo real (sugerencia 2.2) ───────────────────────────────────
+.urg-dashboard {
+  padding: 0.5rem 1.5rem;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  &__label {
+    color: var(--sesa-text-secondary);
+  }
+  &__alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(229, 57, 53, 0.15);
+    color: #c62828;
+    border-radius: 8px;
+    border: 1px solid rgba(229, 57, 53, 0.4);
+    svg { width: 18px; height: 18px; flex-shrink: 0; }
+  }
+}
+
+.urg-sonido-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  cursor: pointer;
+  input { cursor: pointer; }
+}
+
 .urg-stat {
   background: rgba(255,255,255,0.15);
   border-radius: 8px;
@@ -379,6 +421,11 @@ $triage-v:   #1e88e5; // Azul — No urgente
 
 // Badges de estado
 .urg-badge--estado { border-radius: 20px; }
+.urg-badge--alerta-sv {
+  background: rgba(255, 152, 0, 0.25);
+  color: #e65100;
+  border: 1px solid rgba(255, 152, 0, 0.5);
+}
 .estado-espera      { background: #607d8b; }
 .estado-atencion    { background: #1976d2; }
 .estado-observacion { background: #7b1fa2; }
@@ -578,6 +625,21 @@ $triage-v:   #1e88e5; // Azul — No urgente
 
   svg { width: 22px; height: 22px; flex-shrink: 0; color: #fb8c00; margin-top: 1px; }
   p  { font-size: 0.82rem; margin: 0; line-height: 1.5; }
+
+  &--action {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+
+    p { flex: 1; }
+    .urg-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      align-self: flex-start;
+    }
+  }
 }
 
 // ── Formularios ──────────────────────────────────────────────────────────────
@@ -711,6 +773,51 @@ $triage-v:   #1e88e5; // Azul — No urgente
   background: rgba(0,0,0,0.45);
   z-index: 200;
   animation: fadeIn 0.2s ease;
+}
+
+.urg-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 420px;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  z-index: 202;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+
+  h3 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+  &__hint {
+    font-size: 0.875rem;
+    color: var(--sesa-text-secondary);
+    margin: 0 0 1rem;
+  }
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sesa-border);
+  }
+}
+
+.urg-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  input { cursor: pointer; }
+}
+
+.urg-btn--sm {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
 }
 
 .urg-slideover {

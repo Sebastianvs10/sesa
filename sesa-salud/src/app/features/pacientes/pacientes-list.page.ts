@@ -7,13 +7,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faUsers, faPlus, faClipboardList } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 import { PacienteService, PacienteDto, PageResponse } from '../../core/services/paciente.service';
 import { AuthService } from '../../core/services/auth.service';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
-import { SesaDataTableComponent } from '../../shared/components/sesa-data-table/sesa-data-table.component';
-import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-state/sesa-empty-state.component';
-import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 
@@ -25,10 +22,7 @@ import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-d
     FormsModule,
     RouterLink,
     FontAwesomeModule,
-    SesaCardComponent,
-    SesaDataTableComponent,
-    SesaEmptyStateComponent,
-    SesaSkeletonComponent,
+    SesaPageHeaderComponent,
   ],
   templateUrl: './pacientes-list.page.html',
   styleUrl: './pacientes-list.page.scss',
@@ -39,9 +33,8 @@ export class PacientesListPageComponent implements OnInit {
   private readonly toast = inject(SesaToastService);
   private readonly confirmDialog = inject(SesaConfirmDialogService);
 
-  faUsers = faUsers;
-  faPlus = faPlus;
-  faClipboardList = faClipboardList;
+  readonly faUsers = faUsers;
+  readonly faPlus = faPlus;
 
   pacientes: PacienteDto[] = [];
   totalElements = 0;

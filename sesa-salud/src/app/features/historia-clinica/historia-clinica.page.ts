@@ -11,6 +11,7 @@ import { PacienteService, PacienteDto } from '../../core/services/paciente.servi
 import { HistoriaClinicaService, HistoriaClinicaDto } from '../../core/services/historia-clinica.service';
 import { SesaJspdfService, SesaPdfPaciente, SesaPdfHistoriaClinica, SesaPdfBranding } from '../../core/services/sesa-jspdf.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
+import { EmpresaService } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CitaDto, CitaService } from '../../core/services/cita.service';
 import { ConsultaDto, ConsultaService } from '../../core/services/consulta.service';
@@ -26,6 +27,7 @@ import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-stat
 import { SesaRdaPanelComponent } from '../../shared/components/sesa-rda-panel/sesa-rda-panel.component';
 import { SesaConsentimientoComponent } from '../../shared/components/sesa-consentimiento/sesa-consentimiento.component';
 import { parseResultadoToItems } from '../../core/utils/resultado-display.util';
+import { forkJoin } from 'rxjs';
 
 export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores' | 'consentimiento';
 export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGEN';
@@ -65,8 +67,12 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private readonly confirmDialog     = inject(SesaConfirmDialogService);
   private readonly sesaJspdf         = inject(SesaJspdfService);
   private readonly empresaCurrent   = inject(EmpresaCurrentService);
+  private readonly empresaService   = inject(EmpresaService);
 
   descargandoPdf = signal(false);
+  descargandoPdfEvolucion = signal(false);
+  imprimiendoPdfEvolucion = signal(false);
+  imprimiendoPdf = signal(false);
 
   /* ── Estado global ─────────────────────────────────────────────────── */
   loadingPatient  = signal(false);
@@ -867,17 +873,28 @@ export class HistoriaClinicaPageComponent implements OnInit {
     });
   }
 
-  /** Obtiene branding (logo + nombre empresa) y ejecuta el callback; si falla la carga del logo, pasa branding sin logo. */
+  /** Obtiene branding (logo + datos empresa: nombre, NIT, dirección) y ejecuta el callback; si falla la carga del logo o empresa, pasa branding con lo disponible. */
   private withBranding(fn: (branding: SesaPdfBranding) => void): void {
-    this.empresaCurrent.getLogoDataUrl().subscribe({
-      next: (logoDataUrl) => {
+    forkJoin({
+      logoDataUrl: this.empresaCurrent.getLogoDataUrl(),
+      empresa: this.empresaService.getCurrent(),
+    }).subscribe({
+      next: ({ logoDataUrl, empresa }) => {
         const branding: SesaPdfBranding = {
-          empresaNombre: this.empresaCurrent.displayName(),
+          empresaNombre: empresa?.razonSocial?.trim() || this.empresaCurrent.displayName(),
+          empresaIdentificacion: empresa?.identificacion?.trim(),
+          empresaDireccion: empresa?.direccionEmpresa?.trim(),
           logoDataUrl: logoDataUrl ?? undefined,
         };
         fn(branding);
       },
-      error: () => fn({ empresaNombre: this.empresaCurrent.displayName() }),
+      error: () => {
+        fn({
+          empresaNombre: this.empresaCurrent.displayName(),
+          empresaIdentificacion: undefined,
+          empresaDireccion: undefined,
+        });
+      },
     });
   }
 
@@ -894,6 +911,18 @@ export class HistoriaClinicaPageComponent implements OnInit {
       email: p.email,
       direccion: p.direccion,
       grupoSanguineo: p.grupoSanguineo,
+      epsNombre: p.epsNombre,
+      municipioResidencia: p.municipioResidencia,
+      departamentoResidencia: p.departamentoResidencia,
+      zonaResidencia: p.zonaResidencia,
+      regimenAfiliacion: p.regimenAfiliacion,
+      tipoUsuario: p.tipoUsuario,
+      contactoEmergenciaNombre: p.contactoEmergenciaNombre,
+      contactoEmergenciaTelefono: p.contactoEmergenciaTelefono,
+      estadoCivil: p.estadoCivil,
+      escolaridad: p.escolaridad,
+      ocupacion: p.ocupacion,
+      pertenenciaEtnica: p.pertenenciaEtnica,
     };
   }
 
@@ -954,6 +983,91 @@ export class HistoriaClinicaPageComponent implements OnInit {
         this.toast.error('No se pudo generar el PDF.', 'Error PDF');
       }
       this.descargandoPdf.set(false);
+    });
+  }
+
+  /** Abre el PDF de Historia Clínica en otra ventana para imprimir. */
+  imprimirPdf(): void {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    this.imprimiendoPdf.set(true);
+    this.withBranding((branding) => {
+      try {
+        const ultimaConsulta = this.consultasOrdenadas[0] ?? null;
+        const historia = this.historiaClinica();
+        const user = this.authService.currentUser();
+        const brandingHC: SesaPdfBranding = {
+          ...branding,
+          printedBy: user?.nombreCompleto,
+          profesionalNombre: ultimaConsulta?.profesionalNombre,
+          profesionalRol: (ultimaConsulta as { profesionalRol?: string })?.profesionalRol,
+          profesionalTarjeta: ultimaConsulta?.profesionalTarjetaProfesional,
+        };
+        const blob = this.sesaJspdf.generarHistoriaClinicaPdf(
+          this.toSesaPaciente(paciente),
+          historia ? this.toSesaHistoria(historia) : null,
+          ultimaConsulta,
+          this.ordenesPaciente,
+          brandingHC
+        );
+        this.sesaJspdf.openForPrint(blob);
+        this.toast.success('Use el diálogo de impresión en la ventana del PDF.', 'Imprimir');
+      } catch (e) {
+        this.toast.error('No se pudo generar el PDF para imprimir.', 'Error PDF');
+      }
+      this.imprimiendoPdf.set(false);
+    });
+  }
+
+  /** Descarga el PDF de Evolución Clínica (solo consultas/notas de evolución). */
+  descargarPdfEvolucion(): void {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    this.descargandoPdfEvolucion.set(true);
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarEvolucionClinicaPdf(
+          this.toSesaPaciente(paciente),
+          this.consultasOrdenadas,
+          { ...branding, printedBy: this.authService.currentUser()?.nombreCompleto }
+        );
+        const nombre = (paciente.nombres ?? 'paciente').replace(/\s+/g, '-');
+        this.sesaJspdf.triggerDownload(blob, `evolucion-clinica-${nombre}.pdf`);
+        this.toast.success('Evolución clínica descargada en PDF.', 'PDF generado');
+      } catch (e) {
+        this.toast.error('No se pudo generar el PDF de evolución.', 'Error PDF');
+      }
+      this.descargandoPdfEvolucion.set(false);
+    });
+  }
+
+  /** Abre el PDF de Evolución Clínica en ventana de impresión. */
+  imprimirPdfEvolucion(): void {
+    const paciente = this.selectedPatient();
+    if (!paciente?.id) {
+      this.toast.error('No hay un paciente seleccionado.', 'Sin paciente');
+      return;
+    }
+    this.imprimiendoPdfEvolucion.set(true);
+    this.withBranding((branding) => {
+      try {
+        const blob = this.sesaJspdf.generarEvolucionClinicaPdf(
+          this.toSesaPaciente(paciente),
+          this.consultasOrdenadas,
+          { ...branding, printedBy: this.authService.currentUser()?.nombreCompleto }
+        );
+        this.sesaJspdf.openForPrint(blob);
+        this.toast.success('Use el diálogo de impresión para la evolución clínica.', 'Imprimir');
+      } catch (e) {
+        this.toast.error('No se pudo generar el documento para imprimir.', 'Error');
+      }
+      this.imprimiendoPdfEvolucion.set(false);
     });
   }
 

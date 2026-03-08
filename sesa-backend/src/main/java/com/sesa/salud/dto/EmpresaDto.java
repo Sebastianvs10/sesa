@@ -39,7 +39,6 @@ public class EmpresaDto {
     private String adminPrimerApellido;
     private String adminSegundoApellido;
     private String adminCelular;
-    private String adminProveedorServicio;
     private Integer usuarioMovilLimit;
     private Integer usuarioWebLimit;
     private Boolean activo;
