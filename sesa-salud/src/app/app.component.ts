@@ -28,6 +28,7 @@ import {
   faTooth,
   faUserTie,
   faMapLocationDot,
+  faKey,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from './core/services/auth.service';
 import { EmpresaCurrentService } from './core/services/empresa-current.service';
@@ -136,6 +137,8 @@ const SIDEBAR_CATALOG: SidebarSection[] = [
     entries: [
       // Mi empresa: visible si tiene EMPRESAS o PERSONAL
       { codigo: ['EMPRESAS', 'PERSONAL'], label: 'Mi empresa',       route: '/mi-empresa',  icon: faBuilding },
+      // S12: API Keys para integradores (laboratorio, PACS, signos vitales)
+      { codigo: 'EMPRESAS', label: 'API Keys (Integradores)', route: '/api-keys', icon: faKey },
       // Gestión empresas: solo SUPERADMINISTRADOR
       { codigo: 'EMPRESAS', label: 'Gestión empresas', route: '/empresas',    icon: faBuildingColumns, superAdminOnly: true },
       { codigo: 'PERSONAL',       label: 'Personal',        route: '/personal',      icon: faUserTie },

@@ -6,6 +6,8 @@
 package com.sesa.salud.controller;
 
 import com.sesa.salud.dto.rda.RdaStatusDto;
+import com.sesa.salud.dto.RdaRecibidoResumenDto;
+import com.sesa.salud.dto.RdaRecibidoDetalleDto;
 import com.sesa.salud.entity.RdaEnvio;
 import com.sesa.salud.service.fhir.RdaService;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,34 @@ public class RdaController {
         return ResponseEntity.ok(rdaService.generarYEnviar(atencionId, tipoRda));
     }
 
+    // ─── S11: RDA Urgencias ─────────────────────────────────────────────────
+
+    @PostMapping("/generar/urgencia/{urgenciaRegistroId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<RdaStatusDto> generarRdaUrgencia(@PathVariable Long urgenciaRegistroId) {
+        return ResponseEntity.ok(rdaService.generarRdaUrgencias(urgenciaRegistroId));
+    }
+
+    @PostMapping("/generar-y-enviar/urgencia/{urgenciaRegistroId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<RdaStatusDto> generarYEnviarUrgencia(@PathVariable Long urgenciaRegistroId) {
+        return ResponseEntity.ok(rdaService.generarYEnviarUrgencias(urgenciaRegistroId));
+    }
+
+    // ─── S11: RDA Hospitalización ─────────────────────────────────────────
+
+    @PostMapping("/generar/hospitalizacion/{hospitalizacionId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<RdaStatusDto> generarRdaHospitalizacion(@PathVariable Long hospitalizacionId) {
+        return ResponseEntity.ok(rdaService.generarRdaHospitalizacion(hospitalizacionId));
+    }
+
+    @PostMapping("/generar-y-enviar/hospitalizacion/{hospitalizacionId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<RdaStatusDto> generarYEnviarHospitalizacion(@PathVariable Long hospitalizacionId) {
+        return ResponseEntity.ok(rdaService.generarYEnviarHospitalizacion(hospitalizacionId));
+    }
+
     // ─── Consultar estado ───────────────────────────────────────────────────
 
     @GetMapping("/estado/{atencionId:\\d+}")
@@ -107,5 +137,20 @@ public class RdaController {
             "version",   "RDA CO v0.7.2",
             "tipos_rda", "CONSULTA_EXTERNA, HOSPITALIZACION, URGENCIAS, PACIENTE"
         ));
+    }
+
+    // ─── S17: RDA recibidos de otras IPS (IHCE) ─────────────────────────────
+
+    @GetMapping("/recibidos/paciente/{pacienteId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','USER','SUPERADMINISTRADOR')")
+    public ResponseEntity<List<RdaRecibidoResumenDto>> getRdaRecibidosPaciente(@PathVariable Long pacienteId) {
+        return ResponseEntity.ok(rdaService.obtenerRdaRecibidosPaciente(pacienteId));
+    }
+
+    @GetMapping("/recibidos/{id:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','USER','SUPERADMINISTRADOR')")
+    public ResponseEntity<RdaRecibidoDetalleDto> getRdaRecibidoDetalle(@PathVariable Long id) {
+        RdaRecibidoDetalleDto dto = rdaService.getRdaRecibidoDetalle(id);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
     }
 }

@@ -23,8 +23,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -36,6 +40,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,6 +55,10 @@ public class NotificacionServiceImpl implements NotificacionService {
     private final UsuarioRepository             usuarioRepository;
     private final EmpresaRepository             empresaRepository;
     private final DataSource                    dataSource;
+    private final JdbcTemplate                  jdbcTemplate;
+    private final PlatformTransactionManager    transactionManager;
+
+    private final Set<String> schemaColumnsEnsured = ConcurrentHashMap.newKeySet();
 
     // ── Crear notificación ────────────────────────────────────────────────────
 
@@ -138,7 +148,27 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Override
     @Transactional(readOnly = true)
     public Page<NotificacionDto> listRecibidas(Long usuarioId, Pageable pageable) {
-        return destinatarioRepository.findByUsuarioIdOrderByNotificacion_FechaEnvioDesc(usuarioId, pageable)
+        ensureDestinatarioStateColumns();
+        return destinatarioRepository
+                .findByUsuarioIdAndArchivadoFalseAndEliminadoFalseOrderByNotificacion_FechaEnvioDesc(usuarioId, pageable)
+                .map(dest -> toDto(dest.getNotificacion()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificacionDto> listArchivadas(Long usuarioId, Pageable pageable) {
+        ensureDestinatarioStateColumns();
+        return destinatarioRepository
+                .findByUsuarioIdAndArchivadoTrueAndEliminadoFalseOrderByNotificacion_FechaEnvioDesc(usuarioId, pageable)
+                .map(dest -> toDto(dest.getNotificacion()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificacionDto> listPapelera(Long usuarioId, Pageable pageable) {
+        ensureDestinatarioStateColumns();
+        return destinatarioRepository
+                .findByUsuarioIdAndEliminadoTrueOrderByNotificacion_FechaEnvioDesc(usuarioId, pageable)
                 .map(dest -> toDto(dest.getNotificacion()));
     }
 
@@ -198,6 +228,70 @@ public class NotificacionServiceImpl implements NotificacionService {
 
     @Override
     @Transactional
+    public void archivar(Long notificacionId, Long usuarioId) {
+        ensureDestinatarioStateColumns();
+        NotificacionDestinatario dest = getDestinatarioOrThrow(notificacionId, usuarioId);
+        if (Boolean.TRUE.equals(dest.getEliminado())) {
+            throw new RuntimeException("No puede archivar una notificación en papelera");
+        }
+        dest.setArchivado(true);
+        dest.setFechaArchivado(Instant.now());
+        destinatarioRepository.save(dest);
+    }
+
+    @Override
+    @Transactional
+    public void desarchivar(Long notificacionId, Long usuarioId) {
+        ensureDestinatarioStateColumns();
+        NotificacionDestinatario dest = getDestinatarioOrThrow(notificacionId, usuarioId);
+        if (Boolean.TRUE.equals(dest.getEliminado())) {
+            throw new RuntimeException("No puede desarchivar una notificación en papelera");
+        }
+        dest.setArchivado(false);
+        dest.setFechaArchivado(null);
+        destinatarioRepository.save(dest);
+    }
+
+    @Override
+    @Transactional
+    public void moverAPapelera(Long notificacionId, Long usuarioId) {
+        ensureDestinatarioStateColumns();
+        NotificacionDestinatario dest = getDestinatarioOrThrow(notificacionId, usuarioId);
+        dest.setEliminado(true);
+        dest.setFechaEliminado(Instant.now());
+        dest.setArchivado(false);
+        dest.setFechaArchivado(null);
+        destinatarioRepository.save(dest);
+    }
+
+    @Override
+    @Transactional
+    public void restaurarDePapelera(Long notificacionId, Long usuarioId) {
+        ensureDestinatarioStateColumns();
+        NotificacionDestinatario dest = getDestinatarioOrThrow(notificacionId, usuarioId);
+        if (!Boolean.TRUE.equals(dest.getEliminado())) {
+            return;
+        }
+        dest.setEliminado(false);
+        dest.setFechaEliminado(null);
+        dest.setArchivado(false);
+        dest.setFechaArchivado(null);
+        destinatarioRepository.save(dest);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarDefinitivo(Long notificacionId, Long usuarioId) {
+        ensureDestinatarioStateColumns();
+        NotificacionDestinatario dest = getDestinatarioOrThrow(notificacionId, usuarioId);
+        if (!Boolean.TRUE.equals(dest.getEliminado())) {
+            throw new RuntimeException("Para eliminar definitivamente primero mueva a papelera");
+        }
+        destinatarioRepository.delete(dest);
+    }
+
+    @Override
+    @Transactional
     public void deleteAdjunto(Long notificacionId, Long adjuntoId, Long usuarioId) {
         Notificacion notificacion = notificacionRepository.findById(notificacionId)
                 .orElseThrow(() -> new RuntimeException("Notificación no encontrada: " + notificacionId));
@@ -214,7 +308,8 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Override
     @Transactional(readOnly = true)
     public long countNoLeidas(Long usuarioId) {
-        return destinatarioRepository.countByUsuarioIdAndLeidoFalse(usuarioId);
+        ensureDestinatarioStateColumns();
+        return destinatarioRepository.countByUsuarioIdAndLeidoFalseAndArchivadoFalseAndEliminadoFalse(usuarioId);
     }
 
     // ── Destinatarios disponibles ─────────────────────────────────────────────
@@ -362,5 +457,37 @@ public class NotificacionServiceImpl implements NotificacionService {
                 .adjuntos(adjuntosDto)
                 .destinatarios(destinatariosDto)
                 .build();
+    }
+
+    private NotificacionDestinatario getDestinatarioOrThrow(Long notificacionId, Long usuarioId) {
+        return destinatarioRepository
+                .findByNotificacionIdAndUsuarioId(notificacionId, usuarioId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Destinatario no encontrado para notificación " + notificacionId));
+    }
+
+    /**
+     * Garantiza columnas de estado por destinatario para evitar 500 en esquemas antiguos.
+     * Se ejecuta en el schema tenant activo (search_path de la request).
+     */
+    private void ensureDestinatarioStateColumns() {
+        try {
+            String schema = jdbcTemplate.queryForObject("SELECT current_schema()", String.class);
+            if (schema != null && schemaColumnsEnsured.contains(schema)) return;
+
+            TransactionTemplate tx = new TransactionTemplate(transactionManager);
+            tx.setReadOnly(false);
+            tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            tx.executeWithoutResult(status -> {
+                jdbcTemplate.execute("ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS archivado BOOLEAN NOT NULL DEFAULT FALSE");
+                jdbcTemplate.execute("ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_archivado TIMESTAMPTZ");
+                jdbcTemplate.execute("ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS eliminado BOOLEAN NOT NULL DEFAULT FALSE");
+                jdbcTemplate.execute("ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_eliminado TIMESTAMPTZ");
+            });
+
+            if (schema != null) schemaColumnsEnsured.add(schema);
+        } catch (Exception e) {
+            log.warn("No se pudieron verificar columnas de estado en notificacion_destinatarios: {}", e.getMessage());
+        }
     }
 }

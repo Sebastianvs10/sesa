@@ -182,13 +182,15 @@ export class SesaPerfilModalOutletComponent {
   }
 
   get roleLabel(): string {
-    const role = this.auth.currentUser()?.role ?? '';
+    const role = (this.auth.rolActivo() || this.auth.currentUser()?.role) ?? '';
     const labels: Record<string, string> = {
       SUPERADMINISTRADOR: 'Superadministrador',
+      ADMIN: 'Administrador',
       ADMINISTRADOR: 'Administrador',
       MEDICO: 'Médico',
       ENFERMERO: 'Enfermero / Enfermera',
       RECEPCIONISTA: 'Recepcionista',
+      FACTURACION: 'Facturación',
       FARMACEUTICO: 'Farmacéutico',
       LABORATORISTA: 'Laboratorista',
       CONTADOR: 'Contador',
@@ -197,13 +199,15 @@ export class SesaPerfilModalOutletComponent {
   }
 
   get roleKey(): string {
-    const role = this.auth.currentUser()?.role ?? 'DEFAULT';
+    const role = (this.auth.rolActivo() || this.auth.currentUser()?.role) ?? 'DEFAULT';
     const map: Record<string, string> = {
       SUPERADMINISTRADOR: 'superadmin',
+      ADMIN: 'admin',
       ADMINISTRADOR: 'admin',
       MEDICO: 'medico',
       ENFERMERO: 'enfermero',
       RECEPCIONISTA: 'recepcionista',
+      FACTURACION: 'facturacion',
       FARMACEUTICO: 'farmaceutico',
       LABORATORISTA: 'laboratorista',
       CONTADOR: 'contador',

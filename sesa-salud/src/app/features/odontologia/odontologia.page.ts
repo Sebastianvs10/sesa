@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faTooth, faUser, faCalendarCheck, faClipboardList, faFileInvoiceDollar,
@@ -27,9 +26,10 @@ import { OdontogramaComponent, OdontogramaCambio } from './odontograma/odontogra
 import {
   ConsultaOdontologicaDto, PiezaDental, PlanTratamientoDto, PlanTratamientoItemDto,
   ProcedimientoCatalogo, ImagenClinicaDto, EvolucionOdontologicaDto,
-  OdontogramaEstadoDto, dtoListToPiezas, piezasChangedToDtos,
+  OdontogramaEstadoDto, OdontogramaCambioKey, dtoListToPiezas, piezasToDtosDiff,
   ESTADO_LABEL, ESTADO_COLOR,
 } from './odontologia.models';
+import { OdontogramaService } from './odontograma/services/odontograma.service';
 
 type TabPrincipal = 'dashboard' | 'paciente';
 type TabFicha = 'historia' | 'odontograma' | 'procedimientos' | 'plan' | 'imagenes' | 'evolucion' | 'historial';
@@ -64,7 +64,7 @@ interface CitaHoy {
 @Component({
   selector: 'app-odontologia-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, FontAwesomeModule, OdontogramaComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FontAwesomeModule, OdontogramaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './odontologia.page.html',
   styleUrl: './odontologia.page.scss',
@@ -73,6 +73,7 @@ export class OdontologiaPageComponent implements OnInit {
 
   // ── Servicios ────────────────────────────────────────────────────────
   private readonly odontoSvc  = inject(OdontologiaService);
+  private readonly odontoUiSvc = inject(OdontogramaService);
   private readonly citaSvc    = inject(CitaService);
   private readonly auth       = inject(AuthService);
   private readonly toast      = inject(SesaToastService);
@@ -161,6 +162,8 @@ export class OdontologiaPageComponent implements OnInit {
   @ViewChild(OdontogramaComponent) odontogramaRef?: OdontogramaComponent;
   readonly piezasDentales = signal<Map<number, PiezaDental>>(new Map());
   readonly cambiosPendientes = signal<OdontogramaCambio[]>([]);
+  readonly ultimoGuardadoOdontograma = signal<string | null>(null);
+  readonly cambiosPendientesCount = computed(() => this.cambiosPendientes().length);
 
   // ── Procedimientos / Plan de tratamiento ─────────────────────────────
   readonly catalogo         = signal<ProcedimientoCatalogo[]>([]);
@@ -386,6 +389,7 @@ export class OdontologiaPageComponent implements OnInit {
   }
 
   private inicializarFicha(cita: CitaHoy): void {
+    this.odontoUiSvc.setContext(cita.pacienteId);
     this.formConsulta.set({
       pacienteId: cita.pacienteId,
       profesionalId: this.profesionalId,
@@ -433,6 +437,8 @@ export class OdontologiaPageComponent implements OnInit {
     this.tabPrincipal.set('dashboard');
     this.pacienteActivo.set(null);
     this.cambiosPendientes.set([]);
+    this.ultimoGuardadoOdontograma.set(null);
+    this.odontoUiSvc.clearStateForPatient();
   }
 
   /**
@@ -466,13 +472,19 @@ export class OdontologiaPageComponent implements OnInit {
     this.cargando.set(true);
     if (this.consultaActiva()?.id) {
       this.odontoSvc.actualizarConsulta(this.consultaActiva()!.id!, form).subscribe({
-        next: c => { this.consultaActiva.set(c); this.toast.success('Historia guardada'); this.cargando.set(false); },
+        next: c => {
+          this.consultaActiva.set(c);
+          this.odontoUiSvc.setContext(c.pacienteId, c.id);
+          this.toast.success('Historia guardada');
+          this.cargando.set(false);
+        },
         error: () => { this.toast.error('Error al guardar'); this.cargando.set(false); },
       });
     } else {
       this.odontoSvc.crearConsulta(form).subscribe({
         next: c => {
           this.consultaActiva.set(c);
+          this.odontoUiSvc.setContext(c.pacienteId, c.id);
           this.formConsulta.update(f => ({ ...f, id: c.id }));
           this.toast.success('Consulta creada');
           this.cargando.set(false);
@@ -489,20 +501,51 @@ export class OdontologiaPageComponent implements OnInit {
   // ── Odontograma ──────────────────────────────────────────────────────
 
   onOdontogramaCambio(cambio: OdontogramaCambio): void {
-    this.cambiosPendientes.update(cs => [...cs, cambio]);
+    this.cambiosPendientes.update((cs) => {
+      const key = this.buildCambioKey(cambio.fdi, cambio.superficie);
+      const idx = cs.findIndex((it) => this.buildCambioKey(it.fdi, it.superficie) === key);
+      if (idx === -1) return [...cs, cambio];
+      const next = [...cs];
+      next[idx] = cambio;
+      return next;
+    });
   }
 
   guardarOdontograma(): void {
-    if (!this.odontogramaRef) return;
+    if (!this.odontogramaRef) {
+      this.toast.warning('El odontograma aún no está listo para guardar');
+      return;
+    }
+    const paciente = this.pacienteActivo();
+    if (!paciente) {
+      this.toast.warning('Primero selecciona un paciente');
+      return;
+    }
+    const consulta = this.consultaActiva();
+    if (!consulta?.id) {
+      this.toast.warning('Guarda primero la historia clínica para mantener trazabilidad');
+      this.tabFicha.set('historia');
+      return;
+    }
     const piezas = this.odontogramaRef.getPiezasLocal();
-    const pacId = this.pacienteActivo()!.pacienteId;
-    const consId = this.consultaActiva()?.id;
-    const dtos = piezasChangedToDtos(piezas, pacId, this.profesionalId, consId);
+    const cambioKeys = this.cambiosPendientes().map((c) => this.buildCambioKey(c.fdi, c.superficie));
+    const dtos = piezasToDtosDiff(
+      piezas,
+      paciente.pacienteId,
+      this.profesionalId,
+      cambioKeys,
+      consulta.id,
+    );
+    if (!dtos.length) {
+      this.toast.warning('No hay cambios pendientes por guardar');
+      return;
+    }
 
     this.cargando.set(true);
     this.odontoSvc.guardarOdontogramaBatch(dtos).subscribe({
       next: () => {
         this.cambiosPendientes.set([]);
+        this.ultimoGuardadoOdontograma.set(new Date().toISOString());
         this.toast.success('Odontograma guardado');
         this.cargando.set(false);
       },
@@ -775,6 +818,17 @@ export class OdontologiaPageComponent implements OnInit {
     return new Date(iso).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
   }
 
+  formatFechaHoraCorta(iso: string | null): string {
+    if (!iso) return 'Sin guardar';
+    return new Date(iso).toLocaleString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   // ── Historial de consultas ─────────────────────────────────────────────
 
   /**
@@ -947,4 +1001,8 @@ export class OdontologiaPageComponent implements OnInit {
       c.code.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)
     );
   });
+
+  private buildCambioKey(fdi: number, superficie: string): OdontogramaCambioKey {
+    return `${fdi}-${superficie}` as OdontogramaCambioKey;
+  }
 }

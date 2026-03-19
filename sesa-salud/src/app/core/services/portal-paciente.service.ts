@@ -119,4 +119,67 @@ export class PortalPacienteService {
   getConsentimientosPendientes(): Observable<ConsentimientoInformadoDto[]> {
     return this.http.get<ConsentimientoInformadoDto[]>(`${this.apiUrl}/portal/consentimientos-pendientes`);
   }
+
+  /** S7: Descargar PHR del paciente autenticado (portal). */
+  getPhrPdf(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/portal/phr?formato=pdf`, { responseType: 'blob' });
+  }
+
+  getPhrFhir(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/portal/phr?formato=fhir`, { responseType: 'blob' });
+  }
+
+  /** S7: Descargar PHR de un paciente (profesional, con permiso HC). */
+  getPhrPdfByPacienteId(pacienteId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/portal/paciente/${pacienteId}/phr?formato=pdf`, { responseType: 'blob' });
+  }
+
+  getPhrFhirByPacienteId(pacienteId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/portal/paciente/${pacienteId}/phr?formato=fhir`, { responseType: 'blob' });
+  }
+
+  /** S10: Enviar cuestionario pre-consulta (ePRO) para una cita (paciente autenticado). */
+  enviarCuestionarioPreconsulta(
+    citaId: number,
+    body: { motivoPalabras?: string; dolorEva?: number; ansiedadEva?: number; medicamentosActuales?: string; alergiasReferidas?: string }
+  ): Observable<CuestionarioPreconsultaResponseDto> {
+    return this.http.post<CuestionarioPreconsultaResponseDto>(
+      `${this.apiUrl}/portal/cita/${citaId}/cuestionario-preconsulta`,
+      body
+    );
+  }
+
+  /** S14: Órdenes con resultado del paciente (interpretación en lenguaje sencillo y enlace PDF). */
+  getOrdenesConResultados(): Observable<OrdenConResultadoPortalDto[]> {
+    return this.http.get<OrdenConResultadoPortalDto[]>(`${this.apiUrl}/portal/paciente/ordenes-con-resultados`);
+  }
+
+  /** S14: Descargar PDF de una orden (paciente autenticado, solo sus órdenes). */
+  getPdfOrden(ordenId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/portal/paciente/orden/${ordenId}/pdf`, { responseType: 'blob' });
+  }
+}
+
+export interface CuestionarioPreconsultaResponseDto {
+  id: number;
+  citaId: number;
+  pacienteId: number;
+  motivoPalabras?: string;
+  dolorEva?: number;
+  ansiedadEva?: number;
+  medicamentosActuales?: string;
+  alergiasReferidas?: string;
+  enviadoAt?: string;
+  createdAt?: string;
+}
+
+/** S14: Orden con resultado para portal (interpretación en lenguaje sencillo + enlace PDF). */
+export interface OrdenConResultadoPortalDto {
+  ordenId: number;
+  tipo: string;
+  detalle?: string;
+  resultado?: string;
+  fechaResultado?: string;
+  interpretacionLenguajeSencillo?: string;
+  enlaceDescargaPdf?: string;
 }

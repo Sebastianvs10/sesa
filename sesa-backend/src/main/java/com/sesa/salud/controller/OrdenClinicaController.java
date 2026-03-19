@@ -72,6 +72,14 @@ public class OrdenClinicaController {
         return ResponseEntity.ok(ordenClinicaService.registrarResultado(id, dto));
     }
 
+    /** S2: Marca el resultado crítico de la orden como leído por el usuario actual. */
+    @PutMapping("/{id}/marcar-resultado-leido")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<Void> marcarResultadoLeido(@PathVariable("id") Long id) {
+        ordenClinicaService.marcarResultadoLeido(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {

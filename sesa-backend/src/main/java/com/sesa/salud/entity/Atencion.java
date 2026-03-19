@@ -111,6 +111,20 @@ public class Atencion {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** S6: Datos de referencia para PDF (motivo, nivel, resumen). */
+    @Column(name = "referencia_motivo", columnDefinition = "TEXT")
+    private String referenciaMotivo;
+    @Column(name = "referencia_nivel", length = 50)
+    private String referenciaNivel;
+    @Column(name = "referencia_diagnostico", columnDefinition = "TEXT")
+    private String referenciaDiagnostico;
+    @Column(name = "referencia_tratamiento", columnDefinition = "TEXT")
+    private String referenciaTratamiento;
+    @Column(name = "referencia_recomendaciones", columnDefinition = "TEXT")
+    private String referenciaRecomendaciones;
+    @Column(name = "referencia_proxima_cita", columnDefinition = "TEXT")
+    private String referenciaProximaCita;
+
     @OneToMany(mappedBy = "atencion", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Diagnostico> diagnosticos = new ArrayList<>();

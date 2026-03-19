@@ -1,0 +1,181 @@
+/* S14: Portal del Paciente — Resultados con interpretación en lenguaje sencillo */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.pres {
+  padding: 0 0 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.pres__header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+}
+
+.pres__title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.pres__sub {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+}
+
+.pres__list {
+  padding: 1rem 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pres__item {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pres__item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pres__item-tipo {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.pres__item-fecha {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.pres__item-detalle {
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.pres__item-resultado {
+  border-top: 1px solid var(--sesa-border);
+  padding-top: 0.75rem;
+}
+
+.pres__resultado-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.pres__resultado-text {
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+
+.pres__item-interp {
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.pres__interp-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-success);
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.pres__interp-text {
+  font-size: 0.875rem;
+  color: var(--sesa-text-primary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.pres__item-actions {
+  padding-top: 0.5rem;
+}
+
+.pres__btn-pdf {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sesa-secondary);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pres__btn-pdf:hover:not(:disabled) {
+  background: var(--sesa-secondary);
+  color: #fff;
+}
+
+.pres__btn-pdf:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pres__empty,
+.pres__error {
+  padding: 2rem 20px;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+}
+
+.pres__empty-hint {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.pres__error {
+  color: var(--sesa-text-secondary);
+}
+
+.pres__error button {
+  margin-top: 1rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--sesa-secondary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pres__skeleton {
+  height: 120px;
+  background: var(--sesa-border);
+  border-radius: 12px;
+  animation: pres-skeleton 1.5s ease-in-out infinite;
+}
+
+@keyframes pres-skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

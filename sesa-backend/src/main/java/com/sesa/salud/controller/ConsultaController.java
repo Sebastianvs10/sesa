@@ -6,7 +6,9 @@ package com.sesa.salud.controller;
 
 import com.sesa.salud.dto.ConsultaDto;
 import com.sesa.salud.dto.ConsultaRequestDto;
+import com.sesa.salud.dto.CuestionarioPreconsultaDto;
 import com.sesa.salud.service.ConsultaService;
+import com.sesa.salud.service.CuestionarioPreconsultaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +26,7 @@ import java.util.List;
 public class ConsultaController {
 
     private final ConsultaService consultaService;
+    private final CuestionarioPreconsultaService cuestionarioPreconsultaService;
 
     @GetMapping("/mis-consultas")
     @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
@@ -42,6 +45,15 @@ public class ConsultaController {
     @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
     public ResponseEntity<ConsultaDto> get(@PathVariable("id") Long id) {
         return ResponseEntity.ok(consultaService.findById(id));
+    }
+
+    /** S10: Cuestionario pre-consulta (ePRO) asociado a esta consulta (vía cita). Para que el médico vea lo enviado por el paciente. */
+    @GetMapping("/{consultaId}/cuestionario-preconsulta")
+    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    public ResponseEntity<CuestionarioPreconsultaDto> getCuestionarioPreconsulta(@PathVariable("consultaId") Long consultaId) {
+        return cuestionarioPreconsultaService.getByConsultaId(consultaId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping

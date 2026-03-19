@@ -1,7 +1,21 @@
 <!-- Odontograma SVG interactivo — diseño clínico premium FDI -->
 <!-- Autor: Ing. J Sebastian Vargas S -->
 
-<div class="odontograma-wrapper">
+<div class="odontograma-wrapper"
+     [class.mode-hiperrealista]="visualMode() === 'hiperrealista'"
+     [class.mode-operativo]="visualMode() === 'operativo'">
+  <header class="odontograma-headline">
+    <div>
+      <h3 class="odontograma-title">Odontograma Clínico Inteligente</h3>
+      <p class="odontograma-subtitle">Registro por superficies FDI, atajos de teclado y trazabilidad clínica por paciente.</p>
+    </div>
+    <div class="odontograma-shortcuts" aria-label="Atajos de teclado">
+      <span><kbd>C</kbd> Caries</span>
+      <span><kbd>O</kbd> Obturación</span>
+      <span><kbd>E</kbd> Endodoncia</span>
+      <span><kbd>Esc</kbd> Cerrar</span>
+    </div>
+  </header>
 
   <!-- ── Toolbar de acciones (tratamiento a aplicar) ─────────────────── -->
   <div class="odontograma-toolbar">
@@ -11,8 +25,8 @@
   <!-- ── Controles: modo + vista + CPOD ───────────────────────────────── -->
   <div class="odontograma-controls">
     <div class="modo-toggle">
-      <button class="btn-modo" [class.active]="modo() === 'adulto'"     (click)="cambiarModo('adulto')">🦷 Adulto (Permanente)</button>
-      <button class="btn-modo" [class.active]="modo() === 'pediatrico'" (click)="cambiarModo('pediatrico')">🍼 Pediátrico (Temporal)</button>
+      <button class="btn-modo" [class.active]="modo() === 'adulto'" (click)="cambiarModo('adulto')" aria-label="Cambiar a modo adulto">🦷 Adulto (Permanente)</button>
+      <button class="btn-modo" [class.active]="modo() === 'pediatrico'" (click)="cambiarModo('pediatrico')" aria-label="Cambiar a modo pediátrico">🍼 Pediátrico (Temporal)</button>
     </div>
     <div class="vista-zoom-row">
       <app-vista-selector />
@@ -34,11 +48,24 @@
       {{ mostrarLeyenda() ? '▲ Ocultar leyenda' : '▼ Ver leyenda' }}
     </button>
     <div class="odontograma-acciones-extra">
-      <button type="button" class="btn-accion" (click)="useGridLayout.set(!useGridLayout())" [title]="useGridLayout() ? 'Usar círculo FDI' : 'Usar grid cruz'">
+      <button
+        type="button"
+        class="btn-visual-mode"
+        role="switch"
+        [attr.aria-checked]="visualMode() === 'operativo'"
+        [attr.aria-label]="'Modo visual: ' + (visualMode() === 'operativo' ? 'Operativo' : 'Hiperrealista')"
+        [title]="visualMode() === 'operativo' ? 'Cambiar a hiperrealista' : 'Cambiar a operativo'"
+        (click)="toggleVisualMode()">
+        <span class="btn-visual-pill" [class.btn-visual-pill--operativo]="visualMode() === 'operativo'"></span>
+        <span class="btn-visual-label">
+          {{ visualMode() === 'operativo' ? 'Modo operativo' : 'Modo hiperrealista' }}
+        </span>
+      </button>
+      <button type="button" class="btn-accion" (click)="useGridLayout.set(!useGridLayout())" [title]="useGridLayout() ? 'Usar círculo FDI' : 'Usar grid cruz'" aria-label="Alternar layout de superficies">
         {{ useGridLayout() ? '⊞ Grid' : '○ Círculo' }}
       </button>
-      <button type="button" class="btn-accion" (click)="takeSnapshot()">Snapshot</button>
-      <button type="button" class="btn-accion" (click)="exportJson()">Exportar JSON</button>
+      <button type="button" class="btn-accion" (click)="takeSnapshot()" aria-label="Tomar snapshot clínico">Snapshot</button>
+      <button type="button" class="btn-accion" (click)="exportJson()" aria-label="Exportar odontograma a JSON">Exportar JSON</button>
       <label class="btn-accion">
         Importar JSON
         <input type="file" accept=".json" (change)="onFileImport($event)" class="input-file-hidden"/>
@@ -221,6 +248,10 @@
         </linearGradient>
       </defs>
 
+      <!-- ── Backplate premium ──────────────────────────────────────── -->
+      <rect x="12" y="8" width="1030" height="408" rx="18" class="od-backplate"/>
+      <rect x="22" y="116" width="1010" height="256" rx="16" class="od-clinical-panel"/>
+
       <!-- ── Fondos de arcada ──────────────────────────────────────── -->
       <rect x="30" y="130" width="994" height="75" rx="12" class="arcada-bg arcada-sup"/>
       <rect x="30" y="283" width="994" height="75" rx="12" class="arcada-bg arcada-inf"/>
@@ -247,14 +278,19 @@
       @for (pieza of piezasVisibles(); track pieza.fdi) {
       @let w = getToothRectWidth(pieza);
       @let h = getToothRectHeight(pieza);
-      @let rSurf = getSurfaceCircleR(pieza);
 
       <g
         class="pieza-group odontograma-fdi odontograma-vista-anim"
+        [class.pieza-anterior]="pieza.esAnterior"
+        [class.pieza-posterior]="!pieza.esAnterior"
         [class.pieza-ausente]="isAusente(pieza.fdi)"
         [class.pieza-resaltada]="isPiezaResaltada(pieza.fdi)"
         [attr.transform]="'translate(' + pieza.x + ',' + pieza.y + ')'"
         [attr.data-fdi]="pieza.fdi"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'Pieza ' + pieza.fdi + '. Presione Enter para abrir selector de estado.'"
+        (keydown)="onPiezaKeyboardActivate($event, pieza.fdi)"
         (mouseenter)="setPiezaResaltada(pieza.fdi)"
         (mouseleave)="setPiezaResaltada(null)"
       >
@@ -265,6 +301,16 @@
               [attr.filter]="!isAusente(pieza.fdi) ? 'url(#' + getToothShadowFilterId() + ')' : null"
               [ngClass]="getToothBodyClass(pieza)"
               class="od-tooth-shape"/>
+        <path [attr.d]="getToothAnatomicPathDisplay(pieza)" class="od-tooth-contour"/>
+        @if (!isAusente(pieza.fdi)) {
+          <path [attr.d]="getToothAnatomicPathDisplay(pieza)" class="od-tooth-highlight"/>
+          <path [attr.d]="getToothAnatomicPathDisplay(pieza)" class="od-tooth-shadow"/>
+          <path [attr.d]="getFissureMainPath(pieza)" class="od-fissure-main"/>
+          @if (!pieza.esAnterior) {
+            <path [attr.d]="getFissureSubPathA(pieza)" class="od-fissure-sub"/>
+            <path [attr.d]="getFissureSubPathB(pieza)" class="od-fissure-sub"/>
+          }
+        }
         @if (isAusente(pieza.fdi)) {
           <line [attr.x1]="-w/2" [attr.y1]="-h/2" [attr.x2]="w/2" [attr.y2]="h/2" class="od-missing-x"/>
           <line [attr.x1]="w/2" [attr.y1]="-h/2" [attr.x2]="-w/2" [attr.y2]="h/2" class="od-missing-x"/>
@@ -284,25 +330,32 @@
                     (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, g.sup)"/>
             }
           } @else {
-            <!-- Círculo de superficies (FDI) -->
-            @for (sup of superficiesRueda; track sup) {
-              @let seg = getSurfaceSegmentFor(pieza, sup);
-              @if (!seg.isCenter) {
-                <path class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, sup)"
-                      [attr.d]="seg.path" [attr.fill]="getColor(pieza.fdi, sup)"
-                      (click)="onSuperficieClick($event, pieza.fdi, sup)"
-                      (dblclick)="onSuperficieDblClick($event, pieza.fdi, sup)"
-                      (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, sup)"/>
-              }
-            }
-            <circle class="od-surface-segment od-surface-o" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'OCLUSAL')"
-                    r="rSurf * 0.38" [attr.fill]="getColor(pieza.fdi, 'OCLUSAL')"
+            <!-- Superficies anatómicas sobre corona -->
+            <polygon class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'VESTIBULAR')"
+                    [attr.points]="getVestibularPoints(pieza)" [attr.fill]="getColor(pieza.fdi, 'VESTIBULAR')"
+                    (click)="onSuperficieClick($event, pieza.fdi, 'VESTIBULAR')"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'VESTIBULAR')"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'VESTIBULAR')"/>
+            <polygon class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'LINGUAL')"
+                    [attr.points]="getLingualPoints(pieza)" [attr.fill]="getColor(pieza.fdi, 'LINGUAL')"
+                    (click)="onSuperficieClick($event, pieza.fdi, 'LINGUAL')"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'LINGUAL')"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'LINGUAL')"/>
+            <polygon class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'MESIAL')"
+                    [attr.points]="getMesialPoints(pieza)" [attr.fill]="getColor(pieza.fdi, 'MESIAL')"
+                    (click)="onSuperficieClick($event, pieza.fdi, 'MESIAL')"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'MESIAL')"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'MESIAL')"/>
+            <polygon class="od-surface-segment" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'DISTAL')"
+                    [attr.points]="getDistalPoints(pieza)" [attr.fill]="getColor(pieza.fdi, 'DISTAL')"
+                    (click)="onSuperficieClick($event, pieza.fdi, 'DISTAL')"
+                    (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'DISTAL')"
+                    (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'DISTAL')"/>
+            <polygon class="od-surface-segment od-surface-o" [class.od-surface-active]="isPopupPieza(pieza.fdi, 'OCLUSAL')"
+                    [attr.points]="getOclusalPoints(pieza)" [attr.fill]="getColor(pieza.fdi, 'OCLUSAL')"
                     (click)="onSuperficieClick($event, pieza.fdi, 'OCLUSAL')"
                     (dblclick)="onSuperficieDblClick($event, pieza.fdi, 'OCLUSAL')"
                     (contextmenu)="onSuperficieContextMenu($event, pieza.fdi, 'OCLUSAL')"/>
-            <line x1="-rSurf" y1="0" x2="rSurf" y2="0" class="od-surface-line"/>
-            <line x1="0" y1="-rSurf" x2="0" y2="rSurf" class="od-surface-line"/>
-            <circle cx="0" cy="0" [attr.r]="rSurf" class="od-surface-circle"/>
           }
         }
 

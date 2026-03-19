@@ -75,7 +75,15 @@
                 </select>
               </sesa-form-field>
               <sesa-form-field label="Número de documento" [required]="true" [error]="form.get('documento')?.invalid && form.get('documento')?.touched ? 'Requerido' : ''">
-                <input type="text" formControlName="documento" placeholder="Número de documento" />
+                <input
+                  type="text"
+                  formControlName="documento"
+                  placeholder="Número de documento"
+                  (blur)="onDocumentoBlur()"
+                />
+                @if (consultandoDocumento()) {
+                  <span class="pf-consulta-loading" aria-live="polite">Consultando datos por cédula…</span>
+                }
               </sesa-form-field>
               <sesa-form-field label="Nombres" [required]="true" [error]="form.get('nombres')?.invalid && form.get('nombres')?.touched ? 'Requerido' : ''">
                 <input type="text" formControlName="nombres" placeholder="Nombres completos" />

@@ -24,4 +24,7 @@ public class ResumenFacturacionDto {
     private long cantidadPagada;
     private long cantidadAnulada;
     private long cantidadRechazada;
+    /** Facturas PENDIENTE/EN_PROCESO que superaron 22 días hábiles sin radicar (normativa). */
+    private long cantidadVencidaRadicacion;
+    private BigDecimal montoVencidoRadicacion;
 }

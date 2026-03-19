@@ -173,6 +173,14 @@ CREATE TABLE IF NOT EXISTS atenciones (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- S6: Referencia (motivo, nivel, datos para PDF)
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_motivo TEXT;
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_nivel VARCHAR(50);
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_diagnostico TEXT;
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_tratamiento TEXT;
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_recomendaciones TEXT;
+ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_proxima_cita TEXT;
+
 CREATE TABLE IF NOT EXISTS diagnosticos (
     id BIGSERIAL PRIMARY KEY,
     atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
@@ -227,6 +235,21 @@ CREATE TABLE IF NOT EXISTS evoluciones (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- S5: Reconciliación de medicamentos y alergias por atención
+CREATE TABLE IF NOT EXISTS reconciliacion_atencion (
+    id BIGSERIAL PRIMARY KEY,
+    atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
+    profesional_id BIGINT NOT NULL REFERENCES personal(id),
+    medicamentos_referidos TEXT,
+    medicamentos_hc TEXT,
+    alergias_referidas TEXT,
+    alergias_hc TEXT,
+    reconciliado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    observaciones TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(atencion_id)
+);
+
 CREATE TABLE IF NOT EXISTS notas_enfermeria (
     id BIGSERIAL PRIMARY KEY,
     atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
@@ -249,6 +272,23 @@ CREATE TABLE IF NOT EXISTS plantillas_soap (
     activo BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Seed plantillas por tipo de consulta (Res. 1995/412 — ver docs/PLANTILLAS-HC-COLOMBIA.md)
+INSERT INTO plantillas_soap (nombre, motivo_tipo, contenido_subjetivo, contenido_objetivo, contenido_analisis, contenido_plan, codigo_cie10_sugerido)
+SELECT a.nombre, a.motivo_tipo, a.contenido_subjetivo, a.contenido_objetivo, a.contenido_analisis, a.contenido_plan, a.codigo_cie10_sugerido
+FROM (VALUES
+  ('Primera Infancia / Infancia', 'PRIMERA_VEZ', 'Motivo: control crecimiento y desarrollo, vacunación o enfermedad aguda. Antecedentes perinatales, alimentación, hitos del desarrollo.', 'Peso, talla, perímetro cefálico, signos vitales. Examen físico por sistemas. Valoración antropométrica.', 'Clasificación según edad. Detección alteraciones crecimiento/desarrollo. Impresión diagnóstica.', 'Controles según edad, vacunación, educación a padres, remisiones, seguimiento.', 'Z00.1'),
+  ('Prenatal 1ra vez', 'PRIMERA_VEZ', 'FUM, gestas/partos/abortos, motivo de consulta, antecedentes personales y familiares, medicamentos, alergias.', 'Examen físico general y obstétrico. TA, peso, talla. Fondo uterino si aplica. Laboratorio inicial (grupo, Rh, hemograma, glucemia, VDRL, VIH).', 'Edad gestacional, clasificación de riesgo (bajo/alto). Impresión diagnóstica.', 'Controles prenatales según normativa. Micronutrientes (ácido fólico, hierro). Educación. Paraclínicos. Referencia si riesgo alto.', 'Z34.0'),
+  ('Prenatal Control', 'CONTROL', 'Evolución del embarazo, movimientos fetales, síntomas (edema, cefalea, sangrado). Adherencia a recomendaciones.', 'TA, peso, altura uterina, FCF, edema. Hallazgos al examen. Resultados paraclínicos del trimestre.', 'Edad gestacional, clasificación de riesgo, cumplimiento de controles. Impresión diagnóstica.', 'Próximo control, estudios de tamizaje según EG, educación, referencia si procede.', 'Z34.8'),
+  ('Planificación 1ra vez Mujeres', 'PRIMERA_VEZ', 'Motivo: inicio de método anticonceptivo. Antecedentes ginecoobstétricos, ciclos, expectativas, contraindicaciones.', 'Examen físico general. TA. Examen ginecológico si aplica. Peso/talla.', 'Riesgo reproductivo. Método recomendado según perfil y preferencia. Impresión diagnóstica.', 'Método elegido, indicaciones de uso, seguimiento, signos de alarma, prevención ITS.', 'Z30.0'),
+  ('Planificación Control Mujeres', 'CONTROL', 'Evolución con el método (tolerancia, cumplimiento, efectos adversos). Dudas, deseo de cambio de método.', 'TA, peso si aplica. Examen según método (revisión implante/DIU).', 'Efectividad y continuidad del método. Impresión diagnóstica.', 'Continuar método, cambio si procede, refuerzo educativo, próximo control.', 'Z30.4'),
+  ('Control Adolescente / Jóven', 'CONTROL', 'Motivo: control, vacunación, salud sexual, salud mental o agudo. Antecedentes, hábitos, red de apoyo, riesgos.', 'Signos vitales, peso, talla, IMC. Examen físico por sistemas. Tamizajes según edad.', 'Clasificación de riesgo. Impresión diagnóstica. Necesidades de promoción y prevención.', 'Controles, vacunación (VPH, refuerzos), educación, referencia a planificación o salud mental.', 'Z00.1'),
+  ('Control del Adulto / Vejez', 'CONTROL', 'Motivo: control, detección temprana, seguimiento crónico. Antecedentes, medicamentos, factores de riesgo cardiovascular.', 'Signos vitales, peso, talla, IMC. Examen físico. Tamizajes según edad y sexo.', 'Riesgo cardiovascular y otros. Impresión diagnóstica. Condiciones crónicas.', 'Controles periódicos, estilos de vida, medicación crónica, referencia a especialidad si aplica.', 'Z00.0'),
+  ('Urgencias / Hospitalización', 'SEGUIMIENTO_AGUDO', 'Motivo de consulta/ingreso, enfermedad actual, antecedentes relevantes, medicamentos, alergias, último momento de bienestar.', 'Signos vitales, triage si aplica. Examen físico por sistemas. Paraclínicos de urgencia.', 'Impresión diagnóstica. Gravedad. Criterios de ingreso o alta.', 'Manejo (reanimación, medicación, procedimientos). Órdenes de enfermería. Alta o referencia. Seguimiento.', 'R07.4'),
+  ('Enf Cardiovasculares 1ra vez', 'PRIMERA_VEZ', 'Valoración cardiovascular, HTA, dolor torácico o disnea. Antecedentes personales y familiares ECV. Tabaquismo, dieta, actividad física.', 'TA (varias tomas si HTA), FC, peso, talla, IMC. Examen cardiovascular. ECG si aplica. Laboratorio (glucemia, lípidos, creatinina).', 'Riesgo cardiovascular (escalas). Impresión diagnóstica (HTA, dislipidemia, riesgo alto).', 'Estilo de vida, medicación si indicada, controles, metas TA y lípidos, referencia cardiología si procede.', 'I10'),
+  ('Anexo 3 - Autorización de servicios de salud', 'OTRO', 'Motivo de consulta relacionado con el procedimiento o servicio a autorizar. Antecedentes que justifican la solicitud.', 'Hallazgos que soportan la necesidad del servicio (examen, paraclínicos).', 'Justificación clínica para el procedimiento/servicio solicitado. Impresión diagnóstica.', 'Solicitud de autorización (Anexo 3). Procedimiento/servicio indicado. Seguimiento.', NULL)
+) AS a(nombre, motivo_tipo, contenido_subjetivo, contenido_objetivo, contenido_analisis, contenido_plan, codigo_cie10_sugerido)
+WHERE NOT EXISTS (SELECT 1 FROM plantillas_soap LIMIT 1);
 
 CREATE TABLE IF NOT EXISTS consentimientos (
     id BIGSERIAL PRIMARY KEY,
@@ -295,6 +335,26 @@ ALTER TABLE citas ADD COLUMN IF NOT EXISTS numero_autorizacion_eps VARCHAR(60);
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS duracion_estimada_min INT;
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_24h_enviado_at TIMESTAMPTZ;
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_1h_enviado_at TIMESTAMPTZ;
+-- S3: Confirmación/cancelación de cita por enlace
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS token_confirmacion VARCHAR(64) UNIQUE;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS confirmado_at TIMESTAMPTZ;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS cancelado_desde_enlace_at TIMESTAMPTZ;
+
+-- S10: Cuestionario pre-consulta (ePRO)
+CREATE TABLE IF NOT EXISTS cuestionario_preconsulta (
+    id BIGSERIAL PRIMARY KEY,
+    cita_id BIGINT NOT NULL REFERENCES citas(id) ON DELETE CASCADE,
+    paciente_id BIGINT NOT NULL REFERENCES pacientes(id),
+    motivo_palabras TEXT,
+    dolor_eva INT,
+    ansiedad_eva INT,
+    medicamentos_actuales TEXT,
+    alergias_referidas TEXT,
+    enviado_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_cuestionario_preconsulta_cita ON cuestionario_preconsulta (cita_id);
+CREATE INDEX IF NOT EXISTS idx_cuestionario_preconsulta_paciente ON cuestionario_preconsulta (paciente_id);
 
 CREATE TABLE IF NOT EXISTS consultas (
     id BIGSERIAL PRIMARY KEY,
@@ -324,6 +384,7 @@ CREATE TABLE IF NOT EXISTS consultas (
     talla VARCHAR(10),
     imc VARCHAR(10),
     hallazgos_examen TEXT,
+    examen_fisico_estructurado TEXT,
     diagnostico TEXT,
     plan_tratamiento TEXT,
     tratamiento_farmacologico TEXT,
@@ -347,6 +408,7 @@ ALTER TABLE consultas ADD COLUMN IF NOT EXISTS peso VARCHAR(10);
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS talla VARCHAR(10);
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS imc VARCHAR(10);
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS hallazgos_examen TEXT;
+ALTER TABLE consultas ADD COLUMN IF NOT EXISTS examen_fisico_estructurado TEXT;
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS diagnostico TEXT;
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS plan_tratamiento TEXT;
 ALTER TABLE consultas ADD COLUMN IF NOT EXISTS tratamiento_farmacologico TEXT;
@@ -412,6 +474,248 @@ ALTER TABLE facturas ADD COLUMN IF NOT EXISTS consecutive_counter BIGINT;
 -- Secuencia para numeración automática de facturas
 CREATE SEQUENCE IF NOT EXISTS factura_seq START 1 INCREMENT 1;
 
+-- Detalle multiclínea de factura (cuenta médica con varios ítems/CUPS)
+CREATE TABLE IF NOT EXISTS factura_items (
+    id BIGSERIAL PRIMARY KEY,
+    factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+    item_index INT NOT NULL DEFAULT 0,
+    codigo_cups VARCHAR(20),
+    descripcion_cups VARCHAR(500),
+    tipo_servicio VARCHAR(40),
+    cantidad INT NOT NULL DEFAULT 1,
+    valor_unitario NUMERIC(14,2) NOT NULL,
+    valor_total NUMERIC(14,2) NOT NULL,
+    orden_clinica_item_id BIGINT REFERENCES orden_clinica_items(id)
+);
+CREATE INDEX IF NOT EXISTS idx_factura_items_factura ON factura_items (factura_id);
+
+-- Radicación de facturas ante EPS (seguimiento y plazo 22 d hábiles)
+CREATE TABLE IF NOT EXISTS radicaciones (
+    id BIGSERIAL PRIMARY KEY,
+    factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+    fecha_radicacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    numero_radicado VARCHAR(80),
+    eps_codigo VARCHAR(20),
+    eps_nombre VARCHAR(200),
+    estado VARCHAR(30) NOT NULL DEFAULT 'RADICADA',
+    cuv VARCHAR(100),
+    observaciones TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_radicaciones_factura ON radicaciones (factura_id);
+CREATE INDEX IF NOT EXISTS idx_radicaciones_fecha ON radicaciones (fecha_radicacion);
+CREATE INDEX IF NOT EXISTS idx_radicaciones_estado ON radicaciones (estado);
+
+-- Catálogo CUPS nacional (Colombia) - procedimientos, consultas, lab, imagenología
+CREATE TABLE IF NOT EXISTS cups_catalogo (
+    id              BIGSERIAL PRIMARY KEY,
+    codigo          VARCHAR(20) NOT NULL,
+    descripcion     VARCHAR(500) NOT NULL,
+    capitulo        VARCHAR(100),
+    tipo_servicio   VARCHAR(80) NOT NULL DEFAULT 'PROCEDIMIENTO',
+    precio_sugerido NUMERIC(14,2),
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uk_cups_catalogo_codigo UNIQUE (codigo)
+);
+CREATE INDEX IF NOT EXISTS idx_cups_catalogo_codigo ON cups_catalogo (codigo);
+CREATE INDEX IF NOT EXISTS idx_cups_catalogo_tipo ON cups_catalogo (tipo_servicio);
+CREATE INDEX IF NOT EXISTS idx_cups_catalogo_activo ON cups_catalogo (activo) WHERE activo = TRUE;
+
+-- Seed CUPS Colombia (consultas, laboratorio, imagenología, procedimientos) - idempotente
+INSERT INTO cups_catalogo (codigo, descripcion, capitulo, tipo_servicio, precio_sugerido) VALUES
+  ('890201', 'Consulta médica general', 'Cap 15 - Consulta', 'CONSULTA', 55000),
+  ('890202', 'Consulta médica especializada', 'Cap 15 - Consulta', 'CONSULTA', 85000),
+  ('890203', 'Consulta de urgencias', 'Cap 15 - Consulta', 'CONSULTA', 95000),
+  ('890204', 'Consulta prioritaria', 'Cap 15 - Consulta', 'CONSULTA', 65000),
+  ('890301', 'Consulta de primera vez por odontología general', 'Cap 15 - Consulta', 'CONSULTA', 45000),
+  ('890302', 'Consulta de control o seguimiento por odontología general', 'Cap 15 - Consulta', 'CONSULTA', 35000),
+  ('890310', 'Consulta de primera vez por odontología especializada', 'Cap 15 - Consulta', 'CONSULTA', 80000),
+  ('890311', 'Consulta de control por odontología especializada', 'Cap 15 - Consulta', 'CONSULTA', 60000),
+  ('890401', 'Valoración por psicología', 'Cap 15 - Consulta', 'CONSULTA', 70000),
+  ('890402', 'Valoración por terapia ocupacional', 'Cap 15 - Consulta', 'CONSULTA', 65000),
+  ('890403', 'Valoración por fonoaudiología', 'Cap 15 - Consulta', 'CONSULTA', 65000),
+  ('890404', 'Valoración por nutrición', 'Cap 15 - Consulta', 'CONSULTA', 55000),
+  ('890501', 'Valoración por enfermería', 'Cap 15 - Consulta', 'CONSULTA', 35000),
+  ('890601', 'Consulta domiciliaria', 'Cap 15 - Consulta', 'CONSULTA', 120000),
+  ('903801', 'Hemograma completo', 'Cap 16 - Laboratorio', 'LABORATORIO', 25000),
+  ('903802', 'Glicemia', 'Cap 16 - Laboratorio', 'LABORATORIO', 8000),
+  ('903804', 'Perfil lipídico', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903806', 'Creatinina', 'Cap 16 - Laboratorio', 'LABORATORIO', 12000),
+  ('903808', 'TSH', 'Cap 16 - Laboratorio', 'LABORATORIO', 28000),
+  ('903810', 'Parcial de orina', 'Cap 16 - Laboratorio', 'LABORATORIO', 10000),
+  ('903812', 'Coprológico', 'Cap 16 - Laboratorio', 'LABORATORIO', 15000),
+  ('903814', 'Coagulograma', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903816', 'Bilirrubinas', 'Cap 16 - Laboratorio', 'LABORATORIO', 12000),
+  ('903818', 'Transaminasas (TGO, TGP)', 'Cap 16 - Laboratorio', 'LABORATORIO', 18000),
+  ('903820', 'Urea', 'Cap 16 - Laboratorio', 'LABORATORIO', 10000),
+  ('903822', 'Ácido úrico', 'Cap 16 - Laboratorio', 'LABORATORIO', 10000),
+  ('903824', 'Hemoglobina glicada (HbA1c)', 'Cap 16 - Laboratorio', 'LABORATORIO', 28000),
+  ('903826', 'PCR (Proteína C reactiva)', 'Cap 16 - Laboratorio', 'LABORATORIO', 22000),
+  ('903828', 'Ferritina', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903830', 'Vitamina B12', 'Cap 16 - Laboratorio', 'LABORATORIO', 38000),
+  ('903832', 'Ácido fólico', 'Cap 16 - Laboratorio', 'LABORATORIO', 25000),
+  ('903834', 'Troponina', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903836', 'Gasometría arterial', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903838', 'Grupo sanguíneo y factor Rh', 'Cap 16 - Laboratorio', 'LABORATORIO', 18000),
+  ('903840', 'Tiempo de protrombina (PT)', 'Cap 16 - Laboratorio', 'LABORATORIO', 15000),
+  ('903842', 'Fibrinógeno', 'Cap 16 - Laboratorio', 'LABORATORIO', 22000),
+  ('903844', 'Dímero D', 'Cap 16 - Laboratorio', 'LABORATORIO', 55000),
+  ('903846', 'PSA (antígeno prostático específico)', 'Cap 16 - Laboratorio', 'LABORATORIO', 42000),
+  ('903848', 'Beta HCG cuantitativa', 'Cap 16 - Laboratorio', 'LABORATORIO', 25000),
+  ('903850', 'Prueba de embarazo en orina', 'Cap 16 - Laboratorio', 'LABORATORIO', 8000),
+  ('903852', 'Coprocultivo', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903854', 'Urocultivo', 'Cap 16 - Laboratorio', 'LABORATORIO', 28000),
+  ('903856', 'Hemocultivo', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903860', 'Panel tiroideo', 'Cap 16 - Laboratorio', 'LABORATORIO', 55000),
+  ('903862', 'Perfil hepático', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903864', 'Perfil renal', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903868', 'Ionograma', 'Cap 16 - Laboratorio', 'LABORATORIO', 22000),
+  ('903870', 'LDH', 'Cap 16 - Laboratorio', 'LABORATORIO', 18000),
+  ('903872', 'CK total', 'Cap 16 - Laboratorio', 'LABORATORIO', 18000),
+  ('903874', 'Amilasa', 'Cap 16 - Laboratorio', 'LABORATORIO', 15000),
+  ('903876', 'Lipasa', 'Cap 16 - Laboratorio', 'LABORATORIO', 22000),
+  ('903878', 'PCR ultrasensible', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903880', 'Vitamina D', 'Cap 16 - Laboratorio', 'LABORATORIO', 55000),
+  ('903882', 'TSH libre', 'Cap 16 - Laboratorio', 'LABORATORIO', 32000),
+  ('903884', 'T3 y T4', 'Cap 16 - Laboratorio', 'LABORATORIO', 38000),
+  ('903886', 'Insulina', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903890', 'Cortisol', 'Cap 16 - Laboratorio', 'LABORATORIO', 32000),
+  ('903892', 'Microalbuminuria', 'Cap 16 - Laboratorio', 'LABORATORIO', 28000),
+  ('903896', 'Testosterona', 'Cap 16 - Laboratorio', 'LABORATORIO', 42000),
+  ('903898', 'Estradiol', 'Cap 16 - Laboratorio', 'LABORATORIO', 42000),
+  ('903900', 'FSH', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903902', 'LH', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903904', 'Prolactina', 'Cap 16 - Laboratorio', 'LABORATORIO', 38000),
+  ('903916', 'Anticuerpos anti-VIH', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903918', 'VDRL / RPR', 'Cap 16 - Laboratorio', 'LABORATORIO', 15000),
+  ('903920', 'Hepatitis B superficie', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('903922', 'Hepatitis C', 'Cap 16 - Laboratorio', 'LABORATORIO', 45000),
+  ('903924', 'PCR COVID-19', 'Cap 16 - Laboratorio', 'LABORATORIO', 85000),
+  ('903926', 'Prueba antígeno COVID-19', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+  ('881601', 'Radiografía de tórax PA', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 45000),
+  ('881602', 'Radiografía de tórax PA y lateral', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 55000),
+  ('881604', 'Radiografía de columna', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 55000),
+  ('881606', 'Radiografía de abdomen', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 45000),
+  ('881608', 'Radiografía de cráneo', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 50000),
+  ('881610', 'Radiografía de extremidades', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 40000),
+  ('881612', 'Radiografía de pelvis', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 45000),
+  ('881614', 'Radiografía de cadera', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 45000),
+  ('881616', 'Radiografía de rodilla', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 40000),
+  ('881618', 'Radiografía de tobillo', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 40000),
+  ('881620', 'Radiografía de mano', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 35000),
+  ('881626', 'Radiografía lumbar', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 50000),
+  ('881628', 'Radiografía cervical', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 50000),
+  ('881801', 'Ecografía abdominal', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 85000),
+  ('881802', 'Ecografía pélvica', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 75000),
+  ('881804', 'Ecografía obstétrica', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 95000),
+  ('881806', 'Ecografía de tiroides', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 65000),
+  ('881808', 'Ecografía de partes blandas', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 55000),
+  ('881810', 'Ecografía doppler vascular', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 120000),
+  ('881812', 'Ecografía renal', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 75000),
+  ('881814', 'Ecografía de mama', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 85000),
+  ('882001', 'Tomografía axial computarizada (TAC) cráneo', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 180000),
+  ('882002', 'TAC tórax', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 220000),
+  ('882004', 'TAC abdomen', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 220000),
+  ('882006', 'TAC columna', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 200000),
+  ('882101', 'Resonancia magnética cráneo', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 350000),
+  ('882102', 'Resonancia magnética columna', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 380000),
+  ('882104', 'Resonancia magnética articulaciones', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 320000),
+  ('860001', 'Electrocardiograma', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+  ('860002', 'Electrocardiograma con informe', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('860101', 'Espirometría', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 65000),
+  ('860102', 'Espirometría con broncodilatador', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 85000),
+  ('860201', 'Holter 24 horas', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 120000),
+  ('860202', 'MAPA 24 horas', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 95000),
+  ('860301', 'Oximetría de pulso', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 15000),
+  ('860401', 'Polisomnografía', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 450000),
+  ('860501', 'Prueba de esfuerzo', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 95000),
+  ('870101', 'Curaciones', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+  ('870102', 'Sutura simple', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 55000),
+  ('870104', 'Retiro de puntos', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 20000),
+  ('870201', 'Lavado ótico', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+  ('870202', 'Retiro de tapón de cerumen', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 40000),
+  ('870301', 'Nebulización', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+  ('870302', 'Oxigenoterapia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+  ('870401', 'Inyección intramuscular', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 15000),
+  ('870402', 'Inyección intravenosa', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 18000),
+  ('870403', 'Inyección subcutánea', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 15000),
+  ('870501', 'Cateterismo vesical', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('870502', 'Sondaje vesical', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 40000),
+  ('870601', 'Lavado gástrico', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 65000),
+  ('870701', 'Punción lumbar', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 95000),
+  ('870702', 'Paracentesis', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 85000),
+  ('870703', 'Toracentesis', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 95000),
+  ('870704', 'Artrocentesis', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 75000),
+  ('870801', 'Biopsia de piel', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 85000),
+  ('870802', 'Biopsia por aspiración con aguja fina', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 95000),
+  ('870903', 'Audiometría', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 55000),
+  ('870904', 'Oftalmoscopia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+  ('870905', 'Otoscopia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+  ('870906', 'Rinoscopia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+  ('870907', 'Laringoscopia indirecta', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('870908', 'Fundoscopia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('870909', 'Tonometría', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+  ('870910', 'Campimetría', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 55000),
+  ('870911', 'Prueba de Schirmer', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+  ('870912', 'Refracción', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('870913', 'Biomicroscopía', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 45000),
+  ('870914', 'Gonioscopia', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 55000),
+  ('870915', 'Retinografía', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 85000),
+  ('898001', 'Restauración en resina compuesta - 1 cara', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 120000),
+  ('898002', 'Restauración en resina compuesta - 2 caras', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 150000),
+  ('898003', 'Restauración en resina compuesta - 3 caras', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 180000),
+  ('898010', 'Restauración en amalgama - 1 cara', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 90000),
+  ('898011', 'Restauración en amalgama - 2 caras', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 110000),
+  ('898020', 'Sellante de fosas y fisuras', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 60000),
+  ('898030', 'Aplicación de flúor', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 40000),
+  ('898040', 'Detartraje supragingival', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 150000),
+  ('898041', 'Detartraje subgingival', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 200000),
+  ('898042', 'Curetaje cerrado', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 250000),
+  ('898050', 'Exodoncia simple de diente permanente', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 120000),
+  ('898051', 'Exodoncia simple de diente temporal', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 80000),
+  ('898052', 'Exodoncia de diente retenido', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 350000),
+  ('898060', 'Endodoncia unirradicular', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 450000),
+  ('898061', 'Endodoncia birradicular', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 550000),
+  ('898062', 'Endodoncia multirradicular', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 650000),
+  ('898070', 'Corona de porcelana sobre metal', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 1200000),
+  ('898071', 'Corona de porcelana pura (zirconio)', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 1800000),
+  ('898072', 'Corona de resina temporal', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 350000),
+  ('898080', 'Blanqueamiento dental con lámpara', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 450000),
+  ('898081', 'Blanqueamiento dental casero', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 250000),
+  ('898090', 'Ortodoncia - instalación', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 2500000),
+  ('898091', 'Control de ortodoncia mensual', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 120000),
+  ('898100', 'Implante dental (colocación)', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 3500000),
+  ('898101', 'Corona sobre implante', 'Cap 15 - Odontología', 'PROCEDIMIENTO', 1500000)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- S9: Glosas (rechazos de factura) y adjuntos
+CREATE TABLE IF NOT EXISTS glosas (
+    id BIGSERIAL PRIMARY KEY,
+    factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+    motivo_rechazo TEXT NOT NULL,
+    estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_respuesta TIMESTAMP,
+    observaciones TEXT,
+    creado_por_id BIGINT REFERENCES usuarios(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_glosas_factura ON glosas (factura_id);
+CREATE INDEX IF NOT EXISTS idx_glosas_estado ON glosas (estado);
+CREATE INDEX IF NOT EXISTS idx_glosas_fecha_registro ON glosas (fecha_registro);
+
+CREATE TABLE IF NOT EXISTS glosa_adjuntos (
+    id BIGSERIAL PRIMARY KEY,
+    glosa_id BIGINT NOT NULL REFERENCES glosas(id) ON DELETE CASCADE,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    tipo VARCHAR(50),
+    url_o_blob TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_glosa_adjuntos_glosa ON glosa_adjuntos (glosa_id);
+
 CREATE TABLE IF NOT EXISTS laboratorio_solicitudes (
     id BIGSERIAL PRIMARY KEY,
     paciente_id BIGINT NOT NULL REFERENCES pacientes(id),
@@ -474,6 +778,12 @@ ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_ocular INT;
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_verbal INT;
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS glasgow_motor INT;
 ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS fecha_hora_inicio_atencion TIMESTAMP;
+
+-- S6: Datos de alta para PDF al paciente
+ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_diagnostico TEXT;
+ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_tratamiento TEXT;
+ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_recomendaciones TEXT;
+ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_proxima_cita TEXT;
 
 -- Signos vitales seriados por urgencia (sugerencia 5)
 CREATE TABLE IF NOT EXISTS signos_vitales_urgencia (
@@ -604,7 +914,11 @@ CREATE TABLE IF NOT EXISTS notificacion_destinatarios (
     usuario_email VARCHAR(255),
     usuario_nombre VARCHAR(200),
     leido BOOLEAN NOT NULL DEFAULT false,
-    fecha_lectura TIMESTAMP
+    fecha_lectura TIMESTAMP,
+    archivado BOOLEAN NOT NULL DEFAULT false,
+    fecha_archivado TIMESTAMP,
+    eliminado BOOLEAN NOT NULL DEFAULT false,
+    fecha_eliminado TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_nd_usuario_id      ON notificacion_destinatarios(usuario_id);
@@ -621,8 +935,15 @@ CREATE TABLE IF NOT EXISTS notificacion_adjuntos (
 
 -- Recordatorios de cita y portal paciente: columnas en tablas existentes
 ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS cita_id BIGINT;
+ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS archivado BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_archivado TIMESTAMPTZ;
+ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS eliminado BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_eliminado TIMESTAMPTZ;
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_24h_enviado_at TIMESTAMPTZ;
 ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_1h_enviado_at TIMESTAMPTZ;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS token_confirmacion VARCHAR(64) UNIQUE;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS confirmado_at TIMESTAMPTZ;
+ALTER TABLE citas ADD COLUMN IF NOT EXISTS cancelado_desde_enlace_at TIMESTAMPTZ;
 ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS usuario_id BIGINT;
 
 -- Dispositivos para notificaciones push (portal/móvil)
@@ -651,6 +972,8 @@ CREATE TABLE IF NOT EXISTS rda_envios (
     tipo_rda        VARCHAR(30)  NOT NULL,
     estado_envio    VARCHAR(20)  NOT NULL DEFAULT 'PENDIENTE',
     atencion_id     BIGINT       REFERENCES atenciones(id),
+    urgencia_registro_id BIGINT  REFERENCES urgencias(id),
+    hospitalizacion_id   BIGINT  REFERENCES hospitalizaciones(id),
     bundle_json     TEXT,
     id_ministerio   VARCHAR(100),
     fhir_version    VARCHAR(10)  DEFAULT '4.0.1',
@@ -663,7 +986,25 @@ CREATE TABLE IF NOT EXISTS rda_envios (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rda_atencion ON rda_envios (atencion_id);
+CREATE INDEX IF NOT EXISTS idx_rda_urgencia ON rda_envios (urgencia_registro_id);
+CREATE INDEX IF NOT EXISTS idx_rda_hospitalizacion ON rda_envios (hospitalizacion_id);
 CREATE INDEX IF NOT EXISTS idx_rda_estado   ON rda_envios (estado_envio);
+
+-- S11: RDA urgencias/hospitalización — columnas opcionales en schemas existentes
+ALTER TABLE rda_envios ADD COLUMN IF NOT EXISTS urgencia_registro_id BIGINT REFERENCES urgencias(id);
+ALTER TABLE rda_envios ADD COLUMN IF NOT EXISTS hospitalizacion_id BIGINT REFERENCES hospitalizaciones(id);
+
+-- ─── S12: API Keys para integradores (laboratorio, PACS, signos vitales) ─────
+CREATE TABLE IF NOT EXISTS api_keys (
+    id                BIGSERIAL PRIMARY KEY,
+    nombre_integrador VARCHAR(150) NOT NULL,
+    api_key_hash      VARCHAR(255) NOT NULL,
+    api_key_index     VARCHAR(64)  NOT NULL,
+    permisos          VARCHAR(200) NOT NULL DEFAULT 'LABORATORIO',
+    activo            BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_index ON api_keys (api_key_index);
 
 -- ─── Índices de rendimiento — FK más consultadas ─────────────────────────────
 
@@ -728,6 +1069,17 @@ ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(30);
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(120);
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS duracion_dias INT;
 ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id);
+
+-- S2: Resultados críticos — flag en orden y trazabilidad de lectura
+ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_critico BOOLEAN DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS resultado_critico_lectura (
+    id BIGSERIAL PRIMARY KEY,
+    orden_clinica_id BIGINT NOT NULL REFERENCES ordenes_clinicas(id) ON DELETE CASCADE,
+    personal_id BIGINT NOT NULL REFERENCES personal(id) ON DELETE CASCADE,
+    leido_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_resultado_critico_lectura_orden_personal UNIQUE (orden_clinica_id, personal_id)
+);
+CREATE INDEX IF NOT EXISTS idx_resultado_critico_lectura_orden ON resultado_critico_lectura (orden_clinica_id);
 
 -- ============================================================
 -- MÓDULO FACTURACIÓN ELECTRÓNICA DIAN (Res. 000042 / UBL 2.1)
@@ -1155,3 +1507,32 @@ ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS tipo_intervencion VARCHAR(8
 ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS vereda_codigo VARCHAR(20);
 ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS diagnostico_cie10 VARCHAR(20);
 ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS plan_cuidado TEXT;
+
+-- S15: Guías de práctica clínica (GPC) por CIE-10
+CREATE TABLE IF NOT EXISTS guia_gpc (
+    id BIGSERIAL PRIMARY KEY,
+    codigo_cie10 VARCHAR(20) NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
+    criterios_control TEXT,
+    medicamentos_primera_linea TEXT,
+    estudios_seguimiento TEXT,
+    fuente VARCHAR(200),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_guia_gpc_codigo ON guia_gpc(codigo_cie10);
+
+CREATE TABLE IF NOT EXISTS gpc_sugerencia_mostrada (
+    id BIGSERIAL PRIMARY KEY,
+    atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
+    codigo_cie10 VARCHAR(20) NOT NULL,
+    guia_id BIGINT NOT NULL REFERENCES guia_gpc(id) ON DELETE CASCADE,
+    mostrado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    profesional_id BIGINT REFERENCES personal(id)
+);
+CREATE INDEX IF NOT EXISTS idx_gpc_sugerencia_atencion ON gpc_sugerencia_mostrada(atencion_id);
+CREATE INDEX IF NOT EXISTS idx_gpc_sugerencia_guia ON gpc_sugerencia_mostrada(guia_id);
+
+-- S15: Dato inicial de ejemplo (una guía por CIE-10 E11)
+INSERT INTO guia_gpc (codigo_cie10, titulo, criterios_control, medicamentos_primera_linea, estudios_seguimiento, fuente)
+SELECT 'E11', 'Diabetes mellitus tipo 2', 'Control de glicemia, HbA1c, presión arterial, peso y pie diabético.', 'Metformina como primera línea; considerar iDPP-4 o iSGLT2 según perfil.', 'HbA1c cada 3-6 meses; creatinina y perfil lipídico anual; fondo de ojo según criterio.', 'Guía de práctica clínica - MinSalud'
+WHERE NOT EXISTS (SELECT 1 FROM guia_gpc LIMIT 1);

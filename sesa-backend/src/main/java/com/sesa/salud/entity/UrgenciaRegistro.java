@@ -94,6 +94,16 @@ public class UrgenciaRegistro {
     @Column(name = "glasgow_motor")
     private Integer glasgowMotor;
 
+    /** S6: Datos de alta para PDF al paciente. */
+    @Column(name = "alta_diagnostico", columnDefinition = "TEXT")
+    private String altaDiagnostico;
+    @Column(name = "alta_tratamiento", columnDefinition = "TEXT")
+    private String altaTratamiento;
+    @Column(name = "alta_recomendaciones", columnDefinition = "TEXT")
+    private String altaRecomendaciones;
+    @Column(name = "alta_proxima_cita", columnDefinition = "TEXT")
+    private String altaProximaCita;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

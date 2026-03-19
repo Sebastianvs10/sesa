@@ -89,7 +89,7 @@
           title="Sin consultas registradas"
           message="No hay consultas a tu nombre. Busca un paciente para abrir su historia clínica."
           actionLabel="Buscar paciente"
-          (action)="null">
+          (action)="buscarPacientes()">
         </sesa-empty-state>
         <div class="hc-empty-action">
           <a routerLink="/historia-clinica/nueva" class="hc-btn hc-btn--primary">
@@ -206,6 +206,14 @@
 
         <!-- Indicadores rápidos -->
         <div class="hc-patient-stats">
+          @if (pacienteRiesgo(); as riesgo) {
+            <div class="hc-stat-item hc-riesgo-wrap" [attr.title]="'Factores: ' + (riesgo.factores && riesgo.factores.length ? riesgo.factores.join('; ') : '') + (riesgo.recomendaciones && riesgo.recomendaciones.length ? ' — Recomendaciones: ' + riesgo.recomendaciones.join('; ') : '')">
+              <span class="hc-riesgo-badge" [class.hc-riesgo-badge--bajo]="riesgo.nivelRiesgo === 'BAJO'" [class.hc-riesgo-badge--medio]="riesgo.nivelRiesgo === 'MEDIO'" [class.hc-riesgo-badge--alto]="riesgo.nivelRiesgo === 'ALTO'">
+                Riesgo {{ riesgo.nivelRiesgo }} ({{ riesgo.puntos }})
+              </span>
+              <span class="hc-stat-lbl">Score riesgo</span>
+            </div>
+          }
           @if (selectedPatient()) {
             <div class="hc-stat-item">
               <span class="hc-stat-val">{{ totalConsultas() }}</span>
@@ -288,6 +296,82 @@
       </div>
     </div>
 
+    <!-- ── OVERVIEW PRO SAAS (contexto rápido clínico/operativo) ───────────── -->
+    <section class="hc-pro-overview" aria-label="Resumen clínico profesional">
+      <article class="hc-pro-card">
+        <header>
+          <h3>Contexto clínico</h3>
+          <span class="hc-pro-chip">Paciente activo</span>
+        </header>
+        <div class="hc-pro-grid">
+          <div>
+            <small>Historia clínica</small>
+            <strong>{{ historiaClinica() ? ('HC-' + formatAnio(historiaClinica()!.fechaApertura) + '-' + padId(historiaClinica()!.id)) : 'Sin HC' }}</strong>
+          </div>
+          <div>
+            <small>Estado HC</small>
+            <strong>{{ historiaClinica()?.estado || 'SIN_HC' }}</strong>
+          </div>
+          <div>
+            <small>Consultas acumuladas</small>
+            <strong>{{ totalConsultas() }}</strong>
+          </div>
+          <div>
+            <small>Órdenes acumuladas</small>
+            <strong>{{ totalOrdenes() }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="hc-pro-card">
+        <header>
+          <h3>Operación del día</h3>
+          <span class="hc-pro-chip hc-pro-chip--accent">Hoy</span>
+        </header>
+        @if (consultaHoy) {
+          <p class="hc-pro-note">
+            Consulta registrada: <strong>{{ formatFechaHora(consultaHoy.fechaConsulta) }}</strong>
+          </p>
+          <p class="hc-pro-note">
+            Motivo: {{ consultaHoy.motivoConsulta || 'No registrado' }}
+          </p>
+        } @else {
+          <p class="hc-pro-note hc-pro-note--warn">
+            No hay consulta registrada hoy. Recomendado: abrir SOAP y documentar atención.
+          </p>
+        }
+        <div class="hc-pro-actions">
+          <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTabAndSoapSection('soap', 'S')">Ir a SOAP</button>
+          <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('historia')">Ver antecedentes</button>
+        </div>
+      </article>
+
+      <article class="hc-pro-card">
+        <header>
+          <h3>Alertas y pendientes</h3>
+          <span class="hc-pro-chip hc-pro-chip--soft">Seguimiento</span>
+        </header>
+        <ul class="hc-pro-list">
+          <li>
+            <span>Órdenes sin resultado</span>
+            <strong>{{ ordenesPendientesResultadoCount }}</strong>
+          </li>
+          <li>
+            <span>RDA otras IPS</span>
+            <strong>{{ rdaRecibidos.length }}</strong>
+          </li>
+          <li>
+            <span>Facturas generadas</span>
+            <strong>{{ totalFacturas() }}</strong>
+          </li>
+        </ul>
+        <div class="hc-pro-actions">
+          <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('ordenes')">Gestionar órdenes</button>
+          <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('rdaOtrasIps')">Ver RDA</button>
+        </div>
+      </article>
+    </section>
+
     <!-- ── FLUJO DE CONSULTA (una sola vista, menos clics) ───────────────── -->
     @if (historiaClinica()) {
       <div class="hc-flujo-card" role="region" aria-label="Flujo de consulta">
@@ -301,7 +385,26 @@
           </div>
         </div>
         <div class="hc-flujo-body">
-            @if (consultaHoy) {
+          <div class="hc-flujo-status-grid">
+            <div class="hc-flujo-status-item">
+              <small>Estado de hoy</small>
+              @if (consultaHoy) {
+                <strong>Consulta documentada</strong>
+              } @else {
+                <strong class="hc-flujo-text-warn">Falta registro SOAP</strong>
+              }
+            </div>
+            <div class="hc-flujo-status-item">
+              <small>Órdenes pendientes</small>
+              <strong>{{ ordenesPendientesResultadoCount }}</strong>
+            </div>
+            <div class="hc-flujo-status-item">
+              <small>Última consulta</small>
+              <strong>{{ consultasOrdenadas.length > 0 ? formatFechaHora(consultasOrdenadas[0].fechaConsulta) : 'Sin consultas' }}</strong>
+            </div>
+          </div>
+
+          @if (consultaHoy) {
             <div class="hc-flujo-atencion hc-flujo-atencion--registrada">
               <span class="hc-flujo-badge hc-flujo-badge--success">Atención de hoy registrada</span>
               <p class="hc-flujo-motivo">{{ consultaHoy.motivoConsulta || 'Sin motivo' }} · {{ formatFechaHora(consultaHoy.fechaConsulta) }}</p>
@@ -309,34 +412,49 @@
                 <p class="hc-flujo-rips">Datos RIPS: CIE-10 {{ consultaHoy.codigoCie10 || '—' }}, Tipo {{ tipoConsultaLabel(consultaHoy.tipoConsulta) }}</p>
               }
               <div class="hc-flujo-actions">
-                <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="setTab('historia')">Ver en Historia</button>
-                <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="setTabAndSoapSection('soap', 'S')">
+                <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="goToAntecedentesFromFlow()">Ver antecedentes</button>
+                <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="goToSoapChecklistFromFlow()">
                   <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
-                  Registrar otra nota
+                  Registrar seguimiento
                 </button>
               </div>
             </div>
           } @else {
             <div class="hc-flujo-atencion hc-flujo-atencion--sin-registro">
               <span class="hc-flujo-badge hc-flujo-badge--warning">Sin atención registrada hoy</span>
-              <p class="hc-flujo-motivo">Registre la nota SOAP para esta consulta.</p>
-              <button type="button" class="hc-btn hc-btn--primary" (click)="setTabAndSoapSection('soap', 'S')">
-                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
-                Registrar nota SOAP ahora
-              </button>
+              <p class="hc-flujo-motivo">Abra el checklist guiado y complete el paso 1 para dejar trazabilidad clínica.</p>
+              <div class="hc-flujo-actions">
+                <button type="button" class="hc-btn hc-btn--primary" (click)="goToSoapChecklistFromFlow()">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                  Abrir checklist guiado
+                </button>
+                <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm" (click)="goToAntecedentesFromFlow()">Revisar antecedentes</button>
+              </div>
             </div>
           }
-          <div class="hc-flujo-quick">
-            <span class="hc-flujo-quick-lbl">Acceso rápido:</span>
-            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('historia')">Antecedentes y alergias</button>
-            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('soap')">Nota SOAP</button>
-            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('ordenes')">Órdenes</button>
-            <button type="button" class="hc-flujo-quick-btn" (click)="setTab('documentos')">Documentos</button>
-            @if (consultasOrdenadas.length > 0) {
-              <button type="button" class="hc-flujo-quick-btn hc-flujo-quick-btn--pdf" (click)="descargarResumenAltaConsulta()">Resumen de alta / Referencia (PDF)</button>
-            }
-            <a routerLink="/reportes" class="hc-flujo-quick-btn hc-flujo-quick-link">Indicadores de calidad</a>
+
+          <div class="hc-flujo-checklist">
+            <h4>Checklist recomendado</h4>
+            <ul>
+              <li [class.done]="!!consultaHoy">
+                <span>1) Registrar SOAP de la atención</span>
+                <button type="button" class="hc-flujo-quick-btn" (click)="goToSoapChecklistFromFlow()">Ir</button>
+              </li>
+              <li>
+                <span>2) Validar antecedentes y alergias</span>
+                <button type="button" class="hc-flujo-quick-btn" (click)="goToAntecedentesFromFlow()">Ir</button>
+              </li>
+              <li [class.done]="ordenesPaciente.length > 0">
+                <span>3) Generar/ajustar órdenes clínicas</span>
+                <button type="button" class="hc-flujo-quick-btn" (click)="setTab('ordenes')">Ir</button>
+              </li>
+              <li [class.done]="consultasOrdenadas.length > 0">
+                <span>4) Emitir resumen de alta/referencia</span>
+                <button type="button" class="hc-flujo-quick-btn hc-flujo-quick-btn--pdf" [disabled]="consultasOrdenadas.length === 0" (click)="descargarResumenAltaConsulta()">Generar PDF</button>
+              </li>
+            </ul>
           </div>
+
           @if (ordenesPendientesResultadoCount > 0) {
             <div class="hc-flujo-pendientes">
               <span class="hc-flujo-pendientes-lbl">Órdenes pendientes de resultado: {{ ordenesPendientesResultadoCount }}</span>
@@ -368,16 +486,17 @@
           <span class="hc-tab-badge">{{ ordenesPaciente.length }}</span>
         }
       </button>
-      <button role="tab" class="hc-tab hc-tab--mas" [class.hc-tab--active]="activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento'" (click)="setTab('documentos')">
+      <button role="tab" class="hc-tab hc-tab--mas" [class.hc-tab--active]="activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento' || activeTab() === 'rdaOtrasIps'" (click)="setTab('documentos')">
         <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
         Más
       </button>
     </div>
-      @if (activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento') {
+      @if (activeTab() === 'documentos' || activeTab() === 'dolores' || activeTab() === 'consentimiento' || activeTab() === 'rdaOtrasIps') {
         <div class="hc-tabs-sub">
           <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'documentos'" (click)="setTab('documentos')">Documentos</button>
           <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'dolores'" (click)="setTab('dolores')">Mapa de Dolor</button>
           <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'consentimiento'" (click)="setTab('consentimiento')">Consentimiento</button>
+          <button type="button" class="hc-tab-sub" [class.hc-tab-sub--active]="activeTab() === 'rdaOtrasIps'" (click)="setTab('rdaOtrasIps')">RDA otras IPS</button>
         </div>
       }
     </div>
@@ -649,6 +768,66 @@
               </div>
             </div>
           }
+          <!-- S5: Reconciliación de medicamentos y alergias -->
+          @if (atencionesPaciente.length > 0 && atencionIdParaReconciliacion) {
+            <div class="hc-reconciliacion" role="region" aria-label="Reconciliación de medicamentos y alergias">
+              <div class="hc-reconciliacion-header">
+                <span class="hc-reconciliacion-title">Reconciliación de medicamentos y alergias</span>
+                @if (!reconciliacionData()) {
+                  <button type="button" class="hc-btn hc-btn--outline" (click)="loadReconciliacion()" [disabled]="loadingReconciliacion()">
+                    {{ loadingReconciliacion() ? 'Cargando…' : 'Cargar reconciliación' }}
+                  </button>
+                }
+                @if (reconciliacionData()?.nombreProfesional) {
+                  <span class="hc-reconciliacion-badge">Reconciliado por {{ reconciliacionData()!.nombreProfesional }}</span>
+                }
+              </div>
+              @if (loadingReconciliacion()) {
+                <p class="hc-reconciliacion-loading">Cargando…</p>
+              } @else if (reconciliacionData()) {
+                <div class="hc-reconciliacion-grid">
+                  <div class="hc-reconciliacion-col">
+                    <label class="hc-label">Medicamentos referidos por el paciente</label>
+                    <textarea class="hc-textarea" rows="3" [(ngModel)]="reconciliacionMedReferidos" placeholder="Uno por línea"></textarea>
+                  </div>
+                  <div class="hc-reconciliacion-col">
+                    <label class="hc-label">En HC (solo lectura)</label>
+                    <div class="hc-reconciliacion-readonly">
+                      @for (m of reconciliacionData()!.medicamentosHc; track m) { <span class="hc-reconciliacion-item">{{ m }}</span> }
+                      @if (!reconciliacionData()!.medicamentosHc || reconciliacionData()!.medicamentosHc.length === 0) { <span class="hc-reconciliacion-empty">—</span> }
+                    </div>
+                  </div>
+                  <div class="hc-reconciliacion-col">
+                    <label class="hc-label">Alergias referidas por el paciente</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="reconciliacionAlergReferidas" placeholder="Uno por línea"></textarea>
+                  </div>
+                  <div class="hc-reconciliacion-col">
+                    <label class="hc-label">En HC (solo lectura)</label>
+                    <div class="hc-reconciliacion-readonly">
+                      @for (a of reconciliacionData()!.alergiasHc; track a) { <span class="hc-reconciliacion-item">{{ a }}</span> }
+                      @if (!reconciliacionData()!.alergiasHc || reconciliacionData()!.alergiasHc.length === 0) { <span class="hc-reconciliacion-empty">—</span> }
+                    </div>
+                  </div>
+                </div>
+                <div class="hc-reconciliacion-obs">
+                  <label class="hc-label">Observaciones</label>
+                  <input type="text" class="hc-input" [(ngModel)]="reconciliacionObservaciones" placeholder="Opcional" />
+                </div>
+                <button type="button" class="hc-btn hc-btn--primary" (click)="guardarReconciliacion()" [disabled]="guardandoReconciliacion()">
+                  {{ guardandoReconciliacion() ? 'Guardando…' : 'Confirmar reconciliación' }}
+                </button>
+              }
+            </div>
+          }
+          <!-- S6: Referencia a otro servicio -->
+          @if (atencionesPaciente.length > 0) {
+            <div class="hc-referencia-bar">
+              <span class="hc-referencia-title">Referencia</span>
+              <button type="button" class="hc-btn hc-btn--outline" (click)="abrirModalReferencia()">
+                Generar referencia
+              </button>
+            </div>
+          }
           <div class="hc-soap-header">
             <div class="hc-soap-header-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -698,6 +877,23 @@
             </button>
             @if (soapSectionOpen() === 'S') {
               <div class="hc-soap-body">
+                @if (cuestionarioPreconsulta(); as q) {
+                  <div class="hc-cuestionario-epro">
+                    <span class="hc-cuestionario-epro-lbl">Datos aportados por el paciente (cuestionario pre-consulta)</span>
+                    <p class="hc-cuestionario-epro-motivo">{{ q.motivoPalabras || '—' }}</p>
+                    @if (q.dolorEva != null || q.ansiedadEva != null || q.medicamentosActuales || q.alergiasReferidas) {
+                      <ul class="hc-cuestionario-epro-list">
+                        @if (q.dolorEva != null) { <li>Dolor EVA: {{ q.dolorEva }}</li> }
+                        @if (q.ansiedadEva != null) { <li>Ansiedad EVA: {{ q.ansiedadEva }}</li> }
+                        @if (q.medicamentosActuales) { <li>Medicamentos actuales: {{ q.medicamentosActuales }}</li> }
+                        @if (q.alergiasReferidas) { <li>Alergias referidas: {{ q.alergiasReferidas }}</li> }
+                      </ul>
+                    }
+                    <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="usarCuestionarioEnSoap()">
+                      Usar en nota SOAP
+                    </button>
+                  </div>
+                }
                 <div class="hc-form-row hc-form-row--2">
                   <div class="hc-field">
                     <label class="hc-label">Cita relacionada</label>
@@ -731,7 +927,8 @@
                 <div class="hc-field">
                   <label class="hc-label">Motivo de consulta <span class="hc-required">*</span></label>
                   <input type="text" class="hc-input" [(ngModel)]="soapS.motivoConsulta"
-                    placeholder="Describa el motivo principal de la consulta..." />
+                    placeholder="Describa el motivo principal de la consulta..."
+                    (ngModelChange)="onMotivoODiagnosticoChange()" />
                 </div>
                 <div class="hc-field">
                   <label class="hc-label">Enfermedad actual</label>
@@ -842,10 +1039,33 @@
                     <input type="number" class="hc-sv-input" [(ngModel)]="soapO.perimetroCefalico" placeholder="—" />
                   </div>
                 </div>
-                <div class="hc-field" style="margin-top: 1rem">
-                  <label class="hc-label">Hallazgos del examen físico</label>
-                  <textarea class="hc-textarea" rows="3" [(ngModel)]="soapO.hallazgosExamen"
-                    placeholder="Descripción de hallazgos por sistema (cardiopulmonar, abdominal, neurológico...)"></textarea>
+                <!-- Examen físico por subáreas: check = bien (Normal) -->
+                <div class="hc-examen-fisico-block">
+                  <div class="hc-examen-fisico-header">
+                    <label class="hc-label">Examen físico por sistemas</label>
+                    <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-sm" (click)="marcarTodoExamenFisicoNormal()">
+                      Marcar todo como normal
+                    </button>
+                  </div>
+                  <p class="hc-examen-fisico-hint">Marque el recuadro cuando el sistema esté bien; si no, describa en el campo de texto.</p>
+                  <div class="hc-examen-fisico-grid">
+                    @for (area of examenFisicoAreas; track area.id) {
+                      <div class="hc-examen-fisico-row">
+                        <input type="checkbox" class="hc-examen-fisico-check" id="ef-{{ area.id }}"
+                          [ngModel]="area.bien" (ngModelChange)="area.bien = $event; onExamenFisicoBienChange(area)" />
+                        <label class="hc-examen-fisico-lbl" for="ef-{{ area.id }}">{{ area.label }}</label>
+                        <input type="text" class="hc-examen-fisico-input"
+                          [(ngModel)]="area.texto"
+                          [placeholder]="area.bien ? 'Normal' : 'Describa si hay hallazgos'"
+                          [readonly]="area.bien" />
+                      </div>
+                    }
+                  </div>
+                  <div class="hc-field hc-field--otros-hallazgos">
+                    <label class="hc-label">Otros hallazgos examen físico</label>
+                    <textarea class="hc-textarea" rows="2" [(ngModel)]="soapO.otrosHallazgosExamen"
+                      placeholder="Hallazgos adicionales no cubiertos por las subáreas anteriores"></textarea>
+                  </div>
                 </div>
               </div>
             }
@@ -881,7 +1101,8 @@
                   <div class="hc-field">
                     <label class="hc-label">Diagnóstico principal</label>
                     <input type="text" class="hc-input" [(ngModel)]="soapA.diagnostico"
-                      placeholder="Diagnóstico clínico principal..." />
+                      placeholder="Diagnóstico clínico principal..."
+                      (ngModelChange)="onMotivoODiagnosticoChange()" />
                   </div>
                   <div class="hc-field">
                     <label class="hc-label">
@@ -896,6 +1117,24 @@
                         <option [value]="item.code + ' - ' + item.desc">{{ item.code }} — {{ item.desc }}</option>
                       }
                     </datalist>
+                    @if (sugerenciasCie10().length > 0) {
+                      <div class="hc-cie10-sugerencias">
+                        <span class="hc-field-hint">Sugerencias (seleccione una):</span>
+                        <ul class="hc-cie10-sugerencias-list">
+                          @for (item of sugerenciasCie10(); track item.codigo + item.descripcion) {
+                            <li>
+                              <button type="button" class="hc-cie10-sugerencia-item"
+                                (click)="seleccionarSugerenciaCie10(item)">
+                                <strong>{{ item.codigo }}</strong> — {{ item.descripcion }}
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    @if (loadingCie10()) {
+                      <span class="hc-field-hint">Buscando códigos CIE-10...</span>
+                    }
                     <span class="hc-field-hint">Escriba código o elija de la lista. Formato: [A-Z][00-99][.0-9] — Obligatorio en RIPS</span>
                   </div>
                 </div>
@@ -906,6 +1145,36 @@
                     (input)="soapA.codigoCie10Secundario = $any($event.target).value.toUpperCase()" />
                   <span class="hc-field-hint">Diagnósticos secundarios o comorbilidades (opcional)</span>
                 </div>
+                @if (sugerenciasGpc().length > 0) {
+                  <div class="hc-gpc-panel">
+                    <button type="button" class="hc-gpc-panel-toggle" (click)="gpcPanelAbierto.set(!gpcPanelAbierto())">
+                      <span>Sugerencias según guías de práctica clínica</span>
+                      <span class="hc-gpc-panel-badge">{{ sugerenciasGpc().length }}</span>
+                    </button>
+                    @if (gpcPanelAbierto()) {
+                      <div class="hc-gpc-list">
+                        @for (g of sugerenciasGpc(); track g.id) {
+                          <div class="hc-gpc-item">
+                            @if (g.titulo) { <h4 class="hc-gpc-titulo">{{ g.titulo }}</h4> }
+                            @if (g.criteriosControl) {
+                              <p class="hc-gpc-campo"><strong>Criterios de control:</strong> {{ g.criteriosControl }}</p>
+                            }
+                            @if (g.medicamentosPrimeraLinea) {
+                              <p class="hc-gpc-campo"><strong>Medicamentos primera línea:</strong> {{ g.medicamentosPrimeraLinea }}</p>
+                            }
+                            @if (g.estudiosSeguimiento) {
+                              <p class="hc-gpc-campo"><strong>Estudios de seguimiento:</strong> {{ g.estudiosSeguimiento }}</p>
+                            }
+                            @if (g.fuente) { <p class="hc-gpc-fuente">{{ g.fuente }}</p> }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+                @if (loadingGpc()) {
+                  <span class="hc-field-hint">Buscando sugerencias según guías...</span>
+                }
                 <div class="hc-field">
                   <label class="hc-label">Observaciones y análisis diferencial</label>
                   <textarea class="hc-textarea" rows="2" [(ngModel)]="soapA.observaciones"
@@ -1007,7 +1276,7 @@
       </div>
     }
 
-    <!-- ══════════════ TAB: ÓRDENES ══════════════ -->
+  <!-- ══════════════ TAB: ÓRDENES ══════════════ -->
     @if (activeTab() === 'ordenes') {
       <div class="hc-ordenes-layout">
         <!-- Formulario nueva orden -->
@@ -1058,22 +1327,163 @@
             <div class="hc-field">
               <label class="hc-label">Plantilla rápida</label>
               @if (ordenForm.tipo === 'LABORATORIO') {
-                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-                  <option value="">Seleccione...</option>
-                  @for (lab of catalogoLaboratorios; track lab) { <option [value]="lab">{{ lab }}</option> }
-                </select>
+                @if (loadingLaboratorios()) {
+                  <p class="hc-field-hint">Cargando catálogo de laboratorios (CUPS)…</p>
+                } @else {
+                  <div class="hc-dropdown-med-wrapper">
+                    <input
+                      type="text"
+                      class="hc-input"
+                      [ngModel]="ordenForm.plantilla"
+                      (ngModelChange)="ordenForm.plantilla = $event"
+                      (focus)="abrirDropdownLab()"
+                      name="plantillaLab"
+                      placeholder="Clic para ver exámenes de laboratorio (máx. 10) o buscar…"
+                      readonly />
+                    @if (dropdownLabOpen()) {
+                      <div class="hc-dropdown-backdrop" (click)="cerrarDropdownLab()" role="button" tabindex="-1" aria-label="Cerrar"></div>
+                      <div class="hc-dropdown-panel">
+                        <input
+                          type="text"
+                          class="hc-input hc-dropdown-search"
+                          placeholder="Buscar por código o nombre (ej. 9038, hemo, glicemia)…"
+                          [ngModel]="filtroLaboratorio()"
+                          (ngModelChange)="filtroLaboratorio.set($event)"
+                          (click)="$event.stopPropagation()"
+                          autocomplete="off" />
+                        <ul class="hc-dropdown-list" role="listbox">
+                          @for (lab of laboratorioDropdownOpciones(); track lab.codigo) {
+                            <li class="hc-dropdown-item" role="option" (click)="seleccionarLaboratorio(lab)">
+                              <span class="hc-cups-badge">CUPS {{ lab.codigo }}</span>
+                              <span class="hc-dropdown-item-desc">{{ lab.descripcion }}</span>
+                            </li>
+                          }
+                          @if (laboratorioDropdownOpciones().length === 0) {
+                            <li class="hc-dropdown-item hc-dropdown-item--empty">Ningún resultado. Pruebe otro término.</li>
+                          }
+                        </ul>
+                        <p class="hc-dropdown-hint">Mostrando hasta 10 opciones (CUPS). Escriba para filtrar.</p>
+                      </div>
+                    }
+                  </div>
+                }
               } @else if (ordenForm.tipo === 'MEDICAMENTO') {
-                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-                  <option value="">Seleccione...</option>
-                  @for (med of catalogoMedicamentos; track med) { <option [value]="med">{{ med }}</option> }
-                </select>
+                <div class="hc-dropdown-med-wrapper">
+                  <input
+                    type="text"
+                    class="hc-input"
+                    [ngModel]="ordenForm.plantilla"
+                    (ngModelChange)="ordenForm.plantilla = $event"
+                    (focus)="abrirDropdownMed()"
+                    name="plantillaMed"
+                    placeholder="Clic para ver medicamentos (máx. 10) o buscar…"
+                    readonly />
+                  @if (dropdownMedOpen()) {
+                    <div class="hc-dropdown-backdrop" (click)="cerrarDropdownMed()" role="button" tabindex="-1" aria-label="Cerrar"></div>
+                    <div class="hc-dropdown-panel">
+                      <input
+                        type="text"
+                        class="hc-input hc-dropdown-search"
+                        placeholder="Buscar medicamento…"
+                        [ngModel]="filtroMedicamento()"
+                        (ngModelChange)="filtroMedicamento.set($event)"
+                        (click)="$event.stopPropagation()"
+                        autocomplete="off" />
+                      <ul class="hc-dropdown-list" role="listbox">
+                        @for (med of medicamentosDropdownOpciones(); track med) {
+                          <li class="hc-dropdown-item" role="option" (click)="seleccionarMedicamento(med)">
+                            {{ med }}
+                          </li>
+                        }
+                        @if (medicamentosDropdownOpciones().length === 0) {
+                          <li class="hc-dropdown-item hc-dropdown-item--empty">Ningún resultado. Pruebe otro término.</li>
+                        }
+                      </ul>
+                      <p class="hc-dropdown-hint">Mostrando hasta 10 opciones. Escriba para filtrar.</p>
+                    </div>
+                  }
+                </div>
+              } @else if (ordenForm.tipo === 'PROCEDIMIENTO') {
+                <div class="hc-dropdown-med-wrapper">
+                  <input
+                    type="text"
+                    class="hc-input"
+                    [ngModel]="ordenForm.plantilla"
+                    (ngModelChange)="ordenForm.plantilla = $event"
+                    (focus)="abrirDropdownProc()"
+                    name="plantillaProc"
+                    placeholder="Clic para ver procedimientos (máx. 10) o buscar…"
+                    readonly />
+                  @if (dropdownProcOpen()) {
+                    <div class="hc-dropdown-backdrop" (click)="cerrarDropdownProc()" role="button" tabindex="-1" aria-label="Cerrar"></div>
+                    <div class="hc-dropdown-panel">
+                      <input
+                        type="text"
+                        class="hc-input hc-dropdown-search"
+                        placeholder="Buscar procedimiento por código o nombre…"
+                        [ngModel]="filtroProcedimiento()"
+                        (ngModelChange)="filtroProcedimiento.set($event)"
+                        (click)="$event.stopPropagation()"
+                        autocomplete="off" />
+                      <ul class="hc-dropdown-list" role="listbox">
+                        @for (c of procedimientosDropdownOpciones(); track c.codigo) {
+                          <li class="hc-dropdown-item" role="option" (click)="seleccionarProcedimiento(c)">
+                            <span class="hc-cups-badge">CUPS {{ c.codigo }}</span>
+                            <span class="hc-dropdown-item-desc">{{ c.descripcion }}</span>
+                          </li>
+                        }
+                        @if (procedimientosDropdownOpciones().length === 0) {
+                          <li class="hc-dropdown-item hc-dropdown-item--empty">Ningún resultado. Pruebe otro término.</li>
+                        }
+                      </ul>
+                      <p class="hc-dropdown-hint">Mostrando hasta 10 procedimientos (CUPS). Escriba para filtrar.</p>
+                    </div>
+                  }
+                </div>
+              } @else if (ordenForm.tipo === 'IMAGEN') {
+                <div class="hc-dropdown-med-wrapper">
+                  <input
+                    type="text"
+                    class="hc-input"
+                    [ngModel]="ordenForm.plantilla"
+                    (ngModelChange)="ordenForm.plantilla = $event"
+                    (focus)="abrirDropdownImg()"
+                    name="plantillaImg"
+                    placeholder="Clic para ver estudios de imagen (máx. 10) o buscar…"
+                    readonly />
+                  @if (dropdownImgOpen()) {
+                    <div class="hc-dropdown-backdrop" (click)="cerrarDropdownImg()" role="button" tabindex="-1" aria-label="Cerrar"></div>
+                    <div class="hc-dropdown-panel">
+                      <input
+                        type="text"
+                        class="hc-input hc-dropdown-search"
+                        placeholder="Buscar imagen por código o nombre (ej. rx, eco, TAC)…"
+                        [ngModel]="filtroImagen()"
+                        (ngModelChange)="filtroImagen.set($event)"
+                        (click)="$event.stopPropagation()"
+                        autocomplete="off" />
+                      <ul class="hc-dropdown-list" role="listbox">
+                        @for (c of imagenDropdownOpciones(); track c.codigo) {
+                          <li class="hc-dropdown-item" role="option" (click)="seleccionarImagen(c)">
+                            <span class="hc-cups-badge">CUPS {{ c.codigo }}</span>
+                            <span class="hc-dropdown-item-desc">{{ c.descripcion }}</span>
+                          </li>
+                        }
+                        @if (imagenDropdownOpciones().length === 0) {
+                          <li class="hc-dropdown-item hc-dropdown-item--empty">Ningún resultado. Pruebe otro término.</li>
+                        }
+                      </ul>
+                      <p class="hc-dropdown-hint">Mostrando hasta 10 estudios de imagen (CUPS). Escriba para filtrar.</p>
+                    </div>
+                  }
+                </div>
               } @else {
-                <select class="hc-select" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()">
-                  <option value="">Seleccione especialidad...</option>
-                  @for (esp of catalogoEspecialidades; track esp) { <option [value]="'Interconsulta: ' + esp">{{ esp }}</option> }
-                </select>
+                <input type="text" class="hc-input" [(ngModel)]="ordenForm.plantilla" (ngModelChange)="aplicarPlantillaOrden()"
+                  name="plantillaOtro" placeholder="Escriba el detalle de la orden…" />
               }
-            </div>
+              @if (ordenPlantillaCodigoCups && (ordenForm.tipo === 'LABORATORIO' || ordenForm.tipo === 'PROCEDIMIENTO' || ordenForm.tipo === 'IMAGEN')) {
+                <p class="hc-field-hint hc-cups-code-line">Código CUPS: <strong>{{ ordenPlantillaCodigoCups }}</strong></p>
+              }
           </div>
 
           @if (ordenForm.tipo === 'MEDICAMENTO') {
@@ -1152,17 +1562,19 @@
             </div>
           }
 
-          <div class="hc-form-actions">
+          <div class="hc-orden-form-actions-wrap">
+          <div class="hc-form-actions hc-form-actions--below-fields">
             <button type="button" class="hc-btn hc-btn--outline" (click)="agregarItemOrden()">
-              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" width="16" height="16"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
               Agregar ítem a la orden
             </button>
             <button type="button" class="hc-btn hc-btn--primary" [disabled]="savingOrden()" (click)="crearOrden()">
               @if (savingOrden()) { <span class="hc-btn-spinner"></span> Creando... } @else {
-                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" width="16" height="16"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
                 Emitir orden@if (totalOrdenItemsCount > 1) { ({{ totalOrdenItemsCount }} ítems) }
               }
             </button>
+          </div>
           </div>
         </div>
 
@@ -1196,12 +1608,24 @@
           }
           @else {
             <div class="hc-orden-list">
-              @for (o of ordenesFiltradas(); track o.id) {
-                <div class="hc-orden-card" [ngClass]="'hc-orden-card--' + (getOrdenDisplayItems(o)[0]?.tipo || o.tipo)">
+            @for (o of ordenesFiltradas(); track o.id) {
+                <div class="hc-orden-card" [ngClass]="'hc-orden-card--' + ((getOrdenDisplayItems(o)[0] && getOrdenDisplayItems(o)[0].tipo) || o.tipo)">
                   <div class="hc-orden-card-header">
-                    <span class="hc-orden-icon">{{ tipoOrdenIcon(getOrdenDisplayItems(o)[0]?.tipo || o.tipo) }}</span>
-                    <span class="hc-orden-tipo">{{ o.tipo === 'COMPUESTA' ? 'Orden con ' + getOrdenDisplayItems(o).length + ' ítem(s)' : (getOrdenDisplayItems(o)[0]?.tipo || o.tipo) }}</span>
+                    <span class="hc-orden-icon">{{ tipoOrdenIcon((getOrdenDisplayItems(o)[0] && getOrdenDisplayItems(o)[0].tipo) || o.tipo) }}</span>
+                    <span class="hc-orden-tipo">{{ o.tipo === 'COMPUESTA' ? 'Orden con ' + getOrdenDisplayItems(o).length + ' ítem(s)' : ((getOrdenDisplayItems(o)[0] && getOrdenDisplayItems(o)[0].tipo) || o.tipo) }}</span>
                     <span class="hc-badge hc-orden-badge" [ngClass]="estadoBadge(o.estado)">{{ o.estado }}</span>
+                    @if (o.resultadoCritico && !o.leidoPorUsuarioActual) {
+                      <span class="hc-badge hc-orden-badge-critico" title="Resultado crítico pendiente de lectura">Crítico - No leído</span>
+                      <button type="button" class="hc-btn hc-btn--sm hc-btn--outline hc-orden-marcar-leido"
+                        [disabled]="marcarLeidoOrdenId() === o.id"
+                        (click)="marcarResultadoCriticoLeido(o)" title="Registrar que ha leído este resultado crítico">
+                        @if (marcarLeidoOrdenId() === o.id) {
+                          <span class="hc-btn-spinner"></span> Registrando...
+                        } @else {
+                          Marcar como leído
+                        }
+                      </button>
+                    }
                     <button type="button" class="hc-btn hc-btn--ghost hc-btn--sm hc-orden-ver-detalle"
                             (click)="abrirModalOrden(o)" title="Ver detalle de la orden">
                       Ver detalle
@@ -1334,6 +1758,10 @@
                     <label class="hc-label">Resultado de la orden</label>
                     <textarea class="hc-textarea" rows="3" [(ngModel)]="resultadoOrdenTexto"
                               placeholder="Ingrese el resultado (ej. resultados de laboratorio)..."></textarea>
+                    <label class="hc-check-item" style="margin-top:.5rem">
+                      <input type="checkbox" [(ngModel)]="resultadoCriticoOrden" />
+                      <span>Marcar como resultado crítico (S2)</span>
+                    </label>
                     <div class="hc-form-actions">
                       <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" [disabled]="savingResultadoOrden()" (click)="guardarResultadoOrden()">
                         {{ savingResultadoOrden() ? 'Guardando…' : 'Guardar resultado' }}
@@ -1346,16 +1774,18 @@
                 }
               }
             </div>
-
-            <!-- Drawer detalle de orden (al hacer clic en "Ver detalle") — panel lateral premium -->
             @if (ordenParaModal(); as ordenModal) {
               <div class="hc-drawer-backdrop" (click)="cerrarModalOrden()" role="dialog" aria-modal="true" aria-labelledby="hc-drawer-orden-title"></div>
               <aside class="hc-drawer" (click)="$event.stopPropagation()">
                 <div class="hc-drawer-header">
-                  <span class="hc-orden-icon hc-drawer-icon">{{ tipoOrdenIcon(getOrdenDisplayItems(ordenModal)[0]?.tipo || ordenModal.tipo) }}</span>
+                  <span class="hc-orden-icon hc-drawer-icon">{{ tipoOrdenIcon((getOrdenDisplayItems(ordenModal)[0] && getOrdenDisplayItems(ordenModal)[0].tipo) || ordenModal.tipo) }}</span>
                   <div class="hc-drawer-header-text">
                     <h2 id="hc-drawer-orden-title" class="hc-drawer-title">Orden #{{ ordenModal.id }}</h2>
-                    <p class="hc-drawer-subtitle">{{ ordenModal.tipo === 'COMPUESTA' ? getOrdenDisplayItems(ordenModal).length + ' ítem(s)' : (getOrdenDisplayItems(ordenModal)[0]?.tipo || ordenModal.tipo) }} · {{ ordenModal.estado }}</p>
+                    <p class="hc-drawer-subtitle">{{ ordenModal.tipo === 'COMPUESTA' ? getOrdenDisplayItems(ordenModal).length + ' ítem(s)' : ((getOrdenDisplayItems(ordenModal)[0] && getOrdenDisplayItems(ordenModal)[0].tipo) || ordenModal.tipo) }} · {{ ordenModal.estado }}
+                      @if (ordenModal.resultadoCritico && !ordenModal.leidoPorUsuarioActual) {
+                        <span class="hc-badge hc-orden-badge-critico" style="margin-left:.5rem">Crítico - No leído</span>
+                      }
+                    </p>
                   </div>
                   <button class="hc-drawer-close" type="button" (click)="cerrarModalOrden()" aria-label="Cerrar">
                     <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
@@ -1408,6 +1838,9 @@
                   }
                 </div>
                 <div class="hc-drawer-footer">
+                  @if (ordenModal.resultadoCritico && !ordenModal.leidoPorUsuarioActual) {
+                    <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" [disabled]="marcarLeidoOrdenId() === ordenModal.id" (click)="marcarResultadoCriticoLeido(ordenModal); cerrarModalOrden()">Marcar como leído</button>
+                  }
                   @if (ordenAceptaResultado(ordenModal) && !ordenCompletada(ordenModal)) {
                     <button type="button" class="hc-btn hc-btn--outline hc-btn--sm" (click)="cerrarModalOrden(); openSubirResultado(ordenModal)">Subir resultado</button>
                   }
@@ -1423,14 +1856,40 @@
           }
         </div>
       </div>
+    </div>
     }
 
-    <!-- ══════════════ TAB: DOCUMENTOS ══════════════ -->
     @if (activeTab() === 'documentos') {
       <div class="hc-docs-layout">
 
+        <!-- S7: Historial portátil (PHR) para llevar a otra IPS -->
+        @if (selectedPatient(); as p) {
+          <div class="hc-section-card hc-section-card--phr">
+            <div class="hc-section-card-header">
+              <h3 class="hc-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Historial portátil (PHR)
+              </h3>
+              <span class="hc-section-subtitle">Para llevar a otra IPS</span>
+            </div>
+            <div class="hc-section-body">
+              <p class="hc-phr-desc">Descargue el historial del paciente en PDF o FHIR R4 para compartir con otra institución.</p>
+              <div class="hc-phr-btns">
+                <button type="button" class="hc-btn hc-btn--outline" [disabled]="descargandoPhr()" (click)="descargarPhrPdf()">
+                  @if (descargandoPhr()) { <span class="hc-btn-spinner"></span> }
+                  Descargar PDF
+                </button>
+                <button type="button" class="hc-btn hc-btn--outline" [disabled]="descargandoPhr()" (click)="descargarPhrFhir()">
+                  @if (descargandoPhr()) { <span class="hc-btn-spinner"></span> }
+                  Descargar FHIR
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- ── Interoperabilidad RDA — Resolución 1888 de 2025 ── -->
-        @if (consultasPaciente.length > 0 && consultasPaciente[0].id) {
+        @if (atencionesPaciente.length > 0 && atencionesPaciente[0].id) {
           <div class="hc-section-card hc-section-card--rda">
             <div class="hc-section-card-header">
               <h3 class="hc-section-title">
@@ -1443,7 +1902,7 @@
               <span class="hc-section-subtitle">Res. 1888/2025 — HL7 FHIR R4</span>
             </div>
             <div class="hc-section-body">
-              <app-sesa-rda-panel [atencionId]="consultasPaciente[0].id" />
+              <app-sesa-rda-panel [atencionId]="atencionesPaciente[0].id" />
             </div>
           </div>
         }
@@ -1459,10 +1918,10 @@
           <div class="hc-form-row hc-form-row--3">
             <div class="hc-field">
               <label class="hc-label">Orden vinculada</label>
-              <select class="hc-select" [(ngModel)]="facturaForm.ordenId">
+              <select class="hc-select" [(ngModel)]="facturaForm.ordenId" (ngModelChange)="onOrdenFacturaChange($event)">
                 <option [ngValue]="null">Sin orden</option>
                 @for (o of ordenesPaciente; track o.id) {
-                  <option [ngValue]="o.id">#{{ o.id }} — {{ o.tipo === 'COMPUESTA' ? 'Compuesta (' + (o.items?.length ?? 0) + ' ítems)' : tipoOrdenIcon(o.tipo) + ' ' + o.tipo }}</option>
+                  <option [ngValue]="o.id">#{{ o.id }} — {{ o.tipo === 'COMPUESTA' ? 'Compuesta (' + (o.items?.length ?? 0) + ' ítems)' : tipoOrdenIcon(o.tipo) + ' ' + o.tipo }}{{ o.valorEstimado ? ' · $ ' + (o.valorEstimado | number) : '' }}</option>
                 }
               </select>
             </div>
@@ -1537,6 +1996,80 @@
           </div>
         }
       </div>
+    }
+
+    <!-- ══════════════ TAB: RDA OTRAS IPS (S17) ══════════════ -->
+    @if (activeTab() === 'rdaOtrasIps') {
+      @if (selectedPatient(); as p) {
+        <div class="hc-section-card hc-section-card--rda-recibidos">
+          <div class="hc-section-card-header">
+            <h3 class="hc-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Atenciones en otras instituciones (IHCE)
+            </h3>
+            <span class="hc-section-subtitle">RDA recibidos del Ministerio — Res. 1888/2025</span>
+          </div>
+          <div class="hc-section-body">
+            @if (rdaRecibidosLoading()) {
+              <div class="hc-rda-recibidos-loading"><span class="hc-btn-spinner"></span> Cargando RDA de otras IPS…</div>
+            } @else if (rdaRecibidos.length === 0) {
+              <sesa-empty-state icon="document" title="Sin RDA de otras IPS" message="No hay registros de atenciones en otras instituciones para este paciente, o la consulta al IHCE no está disponible." [compact]="true"></sesa-empty-state>
+            } @else {
+              <div class="hc-table-wrap">
+                <table class="hc-table">
+                  <thead>
+                    <tr><th>Fecha atención</th><th>Tipo RDA</th><th>Institución origen</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    @for (r of rdaRecibidos; track r.id) {
+                      <tr>
+                        <td class="hc-td-fecha">{{ r.fechaAtencion ? (r.fechaAtencion | date:'short') : '—' }}</td>
+                        <td>{{ r.tipoRda || '—' }}</td>
+                        <td>{{ r.institucionOrigen || '—' }}</td>
+                        <td>
+                          <button type="button" class="hc-btn hc-btn--sm hc-btn--outline" (click)="openRdaRecibidoDetalle(r.id)">Ver detalle</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+        <!-- Modal/drawer detalle RDA recibido -->
+        @if (rdaDetalleModal(); as detalle) {
+          <div class="hc-drawer-backdrop" (click)="closeRdaDetalle()" role="dialog" aria-modal="true" aria-labelledby="hc-drawer-rda-title"></div>
+          <aside class="hc-drawer" (click)="$event.stopPropagation()">
+            <div class="hc-drawer-header">
+              <span class="hc-drawer-icon">RDA</span>
+              <div class="hc-drawer-header-text">
+                <h2 id="hc-drawer-rda-title" class="hc-drawer-title">RDA de otra IPS</h2>
+                <p class="hc-drawer-subtitle">{{ detalle.tipoRda }} · {{ detalle.institucionOrigen || '—' }}</p>
+              </div>
+              <button class="hc-drawer-close" type="button" (click)="closeRdaDetalle()" aria-label="Cerrar">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <div class="hc-drawer-body">
+              <p class="hc-rda-detalle-fecha"><strong>Fecha atención:</strong> {{ detalle.fechaAtencion ? (detalle.fechaAtencion | date:'medium') : '—' }}</p>
+              <p class="hc-rda-detalle-inst"><strong>Institución:</strong> {{ detalle.institucionOrigen || '—' }}</p>
+              @if (detalle.resumenLegible) {
+                <div class="hc-rda-detalle-resumen">{{ detalle.resumenLegible }}</div>
+              } @else {
+                <p class="hc-rda-detalle-empty">No hay resumen legible disponible para este RDA.</p>
+              }
+            </div>
+            <div class="hc-drawer-footer">
+              <button type="button" class="hc-btn hc-btn--primary hc-btn--sm" (click)="closeRdaDetalle()">Cerrar</button>
+            </div>
+          </aside>
+        }
+        @if (rdaDetalleLoading() && !rdaDetalleModal()) {
+          <div class="hc-drawer-backdrop" role="status" aria-live="polite"></div>
+          <div class="hc-loading-drawer"><span class="hc-btn-spinner"></span> Cargando detalle…</div>
+        }
+      }
     }
 
     <!-- ══════════════ TAB: MAPA DE DOLOR ══════════════ -->
@@ -1656,12 +2189,57 @@
       <div class="hc-modal-footer">
         <button class="hc-btn hc-btn--ghost" type="button" (click)="cancelarEditarHC()">Cancelar</button>
         <button class="hc-btn hc-btn--primary" type="button" [disabled]="savingUpdateHC()" (click)="guardarHC()">
-          <ng-container *ngIf="savingUpdateHC()">
+          @if (savingUpdateHC()) {
             <span class="hc-btn-spinner"></span> Guardando...
-          </ng-container>
-          <ng-container *ngIf="!savingUpdateHC()">
+          } @else {
             Guardar cambios
-          </ng-container>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- S6: Modal Referencia -->
+@if (mostrarModalReferencia()) {
+  <div class="hc-modal-backdrop" (click)="cerrarModalReferencia()" role="dialog" aria-modal="true">
+    <div class="hc-modal hc-modal--ref" (click)="$event.stopPropagation()">
+      <div class="hc-modal-header">
+        <h3 class="hc-modal-title">Generar referencia</h3>
+        <p class="hc-modal-subtitle">Datos para el documento de referencia al paciente</p>
+        <button class="hc-modal-close" type="button" (click)="cerrarModalReferencia()" aria-label="Cerrar">×</button>
+      </div>
+      <div class="hc-modal-body">
+        <div class="hc-form-group">
+          <label class="hc-label">Motivo de referencia</label>
+          <input type="text" class="hc-input" [ngModel]="formRefMotivo()" (ngModelChange)="formRefMotivo.set($event)" placeholder="Ej. Valoración por especialista" />
+        </div>
+        <div class="hc-form-group">
+          <label class="hc-label">Nivel de referencia</label>
+          <input type="text" class="hc-input" [ngModel]="formRefNivel()" (ngModelChange)="formRefNivel.set($event)" placeholder="Ej. I, II, III" />
+        </div>
+        <div class="hc-form-group">
+          <label class="hc-label">Diagnóstico</label>
+          <textarea class="hc-textarea" rows="2" [ngModel]="formRefDiagnostico()" (ngModelChange)="formRefDiagnostico.set($event)" placeholder="Diagnóstico de referencia"></textarea>
+        </div>
+        <div class="hc-form-group">
+          <label class="hc-label">Tratamiento</label>
+          <textarea class="hc-textarea" rows="2" [ngModel]="formRefTratamiento()" (ngModelChange)="formRefTratamiento.set($event)" placeholder="Tratamiento indicado"></textarea>
+        </div>
+        <div class="hc-form-group">
+          <label class="hc-label">Recomendaciones</label>
+          <textarea class="hc-textarea" rows="2" [ngModel]="formRefRecomendaciones()" (ngModelChange)="formRefRecomendaciones.set($event)" placeholder="Recomendaciones"></textarea>
+        </div>
+        <div class="hc-form-group">
+          <label class="hc-label">Próxima cita</label>
+          <input type="text" class="hc-input" [ngModel]="formRefProximaCita()" (ngModelChange)="formRefProximaCita.set($event)" placeholder="Ej. Control en 7 días" />
+        </div>
+      </div>
+      <div class="hc-modal-footer">
+        <button class="hc-btn hc-btn--ghost" type="button" (click)="cerrarModalReferencia()">Cancelar</button>
+        <button class="hc-btn hc-btn--outline" type="button" (click)="descargarPdfReferencia()" [disabled]="guardandoReferencia()">Descargar PDF</button>
+        <button class="hc-btn hc-btn--primary" type="button" [disabled]="guardandoReferencia()" (click)="guardarReferencia()">
+          @if (guardandoReferencia()) { <span class="hc-btn-spinner"></span> Guardando... } @else { Guardar referencia }
         </button>
       </div>
     </div>

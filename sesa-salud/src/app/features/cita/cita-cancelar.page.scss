@@ -1,0 +1,72 @@
+/* Página pública cancelar cita (S3) - Autor: Ing. J Sebastian Vargas S */
+.cita-public-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--sesa-bg);
+}
+.cita-public-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 2rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  text-align: center;
+}
+.cita-public-title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: var(--sesa-text-primary);
+}
+.cita-public-title--success {
+  color: var(--sesa-success, #16a34a);
+}
+.cita-public-title--error {
+  color: var(--sesa-error, #dc2626);
+}
+.cita-public-mensaje {
+  margin: 0 0 1rem;
+  color: var(--sesa-text-secondary);
+  line-height: 1.5;
+}
+.cita-public-error {
+  margin: 0 0 1rem;
+  color: var(--sesa-error, #dc2626);
+}
+.cita-public-form {
+  text-align: left;
+  margin-top: 1rem;
+}
+.cita-public-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+.cita-public-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: 8px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  margin-bottom: 1rem;
+  resize: vertical;
+}
+.cita-public-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--sesa-error, #dc2626);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cita-public-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

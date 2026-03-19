@@ -37,7 +37,7 @@
   <sesa-card title="Pacientes hospitalizados">
     <div class="sesa-table-wrap">
       <table class="sesa-table">
-        <thead><tr><th>Paciente</th><th>Servicio</th><th>Cama</th><th>Estado</th><th>Ingreso</th></tr></thead>
+        <thead><tr><th>Paciente</th><th>Servicio</th><th>Cama</th><th>Estado</th><th>Ingreso</th><th>Acciones</th></tr></thead>
         <tbody>
           @for (h of hospitalizaciones; track h.id) {
             <tr>
@@ -46,9 +46,17 @@
               <td>{{ h.cama || '—' }}</td>
               <td>{{ h.estado || '—' }}</td>
               <td>{{ h.fechaIngreso || '—' }}</td>
+              <td>
+                <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary"
+                        [disabled]="rdaEnviandoId === h.id"
+                        (click)="generarYEnviarRdaHospitalizacion(h)">
+                  @if (rdaEnviandoId === h.id) { Enviando… }
+                  @else { Generar y enviar RDA }
+                </button>
+              </td>
             </tr>
           } @empty {
-            <tr><td colspan="5">Sin registros.</td></tr>
+            <tr><td colspan="6">Sin registros.</td></tr>
           }
         </tbody>
       </table>

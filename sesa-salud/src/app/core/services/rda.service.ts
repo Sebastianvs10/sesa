@@ -5,7 +5,8 @@
  */
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export type TipoRda = 'CONSULTA_EXTERNA' | 'HOSPITALIZACION' | 'URGENCIAS' | 'PACIENTE';
@@ -14,6 +15,10 @@ export type EstadoRda = 'PENDIENTE' | 'ENVIADO' | 'CONFIRMADO' | 'ERROR';
 export interface RdaStatus {
   rdaId: number;
   atencionId: number;
+  /** S11: ID del registro de urgencia cuando tipo es URGENCIAS */
+  urgenciaRegistroId?: number;
+  /** S11: ID de hospitalización cuando tipo es HOSPITALIZACION */
+  hospitalizacionId?: number;
   tipoRda: TipoRda;
   estadoEnvio: EstadoRda;
   idMinisterio: string | null;
@@ -22,6 +27,29 @@ export interface RdaStatus {
   fechaConfirmacion: string | null;
   errorMensaje: string | null;
   reintentos: number;
+}
+
+/** S17: Resumen de RDA recibido de otra IPS (IHCE). */
+export interface RdaRecibidoResumen {
+  id: number;
+  pacienteId: number;
+  idMinisterio: string | null;
+  tipoRda: string;
+  fechaAtencion: string | null;
+  institucionOrigen: string | null;
+  fetchedAt: string | null;
+}
+
+/** S17: Detalle de RDA recibido. */
+export interface RdaRecibidoDetalle {
+  id: number;
+  pacienteId: number;
+  idMinisterio: string | null;
+  tipoRda: string;
+  fechaAtencion: string | null;
+  institucionOrigen: string | null;
+  resumenLegible: string | null;
+  fetchedAt: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -52,6 +80,30 @@ export class RdaService {
       `${this.base}/generar-y-enviar/${atencionId}`, null, { params });
   }
 
+  /** S11: Genera el RDA de Urgencias para un registro de urgencia */
+  generarRdaUrgencia(urgenciaRegistroId: number): Observable<RdaStatus> {
+    return this.http.post<RdaStatus>(
+      `${this.base}/generar/urgencia/${urgenciaRegistroId}`, null);
+  }
+
+  /** S11: Genera y envía RDA de Urgencias en un paso */
+  generarYEnviarUrgencia(urgenciaRegistroId: number): Observable<RdaStatus> {
+    return this.http.post<RdaStatus>(
+      `${this.base}/generar-y-enviar/urgencia/${urgenciaRegistroId}`, null);
+  }
+
+  /** S11: Genera el RDA de Hospitalización para un ingreso */
+  generarRdaHospitalizacion(hospitalizacionId: number): Observable<RdaStatus> {
+    return this.http.post<RdaStatus>(
+      `${this.base}/generar/hospitalizacion/${hospitalizacionId}`, null);
+  }
+
+  /** S11: Genera y envía RDA de Hospitalización en un paso */
+  generarYEnviarHospitalizacion(hospitalizacionId: number): Observable<RdaStatus> {
+    return this.http.post<RdaStatus>(
+      `${this.base}/generar-y-enviar/hospitalizacion/${hospitalizacionId}`, null);
+  }
+
   /** Lista todos los envíos de una atención */
   listarPorAtencion(atencionId: number): Observable<RdaStatus[]> {
     return this.http.get<RdaStatus[]>(`${this.base}/estado/${atencionId}`);
@@ -74,6 +126,18 @@ export class RdaService {
   /** Info normativa del módulo */
   infoNormativo(): Observable<Record<string, string>> {
     return this.http.get<Record<string, string>>(`${this.base}/info`);
+  }
+
+  /** S17: RDA recibidos de otras IPS (IHCE). Lista por paciente. */
+  getRdaRecibidosPaciente(pacienteId: number): Observable<RdaRecibidoResumen[]> {
+    return this.http.get<RdaRecibidoResumen[]>(`${this.base}/recibidos/paciente/${pacienteId}`);
+  }
+
+  /** S17: Detalle de un RDA recibido. */
+  getRdaRecibidoDetalle(id: number): Observable<RdaRecibidoDetalle | null> {
+    return this.http.get<RdaRecibidoDetalle>(`${this.base}/recibidos/${id}`).pipe(
+      catchError(() => of(null))
+    );
   }
 
   /** Helpers UI */

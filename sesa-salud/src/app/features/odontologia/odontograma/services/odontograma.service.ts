@@ -57,6 +57,12 @@ export class OdontogramaService {
     () => this._tratamientoSeleccionado() !== null
   );
 
+  /** Último contexto clínico cargado para evitar arrastre visual entre pacientes. */
+  private contextoActual: { pacienteId: number | null; consultaId: number | null } = {
+    pacienteId: null,
+    consultaId: null,
+  };
+
   setVista(v: TipoVista): void {
     this._vista.set(v);
   }
@@ -88,5 +94,35 @@ export class OdontogramaService {
 
   limpiarHistorial(): void {
     this._historial.set(new Map());
+  }
+
+  /** Restablece estado de UI/edición no persistente del odontograma. */
+  clearTransientState(): void {
+    this._vista.set('oclusal');
+    this._tratamientoSeleccionado.set(null);
+    this._zoomOclusal.set(1);
+    this.limpiarHistorial();
+  }
+
+  /**
+   * Fija contexto clínico activo y limpia estado transitorio cuando cambia
+   * paciente/consulta, para evitar contaminación cruzada de sesión.
+   */
+  setContext(pacienteId: number, consultaId?: number): void {
+    const nextConsultaId = consultaId ?? null;
+    const changed =
+      this.contextoActual.pacienteId !== pacienteId ||
+      this.contextoActual.consultaId !== nextConsultaId;
+    if (changed) {
+      this.clearTransientState();
+      this.contextoActual = { pacienteId, consultaId: nextConsultaId };
+    }
+  }
+
+  /** Limpia contexto y estado transitorio al salir de la ficha. */
+  clearStateForPatient(): void {
+    this.contextoActual = { pacienteId: null, consultaId: null };
+    this.clearTransientState();
+    this._modo.set('adulto');
   }
 }

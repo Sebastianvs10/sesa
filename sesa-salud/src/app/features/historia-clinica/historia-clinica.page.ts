@@ -14,16 +14,23 @@ import { EmpresaCurrentService } from '../../core/services/empresa-current.servi
 import { EmpresaService } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CitaDto, CitaService } from '../../core/services/cita.service';
-import { ConsultaDto, ConsultaService } from '../../core/services/consulta.service';
+import { ConsultaDto, ConsultaService, CuestionarioPreconsultaDto } from '../../core/services/consulta.service';
 import { EvolucionDto, EvolucionService } from '../../core/services/evolucion.service';
 import { OrdenClinicaDto, OrdenClinicaService, OrdenClinicaItemDto } from '../../core/services/orden-clinica.service';
 import { FacturaDto, FacturaService } from '../../core/services/factura.service';
-import { ReporteResumenDto, ReporteService } from '../../core/services/reporte.service';
+import { ReporteResumenDto, ReporteService, PacienteRiesgoDto } from '../../core/services/reporte.service';
 import { PersonalDto, PersonalService } from '../../core/services/personal.service';
+import { AtencionService, AtencionDto, AltaReferenciaRequestDto } from '../../core/services/atencion.service';
+import { ReconciliacionService, ReconciliacionAtencionDto } from '../../core/services/reconciliacion.service';
+import { PortalPacienteService } from '../../core/services/portal-paciente.service';
 import { DoloresPanelComponent } from './dolores-panel/dolores-panel.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { PlantillaSoapService, PlantillaSoapDto } from '../../core/services/plantilla-soap.service';
+import { Cie10Service, Cie10SugerenciaDto } from '../../core/services/cie10.service';
+import { GuiaGpcService, GuiaGpcSugerenciaDto } from '../../core/services/guia-gpc.service';
+import { CupsCatalogoService, CupCatalogoDto } from '../../core/services/cups-catalogo.service';
 import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
+import { RdaService, RdaRecibidoResumen, RdaRecibidoDetalle } from '../../core/services/rda.service';
 import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
 import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-state/sesa-empty-state.component';
 import { SesaRdaPanelComponent } from '../../shared/components/sesa-rda-panel/sesa-rda-panel.component';
@@ -31,7 +38,7 @@ import { SesaConsentimientoComponent } from '../../shared/components/sesa-consen
 import { parseResultadoToItems } from '../../core/utils/resultado-display.util';
 import { forkJoin } from 'rxjs';
 
-export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores' | 'consentimiento';
+export type HistoriaTab = 'historia' | 'soap' | 'ordenes' | 'documentos' | 'dolores' | 'consentimiento' | 'rdaOtrasIps';
 export type TipoOrden = 'LABORATORIO' | 'MEDICAMENTO' | 'PROCEDIMIENTO' | 'IMAGEN';
 
 /** Ítem del timeline unificado: consulta (consultorio) o evolución (urgencias). */
@@ -55,6 +62,19 @@ const CIE10_FRECUENTES: { code: string; desc: string }[] = [
   { code: 'F41.1', desc: 'Trastorno de ansiedad generalizada' },
   { code: 'N39.0', desc: 'Infección de vías urinarias no especificada' },
   { code: 'G43.9', desc: 'Migraña no especificada' },
+];
+
+/** Subáreas del examen físico (check = bien/Normal). Orden como en formulario. */
+const AREAS_EXAMEN_FISICO: { id: string; label: string }[] = [
+  { id: 'estado_general', label: 'Estado general' },
+  { id: 'cabeza_cuello', label: 'Cabeza y cuello' },
+  { id: 'torax', label: 'Tórax' },
+  { id: 'abdomen', label: 'Abdomen' },
+  { id: 'dorso', label: 'Dorso' },
+  { id: 'genitourinario', label: 'Genitourinario' },
+  { id: 'extremidades', label: 'Extremidades' },
+  { id: 'neurologico', label: 'Neurológico' },
+  { id: 'piel_faneras', label: 'Piel y faneras' },
 ];
 
 @Component({
@@ -89,12 +109,19 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private readonly facturaService    = inject(FacturaService);
   private readonly reporteService    = inject(ReporteService);
   private readonly personalService   = inject(PersonalService);
+  private readonly atencionService   = inject(AtencionService);
+  private readonly reconciliacionService = inject(ReconciliacionService);
+  private readonly portalPacienteService = inject(PortalPacienteService);
   private readonly toast             = inject(SesaToastService);
   private readonly plantillaSoapService = inject(PlantillaSoapService);
+  private readonly cie10Service = inject(Cie10Service);
+    private readonly guiaGpcService = inject(GuiaGpcService);
+  private readonly cupsCatalogoService = inject(CupsCatalogoService);
   private readonly confirmDialog     = inject(SesaConfirmDialogService);
-  private readonly sesaJspdf         = inject(SesaJspdfService);
-  private readonly empresaCurrent   = inject(EmpresaCurrentService);
-  private readonly empresaService   = inject(EmpresaService);
+    private readonly sesaJspdf         = inject(SesaJspdfService);
+    private readonly empresaCurrent   = inject(EmpresaCurrentService);
+    private readonly empresaService   = inject(EmpresaService);
+    private readonly rdaService       = inject(RdaService);
 
   descargandoPdf = signal(false);
   descargandoPdfEvolucion = signal(false);
@@ -111,12 +138,22 @@ export class HistoriaClinicaPageComponent implements OnInit {
   profesionales: PersonalDto[] = [];
   citasPaciente: CitaDto[]       = [];
   consultasPaciente: ConsultaDto[] = [];
+  /** Atenciones de la HC (para reconciliación y RDA). */
+  atencionesPaciente: AtencionDto[] = [];
   evolucionesPaciente: EvolucionDto[] = [];
   misConsultas: ConsultaDto[]    = [];
   ordenesPaciente: OrdenClinicaDto[] = [];
   ordenesFiltradas   = signal<OrdenClinicaDto[]>([]);
   facturasPaciente: FacturaDto[] = [];
+
+  /** S17: RDA recibidos de otras IPS */
+  rdaRecibidos: RdaRecibidoResumen[] = [];
+  rdaRecibidosLoading = signal(false);
+  rdaDetalleModal = signal<RdaRecibidoDetalle | null>(null);
+  rdaDetalleLoading = signal(false);
   resumen: ReporteResumenDto | null = null;
+  /** Score de riesgo del paciente para cabecera HC (S1). */
+  pacienteRiesgo = signal<PacienteRiesgoDto | null>(null);
 
   /** Se incrementa al cargar consultas/órdenes/facturas del paciente para que los computed de totales se re-ejecuten. */
   private flujoDataVersion = signal(0);
@@ -154,13 +191,33 @@ export class HistoriaClinicaPageComponent implements OnInit {
     { value: 'TODAS', label: 'Todas' },
     { value: 'PRIMERA_VEZ', label: 'Primera vez' },
     { value: 'CONTROL', label: 'Control' },
+    { value: 'SEGUIMIENTO_AGUDO', label: 'Seguimiento agudo' },
     { value: 'URGENCIA', label: 'Urgencia' },
     { value: 'TELECONSULTA', label: 'Teleconsulta' },
+    { value: 'OTRO', label: 'Otro' },
+  ];
+
+  /** Orden lógico de plantillas SOAP (Res. 1995/412 — ver docs/PLANTILLAS-HC-COLOMBIA.md). Las no listadas van al final. */
+  private readonly ORDEN_PLANTILLAS_HC = [
+    'Primera Infancia / Infancia',
+    'Prenatal 1ra vez',
+    'Prenatal Control',
+    'Planificación 1ra vez Mujeres',
+    'Planificación Control Mujeres',
+    'Control Adolescente / Jóven',
+    'Control del Adulto / Vejez',
+    'Urgencias / Hospitalización',
+    'Enf Cardiovasculares 1ra vez',
+    'Anexo 3 - Autorización de servicios de salud',
   ];
 
   /* ── Subir resultado de orden ─────────────────────────────────────── */
   ordenResultadoEditId = signal<number | null>(null);
   resultadoOrdenTexto = '';
+  /** Checkbox "Resultado crítico" al subir resultado (S2). */
+  resultadoCriticoOrden = false;
+  /** ID de orden en proceso de "Marcar como leído" (S2). */
+  marcarLeidoOrdenId = signal<number | null>(null);
   savingResultadoOrden = signal(false);
   descargandoPdfOrdenes = signal(false);
   imprimiendoPdfOrdenes = signal(false);
@@ -173,6 +230,24 @@ export class HistoriaClinicaPageComponent implements OnInit {
   ordenModalId = signal<number | null>(null);
   /** ID de la orden en modo edición (solo órdenes de un solo ítem, no compuestas). */
   ordenEditandoId = signal<number | null>(null);
+  /* S5: Reconciliación medicamentos/alergias */
+  reconciliacionData = signal<ReconciliacionAtencionDto | null>(null);
+  loadingReconciliacion = signal(false);
+  guardandoReconciliacion = signal(false);
+  /** S6: Modal referencia */
+  mostrarModalReferencia = signal(false);
+  referenciaAtencionId = signal<number | null>(null);
+  formRefMotivo = signal('');
+  formRefNivel = signal('');
+  formRefDiagnostico = signal('');
+  formRefTratamiento = signal('');
+  formRefRecomendaciones = signal('');
+  formRefProximaCita = signal('');
+  guardandoReferencia = signal(false);
+  descargandoPhr = signal(false);
+  reconciliacionMedReferidos = '';
+  reconciliacionAlergReferidas = '';
+  reconciliacionObservaciones = '';
   ordenEditandoForm = {
     tipo: '',
     detalle: '',
@@ -202,6 +277,9 @@ export class HistoriaClinicaPageComponent implements OnInit {
     alergias:             '',
   };
 
+  /** Modelo por subárea: bien = checkbox marcado (Normal), texto = valor del input. */
+  examenFisicoAreas: { id: string; label: string; bien: boolean; texto: string }[] = [];
+
   /* Sección O — Objetivo (Signos Vitales) */
   soapO = {
     presionArterial:       '',
@@ -216,6 +294,8 @@ export class HistoriaClinicaPageComponent implements OnInit {
     perimetroAbdominal:    '',
     perimetroCefalico:     '',
     hallazgosExamen:       '',
+    /** Otros hallazgos examen físico (textarea bajo las subáreas). */
+    otrosHallazgosExamen:  '',
   };
 
   /* Sección A — Análisis */
@@ -237,10 +317,113 @@ export class HistoriaClinicaPageComponent implements OnInit {
   /** Lista de códigos CIE-10 frecuentes para datalist (búsqueda asistida). */
   protected readonly cie10Frecuentes = CIE10_FRECUENTES;
 
+  /** S8: Sugerencias CIE-10 desde API (motivo + diagnóstico). */
+  sugerenciasCie10 = signal<Cie10SugerenciaDto[]>([]);
+  loadingCie10 = signal(false);
+  private cie10DebounceRef: ReturnType<typeof setTimeout> | null = null;
+
+  /** S15: Sugerencias GPC por código CIE-10. */
+  sugerenciasGpc = signal<GuiaGpcSugerenciaDto[]>([]);
+  loadingGpc = signal(false);
+  gpcPanelAbierto = signal(false);
+  private gpcDebounceRef: ReturnType<typeof setTimeout> | null = null;
+
+  /** S10: Cuestionario pre-consulta (ePRO) asociado a la consulta del día, si existe. */
+  cuestionarioPreconsulta = signal<CuestionarioPreconsultaDto | null>(null);
+
+  /** S8: Al cambiar motivo o diagnóstico, buscar sugerencias CIE-10 (debounced). */
+  onMotivoODiagnosticoChange(): void {
+    if (this.cie10DebounceRef != null) clearTimeout(this.cie10DebounceRef);
+    this.cie10DebounceRef = setTimeout(() => {
+      this.cie10DebounceRef = null;
+      const motivo = (this.soapS.motivoConsulta ?? '').trim();
+      const texto = (this.soapA.diagnostico ?? '').trim();
+      if (motivo.length < 2 && texto.length < 2) {
+        this.sugerenciasCie10.set([]);
+        return;
+      }
+      this.loadingCie10.set(true);
+      this.cie10Service.sugerirCie10(motivo, texto).subscribe({
+        next: (list) => { this.sugerenciasCie10.set(list ?? []); this.loadingCie10.set(false); },
+        error: () => { this.sugerenciasCie10.set([]); this.loadingCie10.set(false); },
+      });
+    }, 300);
+  }
+
+  /** S8: Al elegir una sugerencia, rellenar código y descripción. */
+  seleccionarSugerenciaCie10(item: Cie10SugerenciaDto): void {
+    this.soapA.codigoCie10 = item.codigo ?? '';
+    this.soapA.diagnostico = item.descripcion ?? '';
+    this.sugerenciasCie10.set([]);
+    this.cargarSugerenciasGpc();
+  }
+
+  /** S10: Cargar cuestionario pre-consulta si la atención de hoy tiene cita con cuestionario. */
+  private _cargarCuestionarioPreconsultaSiHayConsultaHoy(): void {
+    const ch = this.consultaHoy;
+    if (!ch?.id) {
+      this.cuestionarioPreconsulta.set(null);
+      return;
+    }
+    this.consultaService.getCuestionarioPreconsulta(ch.id).subscribe({
+      next: (q) => this.cuestionarioPreconsulta.set(q),
+      error: () => this.cuestionarioPreconsulta.set(null),
+    });
+  }
+
+  /** S10: Usar datos del cuestionario ePRO en la nota SOAP. */
+  usarCuestionarioEnSoap(): void {
+    const q = this.cuestionarioPreconsulta();
+    if (!q) return;
+    if (q.motivoPalabras?.trim()) this.soapS.motivoConsulta = q.motivoPalabras.trim();
+    const partes: string[] = [];
+    if (q.medicamentosActuales?.trim()) partes.push('Medicamentos actuales (referidos por el paciente): ' + q.medicamentosActuales.trim());
+    if (q.alergiasReferidas?.trim()) partes.push('Alergias referidas: ' + q.alergiasReferidas.trim());
+    if (q.dolorEva != null) partes.push('Dolor EVA: ' + q.dolorEva);
+    if (q.ansiedadEva != null) partes.push('Ansiedad EVA: ' + q.ansiedadEva);
+    if (partes.length && !this.soapS.enfermedadActual?.trim())
+      this.soapS.enfermedadActual = partes.join('\n');
+    if (q.alergiasReferidas?.trim() && !this.soapS.alergias?.trim())
+      this.soapS.alergias = q.alergiasReferidas.trim();
+    this.toast.success('Datos del cuestionario aplicados a la nota SOAP.');
+  }
+
   /** Normaliza valor CIE-10 si el usuario eligió "CODE - Descripción" del datalist. */
   onCie10Input(raw: string): void {
     const idx = raw.indexOf(' - ');
     this.soapA.codigoCie10 = (idx >= 0 ? raw.slice(0, idx).trim() : raw).toUpperCase();
+    this.cargarSugerenciasGpc();
+  }
+
+  /** S15: Carga sugerencias GPC por código CIE-10 (debounced) y registra visualización si hay atención. */
+  cargarSugerenciasGpc(): void {
+    if (this.gpcDebounceRef != null) clearTimeout(this.gpcDebounceRef);
+    const codigo = (this.soapA.codigoCie10 ?? '').trim();
+    if (codigo.length < 2) {
+      this.sugerenciasGpc.set([]);
+      return;
+    }
+    this.gpcDebounceRef = setTimeout(() => {
+      this.gpcDebounceRef = null;
+      this.loadingGpc.set(true);
+      this.guiaGpcService.sugerir(codigo).subscribe({
+        next: (list) => {
+          this.sugerenciasGpc.set(list ?? []);
+          this.loadingGpc.set(false);
+          const atencionId = this.atencionesPaciente.length > 0 ? this.atencionesPaciente[0].id : null;
+          if (atencionId != null && (list?.length ?? 0) > 0) {
+            list!.forEach((g) => {
+              this.guiaGpcService.registrarVisualizacion({
+                atencionId,
+                codigoCie10: codigo,
+                guiaId: g.id,
+              }).subscribe({ error: () => {} });
+            });
+          }
+        },
+        error: () => { this.sugerenciasGpc.set([]); this.loadingGpc.set(false); },
+      });
+    }, 400);
   }
 
   soapSectionOpen = signal<'S' | 'O' | 'A' | 'P' | null>('S');
@@ -303,26 +486,111 @@ export class HistoriaClinicaPageComponent implements OnInit {
     habitosDetalles:  '',
   };
 
-  /* ── Catálogos ────────────────────────────────────────────────────── */
-  readonly catalogoLaboratorios = [
-    'Hemograma completo', 'Química sanguínea', 'Perfil lipídico',
-    'Glicemia', 'TSH', 'Parcial de orina', 'PCR / VSG', 'Ferritina',
-    'Creatinina / BUN', 'Electrolitos', 'Pruebas de función hepática',
-  ];
+  /* ── Catálogos (Laboratorio desde CUPS API; Medicamentos lista ampliada) ── */
+  catalogoLaboratorios = signal<CupCatalogoDto[]>([]);
+  loadingLaboratorios = signal(false);
+  filtroLaboratorio = signal('');
 
-  readonly catalogoMedicamentos = [
-    'Acetaminofén 500 mg', 'Ibuprofeno 400 mg', 'Naproxeno 550 mg',
-    'Amoxicilina 500 mg', 'Azitromicina 500 mg', 'Ciprofloxacina 500 mg',
-    'Omeprazol 20 mg', 'Metoclopramida 10 mg', 'Losartán 50 mg',
-    'Enalapril 10 mg', 'Metformina 850 mg', 'Levotiroxina 50 mcg',
-    'Salbutamol inhalador', 'Prednisolona 5 mg', 'Tramadol 50 mg',
-  ];
+  readonly catalogoLaboratoriosFiltrados = computed(() => {
+    const lista = this.catalogoLaboratorios();
+    const q = (this.filtroLaboratorio() || '').trim().toLowerCase();
+    if (!q) return lista;
+    return lista.filter(
+      (c) =>
+        c.codigo.toLowerCase().includes(q) ||
+        (c.descripcion && c.descripcion.toLowerCase().includes(q))
+    );
+  });
+
+  /** Primeros 10 laboratorios para el dropdown. */
+  readonly laboratorioDropdownOpciones = computed(() =>
+    this.catalogoLaboratoriosFiltrados().slice(0, 10)
+  );
+
+  dropdownLabOpen = signal(false);
+
+  filtroMedicamento = signal('');
+
+  /** Dropdown medicamentos: abierto al hacer clic en el campo. */
+  dropdownMedOpen = signal(false);
+
+  /** Medicamentos de uso frecuente (lista ampliada; sin API CUM/INVIMA por ahora). */
+  readonly listaMedicamentos = signal<string[]>([
+    'Acetaminofén 500 mg', 'Acetaminofén 650 mg', 'Ibuprofeno 400 mg', 'Ibuprofeno 600 mg',
+    'Naproxeno 550 mg', 'Dipirona 500 mg', 'Tramadol 50 mg', 'Tramadol + acetaminofén',
+    'Amoxicilina 500 mg', 'Amoxicilina/clavulánico 875/125 mg', 'Azitromicina 500 mg',
+    'Ciprofloxacina 500 mg', 'Cefalexina 500 mg', 'Doxiciclina 100 mg', 'Metronidazol 500 mg',
+    'Omeprazol 20 mg', 'Ranitidina 150 mg', 'Metoclopramida 10 mg', 'Domperidona 10 mg',
+    'Losartán 50 mg', 'Losartán 100 mg', 'Enalapril 10 mg', 'Amlodipino 5 mg', 'Atenolol 50 mg',
+    'Metformina 850 mg', 'Metformina 500 mg', 'Glibenclamida 5 mg', 'Insulina NPH',
+    'Levotiroxina 50 mcg', 'Levotiroxina 100 mcg',
+    'Salbutamol inhalador', 'Salbutamol nebulización', 'Budesonida inhalador',
+    'Prednisolona 5 mg', 'Prednisona 5 mg', 'Dexametasona 4 mg',
+    'Loratadina 10 mg', 'Cetirizina 10 mg', 'Clorfeniramina 4 mg',
+    'Diazepam 10 mg', 'Clonazepam 2 mg', 'Sertralina 50 mg', 'Amitriptilina 25 mg',
+    'Ácido fólico 5 mg', 'Sulfato ferroso 300 mg', 'Vitamina B12', 'Vitamina D',
+    'Ketoprofeno 100 mg', 'Diclofenaco 50 mg', 'Piroxicam 20 mg',
+    'Hidroclorotiazida 25 mg', 'Furosemida 40 mg', 'Espironolactona 25 mg',
+    'Atorvastatina 20 mg', 'Simvastatina 20 mg', 'Rosuvastatina 10 mg',
+    'Gabapentina 300 mg', 'Pregabalina 75 mg', 'Carbamazepina 200 mg',
+    'Paracetamol 500 mg', 'Codeína 30 mg', 'Morfina 10 mg',
+  ]);
+
+  readonly catalogoMedicamentosFiltrados = computed(() => {
+    const q = (this.filtroMedicamento() || '').trim().toLowerCase();
+    const list = this.listaMedicamentos();
+    if (!q) return list;
+    return list.filter((m) => m.toLowerCase().includes(q));
+  });
+
+  /** Primeros 10 medicamentos para el dropdown (con filtro aplicado). */
+  readonly medicamentosDropdownOpciones = computed(() =>
+    this.catalogoMedicamentosFiltrados().slice(0, 10)
+  );
 
   readonly catalogoEspecialidades = [
     'Medicina interna', 'Pediatría', 'Ginecología', 'Cardiología',
     'Neurología', 'Ortopedia', 'Dermatología', 'Psicología',
     'Nutrición', 'Oftalmología', 'Otorrinolaringología',
   ];
+
+  /** Catálogos CUPS para procedimientos e imagenología (desde API). */
+  catalogoProcedimientos = signal<CupCatalogoDto[]>([]);
+  catalogoImagen = signal<CupCatalogoDto[]>([]);
+  filtroProcedimiento = signal('');
+  filtroImagen = signal('');
+  dropdownProcOpen = signal(false);
+  dropdownImgOpen = signal(false);
+
+  readonly catalogoProcedimientosFiltrados = computed(() => {
+    const lista = this.catalogoProcedimientos();
+    const q = (this.filtroProcedimiento() || '').trim().toLowerCase();
+    if (!q) return lista;
+    return lista.filter(
+      (c) =>
+        c.codigo.toLowerCase().includes(q) ||
+        (c.descripcion && c.descripcion.toLowerCase().includes(q))
+    );
+  });
+
+  readonly catalogoImagenFiltrados = computed(() => {
+    const lista = this.catalogoImagen();
+    const q = (this.filtroImagen() || '').trim().toLowerCase();
+    if (!q) return lista;
+    return lista.filter(
+      (c) =>
+        c.codigo.toLowerCase().includes(q) ||
+        (c.descripcion && c.descripcion.toLowerCase().includes(q))
+    );
+  });
+
+  readonly procedimientosDropdownOpciones = computed(() =>
+    this.catalogoProcedimientosFiltrados().slice(0, 10)
+  );
+
+  readonly imagenDropdownOpciones = computed(() =>
+    this.catalogoImagenFiltrados().slice(0, 10)
+  );
 
   readonly gruposSanguineos = ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'];
 
@@ -364,13 +632,50 @@ export class HistoriaClinicaPageComponent implements OnInit {
 
   /* ── Lifecycle ────────────────────────────────────────────────────── */
   ngOnInit(): void {
+    this.inicializarExamenFisicoAreas();
     this.personalService.list(0, 300).subscribe({
       next: (res) => (this.profesionales = res.content ?? []),
       error: () => (this.profesionales = []),
     });
     this.plantillaSoapService.listarActivas().subscribe({
-      next: (list) => (this.plantillasSoap = list ?? []),
+      next: (list) => (this.plantillasSoap = this.ordenarPlantillasSoap(list ?? [])),
       error: () => (this.plantillasSoap = []),
+    });
+
+    this.loadingLaboratorios.set(true);
+    this.cupsCatalogoService.listar().subscribe({
+      next: (list) => {
+        let labs = (list ?? []).filter(
+          (c) => (c.tipoServicio || '').toUpperCase() === 'LABORATORIO'
+        );
+        if (!labs.length) {
+          // Fallback local si el backend aún no tiene catálogo CUPS cargado
+          labs = [
+            { codigo: '903801', descripcion: 'Hemograma completo' } as CupCatalogoDto,
+            { codigo: '903802', descripcion: 'Glicemia' } as CupCatalogoDto,
+            { codigo: '903804', descripcion: 'Perfil lipídico' } as CupCatalogoDto,
+            { codigo: '903806', descripcion: 'Creatinina' } as CupCatalogoDto,
+            { codigo: '903810', descripcion: 'Parcial de orina' } as CupCatalogoDto,
+            { codigo: '903814', descripcion: 'Coagulograma' } as CupCatalogoDto,
+            { codigo: '903824', descripcion: 'Hemoglobina glicada (HbA1c)' } as CupCatalogoDto,
+            { codigo: '903836', descripcion: 'Gasometría arterial' } as CupCatalogoDto,
+            { codigo: '903846', descripcion: 'PSA (antígeno prostático específico)' } as CupCatalogoDto,
+            { codigo: '903916', descripcion: 'Anticuerpos anti-VIH' } as CupCatalogoDto,
+          ];
+        }
+        this.catalogoLaboratorios.set(labs);
+        this.loadingLaboratorios.set(false);
+        const all = list ?? [];
+        const procs = all.filter(
+          (c) => (c.tipoServicio || '').toUpperCase() === 'PROCEDIMIENTO'
+        );
+        const imgs = all.filter(
+          (c) => (c.tipoServicio || '').toUpperCase() === 'IMAGENOLOGIA'
+        );
+        this.catalogoProcedimientos.set(procs);
+        this.catalogoImagen.set(imgs);
+      },
+      error: () => this.loadingLaboratorios.set(false),
     });
 
     this.route.queryParams.subscribe((params) => {
@@ -433,6 +738,7 @@ export class HistoriaClinicaPageComponent implements OnInit {
   private loadPaciente(pacienteId: number): void {
     this.loadingPatient.set(true);
     this.error = null;
+    this.pacienteRiesgo.set(null);
     this.pacienteService.get(pacienteId).subscribe({
       next: (paciente) => {
         this.selectedPatient.set(paciente);
@@ -449,13 +755,20 @@ export class HistoriaClinicaPageComponent implements OnInit {
     this.historiaService.getByPacienteOrNull(pacienteId).subscribe({
       next: (historia) => {
         this.historiaClinica.set(historia ?? null);
-        if (historia) this._populateHcEditForm(historia);
-        this.loadingPatient.set(false);
+        if (historia) {
+          this._populateHcEditForm(historia);
+          this.atencionService.listByHistoria(historia.id, 0, 100).subscribe({
+            next: (page) => { this.atencionesPaciente = page.content ?? []; },
+            error: () => { this.atencionesPaciente = []; },
+          });
+        } else {
+          this.atencionesPaciente = [];
+        }
         this.loadFlujoClinico(pacienteId);
       },
       error: () => {
         this.historiaClinica.set(null);
-        this.loadingPatient.set(false);
+        this.atencionesPaciente = [];
         this.loadFlujoClinico(pacienteId);
       },
     });
@@ -473,6 +786,7 @@ export class HistoriaClinicaPageComponent implements OnInit {
           next: ({ consultas, evoluciones }) => {
             this.consultasPaciente = Array.isArray(consultas) ? consultas : [];
             this.evolucionesPaciente = Array.isArray(evoluciones) ? evoluciones : [];
+            this._cargarCuestionarioPreconsultaSiHayConsultaHoy();
             this.ordenService.listByPaciente(pacienteId).subscribe({
               next: (ordenes) => {
                 this.ordenesPaciente = ordenes ?? [];
@@ -486,6 +800,10 @@ export class HistoriaClinicaPageComponent implements OnInit {
                     this.flujoDataVersion.update((v) => v + 1);
                     this.loadingFlujo.set(false);
                     this.loadingPatient.set(false);
+                    this.reporteService.getRiesgoPaciente(pacienteId).subscribe({
+                      next: (r) => this.pacienteRiesgo.set(r),
+                      error: () => this.pacienteRiesgo.set(null),
+                    });
                   },
                   error: (err: unknown) => this._setLoadError(err, 'Error al cargar facturas'),
                 });
@@ -549,6 +867,9 @@ export class HistoriaClinicaPageComponent implements OnInit {
   /* ── Tabs ─────────────────────────────────────────────────────────── */
   setTab(tab: HistoriaTab): void {
     this.activeTab.set(tab);
+    if (tab === 'rdaOtrasIps' && this.selectedPatient()) {
+      this.loadRdaRecibidos();
+    }
     this.error = null;
     if (tab === 'soap') {
       if (!this.soapS.profesionalId) {
@@ -564,6 +885,40 @@ export class HistoriaClinicaPageComponent implements OnInit {
       if (!this.soapS.antecedentesFamiliares?.trim() && hc.antecedentesFamiliares?.trim())
         this.soapS.antecedentesFamiliares = hc.antecedentesFamiliares;
     }
+  }
+
+  /** S17: Cargar RDA recibidos de otras IPS para el paciente actual. */
+  loadRdaRecibidos(): void {
+    const p = this.selectedPatient();
+    if (!p?.id) return;
+    this.rdaRecibidosLoading.set(true);
+    this.rdaRecibidos = [];
+    this.rdaService.getRdaRecibidosPaciente(p.id).subscribe({
+      next: (list) => {
+        this.rdaRecibidos = list ?? [];
+        this.rdaRecibidosLoading.set(false);
+      },
+      error: () => {
+        this.rdaRecibidos = [];
+        this.rdaRecibidosLoading.set(false);
+      },
+    });
+  }
+
+  /** S17: Abrir detalle de un RDA recibido en modal. */
+  openRdaRecibidoDetalle(id: number): void {
+    this.rdaDetalleLoading.set(true);
+    this.rdaDetalleModal.set(null);
+    this.rdaService.getRdaRecibidoDetalle(id).subscribe({
+      next: (d) => this.rdaDetalleModal.set(d ?? null),
+      error: () => this.rdaDetalleModal.set(null),
+      complete: () => this.rdaDetalleLoading.set(false),
+    });
+  }
+
+  /** S17: Cerrar modal de detalle RDA. */
+  closeRdaDetalle(): void {
+    this.rdaDetalleModal.set(null);
   }
 
   toggleSoapSection(sec: 'S' | 'O' | 'A' | 'P'): void {
@@ -593,9 +948,10 @@ export class HistoriaClinicaPageComponent implements OnInit {
 
   private _crearConsultaReal(): void {
     const signosVitalesTexto = this._buildSignosVitalesTexto();
+    const hallazgosTexto = this._getHallazgosExamenTexto();
     const enfermedadCompleta  = [
       signosVitalesTexto,
-      this.soapO.hallazgosExamen ? `Hallazgos examen físico: ${this.soapO.hallazgosExamen}` : '',
+      hallazgosTexto ? `Hallazgos examen físico: ${hallazgosTexto}` : '',
       this.soapA.diagnostico    ? `Diagnóstico: ${this.soapA.diagnostico}` : '',
       this.soapA.codigoCie10    ? `CIE-10: ${this.soapA.codigoCie10}` : '',
       this.soapP.planTratamiento ? `Plan: ${this.soapP.planTratamiento}` : '',
@@ -630,7 +986,8 @@ export class HistoriaClinicaPageComponent implements OnInit {
       peso:                   this.soapO.peso ? String(this.soapO.peso) : undefined,
       talla:                  this.soapO.talla ? String(this.soapO.talla) : undefined,
       imc:                    this.soapO.imc || undefined,
-      hallazgosExamen:        this.soapO.hallazgosExamen.trim() || undefined,
+      hallazgosExamen:        this._getHallazgosExamenTexto() || undefined,
+      examenFisicoEstructurado: this._buildExamenFisicoEstructuradoJson(),
       planTratamiento:        this.soapP.planTratamiento.trim() || undefined,
       tratamientoFarmacologico: this.soapP.tratamientoFarmacologico.trim() || undefined,
       recomendaciones:        this.soapP.recomendaciones.trim() || undefined,
@@ -647,6 +1004,49 @@ export class HistoriaClinicaPageComponent implements OnInit {
         this.toast.error((err as { error?: { error?: string } })?.error?.error || 'No se pudo guardar la consulta.', 'Error');
       },
     });
+  }
+
+  /** Inicializa o resetea las subáreas del examen físico (bien=false, texto=''). */
+  private inicializarExamenFisicoAreas(): void {
+    this.examenFisicoAreas = AREAS_EXAMEN_FISICO.map((a: { id: string; label: string }) => ({
+      id: a.id,
+      label: a.label,
+      bien: false,
+      texto: '',
+    }));
+  }
+
+  /** Marca/desmarca subárea; si se marca, texto = "Normal". */
+  onExamenFisicoBienChange(area: { bien: boolean; texto: string }): void {
+    if (area.bien) area.texto = 'Normal';
+  }
+
+  /** Marca todas las subáreas del examen físico como bien (Normal). */
+  marcarTodoExamenFisicoNormal(): void {
+    this.examenFisicoAreas.forEach((a) => {
+      a.bien = true;
+      a.texto = 'Normal';
+    });
+  }
+
+  /** Construye el JSON de examen físico estructurado para el backend. */
+  private _buildExamenFisicoEstructuradoJson(): string {
+    const areas = this.examenFisicoAreas.map((a) => ({
+      id: a.id,
+      label: a.label,
+      bien: a.bien,
+      texto: (a.bien ? 'Normal' : a.texto?.trim()) || '',
+    }));
+    return JSON.stringify({ areas, otros: this.soapO.otrosHallazgosExamen?.trim() ?? '' });
+  }
+
+  /** Texto resumen de hallazgos (subáreas + otros) para narrativa y PDF. */
+  private _getHallazgosExamenTexto(): string {
+    const partes = this.examenFisicoAreas
+      .map((a) => (a.bien ? `${a.label}: Normal` : a.texto?.trim() ? `${a.label}: ${a.texto.trim()}` : null))
+      .filter(Boolean) as string[];
+    if (this.soapO.otrosHallazgosExamen?.trim()) partes.push(`Otros: ${this.soapO.otrosHallazgosExamen.trim()}`);
+    return partes.join('. ');
   }
 
   private _buildSignosVitalesTexto(): string {
@@ -676,8 +1076,9 @@ export class HistoriaClinicaPageComponent implements OnInit {
     Object.assign(this.soapO, {
       presionArterial:'', frecuenciaCardiaca:'', frecuenciaRespiratoria:'',
       temperatura:'', saturacionO2:'', peso:'', talla:'', imc:'',
-      dolorEva:'', perimetroAbdominal:'', perimetroCefalico:'', hallazgosExamen:'',
+      dolorEva:'', perimetroAbdominal:'', perimetroCefalico:'', hallazgosExamen:'', otrosHallazgosExamen:'',
     });
+    this.inicializarExamenFisicoAreas();
     Object.assign(this.soapA, { tipoConsulta:'', diagnostico:'', codigoCie10:'', codigoCie10Secundario:'', observaciones:'' });
     Object.assign(this.soapP, { planTratamiento:'', tratamientoFarmacologico:'', recomendaciones:'' });
     this.selectedPlantillaSoapId = null;
@@ -689,7 +1090,7 @@ export class HistoriaClinicaPageComponent implements OnInit {
     if (!plantilla) return;
     if (plantilla.motivoTipo) this.soapS.motivoConsulta = plantilla.nombre;
     if (plantilla.contenidoSubjetivo) this.soapS.enfermedadActual = plantilla.contenidoSubjetivo;
-    if (plantilla.contenidoObjetivo) this.soapO.hallazgosExamen = plantilla.contenidoObjetivo;
+    if (plantilla.contenidoObjetivo) this.soapO.otrosHallazgosExamen = plantilla.contenidoObjetivo;
     if (plantilla.contenidoAnalisis) this.soapA.observaciones = plantilla.contenidoAnalisis;
     if (plantilla.contenidoPlan) this.soapP.planTratamiento = plantilla.contenidoPlan;
     if (plantilla.codigoCie10Sugerido) this.soapA.codigoCie10 = plantilla.codigoCie10Sugerido;
@@ -703,6 +1104,162 @@ export class HistoriaClinicaPageComponent implements OnInit {
     if (id == null) return;
     const p = this.plantillasSoap.find((x) => x.id === id) ?? null;
     this.aplicarPlantillaSoap(p);
+  }
+
+  /** Ordena plantillas según ORDEN_PLANTILLAS_HC (ciclo de vida / tipo consulta). */
+  private ordenarPlantillasSoap(list: PlantillaSoapDto[]): PlantillaSoapDto[] {
+    const order = this.ORDEN_PLANTILLAS_HC;
+    return [...list].sort((a, b) => {
+      const i = order.indexOf(a.nombre);
+      const j = order.indexOf(b.nombre);
+      if (i === -1 && j === -1) return a.nombre.localeCompare(b.nombre);
+      if (i === -1) return 1;
+      if (j === -1) return -1;
+      return i - j;
+    });
+  }
+
+  /* S5: Reconciliación de medicamentos y alergias */
+  get atencionIdParaReconciliacion(): number | null {
+    return this.atencionesPaciente.length > 0 ? this.atencionesPaciente[0].id : null;
+  }
+
+  loadReconciliacion(): void {
+    const id = this.atencionIdParaReconciliacion;
+    if (id == null) return;
+    this.loadingReconciliacion.set(true);
+    this.reconciliacionData.set(null);
+    this.reconciliacionService.getByAtencionId(id).subscribe({
+      next: (d) => {
+        this.reconciliacionData.set(d);
+        this.reconciliacionMedReferidos = (d.medicamentosReferidos ?? []).join('\n');
+        this.reconciliacionAlergReferidas = (d.alergiasReferidas ?? []).join('\n');
+        this.reconciliacionObservaciones = d.observaciones ?? '';
+        this.loadingReconciliacion.set(false);
+      },
+      error: () => {
+        this.loadingReconciliacion.set(false);
+      },
+    });
+  }
+
+  guardarReconciliacion(): void {
+    const id = this.atencionIdParaReconciliacion;
+    if (id == null) return;
+    this.guardandoReconciliacion.set(true);
+    const medRef = this.reconciliacionMedReferidos.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
+    const alerRef = this.reconciliacionAlergReferidas.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
+    this.reconciliacionService.guardar(id, {
+      medicamentosReferidos: medRef,
+      alergiasReferidas: alerRef,
+      observaciones: this.reconciliacionObservaciones.trim() || undefined,
+    }).subscribe({
+      next: (d) => {
+        this.reconciliacionData.set(d);
+        this.guardandoReconciliacion.set(false);
+        this.toast.success('Reconciliación guardada.', 'Reconciliación');
+      },
+      error: () => this.guardandoReconciliacion.set(false),
+    });
+  }
+
+  /** S6: Abrir modal de referencia (usa primera atención si hay varias). */
+  abrirModalReferencia(): void {
+    if (this.atencionesPaciente.length === 0) return;
+    const at = this.atencionesPaciente[0];
+    this.referenciaAtencionId.set(at.id);
+    this.formRefMotivo.set(at.referenciaMotivo ?? '');
+    this.formRefNivel.set(at.referenciaNivel ?? '');
+    this.formRefDiagnostico.set(at.referenciaDiagnostico ?? '');
+    this.formRefTratamiento.set(at.referenciaTratamiento ?? '');
+    this.formRefRecomendaciones.set(at.referenciaRecomendaciones ?? '');
+    this.formRefProximaCita.set(at.referenciaProximaCita ?? '');
+    this.mostrarModalReferencia.set(true);
+  }
+
+  cerrarModalReferencia(): void {
+    this.mostrarModalReferencia.set(false);
+  }
+
+  guardarReferencia(): void {
+    const id = this.referenciaAtencionId();
+    if (id == null) return;
+    this.guardandoReferencia.set(true);
+    const body: AltaReferenciaRequestDto = {
+      motivoReferencia: this.formRefMotivo() || undefined,
+      nivelReferencia: this.formRefNivel() || undefined,
+      diagnostico: this.formRefDiagnostico() || undefined,
+      tratamiento: this.formRefTratamiento() || undefined,
+      recomendaciones: this.formRefRecomendaciones() || undefined,
+      proximaCita: this.formRefProximaCita() || undefined,
+    };
+    this.atencionService.guardarReferencia(id, body).subscribe({
+      next: (updated) => {
+        const idx = this.atencionesPaciente.findIndex((a) => a.id === updated.id);
+        if (idx >= 0) this.atencionesPaciente[idx] = updated;
+        this.guardandoReferencia.set(false);
+        this.toast.success('Referencia guardada. Puede descargar el PDF.', 'Referencia');
+      },
+      error: () => this.guardandoReferencia.set(false),
+    });
+  }
+
+  descargarPdfReferencia(): void {
+    const id = this.referenciaAtencionId();
+    if (id == null) return;
+    this.guardandoReferencia.set(true);
+    this.atencionService.getPdfReferencia(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `referencia-${id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.guardandoReferencia.set(false);
+        this.toast.success('PDF descargado', 'Referencia');
+      },
+      error: () => this.guardandoReferencia.set(false),
+    });
+  }
+
+  /** S7: Descargar PHR (historial portátil) del paciente seleccionado. */
+  descargarPhrPdf(): void {
+    const p = this.selectedPatient();
+    if (!p?.id) return;
+    this.descargandoPhr.set(true);
+    this.portalPacienteService.getPhrPdfByPacienteId(p.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `phr-paciente-${p.id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargandoPhr.set(false);
+        this.toast.success('PDF descargado', 'PHR');
+      },
+      error: () => this.descargandoPhr.set(false),
+    });
+  }
+
+  descargarPhrFhir(): void {
+    const p = this.selectedPatient();
+    if (!p?.id) return;
+    this.descargandoPhr.set(true);
+    this.portalPacienteService.getPhrFhirByPacienteId(p.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `phr-paciente-${p.id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargandoPhr.set(false);
+        this.toast.success('FHIR descargado', 'PHR');
+      },
+      error: () => this.descargandoPhr.set(false),
+    });
   }
 
   /* ── IMC automático ─────────────────────────────────────────────── */
@@ -781,6 +1338,75 @@ export class HistoriaClinicaPageComponent implements OnInit {
     if (item.frecuencia?.trim()) parts.push(item.frecuencia.trim());
     if (item.duracionDias != null) parts.push(`${item.duracionDias} días`);
     return parts.join(' · ');
+  }
+
+  abrirDropdownMed(): void {
+    this.dropdownMedOpen.set(true);
+    this.filtroMedicamento.set('');
+  }
+
+  cerrarDropdownMed(): void {
+    this.dropdownMedOpen.set(false);
+  }
+
+  seleccionarMedicamento(med: string): void {
+    this.ordenForm.plantilla = med;
+    this.aplicarPlantillaOrden();
+    this.cerrarDropdownMed();
+  }
+
+  abrirDropdownLab(): void {
+    this.dropdownLabOpen.set(true);
+    this.filtroLaboratorio.set('');
+  }
+
+  cerrarDropdownLab(): void {
+    this.dropdownLabOpen.set(false);
+  }
+
+  seleccionarLaboratorio(lab: CupCatalogoDto): void {
+    this.ordenForm.plantilla = lab.codigo + ' – ' + lab.descripcion;
+    this.aplicarPlantillaOrden();
+    this.cerrarDropdownLab();
+  }
+
+  abrirDropdownProc(): void {
+    this.dropdownProcOpen.set(true);
+    this.filtroProcedimiento.set('');
+  }
+
+  cerrarDropdownProc(): void {
+    this.dropdownProcOpen.set(false);
+  }
+
+  seleccionarProcedimiento(c: CupCatalogoDto): void {
+    this.ordenForm.plantilla = c.codigo + ' – ' + c.descripcion;
+    this.aplicarPlantillaOrden();
+    this.cerrarDropdownProc();
+  }
+
+  abrirDropdownImg(): void {
+    this.dropdownImgOpen.set(true);
+    this.filtroImagen.set('');
+  }
+
+  cerrarDropdownImg(): void {
+    this.dropdownImgOpen.set(false);
+  }
+
+  seleccionarImagen(c: CupCatalogoDto): void {
+    this.ordenForm.plantilla = c.codigo + ' – ' + c.descripcion;
+    this.aplicarPlantillaOrden();
+    this.cerrarDropdownImg();
+  }
+
+  /** Extrae el código CUPS de ordenForm.plantilla cuando tiene formato "codigo – descripcion". */
+  get ordenPlantillaCodigoCups(): string | null {
+    const p = this.ordenForm.plantilla;
+    if (!p || typeof p !== 'string') return null;
+    const idx = p.indexOf(' – ');
+    if (idx === -1) return null;
+    return p.slice(0, idx).trim() || null;
   }
 
   aplicarPlantillaOrden(): void {
@@ -965,6 +1591,12 @@ export class HistoriaClinicaPageComponent implements OnInit {
     this.ordenForm.frecuencia = '';
     this.ordenForm.duracionDias = null;
     this.ordenForm.valorEstimado = '';
+  }
+
+  /** Al elegir una orden para facturar, prellenar valor total desde la orden. */
+  onOrdenFacturaChange(ordenId: number | null): void {
+    const ord = this.ordenesPaciente.find((o) => o.id === ordenId);
+    if (ord?.valorEstimado != null) this.facturaForm.valorTotal = String(ord.valorEstimado);
   }
 
   /* ── Factura ─────────────────────────────────────────────────────── */
@@ -1157,11 +1789,13 @@ export class HistoriaClinicaPageComponent implements OnInit {
     this.ordenDetalleAbiertoId.set(orden.id);
     this.ordenResultadoEditId.set(orden.id);
     this.resultadoOrdenTexto = orden.resultado ?? '';
+    this.resultadoCriticoOrden = orden.resultadoCritico ?? false;
   }
 
   cancelarSubirResultado(): void {
     this.ordenResultadoEditId.set(null);
     this.resultadoOrdenTexto = '';
+    this.resultadoCriticoOrden = false;
   }
 
   /** Alterna la vista detallada de la orden (ver ítems). */
@@ -1254,11 +1888,12 @@ export class HistoriaClinicaPageComponent implements OnInit {
       return;
     }
     this.savingResultadoOrden.set(true);
-    this.ordenService.registrarResultado(id, this.resultadoOrdenTexto.trim()).subscribe({
+    this.ordenService.registrarResultado(id, this.resultadoOrdenTexto.trim(), this.resultadoCriticoOrden).subscribe({
       next: () => {
         this.savingResultadoOrden.set(false);
         this.ordenResultadoEditId.set(null);
         this.resultadoOrdenTexto = '';
+        this.resultadoCriticoOrden = false;
         this.toast.success('Resultado registrado. Orden marcada como completada.', 'Orden actualizada');
         const pid = this.selectedPatient()?.id;
         if (pid) this.loadFlujoClinico(pid);
@@ -1266,6 +1901,24 @@ export class HistoriaClinicaPageComponent implements OnInit {
       error: (err) => {
         this.savingResultadoOrden.set(false);
         this.toast.error((err as { error?: { message?: string } })?.error?.message ?? 'No se pudo guardar el resultado.', 'Error');
+      },
+    });
+  }
+
+  /** S2: Marca el resultado crítico de la orden como leído por el usuario actual. */
+  marcarResultadoCriticoLeido(orden: OrdenClinicaDto): void {
+    if (!orden?.id || orden.leidoPorUsuarioActual) return;
+    this.marcarLeidoOrdenId.set(orden.id);
+    this.ordenService.marcarResultadoLeido(orden.id).subscribe({
+      next: () => {
+        this.marcarLeidoOrdenId.set(null);
+        this.toast.success('Resultado crítico marcado como leído.', 'Lectura registrada');
+        const pid = this.selectedPatient()?.id;
+        if (pid) this.loadFlujoClinico(pid);
+      },
+      error: (err) => {
+        this.marcarLeidoOrdenId.set(null);
+        this.toast.error((err as { error?: { error?: string } })?.error?.error ?? 'No se pudo registrar la lectura.', 'Error');
       },
     });
   }
@@ -1529,6 +2182,18 @@ export class HistoriaClinicaPageComponent implements OnInit {
     if (tab === 'soap' && section) this.soapSectionOpen.set(section);
   }
 
+  /** CTA del flujo: ir a antecedentes y dejar visible la navegación principal. */
+  goToAntecedentesFromFlow(): void {
+    this.setTab('historia');
+    this.scrollToTabs();
+  }
+
+  /** CTA del flujo: abrir SOAP en sección S como checklist guiado. */
+  goToSoapChecklistFromFlow(): void {
+    this.setTabAndSoapSection('soap', 'S');
+    this.scrollToTabs();
+  }
+
   /** Órdenes sin resultado registrado (continuidad — Res. 1995/1999). */
   get ordenesPendientesResultadoCount(): number {
     return this.ordenesPaciente.filter((o) => !(o.resultado?.trim())).length;
@@ -1660,6 +2325,16 @@ export class HistoriaClinicaPageComponent implements OnInit {
       }
       this.imprimiendoPdfEvolucion.set(false);
     });
+  }
+
+  private scrollToTabs(): void {
+    if (typeof document === 'undefined') return;
+    setTimeout(() => {
+      const el = document.querySelector('.hc-tabs-wrap');
+      if (el instanceof HTMLElement) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
   }
 
   private toSesaHistoria(h: HistoriaClinicaDto): SesaPdfHistoriaClinica {

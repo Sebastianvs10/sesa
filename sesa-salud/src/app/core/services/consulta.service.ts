@@ -17,7 +17,6 @@ export interface ConsultaDto {
   antecedentesFamiliares?: string;
   alergias?: string;
   fechaConsulta?: string;
-  // Campos normativos
   tipoConsulta?: string;
   codigoCie10?: string;
   codigoCie10Secundario?: string;
@@ -33,11 +32,26 @@ export interface ConsultaDto {
   talla?: string;
   imc?: string;
   hallazgosExamen?: string;
+  /** JSON: examen físico por subáreas (areas[].id, bien, texto; otros). */
+  examenFisicoEstructurado?: string;
   diagnostico?: string;
   planTratamiento?: string;
   tratamientoFarmacologico?: string;
   observacionesClincias?: string;
   recomendaciones?: string;
+}
+
+export interface CuestionarioPreconsultaDto {
+  id: number;
+  citaId: number;
+  pacienteId: number;
+  motivoPalabras?: string;
+  dolorEva?: number;
+  ansiedadEva?: number;
+  medicamentosActuales?: string;
+  alergiasReferidas?: string;
+  enviadoAt?: string;
+  createdAt?: string;
 }
 
 export interface ConsultaRequestDto {
@@ -65,6 +79,8 @@ export interface ConsultaRequestDto {
   talla?: string;
   imc?: string;
   hallazgosExamen?: string;
+  /** JSON: examen físico por subáreas (areas[].id, bien, texto; otros). */
+  examenFisicoEstructurado?: string;
   diagnostico?: string;
   planTratamiento?: string;
   tratamientoFarmacologico?: string;
@@ -89,5 +105,10 @@ export class ConsultaService {
 
   create(request: ConsultaRequestDto): Observable<ConsultaDto> {
     return this.http.post<ConsultaDto>(this.apiUrl, request);
+  }
+
+  /** S10: Cuestionario pre-consulta (ePRO) asociado a esta consulta. */
+  getCuestionarioPreconsulta(consultaId: number): Observable<CuestionarioPreconsultaDto> {
+    return this.http.get<CuestionarioPreconsultaDto>(`${this.apiUrl}/${consultaId}/cuestionario-preconsulta`);
   }
 }

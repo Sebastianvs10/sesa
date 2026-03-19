@@ -20,5 +20,7 @@ public interface OrdenClinicaService {
     OrdenClinicaDto createBatch(OrdenClinicaBatchRequestDto batch);
     OrdenClinicaDto update(Long id, OrdenClinicaRequestDto dto);
     OrdenClinicaDto registrarResultado(Long id, ResultadoOrdenDto dto);
+    /** S2: Registra que el usuario actual leyó el resultado crítico de la orden. */
+    void marcarResultadoLeido(Long id);
     void deleteById(Long id);
 }

@@ -45,6 +45,7 @@ public class PermissionServiceImpl implements PermissionService {
         Map.entry(RoleConstants.PSICOLOGO,           "Psicólogo"),
         Map.entry(RoleConstants.REGENTE_FARMACIA,    "Regente de Farmacia"),
         Map.entry(RoleConstants.RECEPCIONISTA,       "Recepcionista"),
+        Map.entry(RoleConstants.FACTURACION,         "Facturación"),
         Map.entry(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico"),
         Map.entry(RoleConstants.EBS,                  "Profesional EBS"),
         Map.entry(RoleConstants.COORDINADOR_TERRITORIAL, "Coordinador Territorial"),
@@ -289,6 +290,19 @@ public class PermissionServiceImpl implements PermissionService {
         recepcionista.put(RoleConstants.Modulo.FACTURACION,  Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.FACTURAR));
         recepcionista.put(RoleConstants.Modulo.URGENCIAS,    Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR));
         m.put(RoleConstants.RECEPCIONISTA, recepcionista);
+
+        // FACTURACION: Facturación, HC, Laboratorios y todos los módulos que requieran facturación
+        Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> facturacion = new HashMap<>();
+        facturacion.put(RoleConstants.Modulo.DASHBOARD,        Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.PACIENTES,        Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.HISTORIA_CLINICA, Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.LABORATORIOS,     Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.IMAGENES,        Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.FACTURACION,      Set.of(RoleConstants.Accion.VER, RoleConstants.Accion.CREAR, RoleConstants.Accion.EDITAR, RoleConstants.Accion.FACTURAR));
+        facturacion.put(RoleConstants.Modulo.CITAS,           Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.REPORTES,         Set.of(RoleConstants.Accion.VER));
+        facturacion.put(RoleConstants.Modulo.FARMACIA,        Set.of(RoleConstants.Accion.VER));
+        m.put(RoleConstants.FACTURACION, facturacion);
 
         // EBS: Profesional EBS — módulo EBS + pacientes, historia, consulta, citas para visitas domiciliarias
         Map<RoleConstants.Modulo, Set<RoleConstants.Accion>> ebs = new HashMap<>();

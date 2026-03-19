@@ -279,6 +279,21 @@ public class UrgenciaRegistroServiceImpl implements UrgenciaRegistroService {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public UrgenciaRegistroDto darAlta(Long id, AltaReferenciaRequestDto request) {
+        UrgenciaRegistro u = urgenciaRegistroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de urgencia no encontrado: " + id));
+        u.setEstado("ALTA");
+        if (request != null) {
+            u.setAltaDiagnostico(request.getDiagnostico());
+            u.setAltaTratamiento(request.getTratamiento());
+            u.setAltaRecomendaciones(request.getRecomendaciones());
+            u.setAltaProximaCita(request.getProximaCita());
+        }
+        return toDto(urgenciaRegistroRepository.save(u));
+    }
+
     private UrgenciaRegistroDto toDto(UrgenciaRegistro u) {
         String pacienteNombre = u.getPaciente().getNombres() + " " +
                 (u.getPaciente().getApellidos() != null ? u.getPaciente().getApellidos() : "");
@@ -310,6 +325,10 @@ public class UrgenciaRegistroServiceImpl implements UrgenciaRegistroService {
                 .glasgowOcular(u.getGlasgowOcular())
                 .glasgowVerbal(u.getGlasgowVerbal())
                 .glasgowMotor(u.getGlasgowMotor())
+                .altaDiagnostico(u.getAltaDiagnostico())
+                .altaTratamiento(u.getAltaTratamiento())
+                .altaRecomendaciones(u.getAltaRecomendaciones())
+                .altaProximaCita(u.getAltaProximaCita())
                 .build();
     }
 }

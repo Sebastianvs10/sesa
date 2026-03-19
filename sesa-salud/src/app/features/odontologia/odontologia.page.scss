@@ -608,6 +608,79 @@ $transition: all 0.2s ease;
   padding: 20px;
 }
 
+.odontograma-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.odontograma-sidepanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 12px;
+}
+
+.odonto-kpi-card {
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  border-radius: $radius-sm;
+  padding: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sesa-text-primary);
+  }
+}
+
+.odonto-kpi-sub {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  color: var(--sesa-text-secondary);
+}
+
+.odonto-kpi-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--sesa-border);
+  }
+
+  span {
+    font-size: 0.74rem;
+    color: var(--sesa-text-secondary);
+  }
+
+  strong {
+    font-size: 0.8rem;
+    color: var(--sesa-text-primary);
+  }
+}
+
+.odonto-kpi-guide {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    color: var(--sesa-text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+}
+
 // ── HISTORIA CLÍNICA ──────────────────────────────────────────────────
 
 .historia-grid {
@@ -1625,6 +1698,8 @@ $transition: all 0.2s ease;
   .historia-grid { grid-template-columns: 1fr; }
   .imagenes-galeria { grid-template-columns: repeat(2, 1fr); }
   .forma-row { flex-direction: column; }
+  .odontograma-workspace { grid-template-columns: 1fr; }
+  .odontograma-sidepanel { position: static; }
 }
 
 // ── Nuevos campos normativos Odontología ──────────────────────────────

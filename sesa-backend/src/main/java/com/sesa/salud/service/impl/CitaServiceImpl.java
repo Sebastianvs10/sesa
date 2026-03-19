@@ -28,6 +28,7 @@ import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -177,6 +178,55 @@ public class CitaServiceImpl implements CitaService {
         c.setMotivoCancelacion(motivo);
         c = citaRepository.save(c);
         return toDto(c);
+    }
+
+    @Override
+    @Transactional
+    public String generarTokenConfirmacion(Long citaId) {
+        Cita c = citaRepository.findById(citaId)
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada: " + citaId));
+        if (c.getTokenConfirmacion() != null && !c.getTokenConfirmacion().isBlank()) {
+            return c.getTokenConfirmacion();
+        }
+        String token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        c.setTokenConfirmacion(token);
+        citaRepository.save(c);
+        return token;
+    }
+
+    @Override
+    @Transactional
+    public String confirmarCitaPorToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token inválido o vacío");
+        }
+        Cita c = citaRepository.findByTokenConfirmacion(token.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Enlace no válido o ya utilizado"));
+        if (!"AGENDADA".equalsIgnoreCase(c.getEstado())) {
+            throw new IllegalStateException("Esta cita ya no está pendiente de confirmación (estado: " + c.getEstado() + ")");
+        }
+        c.setEstado("CONFIRMADA");
+        c.setConfirmadoAt(java.time.Instant.now());
+        citaRepository.save(c);
+        return "Cita confirmada correctamente. Te esperamos el " + c.getFechaHora().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm")) + ".";
+    }
+
+    @Override
+    @Transactional
+    public String cancelarCitaPorToken(String token, String motivo) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token inválido o vacío");
+        }
+        Cita c = citaRepository.findByTokenConfirmacion(token.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Enlace no válido o ya utilizado"));
+        if (!"AGENDADA".equalsIgnoreCase(c.getEstado()) && !"CONFIRMADA".equalsIgnoreCase(c.getEstado())) {
+            throw new IllegalStateException("Esta cita no puede cancelarse por enlace (estado: " + c.getEstado() + ")");
+        }
+        c.setEstado("CANCELADA");
+        c.setMotivoCancelacion(motivo != null ? motivo.trim() : "Cancelado por el paciente desde el enlace");
+        c.setCanceladoDesdeEnlaceAt(java.time.Instant.now());
+        citaRepository.save(c);
+        return "Cita cancelada correctamente. Si deseas reagendar, contacta a la institución.";
     }
 
     @Override

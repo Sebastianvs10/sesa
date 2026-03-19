@@ -36,7 +36,7 @@ export class ConnectionService implements OnDestroy {
   /**
    * Heartbeat apunta a /actuator/health dentro del context-path del backend.
    * Como el backend usa server.servlet.context-path=/api, el endpoint real es
-   * <apiUrl>/actuator/health (p. ej. http://localhost:8081/api/actuator/health).
+   * <apiUrl>/actuator/health (p. ej. http://localhost:8000/api/actuator/health).
    */
   private heartbeatUrl = environment.apiUrl.replace(/\/?$/, '') + '/actuator/health';
   /** Intervalo entre comprobaciones (evita marcar inestable por un fallo puntual) */

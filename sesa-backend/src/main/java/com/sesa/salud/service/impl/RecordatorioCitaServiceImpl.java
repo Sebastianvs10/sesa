@@ -14,9 +14,11 @@ import com.sesa.salud.repository.CitaRepository;
 import com.sesa.salud.repository.NotificacionDestinatarioRepository;
 import com.sesa.salud.repository.NotificacionRepository;
 import com.sesa.salud.repository.UsuarioRepository;
+import com.sesa.salud.service.CitaService;
 import com.sesa.salud.service.RecordatorioCitaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,10 @@ public class RecordatorioCitaServiceImpl implements RecordatorioCitaService {
     private final NotificacionRepository notificacionRepository;
     private final NotificacionDestinatarioRepository destinatarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CitaService citaService;
+
+    @Value("${sesa.frontend-url:http://localhost:4200}")
+    private String frontendUrl;
 
     @Override
     @Transactional
@@ -80,6 +86,11 @@ public class RecordatorioCitaServiceImpl implements RecordatorioCitaService {
     }
 
     private boolean enviarRecordatorio(Cita cita, String ventana, String titulo, String contenido) {
+        String token = citaService.generarTokenConfirmacion(cita.getId());
+        String urlConfirmar = frontendUrl + "/cita/confirmar?t=" + token;
+        String urlCancelar = frontendUrl + "/cita/cancelar?t=" + token;
+        String contenidoConEnlaces = contenido + "\n\nConfirmar asistencia: " + urlConfirmar + "\nCancelar o reagendar: " + urlCancelar;
+
         Paciente paciente = cita.getPaciente();
         Long usuarioId = paciente.getUsuarioId();
         if (usuarioId == null) {
@@ -92,7 +103,7 @@ public class RecordatorioCitaServiceImpl implements RecordatorioCitaService {
         }
         Notificacion notif = Notificacion.builder()
                 .titulo(titulo)
-                .contenido(contenido)
+                .contenido(contenidoConEnlaces)
                 .tipo("RECORDATORIO_CITA")
                 .remitenteId(REMITENTE_SISTEMA)
                 .remitenteNombre(REMITENTE_NOMBRE)

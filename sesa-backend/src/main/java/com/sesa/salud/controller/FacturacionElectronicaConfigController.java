@@ -20,7 +20,7 @@ public class FacturacionElectronicaConfigController {
 
     /** Obtiene la configuración actual (o crea una por defecto si no existe). */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','FACTURACION','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACTURACION','RECEPCIONISTA','SUPERADMINISTRADOR')")
     public ResponseEntity<FacturacionElectronicaConfigDto> get() {
         return ResponseEntity.ok(service.getOrCreate());
     }

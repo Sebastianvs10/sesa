@@ -258,9 +258,9 @@
     }
 
     <!-- Cambios pendientes -->
-    @if (cambiosPendientes().length > 0) {
+    @if (cambiosPendientesCount() > 0) {
     <div class="cambios-badge">
-      <span>{{ cambiosPendientes().length }} cambio(s) sin guardar</span>
+      <span>{{ cambiosPendientesCount() }} cambio(s) sin guardar</span>
     </div>
     }
 
@@ -322,15 +322,48 @@
   <section class="ficha-section">
     <div class="section-header">
       <h2 class="section-title"><fa-icon [icon]="faTooth"></fa-icon> Odontograma Interactivo</h2>
-      <button class="btn-primary" (click)="guardarOdontograma()" [disabled]="cambiosPendientes().length === 0">
+      <button class="btn-primary" (click)="guardarOdontograma()" [disabled]="cambiosPendientesCount() === 0">
         <fa-icon [icon]="faSave"></fa-icon>
-        Guardar cambios ({{ cambiosPendientes().length }})
+        Guardar cambios ({{ cambiosPendientesCount() }})
       </button>
     </div>
-    <app-odontograma
-      [piezas]="piezasDentales()"
-      (cambio)="onOdontogramaCambio($event)"
-    ></app-odontograma>
+    <div class="odontograma-workspace">
+      <div class="odontograma-main">
+        <app-odontograma
+          [piezas]="piezasDentales()"
+          (cambio)="onOdontogramaCambio($event)"
+        ></app-odontograma>
+      </div>
+      <aside class="odontograma-sidepanel">
+        <article class="odonto-kpi-card">
+          <h3>Estado operativo</h3>
+          <p class="odonto-kpi-sub">Control rápido del flujo clínico durante atención.</p>
+          <div class="odonto-kpi-list">
+            <div>
+              <span>Cambios pendientes</span>
+              <strong>{{ cambiosPendientesCount() }}</strong>
+            </div>
+            <div>
+              <span>Consulta activa</span>
+              <strong>{{ consultaActiva()?.id ? 'Sí' : 'No' }}</strong>
+            </div>
+            <div>
+              <span>Último guardado</span>
+              <strong>{{ formatFechaHoraCorta(ultimoGuardadoOdontograma()) }}</strong>
+            </div>
+          </div>
+        </article>
+        <article class="odonto-kpi-card">
+          <h3>Guía rápida</h3>
+          <ul class="odonto-kpi-guide">
+            <li>Selecciona condición clínica en la barra superior.</li>
+            <li>Haz clic en una superficie para aplicarla.</li>
+            <li>Usa snapshots para comparar evolución del caso.</li>
+            <li>Guarda siempre con consulta activa para trazabilidad.</li>
+          </ul>
+        </article>
+      </aside>
+    </div>
   </section>
   }
 

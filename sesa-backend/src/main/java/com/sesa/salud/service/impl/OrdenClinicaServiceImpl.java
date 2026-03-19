@@ -12,10 +12,13 @@ import com.sesa.salud.entity.Consulta;
 import com.sesa.salud.entity.OrdenClinica;
 import com.sesa.salud.entity.OrdenClinicaItem;
 import com.sesa.salud.entity.Paciente;
+import com.sesa.salud.entity.Personal;
+import com.sesa.salud.entity.ResultadoCriticoLectura;
 import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.repository.PersonalRepository;
+import com.sesa.salud.repository.ResultadoCriticoLecturaRepository;
 import com.sesa.salud.security.JwtPrincipal;
 import com.sesa.salud.service.OrdenClinicaService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +42,7 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
     private final PacienteRepository pacienteRepository;
     private final ConsultaRepository consultaRepository;
     private final PersonalRepository personalRepository;
+    private final ResultadoCriticoLecturaRepository resultadoCriticoLecturaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -144,11 +149,38 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
         orden.setResultado(dto.getResultado());
         orden.setFechaResultado(Instant.now());
         orden.setEstado("COMPLETADO");
+        orden.setResultadoCritico(Boolean.TRUE.equals(dto.getResultadoCritico()));
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof JwtPrincipal principal) {
             personalRepository.findByUsuario_Id(principal.userId()).ifPresent(orden::setResultadoRegistradoPor);
         }
         return toDto(ordenClinicaRepository.save(orden));
+    }
+
+    @Override
+    @Transactional
+    public void marcarResultadoLeido(Long id) {
+        OrdenClinica orden = ordenClinicaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Orden clínica no encontrada: " + id));
+        if (!Boolean.TRUE.equals(orden.getResultadoCritico())) {
+            return;
+        }
+        java.util.Optional<Long> personalIdOpt = getCurrentPersonalId();
+        if (personalIdOpt.isEmpty()) {
+            throw new RuntimeException("Usuario sin personal asociado para registrar lectura");
+        }
+        Long personalId = personalIdOpt.get();
+        if (resultadoCriticoLecturaRepository.existsByOrdenClinica_IdAndPersonal_Id(id, personalId)) {
+            return;
+        }
+        Personal personal = personalRepository.findById(personalId)
+                .orElseThrow(() -> new RuntimeException("Personal no encontrado: " + personalId));
+        ResultadoCriticoLectura lectura = ResultadoCriticoLectura.builder()
+                .ordenClinica(orden)
+                .personal(personal)
+                .leidoAt(Instant.now())
+                .build();
+        resultadoCriticoLecturaRepository.save(lectura);
     }
 
     @Override
@@ -197,6 +229,13 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                     .valorEstimado(o.getValorEstimado())
                     .build());
         }
+        Boolean resultadoCritico = o.getResultadoCritico() != null && o.getResultadoCritico();
+        Boolean leidoPorUsuarioActual = false;
+        if (resultadoCritico) {
+            Optional<Long> personalId = getCurrentPersonalId();
+            leidoPorUsuarioActual = personalId.isPresent()
+                    && resultadoCriticoLecturaRepository.existsByOrdenClinica_IdAndPersonal_Id(o.getId(), personalId.get());
+        }
         return OrdenClinicaDto.builder()
                 .id(o.getId())
                 .pacienteId(o.getPaciente().getId())
@@ -216,6 +255,16 @@ public class OrdenClinicaServiceImpl implements OrdenClinicaService {
                 .valorEstimado(o.getValorEstimado())
                 .createdAt(o.getCreatedAt())
                 .items(itemsDto)
+                .resultadoCritico(resultadoCritico)
+                .leidoPorUsuarioActual(leidoPorUsuarioActual)
                 .build();
+    }
+
+    private Optional<Long> getCurrentPersonalId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof JwtPrincipal principal)) {
+            return Optional.empty();
+        }
+        return personalRepository.findByUsuario_Id(principal.userId()).map(Personal::getId);
     }
 }

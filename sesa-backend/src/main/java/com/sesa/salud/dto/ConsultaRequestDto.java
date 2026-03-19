@@ -39,6 +39,8 @@ public class ConsultaRequestDto {
     private String talla;
     private String imc;
     private String hallazgosExamen;
+    /** JSON: examen físico por subáreas (areas[].id, bien, texto; otros). */
+    private String examenFisicoEstructurado;
     private String diagnostico;
     private String planTratamiento;
     private String tratamientoFarmacologico;

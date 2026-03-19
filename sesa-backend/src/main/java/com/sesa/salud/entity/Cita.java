@@ -66,6 +66,16 @@ public class Cita {
     @Column(name = "recordatorio_1h_enviado_at")
     private Instant recordatorio1hEnviadoAt;
 
+    /** S3: Token único para confirmar/cancelar cita por enlace (sin login). */
+    @Column(name = "token_confirmacion", length = 64, unique = true)
+    private String tokenConfirmacion;
+
+    @Column(name = "confirmado_at")
+    private Instant confirmadoAt;
+
+    @Column(name = "cancelado_desde_enlace_at")
+    private Instant canceladoDesdeEnlaceAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

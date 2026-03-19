@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -89,6 +90,16 @@ public class GlobalExceptionHandler {
         body.put(MESSAGE_KEY, e.getMessage() != null ? e.getMessage() : "Revise los datos enviados");
         body.put(STATUS_KEY, HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException e) {
+        log.debug("Recurso no encontrado: {}", e.getResourcePath());
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Recurso no encontrado");
+        body.put(MESSAGE_KEY, "La ruta solicitada no existe");
+        body.put(STATUS_KEY, HttpStatus.NOT_FOUND.value());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
     @ExceptionHandler(RuntimeException.class)

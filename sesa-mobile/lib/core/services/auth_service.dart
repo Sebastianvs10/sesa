@@ -40,7 +40,7 @@ class AuthService {
       }
       throw AuthException(
         'No se pudo conectar al servidor ($e).\n'
-        'Verifica que el backend esté corriendo en el puerto 8081 '
+        'Verifica que el backend esté corriendo en el puerto 8000 '
         'y que la IP en api_constants.dart sea correcta.',
       );
     }

@@ -4,12 +4,13 @@
 
 package com.sesa.salud.service.impl;
 
+import com.sesa.salud.dto.ConsultaDocumentoDto;
 import com.sesa.salud.dto.PacienteDto;
 import com.sesa.salud.dto.PacienteRequestDto;
-import com.sesa.salud.entity.Eps;
 import com.sesa.salud.entity.Paciente;
 import com.sesa.salud.repository.EpsRepository;
 import com.sesa.salud.repository.PacienteRepository;
+import com.sesa.salud.service.AdresConsultaService;
 import com.sesa.salud.service.PacienteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,12 +18,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class PacienteServiceImpl implements PacienteService {
 
     private final PacienteRepository pacienteRepository;
     private final EpsRepository epsRepository;
+    private final AdresConsultaService adresConsultaService;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ConsultaDocumentoDto> consultaPorDocumento(String tipoDocumento, String documento) {
+        return adresConsultaService.consultarPorDocumento(tipoDocumento, documento);
+    }
 
     @Override
     @Transactional(readOnly = true)

@@ -23,6 +23,10 @@ export interface OrdenClinicaDto {
   createdAt?: string;
   /** Ítems de la orden (varios en una sola orden). */
   items?: OrdenClinicaItemDto[];
+  /** S2: Si el resultado fue marcado como crítico. */
+  resultadoCritico?: boolean;
+  /** S2: Si el usuario actual ya leyó el resultado crítico. */
+  leidoPorUsuarioActual?: boolean;
 }
 
 export interface OrdenClinicaRequestDto {
@@ -78,7 +82,15 @@ export class OrdenClinicaService {
     return this.http.put<OrdenClinicaDto>(`${this.apiUrl}/${id}`, request);
   }
 
-  registrarResultado(ordenId: number, resultado: string): Observable<OrdenClinicaDto> {
-    return this.http.patch<OrdenClinicaDto>(`${this.apiUrl}/${ordenId}/resultado`, { resultado });
+  registrarResultado(ordenId: number, resultado: string, resultadoCritico?: boolean): Observable<OrdenClinicaDto> {
+    return this.http.patch<OrdenClinicaDto>(`${this.apiUrl}/${ordenId}/resultado`, {
+      resultado,
+      resultadoCritico: resultadoCritico ?? false,
+    });
+  }
+
+  /** S2: Marca el resultado crítico de la orden como leído por el usuario actual. */
+  marcarResultadoLeido(ordenId: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${ordenId}/marcar-resultado-leido`, null);
   }
 }

@@ -17,4 +17,6 @@ import lombok.NoArgsConstructor;
 public class ResultadoOrdenDto {
     @NotBlank(message = "El resultado es obligatorio")
     private String resultado;
+    /** Si true, la orden se marca como resultado crítico (alertas y trazabilidad de lectura). */
+    private Boolean resultadoCritico;
 }

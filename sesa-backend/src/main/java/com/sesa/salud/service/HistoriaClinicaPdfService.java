@@ -12,6 +12,8 @@ import com.sesa.salud.repository.ConsultaRepository;
 import com.sesa.salud.repository.HistoriaClinicaRepository;
 import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
+import com.sesa.salud.repository.AtencionRepository;
+import com.sesa.salud.repository.UrgenciaRegistroRepository;
 import com.sesa.salud.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,8 @@ public class HistoriaClinicaPdfService {
     private final ConsultaRepository consultaRepository;
     private final OrdenClinicaRepository ordenClinicaRepository;
     private final PacienteRepository pacienteRepository;
+    private final UrgenciaRegistroRepository urgenciaRegistroRepository;
+    private final AtencionRepository atencionRepository;
     private final EmpresaService empresaService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -113,6 +117,88 @@ public class HistoriaClinicaPdfService {
         OrdenesPacientePdfDto dto = buildOrdenIndividualDto(ordenId);
         String template = templateOrdenIndividualPorTipo(dto);
         String html = TEMPLATE_ENGINE.process(template, buildOrdenesContext(dto));
+        return htmlToPdf(html);
+    }
+
+    /** PDF de resumen de alta de urgencias (S6). */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfAltaUrgencia(Long urgenciaRegistroId) {
+        UrgenciaRegistro u = urgenciaRegistroRepository.findById(urgenciaRegistroId)
+                .orElseThrow(() -> new RuntimeException("Registro de urgencia no encontrado: " + urgenciaRegistroId));
+        Paciente p = u.getPaciente();
+        if (p == null) throw new RuntimeException("Urgencia sin paciente asociado");
+        EmpresaDto empresa = loadEmpresa();
+        String logoBase64 = null;
+        String logoContentType = null;
+        try {
+            var logoOpt = empresaService.getLogoResource(TenantContextHolder.getTenantSchema());
+            if (logoOpt.isPresent()) {
+                byte[] logoBytes = logoOpt.get().getResource().getContentAsByteArray();
+                logoBase64 = Base64.getEncoder().encodeToString(logoBytes);
+                logoContentType = logoOpt.get().getContentType() != null ? logoOpt.get().getContentType() : "image/png";
+            }
+        } catch (Exception e) {
+            log.debug("No se pudo cargar logo para PDF alta urgencia: {}", e.getMessage());
+        }
+        String pacienteNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
+        AltaUrgenciaPdfDto dto = AltaUrgenciaPdfDto.builder()
+                .empresaNombre(empresa != null ? empresa.getRazonSocial() : "IPS SESA Salud")
+                .empresaIdentificacion(empresa != null ? empresa.getIdentificacion() : null)
+                .logoBase64(logoBase64)
+                .logoContentType(logoContentType)
+                .fechaGeneracion(DT_FMT.format(java.time.ZonedDateTime.now(ZoneOffset.UTC)))
+                .pacienteNombre(pacienteNombre)
+                .pacienteDocumento(p.getDocumento())
+                .diagnostico(u.getAltaDiagnostico())
+                .tratamiento(u.getAltaTratamiento())
+                .recomendaciones(u.getAltaRecomendaciones())
+                .proximaCita(u.getAltaProximaCita())
+                .build();
+        Context ctx = new Context();
+        ctx.setVariable("data", dto);
+        String html = TEMPLATE_ENGINE.process("pdf/alta-urgencia", ctx);
+        return htmlToPdf(html);
+    }
+
+    /** PDF de referencia (consulta/atención) S6. */
+    @Transactional(readOnly = true)
+    public byte[] generarPdfReferenciaAtencion(Long atencionId) {
+        Atencion a = atencionRepository.findById(atencionId)
+                .orElseThrow(() -> new RuntimeException("Atención no encontrada: " + atencionId));
+        Paciente p = a.getHistoriaClinica() != null ? a.getHistoriaClinica().getPaciente() : null;
+        if (p == null) throw new RuntimeException("Atención sin paciente asociado");
+        EmpresaDto empresa = loadEmpresa();
+        String logoBase64 = null;
+        String logoContentType = null;
+        try {
+            var logoOpt = empresaService.getLogoResource(TenantContextHolder.getTenantSchema());
+            if (logoOpt.isPresent()) {
+                byte[] logoBytes = logoOpt.get().getResource().getContentAsByteArray();
+                logoBase64 = Base64.getEncoder().encodeToString(logoBytes);
+                logoContentType = logoOpt.get().getContentType() != null ? logoOpt.get().getContentType() : "image/png";
+            }
+        } catch (Exception e) {
+            log.debug("No se pudo cargar logo para PDF referencia: {}", e.getMessage());
+        }
+        String pacienteNombre = (p.getNombres() + " " + (p.getApellidos() != null ? p.getApellidos() : "")).trim();
+        ReferenciaAtencionPdfDto dto = ReferenciaAtencionPdfDto.builder()
+                .empresaNombre(empresa != null ? empresa.getRazonSocial() : "IPS SESA Salud")
+                .empresaIdentificacion(empresa != null ? empresa.getIdentificacion() : null)
+                .logoBase64(logoBase64)
+                .logoContentType(logoContentType)
+                .fechaGeneracion(DT_FMT.format(java.time.ZonedDateTime.now(ZoneOffset.UTC)))
+                .pacienteNombre(pacienteNombre)
+                .pacienteDocumento(p.getDocumento())
+                .motivoReferencia(a.getReferenciaMotivo())
+                .nivelReferencia(a.getReferenciaNivel())
+                .diagnostico(a.getReferenciaDiagnostico())
+                .tratamiento(a.getReferenciaTratamiento())
+                .recomendaciones(a.getReferenciaRecomendaciones())
+                .proximaCita(a.getReferenciaProximaCita())
+                .build();
+        Context ctx = new Context();
+        ctx.setVariable("data", dto);
+        String html = TEMPLATE_ENGINE.process("pdf/referencia-atencion", ctx);
         return htmlToPdf(html);
     }
 

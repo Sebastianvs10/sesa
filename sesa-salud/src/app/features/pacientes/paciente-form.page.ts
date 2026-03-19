@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { PacienteService, PacienteRequestDto } from '../../core/services/paciente.service';
+import { PacienteService, PacienteRequestDto, ConsultaDocumentoDto } from '../../core/services/paciente.service';
 import { EpsService, EpsDto } from '../../core/services/eps.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
@@ -44,6 +44,7 @@ export class PacienteFormPageComponent implements OnInit {
   id: number | null = null;
   loadingPatient = signal(false);
   saving = signal(false);
+  consultandoDocumento = signal(false);
   error: string | null = null;
 
   isFirstStep = computed(() => this.currentStep() === 1);
@@ -165,6 +166,55 @@ export class PacienteFormPageComponent implements OnInit {
       this.currentStep.set(step);
       this.error = null;
     }
+  }
+
+  /** Consulta datos por documento (ADRES/BDUA si está configurado) y rellena el formulario. */
+  onDocumentoBlur(): void {
+    if (this.isEdit || !this.form) return;
+    const tipoDoc = this.form.get('tipoDocumento')?.value ?? 'CC';
+    const doc = (this.form.get('documento')?.value ?? '').trim().replace(/\s/g, '');
+    if (doc.length < 5) return;
+    this.consultandoDocumento.set(true);
+    this.error = null;
+    this.pacienteService.consultaPorDocumento(tipoDoc, doc).subscribe({
+      next: (data) => {
+        this.consultandoDocumento.set(false);
+        if (data) {
+          this.aplicarDatosConsulta(data);
+          this.toast.success('Datos básicos cargados desde consulta por cédula.', 'Datos cargados');
+        }
+      },
+      error: () => {
+        this.consultandoDocumento.set(false);
+      },
+    });
+  }
+
+  private aplicarDatosConsulta(d: ConsultaDocumentoDto): void {
+    const patch: Record<string, unknown> = {};
+    if (d.nombres != null) patch['nombres'] = d.nombres;
+    if (d.apellidos != null) patch['apellidos'] = d.apellidos;
+    if (d.fechaNacimiento != null) patch['fechaNacimiento'] = typeof d.fechaNacimiento === 'string' ? d.fechaNacimiento.slice(0, 10) : d.fechaNacimiento;
+    if (d.sexo != null) patch['sexo'] = d.sexo;
+    if (d.regimenAfiliacion != null) patch['regimenAfiliacion'] = d.regimenAfiliacion;
+    if (d.tipoUsuario != null) patch['tipoUsuario'] = d.tipoUsuario;
+    if (d.epsId != null) patch['epsId'] = d.epsId;
+    if (d.municipioResidencia != null) patch['municipioResidencia'] = d.municipioResidencia;
+    if (d.departamentoResidencia != null) {
+      const codigo = this.codigoDepartamentoPorNombre(d.departamentoResidencia);
+      if (codigo) patch['departamentoResidencia'] = codigo;
+      else patch['departamentoResidencia'] = d.departamentoResidencia;
+    }
+    this.form.patchValue(patch);
+  }
+
+  private codigoDepartamentoPorNombre(nombre: string): string | null {
+    if (!nombre?.trim()) return null;
+    const n = nombre.trim().toLowerCase();
+    const found = this.departamentos.find(
+      (d) => d.nombre.toLowerCase().includes(n) || n.includes(d.nombre.toLowerCase())
+    );
+    return found?.codigo ?? null;
   }
 
   /** Valida solo los campos del paso actual. Paso 1 = documento y nombres obligatorios. */

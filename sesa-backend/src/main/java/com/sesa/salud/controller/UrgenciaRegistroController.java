@@ -9,16 +9,20 @@ import com.sesa.salud.dto.UrgenciaRegistroDto;
 import com.sesa.salud.dto.UrgenciaRegistroRequestDto;
 import com.sesa.salud.dto.UrgenciaReporteCumplimientoDto;
 import com.sesa.salud.dto.UrgenciaTriagePatchDto;
+import com.sesa.salud.dto.AltaReferenciaRequestDto;
 import com.sesa.salud.service.UrgenciaRegistroService;
 import com.sesa.salud.dto.SignosVitalesUrgenciaDto;
 import com.sesa.salud.dto.SignosVitalesUrgenciaRequestDto;
 import com.sesa.salud.service.SignosVitalesUrgenciaService;
+import com.sesa.salud.service.HistoriaClinicaPdfService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +38,7 @@ public class UrgenciaRegistroController {
 
     private final UrgenciaRegistroService urgenciaRegistroService;
     private final SignosVitalesUrgenciaService signosVitalesUrgenciaService;
+    private final HistoriaClinicaPdfService historiaClinicaPdfService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO','AUXILIAR_ENFERMERIA','RECEPCIONISTA')")
@@ -113,6 +118,27 @@ public class UrgenciaRegistroController {
             @Valid @RequestBody SignosVitalesUrgenciaRequestDto dto) {
         dto.setUrgenciaRegistroId(id);
         return ResponseEntity.status(HttpStatus.CREATED).body(signosVitalesUrgenciaService.create(dto));
+    }
+
+    /** S6: Dar alta al registro de urgencia (estado ALTA + datos para PDF). */
+    @PostMapping("/{id}/alta")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
+    public ResponseEntity<UrgenciaRegistroDto> darAlta(
+            @PathVariable("id") Long id,
+            @RequestBody(required = false) AltaReferenciaRequestDto request) {
+        return ResponseEntity.ok(urgenciaRegistroService.darAlta(id, request));
+    }
+
+    /** S6: Descargar PDF de resumen de alta de urgencias. */
+    @GetMapping("/{id}/alta/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','COORDINADOR_MEDICO','JEFE_ENFERMERIA','ENFERMERO')")
+    public ResponseEntity<byte[]> pdfAlta(@PathVariable("id") Long id) {
+        byte[] pdf = historiaClinicaPdfService.generarPdfAltaUrgencia(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"alta-urgencia-" + id + ".pdf\"")
+                .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(pdf.length))
+                .body(pdf);
     }
 
     @DeleteMapping("/{id}")

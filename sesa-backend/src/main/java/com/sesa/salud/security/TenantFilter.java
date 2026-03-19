@@ -41,13 +41,20 @@ public class TenantFilter extends OncePerRequestFilter {
             if (isLogin) {
                 TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
             } else {
-                String jwt = getJwtFromRequest(request);
-                if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                    String schema = jwtTokenProvider.getSchemaFromToken(jwt);
-                    TenantContextHolder.setTenantSchema(schema != null ? schema : TenantContextHolder.PUBLIC);
-                    log.trace("Tenant para petición: {}", TenantContextHolder.getTenantSchema());
+                // S12: Si ApiKeyAuthenticationFilter ya estableció el tenant, no sobrescribir
+                String apiKeyTenant = (String) request.getAttribute("tenantSchema");
+                if (apiKeyTenant != null) {
+                    TenantContextHolder.setTenantSchema(apiKeyTenant);
+                    log.trace("Tenant desde API Key: {}", apiKeyTenant);
                 } else {
-                    TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
+                    String jwt = getJwtFromRequest(request);
+                    if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+                        String schema = jwtTokenProvider.getSchemaFromToken(jwt);
+                        TenantContextHolder.setTenantSchema(schema != null ? schema : TenantContextHolder.PUBLIC);
+                        log.trace("Tenant para petición: {}", TenantContextHolder.getTenantSchema());
+                    } else {
+                        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
+                    }
                 }
             }
             filterChain.doFilter(request, response);

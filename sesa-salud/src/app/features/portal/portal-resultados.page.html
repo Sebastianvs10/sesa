@@ -1,0 +1,62 @@
+<section class="pres">
+  <header class="pres__header">
+    <h1 class="pres__title">Resultados</h1>
+    <p class="pres__sub">Sus resultados con una breve interpretación en lenguaje sencillo. Puede descargar cada uno en PDF.</p>
+  </header>
+
+  @if (loading()) {
+    <div class="pres__list">
+      @for (i of [1,2,3]; track i) {
+        <div class="pres__skeleton"></div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="pres__error">
+      <p>No se pudo cargar la información.</p>
+      <button type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (ordenes().length === 0) {
+    <div class="pres__empty">
+      <p>No hay resultados disponibles aún.</p>
+      <p class="pres__empty-hint">Cuando tenga órdenes con resultado, aparecerán aquí con una interpretación y la opción de descargar en PDF.</p>
+    </div>
+  } @else {
+    <div class="pres__list">
+      @for (o of ordenes(); track o.ordenId) {
+        <article class="pres__item">
+          <div class="pres__item-head">
+            <span class="pres__item-tipo">{{ o.tipo }}</span>
+            @if (o.fechaResultado) {
+              <span class="pres__item-fecha">{{ o.fechaResultado | date:'dd/MM/yyyy' }}</span>
+            }
+          </div>
+          @if (o.detalle) {
+            <p class="pres__item-detalle">{{ o.detalle }}</p>
+          }
+          @if (o.resultado) {
+            <div class="pres__item-resultado">
+              <span class="pres__resultado-label">Resultado</span>
+              <pre class="pres__resultado-text">{{ o.resultado }}</pre>
+            </div>
+          }
+          @if (o.interpretacionLenguajeSencillo) {
+            <div class="pres__item-interp">
+              <span class="pres__interp-label">Interpretación</span>
+              <p class="pres__interp-text">{{ o.interpretacionLenguajeSencillo }}</p>
+            </div>
+          }
+          <div class="pres__item-actions">
+            <button
+              type="button"
+              class="pres__btn-pdf"
+              [disabled]="descargandoId() === o.ordenId"
+              (click)="descargarPdf(o)"
+            >
+              {{ descargandoId() === o.ordenId ? 'Descargando…' : 'Descargar PDF' }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

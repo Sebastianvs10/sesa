@@ -15,8 +15,8 @@ class ApiConstants {
 
   static const bool _isEmulator = true; // ← true = emulador Android | false = dispositivo físico
 
-  static const String _emulatorHost = '10.0.2.2:8081';
-  static const String _deviceHost   = '192.168.18.132:8081';
+  static const String _emulatorHost = '10.0.2.2:8000';
+  static const String _deviceHost   = '192.168.18.132:8000';
 
   static String get _host => _isEmulator ? _emulatorHost : _deviceHost;
   static String get baseUrl => 'http://$_host/api';

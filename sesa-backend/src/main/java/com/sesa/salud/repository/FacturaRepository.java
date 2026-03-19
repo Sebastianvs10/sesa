@@ -20,6 +20,8 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
 
     List<Factura> findByFechaFacturaBetween(Instant desde, Instant hasta);
 
+    List<Factura> findByEstadoIn(List<String> estados);
+
     @Query("SELECT COALESCE(SUM(f.valorTotal), 0) FROM Factura f WHERE f.estado = :estado")
     BigDecimal sumByEstado(@Param("estado") String estado);
 
@@ -34,4 +36,10 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
 
     @Query("SELECT COUNT(f) > 0 FROM Factura f WHERE f.paciente.id = :pacienteId AND f.estado = 'PENDIENTE'")
     boolean existeFacturaPendienteByPacienteId(@Param("pacienteId") Long pacienteId);
+
+    /** Siguiente consecutivo para número de factura (usa secuencia factura_seq por tenant). */
+    @org.springframework.data.jpa.repository.Query(value = "SELECT nextval('factura_seq')", nativeQuery = true)
+    long getNextConsecutive();
+
+    boolean existsByOrden_Id(Long ordenId);
 }

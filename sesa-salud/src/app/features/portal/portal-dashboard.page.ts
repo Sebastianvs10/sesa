@@ -53,6 +53,11 @@ import {
             </div>
             <span class="portal-hero__prox-cita-badge">{{ resumen()?.proximaCita?.especialidad }}</span>
           </div>
+          @if (resumen()?.proximaCita?.id) {
+            <a [routerLink]="['/portal/cita', resumen()?.proximaCita?.id, 'cuestionario']" class="portal-hero__cuestionario-link">
+              Completar cuestionario pre-consulta
+            </a>
+          }
         }
       </section>
 

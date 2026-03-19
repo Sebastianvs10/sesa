@@ -99,6 +99,30 @@ public class NotificacionController {
                 PageRequest.of(page, size));
     }
 
+    @GetMapping("/recibidas/archivadas")
+    @PreAuthorize("isAuthenticated()")
+    public Page<NotificacionDto> listArchivadas(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        return notificacionService.listArchivadas(
+                principal.userId(),
+                PageRequest.of(page, size));
+    }
+
+    @GetMapping("/recibidas/papelera")
+    @PreAuthorize("isAuthenticated()")
+    public Page<NotificacionDto> listPapelera(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        return notificacionService.listPapelera(
+                principal.userId(),
+                PageRequest.of(page, size));
+    }
+
     @GetMapping("/recibidas/count")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Long> countNoLeidas(Authentication authentication) {
@@ -139,6 +163,46 @@ public class NotificacionController {
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         notificacionService.marcarNoLeida(id, principal.userId());
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/archivar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> archivar(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.archivar(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/desarchivar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> desarchivar(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.desarchivar(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/papelera")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> moverAPapelera(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.moverAPapelera(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/restaurar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> restaurarDePapelera(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.restaurarDePapelera(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> eliminarDefinitivo(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.eliminarDefinitivo(id, principal.userId());
+        return ResponseEntity.noContent().build();
     }
 
     /**

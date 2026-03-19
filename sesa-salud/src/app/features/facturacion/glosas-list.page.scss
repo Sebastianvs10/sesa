@@ -1,0 +1,129 @@
+/* S9: Glosas — listado y reporte recuperación de cartera */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.glo-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.glo-header { margin-bottom: 0.5rem; }
+.glo-back {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+.glo-back:hover { color: var(--sesa-secondary); }
+.glo-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+}
+.glo-subtitle {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  margin: 0.2rem 0 0;
+}
+
+.glo-filter-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  a { color: var(--sesa-secondary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+}
+
+.glo-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+.glo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.glo-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+.glo-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.875rem;
+}
+
+.glo-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  margin: 0 0 1rem;
+}
+
+.glo-reporte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+.glo-reporte-item {
+  padding: 0.75rem;
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.glo-reporte-label {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+.glo-reporte-item strong {
+  font-size: 1.1rem;
+  color: var(--sesa-text-primary);
+}
+
+.glo-loading, .glo-empty {
+  color: var(--sesa-text-secondary);
+  margin: 1rem 0;
+}
+.glo-table-wrap { overflow-x: auto; }
+.glo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.glo-table th, .glo-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sesa-border);
+}
+.glo-table th {
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  background: var(--sesa-surface);
+}
+.glo-table td { color: var(--sesa-text-primary); }
+.glo-cell-motivo { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.glo-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--sesa-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.glo-badge--pendiente { background: rgba(245, 158, 11, 0.2); color: #b45309; }
+.glo-badge--enviado { background: rgba(59, 130, 246, 0.2); color: #1d4ed8; }
+.glo-badge--aceptado { background: rgba(34, 197, 94, 0.2); color: #15803d; }
+.glo-badge--rechazado { background: rgba(239, 68, 68, 0.2); color: #b91c1c; }

@@ -3,6 +3,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+/** S6: Body para referencia (consulta/atención). */
+export interface AltaReferenciaRequestDto {
+  diagnostico?: string;
+  tratamiento?: string;
+  recomendaciones?: string;
+  proximaCita?: string;
+  motivoReferencia?: string;
+  nivelReferencia?: string;
+}
+
 export interface DiagnosticoDto {
   id?: number;
   codigoCie10: string;
@@ -36,6 +46,13 @@ export interface AtencionDto {
   diagnosticos: DiagnosticoDto[];
   procedimientos: ProcedimientoDto[];
   formulasMedicas: FormulaMedicaDto[];
+  /** S6: Referencia */
+  referenciaMotivo?: string;
+  referenciaNivel?: string;
+  referenciaDiagnostico?: string;
+  referenciaTratamiento?: string;
+  referenciaRecomendaciones?: string;
+  referenciaProximaCita?: string;
 }
 
 export interface AtencionRequestDto {
@@ -85,5 +102,15 @@ export class AtencionService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /** S6: Guardar referencia (motivo, nivel, datos para PDF). */
+  guardarReferencia(id: number, body: AltaReferenciaRequestDto): Observable<AtencionDto> {
+    return this.http.post<AtencionDto>(`${this.apiUrl}/${id}/referencia`, body ?? {});
+  }
+
+  /** S6: Descargar PDF de referencia. */
+  getPdfReferencia(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/referencia/pdf`, { responseType: 'blob' });
   }
 }

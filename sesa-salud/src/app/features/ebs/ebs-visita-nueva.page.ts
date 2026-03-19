@@ -7,10 +7,11 @@ import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { EbsService, EbsHouseholdSummary, EbsTerritorySummary, EbsBrigadeDto } from '../../core/services/ebs.service';
+import { EbsService, EbsHouseholdSummary, EbsTerritorySummary, EbsBrigadeDto, VisitaEbsSyncDto } from '../../core/services/ebs.service';
 import { IgacService, IgacVereda } from '../../core/services/igac.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { EbsSyncService } from '../../core/services/ebs-sync.service';
 
 @Component({
   standalone: true,
@@ -24,6 +25,7 @@ export class EbsVisitaNuevaPageComponent implements OnInit {
   private readonly ebs = inject(EbsService);
   private readonly igac = inject(IgacService);
   private readonly toast = inject(SesaToastService);
+  private readonly ebsSync = inject(EbsSyncService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -205,20 +207,60 @@ export class EbsVisitaNuevaPageComponent implements OnInit {
         cronico: this.riskCronico || undefined,
       },
     };
+    if (!this.ebsSync.isOnline()) {
+      const syncDto: VisitaEbsSyncDto = {
+        offlineUuid: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+        clientUpdatedAt: new Date().toISOString(),
+        householdId,
+        familyGroupId: undefined,
+        visitDate: payload.visitDate,
+        visitType: payload.visitType,
+        tipoIntervencion: payload.tipoIntervencion,
+        veredaCodigo: payload.veredaCodigo,
+        diagnosticoCie10: payload.diagnosticoCie10,
+        planCuidado: payload.planCuidado,
+        brigadeId: payload.brigadeId,
+        motivo: payload.motivo,
+        notes: payload.notes,
+        status: 'COMPLETADA',
+        riskFlags: payload.riskFlags,
+      };
+      this.ebsSync.addToQueue(syncDto);
+      this.saving.set(false);
+      this.toast.info('Sin conexión. Visita guardada localmente; se enviará al recuperar la red.', 'EBS');
+      return;
+    }
     this.ebs.createHomeVisit(payload).subscribe({
-      next: (res: unknown) => {
-        const body = res as { offline?: boolean };
+      next: () => {
         this.saving.set(false);
-        if (body?.offline) {
-          this.toast.info('Visita encolada. Se sincronizará con conexión.', 'EBS');
-        } else {
-          this.toast.success('Visita domiciliaria registrada.', 'EBS');
-          this.router.navigate(['/ebs/visitas']);
-        }
+        this.toast.success('Visita domiciliaria registrada.', 'EBS');
+        this.router.navigate(['/ebs/visitas']);
       },
       error: (err) => {
         this.saving.set(false);
-        this.toast.error(err?.error?.message ?? 'No se pudo guardar la visita.', 'EBS');
+        const isNetworkError = !err?.status || err?.status === 0 || err?.message === 'Http failure response';
+        if (isNetworkError) {
+          const syncDto: VisitaEbsSyncDto = {
+            offlineUuid: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+            clientUpdatedAt: new Date().toISOString(),
+            householdId,
+            visitDate: payload.visitDate,
+            visitType: payload.visitType,
+            tipoIntervencion: payload.tipoIntervencion,
+            veredaCodigo: payload.veredaCodigo,
+            diagnosticoCie10: payload.diagnosticoCie10,
+            planCuidado: payload.planCuidado,
+            brigadeId: payload.brigadeId,
+            motivo: payload.motivo,
+            notes: payload.notes,
+            status: 'COMPLETADA',
+            riskFlags: payload.riskFlags,
+          };
+          this.ebsSync.addToQueue(syncDto);
+          this.toast.info('Error de red. Visita guardada localmente; use "Sincronizar ahora" cuando haya conexión.', 'EBS');
+        } else {
+          this.toast.error(err?.error?.message ?? 'No se pudo guardar la visita.', 'EBS');
+        }
       },
     });
   }

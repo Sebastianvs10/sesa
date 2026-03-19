@@ -35,4 +35,9 @@ public interface EbsHomeVisitRepository extends JpaRepository<EbsHomeVisit, Long
 
     @Query("SELECT COUNT(v) FROM EbsHomeVisit v WHERE v.visitDate >= :from AND v.visitDate < :to")
     long countByVisitDateBetween(@Param("from") Instant from, @Param("to") Instant to);
+
+    /** S13: Visitas creadas después de una fecha (para sincronización). */
+    List<EbsHomeVisit> findByCreatedAtAfterOrderByCreatedAtAsc(Instant desde);
+
+    Optional<EbsHomeVisit> findByOfflineUuid(String offlineUuid);
 }

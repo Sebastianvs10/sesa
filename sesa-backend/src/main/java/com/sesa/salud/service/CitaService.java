@@ -48,6 +48,15 @@ public interface CitaService {
     /** Cancela la cita con un motivo. */
     CitaDto cancelarCita(Long id, String motivo);
 
+    /** S3: Genera (o devuelve existente) token de confirmación para la cita. */
+    String generarTokenConfirmacion(Long citaId);
+
+    /** S3: Confirma la cita por token (enlace público). Devuelve mensaje para mostrar. */
+    String confirmarCitaPorToken(String token);
+
+    /** S3: Cancela la cita por token (enlace público). Devuelve mensaje para mostrar. */
+    String cancelarCitaPorToken(String token, String motivo);
+
     /** Cambia el estado de la cita. */
     CitaDto cambiarEstado(Long id, String nuevoEstado);
 

@@ -101,6 +101,10 @@ public class Consulta {
     @Column(name = "hallazgos_examen", columnDefinition = "TEXT")
     private String hallazgosExamen;
 
+    /** Examen físico por subáreas: JSON con { "areas": [ { "id", "bien", "texto" }, ... ], "otros": "..." }. Check = bien (Normal). */
+    @Column(name = "examen_fisico_estructurado", columnDefinition = "TEXT")
+    private String examenFisicoEstructurado;
+
     @Column(columnDefinition = "TEXT")
     private String diagnostico;
 

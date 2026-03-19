@@ -113,7 +113,7 @@ cd sesa-backend
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-La API queda disponible en `http://localhost:8081/api`.
+La API queda disponible en `http://localhost:8000/api`.
 
 ### 4. Frontend
 
@@ -202,7 +202,7 @@ src/app/
 
 | Variable | Descripción | Default |
 |----------|-------------|---------|
-| `apiUrl` | Base URL del API | `http://localhost:8081/api` |
+| `apiUrl` | Base URL del API | `http://localhost:8000/api` |
 
 ## Características destacadas
 

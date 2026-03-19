@@ -94,6 +94,7 @@ export const ROLES_PERSONAL: { value: string; label: string; disabled?: boolean 
   { value: 'PSICOLOGO', label: 'Psicólogo' },
   { value: 'REGENTE_FARMACIA', label: 'Regente de Farmacia' },
   { value: 'RECEPCIONISTA', label: 'Recepcionista' },
+  { value: 'FACTURACION', label: 'Facturación' },
 ];
 
 export interface PageResponse<T> {

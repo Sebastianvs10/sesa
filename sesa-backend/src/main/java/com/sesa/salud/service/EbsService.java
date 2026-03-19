@@ -49,4 +49,10 @@ public interface EbsService {
     EbsAlertDto updateAlertStatus(Long id, String status);
 
     EbsReportDataDto getReportData(String reportType, String periodFrom, String periodTo);
+
+    /** S13: Visitas creadas después de una fecha (para pull en sincronización). */
+    List<EbsHomeVisitSummaryDto> listPendientesSincronizar(Instant desde);
+
+    /** S13: Aplica sincronización (last-write-wins) y devuelve conflictos si los hay. */
+    VisitaEbsSyncResponseDto sincronizarVisitas(List<VisitaEbsSyncDto> visitas);
 }

@@ -1,52 +1,91 @@
-<section class="ebs-inicio">
-  <header class="ebs-inicio__header">
-    <h1 class="ebs-inicio__title">Equipos Básicos de Salud</h1>
-    <p class="ebs-inicio__subtitle">
-      Atención Primaria en Salud: gestión territorial, visitas domiciliarias y seguimiento poblacional.
+<section class="ebs-inicio ebs-inicio--premium">
+  <header class="ebs-inicio__hero">
+    <div class="ebs-inicio__hero-badge">APS — Ley 1438 de 2011</div>
+    <h1 class="ebs-inicio__hero-title">Equipos Básicos de Salud</h1>
+    <p class="ebs-inicio__hero-subtitle">
+      Atención Primaria en Salud: primer contacto con el sistema, atención en casa, prevención y detección temprana.
     </p>
+    <div class="ebs-inicio__pillar" role="list">
+      <span class="ebs-inicio__pillar-item" role="listitem">Promover</span>
+      <span class="ebs-inicio__pillar-item" role="listitem">Prevenir</span>
+      <span class="ebs-inicio__pillar-item" role="listitem">Detectar</span>
+      <span class="ebs-inicio__pillar-item" role="listitem">Tratar a tiempo</span>
+    </div>
   </header>
 
   @if (loading()) {
-    <div class="ebs-inicio__skeleton">
-      <sesa-skeleton width="100%" height="4rem" />
-      <sesa-skeleton width="80%" height="3rem" />
-      <sesa-skeleton width="60%" height="2rem" />
+    <div class="ebs-inicio__skeleton" aria-busy="true" aria-label="Cargando">
+      <div class="ebs-inicio__skeleton-hero">
+        <sesa-skeleton width="140px" height="1.75rem" />
+        <sesa-skeleton width="92%" height="2.5rem" />
+        <sesa-skeleton width="70%" height="1.25rem" />
+      </div>
+      <sesa-skeleton width="100%" height="6rem" />
+      <sesa-skeleton width="100%" height="8rem" />
     </div>
   } @else if (error()) {
-    <p class="ebs-inicio__error">{{ error() }}</p>
+    <div class="ebs-inicio__error-card" role="alert">
+      <span class="ebs-inicio__error-icon" aria-hidden="true"></span>
+      <p class="ebs-inicio__error-text">{{ error() }}</p>
+      <button type="button" class="ebs-inicio__error-retry" (click)="load()">Reintentar</button>
+    </div>
   } @else {
-    <!-- Supervisor APS: vista dashboard -->
-    @if (isSupervisor() && dashboard(); as d) {
-      <div class="ebs-inicio__dashboard">
-        <div class="ebs-inicio__kpis">
-          <div class="ebs-inicio__kpi">
-            <span class="ebs-inicio__kpi-value">{{ d.totalTerritorios }}</span>
-            <span class="ebs-inicio__kpi-label">Microterritorios</span>
-          </div>
-          <div class="ebs-inicio__kpi">
-            <span class="ebs-inicio__kpi-value">{{ d.totalHogares }}</span>
-            <span class="ebs-inicio__kpi-label">Hogares</span>
-          </div>
-          <div class="ebs-inicio__kpi ebs-inicio__kpi--highlight">
-            <span class="ebs-inicio__kpi-value">{{ d.porcentajeCobertura | number: '1.1-1' }}%</span>
-            <span class="ebs-inicio__kpi-label">Cobertura visitada</span>
-          </div>
-          <div class="ebs-inicio__kpi">
-            <span class="ebs-inicio__kpi-value">{{ d.visitasEnPeriodo }}</span>
-            <span class="ebs-inicio__kpi-label">Visitas (30 días)</span>
-          </div>
-          <div class="ebs-inicio__kpi ebs-inicio__kpi--alert">
-            <span class="ebs-inicio__kpi-value">{{ d.hogaresAltoRiesgo }}</span>
-            <span class="ebs-inicio__kpi-label">Alto riesgo</span>
-          </div>
+    <div class="ebs-inicio__prioridades" role="region" aria-label="Poblaciones prioritarias EBS">
+      <sesa-card variant="elevated" title="Poblaciones prioritarias" subtitle="Valoración integral y seguimiento según lineamiento técnico-operativo" alignHeader="start">
+        <div class="ebs-inicio__prioridades-chips">
+          <span class="ebs-inicio__chip ebs-inicio__chip--primary">0–5 años</span>
+          <span class="ebs-inicio__chip ebs-inicio__chip--primary">60+ años</span>
+          <span class="ebs-inicio__chip">Gestantes</span>
+          <span class="ebs-inicio__chip">Crónicos</span>
+          <span class="ebs-inicio__chip">Gestión de riesgo</span>
         </div>
-        <a routerLink="/ebs/dashboard-supervisor" class="ebs-inicio__link">Ver dashboard completo →</a>
+      </sesa-card>
+    </div>
+
+    @if (isSupervisor() && dashboard(); as d) {
+      <div class="ebs-inicio__dashboard" role="region" aria-label="Indicadores operativos">
+        <sesa-card variant="elevated" title="Indicadores operativos" subtitle="Cobertura territorial y seguimiento según SI-APS" alignHeader="start">
+          <div class="ebs-inicio__kpis">
+            <div class="ebs-inicio__kpi">
+              <span class="ebs-inicio__kpi-value">{{ d.totalTerritorios }}</span>
+              <span class="ebs-inicio__kpi-label">Microterritorios</span>
+            </div>
+            <div class="ebs-inicio__kpi">
+              <span class="ebs-inicio__kpi-value">{{ d.totalHogares }}</span>
+              <span class="ebs-inicio__kpi-label">Hogares</span>
+            </div>
+            <div class="ebs-inicio__kpi ebs-inicio__kpi--highlight">
+              <span class="ebs-inicio__kpi-value">{{ d.porcentajeCobertura | number: '1.1-1' }}%</span>
+              <span class="ebs-inicio__kpi-label">Cobertura visitada</span>
+            </div>
+            <div class="ebs-inicio__kpi">
+              <span class="ebs-inicio__kpi-value">{{ d.visitasEnPeriodo }}</span>
+              <span class="ebs-inicio__kpi-label">Visitas (30 días)</span>
+            </div>
+            <div class="ebs-inicio__kpi ebs-inicio__kpi--alert">
+              <span class="ebs-inicio__kpi-value">{{ d.hogaresAltoRiesgo }}</span>
+              <span class="ebs-inicio__kpi-label">Alto riesgo</span>
+            </div>
+            @if (d.cronicosControlados != null) {
+              <div class="ebs-inicio__kpi">
+                <span class="ebs-inicio__kpi-value">{{ d.cronicosControlados }}</span>
+                <span class="ebs-inicio__kpi-label">Crónicos controlados</span>
+              </div>
+            }
+            @if (d.alertasSeguimiento != null && d.alertasSeguimiento > 0) {
+              <div class="ebs-inicio__kpi ebs-inicio__kpi--alert">
+                <span class="ebs-inicio__kpi-value">{{ d.alertasSeguimiento }}</span>
+                <span class="ebs-inicio__kpi-label">Alertas en seguimiento</span>
+              </div>
+            }
+          </div>
+          <a routerLink="/ebs/dashboard-supervisor" class="ebs-inicio__cta">Ver dashboard completo</a>
+        </sesa-card>
       </div>
     }
 
-    <!-- Coordinador / Profesional EBS: resumen de territorios -->
     @if ((isCoordinador() || isProfesionalEbs()) && territories().length > 0) {
-      <sesa-card title="Mis microterritorios" subtitle="Territorios asignados al equipo" alignHeader="start">
+      <sesa-card variant="elevated" title="Mis microterritorios" subtitle="Atención en barrios y veredas — gestión territorial" alignHeader="start">
         <ul class="ebs-inicio__territory-list">
           @for (t of territories(); track t.id) {
             <li class="ebs-inicio__territory-item">
@@ -60,38 +99,64 @@
             </li>
           }
         </ul>
-        <a routerLink="/ebs/territorios" class="ebs-inicio__link">Ir a territorios y hogares →</a>
+        <a routerLink="/ebs/territorios" class="ebs-inicio__cta">Ir a territorios y hogares</a>
       </sesa-card>
     }
 
-    <!-- Accesos rápidos comunes -->
-    <sesa-card title="Accesos rápidos" subtitle="Acciones frecuentes del módulo EBS" alignHeader="start">
+    <sesa-card variant="elevated" title="Acciones operativas" subtitle="Atención en casa, prevención y seguimiento poblacional" alignHeader="start">
       <div class="ebs-inicio__actions">
+        <a routerLink="/ebs/visita/nueva" class="ebs-inicio__action ebs-inicio__action--primary">
+          <span class="ebs-inicio__action-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <span class="ebs-inicio__action-label">Nueva visita domiciliaria</span>
+        </a>
         <a routerLink="/ebs/territorios" class="ebs-inicio__action">
-          <span class="ebs-inicio__action-icon">🗺️</span>
-          <span>Territorios y hogares</span>
+          <span class="ebs-inicio__action-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          </span>
+          <span class="ebs-inicio__action-label">Territorios y hogares</span>
         </a>
         <a routerLink="/ebs/visitas" class="ebs-inicio__action">
-          <span class="ebs-inicio__action-icon">📋</span>
-          <span>Historial de visitas</span>
+          <span class="ebs-inicio__action-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </span>
+          <span class="ebs-inicio__action-label">Historial de visitas</span>
         </a>
-        <a routerLink="/ebs/visita/nueva" class="ebs-inicio__action ebs-inicio__action--primary">
-          <span class="ebs-inicio__action-icon">➕</span>
-          <span>Nueva visita domiciliaria</span>
+        <a routerLink="/ebs/brigadas" class="ebs-inicio__action">
+          <span class="ebs-inicio__action-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+          <span class="ebs-inicio__action-label">Brigadas</span>
+        </a>
+        <a routerLink="/ebs/alertas" class="ebs-inicio__action">
+          <span class="ebs-inicio__action-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </span>
+          <span class="ebs-inicio__action-label">Alertas</span>
         </a>
         @if (isCoordinador()) {
           <a routerLink="/ebs/asignacion" class="ebs-inicio__action">
-            <span class="ebs-inicio__action-icon">👥</span>
-            <span>Asignación territorial</span>
+            <span class="ebs-inicio__action-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            <span class="ebs-inicio__action-label">Asignación territorial</span>
           </a>
         }
         @if (isSupervisor()) {
           <a routerLink="/ebs/dashboard-supervisor" class="ebs-inicio__action">
-            <span class="ebs-inicio__action-icon">📊</span>
-            <span>Dashboard gerencial</span>
+            <span class="ebs-inicio__action-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="ebs-inicio__action-label">Dashboard gerencial</span>
           </a>
         }
       </div>
     </sesa-card>
+
+    <footer class="ebs-inicio__footer">
+      <span class="ebs-inicio__footer-text">Sistema alineado con lineamiento técnico-operativo EBS — MinSalud</span>
+      <a href="https://www.minsalud.gov.co/salud/publica/Paginas/equipos-basicos-en-salud.aspx" target="_blank" rel="noopener noreferrer" class="ebs-inicio__footer-link">Conocer más</a>
+    </footer>
   }
 </section>

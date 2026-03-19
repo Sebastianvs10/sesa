@@ -7,14 +7,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { of, forkJoin } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faChartBar, faArrowLeft, faFileCsv } from '@fortawesome/free-solid-svg-icons';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { DashboardChartBarComponent } from '../../shared/components/dashboard-chart-bar/dashboard-chart-bar.component';
 import { DashboardChartDoughnutComponent } from '../../shared/components/dashboard-chart-doughnut/dashboard-chart-doughnut.component';
-import { ReporteService, DashboardStatsDto, IndicadorCalidadDto } from '../../core/services/reporte.service';
+import { ReporteService, DashboardStatsDto, IndicadorCalidadDto, CumplimientoNormativoDto, AuditoriaHcProfesionalDto, AuditoriaHcServicioDto } from '../../core/services/reporte.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 const MESES_LABELS: Record<number, string> = {
@@ -32,6 +33,7 @@ const ESTADO_LABELS: Record<string, string> = {
   selector: 'sesa-reportes-page',
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     FontAwesomeModule,
     SesaCardComponent,
@@ -49,6 +51,19 @@ export class ReportesPageComponent implements OnInit {
   error = false;
   loadingCalidad = true;
   indicadoresCalidad: IndicadorCalidadDto[] = [];
+
+  /** S4: Cumplimiento normativo */
+  cumplimientoNormativo: CumplimientoNormativoDto | null = null;
+  loadingCumplimiento = false;
+  cumplimientoDesde = '';
+  cumplimientoHasta = '';
+
+  /** S16: Auditoría de calidad HC */
+  auditoriaPorProfesional: AuditoriaHcProfesionalDto[] = [];
+  auditoriaPorServicio: AuditoriaHcServicioDto[] = [];
+  loadingAuditoriaHc = false;
+  auditoriaDesde = '';
+  auditoriaHasta = '';
 
   chartCitasPorDia: { labels: string[]; values: number[] } = { labels: [], values: [] };
   chartConsultasPorMes: { labels: string[]; values: number[] } = { labels: [], values: [] };
@@ -126,6 +141,33 @@ export class ReportesPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadStats();
     this.loadCalidad();
+    const hoy = new Date();
+    const hace30 = new Date(hoy);
+    hace30.setDate(hace30.getDate() - 30);
+    this.cumplimientoHasta = hoy.toISOString().slice(0, 10);
+    this.cumplimientoDesde = hace30.toISOString().slice(0, 10);
+    this.auditoriaHasta = hoy.toISOString().slice(0, 10);
+    this.auditoriaDesde = hace30.toISOString().slice(0, 10);
+  }
+
+  loadCumplimientoNormativo(): void {
+    this.loadingCumplimiento = true;
+    this.cumplimientoNormativo = null;
+    this.reporteService
+      .getCumplimientoNormativo({
+        desde: this.cumplimientoDesde || undefined,
+        hasta: this.cumplimientoHasta || undefined,
+      })
+      .pipe(
+        catchError(() => {
+          this.toast.error('No se pudo cargar el cumplimiento normativo.', 'Error');
+          return of<CumplimientoNormativoDto | null>(null);
+        })
+      )
+      .subscribe((r) => {
+        this.cumplimientoNormativo = r ?? null;
+        this.loadingCumplimiento = false;
+      });
   }
 
   loadCalidad(): void {
@@ -135,6 +177,26 @@ export class ReportesPageComponent implements OnInit {
         this.indicadoresCalidad = list;
         this.loadingCalidad = false;
       });
+  }
+
+  /** S16: Cargar auditoría de calidad HC por profesional y servicio. */
+  loadAuditoriaHc(): void {
+    this.loadingAuditoriaHc = true;
+    this.auditoriaPorProfesional = [];
+    this.auditoriaPorServicio = [];
+    const params = { desde: this.auditoriaDesde || undefined, hasta: this.auditoriaHasta || undefined };
+    forkJoin({
+      porProfesional: this.reporteService.getAuditoriaHcPorProfesional(params).pipe(
+        catchError(() => of<AuditoriaHcProfesionalDto[]>([]))
+      ),
+      porServicio: this.reporteService.getAuditoriaHcPorServicio(params).pipe(
+        catchError(() => of<AuditoriaHcServicioDto[]>([]))
+      ),
+    }).subscribe(({ porProfesional, porServicio }: { porProfesional: AuditoriaHcProfesionalDto[]; porServicio: AuditoriaHcServicioDto[] }) => {
+      this.auditoriaPorProfesional = porProfesional;
+      this.auditoriaPorServicio = porServicio;
+      this.loadingAuditoriaHc = false;
+    });
   }
 
   loadStats(): void {

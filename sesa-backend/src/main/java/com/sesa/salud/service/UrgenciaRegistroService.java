@@ -37,4 +37,7 @@ public interface UrgenciaRegistroService {
     UrgenciaDashboardDto getDashboard();
 
     UrgenciaReporteCumplimientoDto getReporteCumplimiento(LocalDate desde, LocalDate hasta);
+
+    /** S6: Dar alta con checklist (diagnóstico, tratamiento, recomendaciones, próxima cita). Actualiza estado a ALTA y guarda datos para PDF. */
+    UrgenciaRegistroDto darAlta(Long id, com.sesa.salud.dto.AltaReferenciaRequestDto request);
 }

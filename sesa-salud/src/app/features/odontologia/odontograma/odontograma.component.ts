@@ -63,10 +63,13 @@ export interface PiezaUI {
   rx: number;   // radio de borde según tipo de diente
 }
 
+type VisualMode = 'hiperrealista' | 'operativo';
+
 const ESTADOS_LISTA: EstadoDental[] = [
   'SANO','CARIES','OBTURACION','ENDODONCIA','CORONA',
   'AUSENTE','PROTESIS','FRACTURA','SELLANTE','EXTRACCION_INDICADA','IMPLANTE',
 ];
+const SUPERFICIES_VALIDAS: Superficie[] = ['MESIAL', 'DISTAL', 'VESTIBULAR', 'LINGUAL', 'OCLUSAL', 'GENERAL'];
 
 /** Tamaños anatómicos en vista oclusal (mesio-distal × vestibulo-lingual) */
 const TOOTH_SIZES: Record<number, { hw: number; hh: number; rx: number }> = {
@@ -92,6 +95,7 @@ export class OdontogramaComponent {
   private readonly doc = inject(DOCUMENT) as Document;
   readonly odontogramaSvc = inject(OdontogramaService);
   private readonly auth = inject(AuthService);
+  private readonly visualModeStorageKey = 'sesa_odontograma_visual_mode';
 
   readonly piezasInput  = input<Map<number, PiezaDental>>(new Map(), { alias: 'piezas' });
   readonly readonly     = input(false);
@@ -99,8 +103,10 @@ export class OdontogramaComponent {
 
   readonly modo           = signal<'adulto' | 'pediatrico'>('adulto');
   readonly piezasLocal    = signal<Map<number, PiezaDental>>(new Map());
+  readonly visualMode     = signal<VisualMode>('hiperrealista');
 
   constructor() {
+    this.restoreVisualMode();
     effect(() => {
       const input = this.piezasInput();
       const copia = new Map(input);
@@ -141,7 +147,7 @@ export class OdontogramaComponent {
   readonly piezaResaltadaFdi = signal<number | null>(null);
 
   /** Vista superficies: true = grid 3×3 (cruz tipo React), false = círculo FDI */
-  readonly useGridLayout = signal(true);
+  readonly useGridLayout = signal(false);
 
   /** Snapshots para evolución del caso (tomar / restaurar) */
   readonly snapshots = signal<OdontogramaSnapshot[]>([]);
@@ -409,14 +415,46 @@ export class OdontogramaComponent {
     const h = this.getToothRectHeight(p);
     const hw = w / 2;
     const hh = h / 2;
-    const rootLen = 14;
-    const rx = p.esAnterior ? 8 : 6;
-    const ry = p.esAnterior ? 10 : 8;
-    const nw = p.esAnterior ? hw * 0.32 : hw * 0.4;
-    if (p.esSuperior) {
-      return `M ${-hw + rx} ${hh} L ${hw - rx} ${hh} Q ${hw} ${hh} ${hw} ${hh - ry} L ${hw} ${-hh + ry} Q ${hw} ${-hh} ${hw - rx} ${-hh} L ${nw} ${-hh} L ${nw} ${-hh - rootLen} L ${-nw} ${-hh - rootLen} L ${-nw} ${-hh} L ${-hw + rx} ${-hh} Q ${-hw} ${-hh} ${-hw} ${-hh + ry} L ${-hw} ${hh - ry} Q ${-hw} ${hh} ${-hw + rx} ${hh} Z`;
-    }
-    return `M ${-hw + rx} ${-hh} L ${hw - rx} ${-hh} Q ${hw} ${-hh} ${hw} ${-hh + ry} L ${hw} ${hh - ry} Q ${hw} ${hh} ${hw - rx} ${hh} L ${nw} ${hh} L ${nw} ${hh + rootLen} L ${-nw} ${hh + rootLen} L ${-nw} ${hh} L ${-hw + rx} ${hh} Q ${-hw} ${hh} ${-hw} ${hh - ry} L ${-hw} ${-hh + ry} Q ${-hw} ${-hh} ${-hw + rx} ${-hh} Z`;
+    const rootLen = p.esAnterior ? 16 : 18;
+    const neck = p.esAnterior ? hw * 0.34 : hw * 0.42;
+    const rootSpread = p.esAnterior ? hw * 0.2 : hw * 0.36;
+    const outer = hw * 0.95;
+    const baseY = p.esSuperior ? hh * 0.82 : -hh * 0.82;
+    const crownShoulderY = p.esSuperior ? hh * 0.42 : -hh * 0.42;
+    const occlusalY = p.esSuperior ? hh * 0.96 : -hh * 0.96;
+    const cervicalY = p.esSuperior ? -hh * 0.22 : hh * 0.22;
+    const rootMidY = p.esSuperior ? -(hh + rootLen * 0.52) : hh + rootLen * 0.52;
+    const rootTipY = p.esSuperior ? -(hh + rootLen) : hh + rootLen;
+
+    return `
+      M ${-outer} ${baseY}
+      Q ${-hw} ${crownShoulderY} ${-outer * 0.75} ${occlusalY * 0.94}
+      Q ${-outer * 0.38} ${occlusalY} 0 ${occlusalY}
+      Q ${outer * 0.38} ${occlusalY} ${outer * 0.75} ${occlusalY * 0.94}
+      Q ${hw} ${crownShoulderY} ${outer} ${baseY}
+      Q ${neck} ${baseY * 0.55} ${neck} ${cervicalY}
+      Q ${rootSpread} ${cervicalY * 0.9} ${rootSpread} ${rootMidY}
+      Q ${neck * 0.45} ${rootTipY * 0.98} 0 ${rootTipY}
+      Q ${-neck * 0.45} ${rootTipY * 0.98} ${-rootSpread} ${rootMidY}
+      Q ${-rootSpread} ${cervicalY * 0.9} ${-neck} ${cervicalY}
+      Q ${-neck} ${baseY * 0.55} ${-outer} ${baseY}
+      Z
+    `;
+  }
+
+  getFissureMainPath(p: PiezaUI): string {
+    const dir = p.esSuperior ? 1 : -1;
+    return `M ${-p.hw * 0.34} ${dir * p.hh * 0.14} Q 0 ${dir * p.hh * 0.3} ${p.hw * 0.34} ${dir * p.hh * 0.14}`;
+  }
+
+  getFissureSubPathA(p: PiezaUI): string {
+    const dir = p.esSuperior ? 1 : -1;
+    return `M ${-p.hw * 0.24} ${dir * p.hh * 0.06} Q ${-p.hw * 0.03} ${dir * p.hh * 0.18} ${p.hw * 0.2} ${dir * p.hh * 0.06}`;
+  }
+
+  getFissureSubPathB(p: PiezaUI): string {
+    const dir = p.esSuperior ? 1 : -1;
+    return `M ${-p.hw * 0.2} ${dir * p.hh * 0.24} Q 0 ${dir * p.hh * 0.33} ${p.hw * 0.2} ${dir * p.hh * 0.24}`;
   }
 
   /** Solo la zona radicular (para relleno endodoncia). */
@@ -513,6 +551,12 @@ export class OdontogramaComponent {
   }
 
   cambiarModo(modo: 'adulto' | 'pediatrico'): void {
+    if (this.hasCambiosLocales()) {
+      const ok = this.doc.defaultView?.confirm(
+        'Hay cambios sin guardar en el odontograma. Si cambias el modo, podrías perder contexto visual. ¿Deseas continuar?',
+      );
+      if (!ok) return;
+    }
     this.modo.set(modo);
     this.odontogramaSvc.setModo(modo);
     const copia = new Map(this.piezasInput());
@@ -615,7 +659,13 @@ export class OdontogramaComponent {
     const pieza = { ...(mapa.get(fdi) ?? crearPiezaVacia(fdi, fdi >= 50)) };
     const anterior = pieza.superficies[sup] ?? 'SANO';
     pieza.superficies = { ...pieza.superficies, [sup]: estado };
-    if (sup === 'GENERAL') pieza.ausente = estado === 'AUSENTE';
+    if (estado === 'AUSENTE') {
+      pieza.superficies.GENERAL = 'AUSENTE';
+      pieza.ausente = true;
+    } else if (sup === 'GENERAL') {
+      pieza.ausente = false;
+      if (pieza.superficies.GENERAL === 'AUSENTE') pieza.superficies.GENERAL = estado;
+    }
     mapa.set(fdi, pieza);
     this.piezasLocal.set(mapa);
     this.cambio.emit({ fdi, superficie: sup, estadoAnterior: anterior, estadoNuevo: estado });
@@ -647,6 +697,48 @@ export class OdontogramaComponent {
 
   @HostListener('document:click')
   onDocumentClick(): void { this.cerrarPopup(); }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (this.readonly()) return;
+    if (this.isTypingTarget(event.target)) return;
+    const key = event.key.toLowerCase();
+    if (key === 'escape') {
+      this.cerrarPopup();
+      this.cerrarContextMenu();
+      this.cerrarHistorial();
+      this.odontogramaSvc.setTratamientoSeleccionado(null);
+      return;
+    }
+    const shortcutMap: Partial<Record<string, EstadoDental>> = {
+      c: 'CARIES',
+      o: 'OBTURACION',
+      e: 'ENDODONCIA',
+      i: 'IMPLANTE',
+      x: 'EXTRACCION_INDICADA',
+      s: 'SELLANTE',
+      p: 'PROTESIS',
+      a: 'AUSENTE',
+    };
+    const estado = shortcutMap[key];
+    if (!estado) return;
+    event.preventDefault();
+    this.odontogramaSvc.setTratamientoSeleccionado(estado);
+  }
+
+  onPiezaKeyboardActivate(event: KeyboardEvent, fdi: number): void {
+    if (this.readonly()) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    const foco = this.doc.activeElement as SVGElement | null;
+    const rect = foco?.getBoundingClientRect();
+    if (!rect) return;
+    this.popupX.set(Math.max(8, rect.x));
+    this.popupY.set(Math.max(8, rect.y));
+    this.popupFdi.set(fdi);
+    this.popupSuperficie.set('OCLUSAL');
+    this.popupVisible.set(true);
+  }
 
   getEstadoColor(key: unknown): string  { return ESTADO_COLOR[key as EstadoDental] ?? 'transparent'; }
   getEstadoLabel(key: unknown): string  { return ESTADO_LABEL[key as EstadoDental] ?? String(key); }
@@ -694,9 +786,12 @@ export class OdontogramaComponent {
     return list;
   }
 
-  deserializePiezas(data: OdontogramaExportData['piezas']): Map<number, PiezaDental> {
+  deserializePiezas(
+    data: OdontogramaExportData['piezas'],
+    modoObjetivo: 'adulto' | 'pediatrico' = this.modo(),
+  ): Map<number, PiezaDental> {
     const mapa = new Map<number, PiezaDental>();
-    const todas = this.modo() === 'adulto'
+    const todas = modoObjetivo === 'adulto'
       ? [...PIEZAS_PERMANENTES_SUPERIOR, ...PIEZAS_PERMANENTES_INFERIOR]
       : [...PIEZAS_DECIDUAS_SUPERIOR, ...PIEZAS_DECIDUAS_INFERIOR];
     for (const fdi of todas) {
@@ -714,9 +809,10 @@ export class OdontogramaComponent {
         },
       };
       for (const [k, v] of Object.entries(item.superficies ?? {})) {
-        if (v && (pieza.superficies as Record<string, string>)[k] !== undefined)
-          (pieza.superficies as Record<string, string>)[k] = v;
+        if (!this.isSuperficieValida(k) || !this.isEstadoValido(v)) continue;
+        pieza.superficies[k] = v;
       }
+      if (pieza.superficies.GENERAL === 'AUSENTE') pieza.ausente = true;
       mapa.set(item.fdi, pieza);
     }
     return mapa;
@@ -738,12 +834,13 @@ export class OdontogramaComponent {
   }
 
   restoreSnapshot(snap: OdontogramaSnapshot): void {
-    const mapa = this.deserializePiezas(snap.data);
-    this.piezasLocal.set(mapa);
     if (snap.modo === 'pediatrico' || snap.modo === 'adulto') {
       this.modo.set(snap.modo);
       this.odontogramaSvc.setModo(snap.modo);
     }
+    const modoObjetivo = snap.modo === 'pediatrico' || snap.modo === 'adulto' ? snap.modo : this.modo();
+    const mapa = this.deserializePiezas(snap.data, modoObjetivo);
+    this.piezasLocal.set(mapa);
     this.setPiezaResaltada(null);
     this.cerrarPopup();
   }
@@ -776,12 +873,13 @@ export class OdontogramaComponent {
       try {
         const parsed = JSON.parse(reader.result as string) as OdontogramaExportData;
         if (parsed?.piezas?.length !== undefined) {
-          const mapa = this.deserializePiezas(parsed.piezas);
+          const modoObjetivo = parsed.modo === 'pediatrico' || parsed.modo === 'adulto'
+            ? parsed.modo
+            : this.modo();
+          this.modo.set(modoObjetivo);
+          this.odontogramaSvc.setModo(modoObjetivo);
+          const mapa = this.deserializePiezas(parsed.piezas, modoObjetivo);
           this.piezasLocal.set(mapa);
-          if (parsed.modo === 'pediatrico' || parsed.modo === 'adulto') {
-            this.modo.set(parsed.modo);
-            this.odontogramaSvc.setModo(parsed.modo);
-          }
         }
       } catch {
         console.error('Archivo JSON inválido');
@@ -812,5 +910,57 @@ export class OdontogramaComponent {
       MESIAL: 'Mesial', DISTAL: 'Distal', OCLUSAL: 'Oclusal / Incisal', GENERAL: 'General',
     };
     return sup ? (map[sup] ?? sup) : '';
+  }
+
+  setVisualMode(mode: VisualMode): void {
+    this.visualMode.set(mode);
+    this.persistVisualMode(mode);
+  }
+
+  toggleVisualMode(): void {
+    this.setVisualMode(this.visualMode() === 'hiperrealista' ? 'operativo' : 'hiperrealista');
+  }
+
+  private isEstadoValido(value: unknown): value is EstadoDental {
+    return typeof value === 'string' && ESTADOS_LISTA.includes(value as EstadoDental);
+  }
+
+  private isSuperficieValida(value: string): value is Superficie {
+    return SUPERFICIES_VALIDAS.includes(value as Superficie);
+  }
+
+  private isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    const tag = target.tagName.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+  }
+
+  private hasCambiosLocales(): boolean {
+    const current = JSON.stringify(this.serializePiezas());
+    const fromInput = (() => {
+      const list: OdontogramaExportData['piezas'] = [];
+      for (const p of this.piezasInput().values()) {
+        list.push({
+          fdi: p.fdi,
+          esPediatrica: p.esPediatrica,
+          ausente: p.ausente,
+          observacion: p.observacion,
+          superficies: { ...p.superficies },
+        });
+      }
+      return JSON.stringify(list);
+    })();
+    return current !== fromInput;
+  }
+
+  private restoreVisualMode(): void {
+    const stored = this.doc.defaultView?.localStorage?.getItem(this.visualModeStorageKey);
+    if (stored === 'hiperrealista' || stored === 'operativo') {
+      this.visualMode.set(stored);
+    }
+  }
+
+  private persistVisualMode(mode: VisualMode): void {
+    this.doc.defaultView?.localStorage?.setItem(this.visualModeStorageKey, mode);
   }
 }

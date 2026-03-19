@@ -41,6 +41,7 @@ export const ROLES_USUARIO = [
   { value: 'PSICOLOGO',           label: 'Psicólogo' },
   { value: 'REGENTE_FARMACIA',    label: 'Regente de Farmacia' },
   { value: 'RECEPCIONISTA',       label: 'Recepcionista' },
+  { value: 'FACTURACION',         label: 'Facturación' },
 ] as const;
 
 @Injectable({ providedIn: 'root' })

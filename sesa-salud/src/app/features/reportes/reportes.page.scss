@@ -224,3 +224,82 @@
   padding: 1rem;
   color: var(--sesa-text-muted);
 }
+
+/* S4: Cumplimiento normativo */
+.sesa-cumplimiento-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.sesa-cumplimiento-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+.sesa-cumplimiento-filtros input[type="date"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+}
+.sesa-cumplimiento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.sesa-cumplimiento-card {
+  padding: 1rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.sesa-cumplimiento-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-secondary);
+}
+.sesa-cumplimiento-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+.sesa-cumplimiento-detail {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+/* S16: Auditoría HC */
+.sesa-auditoria-hc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.5rem;
+}
+.sesa-auditoria-hc-subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+.sesa-auditoria-hc-table-wrap {
+  overflow-x: auto;
+}
+.sesa-auditoria-bajo {
+  background: var(--sesa-error-bg, rgba(220, 53, 69, 0.08));
+}
+.sesa-badge-alerta {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--sesa-radius-sm);
+  background: var(--sesa-error);
+  color: #fff;
+  font-weight: 600;
+}

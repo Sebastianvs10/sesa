@@ -854,6 +854,10 @@ $triage-v:   #1e88e5; // Azul — No urgente
   }
 }
 
+.urg-modal--wide {
+  max-width: 520px;
+}
+
 .urg-checkbox {
   display: flex;
   align-items: center;

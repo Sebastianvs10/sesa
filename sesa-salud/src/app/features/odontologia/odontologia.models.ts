@@ -92,6 +92,8 @@ export interface OdontogramaEstadoDto {
   createdAt?: string;
 }
 
+export type OdontogramaCambioKey = `${number}-${Superficie}`;
+
 export type TipoConsultaOdonto = 'PRIMERA_VEZ' | 'CONTROL' | 'URGENCIA_ODONTOLOGICA' | 'INTERCONSULTA';
 
 export interface ConsultaOdontologicaDto {
@@ -252,8 +254,13 @@ export function crearPiezaVacia(fdi: number, pediatrica = false): PiezaDental {
 
 /** Convierte lista de OdontogramaEstadoDto a mapa fdi->PiezaDental */
 export function dtoListToPiezas(dtos: OdontogramaEstadoDto[]): Map<number, PiezaDental> {
+  const ordenados = [...dtos].sort((a, b) => {
+    const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return ta - tb;
+  });
   const map = new Map<number, PiezaDental>();
-  for (const dto of dtos) {
+  for (const dto of ordenados) {
     if (!map.has(dto.piezaFdi)) {
       const pediatrica = dto.piezaFdi >= 50;
       map.set(dto.piezaFdi, crearPiezaVacia(dto.piezaFdi, pediatrica));
@@ -268,7 +275,7 @@ export function dtoListToPiezas(dtos: OdontogramaEstadoDto[]): Map<number, Pieza
 }
 
 /** Convierte el mapa de piezas modificadas a lista de DTOs para batch */
-export function piezasChangedToDtos(
+export function piezasToDtosSnapshot(
   piezas: Map<number, PiezaDental>,
   pacienteId: number,
   profesionalId: number,
@@ -282,4 +289,37 @@ export function piezasChangedToDtos(
     }
   }
   return dtos;
+}
+
+/** Convierte solo piezas-superficies cambiadas (modo diff) a DTOs para batch */
+export function piezasToDtosDiff(
+  piezas: Map<number, PiezaDental>,
+  pacienteId: number,
+  profesionalId: number,
+  cambios: Iterable<OdontogramaCambioKey>,
+  consultaId?: number,
+): OdontogramaEstadoDto[] {
+  const dtos: OdontogramaEstadoDto[] = [];
+  for (const key of cambios) {
+    const [fdiRaw, superficieRaw] = key.split('-');
+    const fdi = Number(fdiRaw);
+    if (!Number.isFinite(fdi)) continue;
+    const superficie = superficieRaw as Superficie;
+    const pieza = piezas.get(fdi);
+    if (!pieza) continue;
+    const estado = pieza.superficies[superficie];
+    if (!estado) continue;
+    dtos.push({ pacienteId, profesionalId, consultaId, piezaFdi: fdi, superficie, estado });
+  }
+  return dtos;
+}
+
+/** Compatibilidad con llamadas existentes (mantiene snapshot completo). */
+export function piezasChangedToDtos(
+  piezas: Map<number, PiezaDental>,
+  pacienteId: number,
+  profesionalId: number,
+  consultaId?: number,
+): OdontogramaEstadoDto[] {
+  return piezasToDtosSnapshot(piezas, pacienteId, profesionalId, consultaId);
 }

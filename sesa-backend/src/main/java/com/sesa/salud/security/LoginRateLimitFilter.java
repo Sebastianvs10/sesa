@@ -9,7 +9,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,9 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * Nota: el mapa de IPs vive en memoria de la instancia JVM.
  * En despliegues multi-instancia usar Redis para compartir el estado.
+ *
+ * Registrado como filtro del contenedor en SecurityConfig (no en la cadena de Spring Security)
+ * para evitar el requisito de orden registrado en 6.2+.
  */
 @Component
-@Order(1)
 @Slf4j
 public class LoginRateLimitFilter extends OncePerRequestFilter {
 

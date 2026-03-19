@@ -25,6 +25,10 @@ public interface NotificacionService {
 
     Page<NotificacionDto> listRecibidas(Long usuarioId, Pageable pageable);
 
+    Page<NotificacionDto> listArchivadas(Long usuarioId, Pageable pageable);
+
+    Page<NotificacionDto> listPapelera(Long usuarioId, Pageable pageable);
+
     void marcarLeida(Long notificacionId, Long usuarioId);
 
     /**
@@ -38,6 +42,16 @@ public interface NotificacionService {
 
     /** Marca varias notificaciones como no leídas para el usuario actual (solo donde es destinatario). */
     void marcarNoLeidas(List<Long> notificacionIds, Long usuarioId);
+
+    void archivar(Long notificacionId, Long usuarioId);
+
+    void desarchivar(Long notificacionId, Long usuarioId);
+
+    void moverAPapelera(Long notificacionId, Long usuarioId);
+
+    void restaurarDePapelera(Long notificacionId, Long usuarioId);
+
+    void eliminarDefinitivo(Long notificacionId, Long usuarioId);
 
     long countNoLeidas(Long usuarioId);
 

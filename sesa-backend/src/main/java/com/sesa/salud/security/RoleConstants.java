@@ -20,6 +20,8 @@ public final class RoleConstants {
     public static final String PSICOLOGO             = "PSICOLOGO";
     public static final String REGENTE_FARMACIA      = "REGENTE_FARMACIA";
     public static final String RECEPCIONISTA         = "RECEPCIONISTA";
+    /** Rol dedicado a facturación, HC, laboratorios y módulos que requieran facturación. */
+    public static final String FACTURACION           = "FACTURACION";
     public static final String COORDINADOR_MEDICO    = "COORDINADOR_MEDICO";
     /** Profesional de Equipos Básicos de Salud (visitas domiciliarias, APS). */
     public static final String EBS                    = "EBS";
@@ -40,6 +42,7 @@ public final class RoleConstants {
     public static final Set<String> ALL_ROLES = Set.of(
             SUPERADMINISTRADOR, ADMIN, MEDICO, ODONTOLOGO, BACTERIOLOGO, ENFERMERO,
             JEFE_ENFERMERIA, AUXILIAR_ENFERMERIA, PSICOLOGO, REGENTE_FARMACIA, RECEPCIONISTA,
+            FACTURACION,
             COORDINADOR_MEDICO, EBS, COORDINADOR_TERRITORIAL, SUPERVISOR_APS
     );
 

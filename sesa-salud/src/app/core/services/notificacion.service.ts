@@ -93,6 +93,18 @@ export class NotificacionService {
     return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas`, { params });
   }
 
+  /** Listar notificaciones archivadas (paginado) */
+  listArchivadas(page = 0, size = 20): Observable<PageResponse<NotificacionDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas/archivadas`, { params });
+  }
+
+  /** Listar notificaciones en papelera (paginado) */
+  listPapelera(page = 0, size = 20): Observable<PageResponse<NotificacionDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas/papelera`, { params });
+  }
+
   /** Contar no leídas */
   countNoLeidas(): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/recibidas/count`);
@@ -111,6 +123,31 @@ export class NotificacionService {
   /** Marcar una notificación como no leída (solo destinatario) */
   marcarNoLeida(id: number): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}/no-leer`, {});
+  }
+
+  /** Archivar notificación (solo destinatario) */
+  archivar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/archivar`, {});
+  }
+
+  /** Desarchivar notificación (solo destinatario) */
+  desarchivar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/desarchivar`, {});
+  }
+
+  /** Mover a papelera (soft delete por destinatario) */
+  moverAPapelera(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/papelera`, {});
+  }
+
+  /** Restaurar desde papelera */
+  restaurar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/restaurar`, {});
+  }
+
+  /** Eliminar definitivamente (si ya estaba en papelera) */
+  eliminarDefinitivo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
   /** Marcar varias notificaciones como no leídas (solo donde el usuario es destinatario) */

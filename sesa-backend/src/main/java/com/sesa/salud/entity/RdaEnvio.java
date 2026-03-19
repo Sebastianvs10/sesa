@@ -13,6 +13,8 @@ import java.time.Instant;
 @Entity
 @Table(name = "rda_envios", indexes = {
         @Index(name = "idx_rda_atencion", columnList = "atencion_id"),
+        @Index(name = "idx_rda_urgencia", columnList = "urgencia_registro_id"),
+        @Index(name = "idx_rda_hospitalizacion", columnList = "hospitalizacion_id"),
         @Index(name = "idx_rda_estado",   columnList = "estado_envio")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -34,6 +36,14 @@ public class RdaEnvio {
 
     @Column(name = "atencion_id")
     private Long atencionId;
+
+    /** S11: RDA de urgencias (sin atención ambulatoria). */
+    @Column(name = "urgencia_registro_id")
+    private Long urgenciaRegistroId;
+
+    /** S11: RDA de hospitalización. */
+    @Column(name = "hospitalizacion_id")
+    private Long hospitalizacionId;
 
     /** Bundle FHIR R4 generado (JSON) */
     @Column(name = "bundle_json", columnDefinition = "TEXT")

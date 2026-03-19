@@ -4,12 +4,21 @@
 
 package com.sesa.salud.service;
 
+import com.sesa.salud.dto.ConsultaDocumentoDto;
 import com.sesa.salud.dto.PacienteDto;
 import com.sesa.salud.dto.PacienteRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Optional;
+
 public interface PacienteService {
+
+    /**
+     * Consulta datos básicos por documento (ej. ADRES/BDUA si está configurado).
+     * No requiere que el paciente exista en el sistema.
+     */
+    Optional<ConsultaDocumentoDto> consultaPorDocumento(String tipoDocumento, String documento);
 
     Page<PacienteDto> findAll(Pageable pageable);
 

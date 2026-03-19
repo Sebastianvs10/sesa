@@ -41,4 +41,18 @@ public class NotificacionDestinatario {
 
     @Column(name = "fecha_lectura")
     private Instant fechaLectura;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean archivado = false;
+
+    @Column(name = "fecha_archivado")
+    private Instant fechaArchivado;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean eliminado = false;
+
+    @Column(name = "fecha_eliminado")
+    private Instant fechaEliminado;
 }

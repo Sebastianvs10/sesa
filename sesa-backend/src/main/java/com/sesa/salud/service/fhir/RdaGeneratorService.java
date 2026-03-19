@@ -10,6 +10,8 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import com.sesa.salud.dto.EmpresaDto;
 import com.sesa.salud.entity.*;
+import com.sesa.salud.repository.HospitalizacionRepository;
+import com.sesa.salud.repository.UrgenciaRegistroRepository;
 import com.sesa.salud.service.EmpresaService;
 import com.sesa.salud.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,8 @@ import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -42,7 +46,9 @@ import java.util.UUID;
 public class RdaGeneratorService {
 
     private final FhirMapperService mapper;
-    private final EmpresaService    empresaService;
+    private final EmpresaService   empresaService;
+    private final UrgenciaRegistroRepository urgenciaRegistroRepository;
+    private final HospitalizacionRepository hospitalizacionRepository;
 
     // FHIR Context singleton (thread-safe después de inicialización)
     private static final FhirContext FHIR_CTX = FhirContext.forR4();
@@ -52,6 +58,11 @@ public class RdaGeneratorService {
             "https://fhir.minsalud.gov.co/rda/StructureDefinition/RDA-ConsultaExterna";
     private static final String PROFILE_RDA_PACIENTE  =
             "https://fhir.minsalud.gov.co/rda/StructureDefinition/RDA-Paciente";
+    /** S11: Perfiles RDA urgencias y hospitalización (Res. 1888/2025). */
+    private static final String PROFILE_RDA_URGENCIAS =
+            "https://fhir.minsalud.gov.co/rda/StructureDefinition/RDA-Urgencias";
+    private static final String PROFILE_RDA_HOSPITALIZACION =
+            "https://fhir.minsalud.gov.co/rda/StructureDefinition/RDA-Hospitalizacion";
 
     // LOINC code para documento de consulta ambulatoria
     private static final String LOINC_CONSULTA_EXTERNA = "11488-4";
@@ -76,6 +87,24 @@ public class RdaGeneratorService {
     @Transactional(readOnly = true)
     public String generarRdaPaciente(Atencion atencion) {
         Bundle bundle = buildBundle(atencion, RdaEnvio.TipoRda.PACIENTE);
+        return serializarJson(bundle);
+    }
+
+    /** S11: Genera el Bundle RDA de Urgencias para un registro de urgencia. */
+    @Transactional(readOnly = true)
+    public String generarRdaUrgencias(Long urgenciaRegistroId) {
+        UrgenciaRegistro urgencia = urgenciaRegistroRepository.findById(urgenciaRegistroId)
+                .orElseThrow(() -> new RuntimeException("Registro de urgencia no encontrado: " + urgenciaRegistroId));
+        Bundle bundle = buildBundleUrgencias(urgencia);
+        return serializarJson(bundle);
+    }
+
+    /** S11: Genera el Bundle RDA de Hospitalización para un ingreso. */
+    @Transactional(readOnly = true)
+    public String generarRdaHospitalizacion(Long hospitalizacionId) {
+        Hospitalizacion hosp = hospitalizacionRepository.findById(hospitalizacionId)
+                .orElseThrow(() -> new RuntimeException("Hospitalización no encontrada: " + hospitalizacionId));
+        Bundle bundle = buildBundleHospitalizacion(hosp);
         return serializarJson(bundle);
     }
 
@@ -152,6 +181,84 @@ public class RdaGeneratorService {
 
         log.info("Bundle RDA generado — tipo:{} bundleId:{} atencionId:{}",
                 tipo, bundleId, atencion.getId());
+        return bundle;
+    }
+
+    /** S11: Bundle RDA desde registro de urgencias. */
+    private Bundle buildBundleUrgencias(UrgenciaRegistro urgencia) {
+        String bundleId = UUID.randomUUID().toString();
+        Date ahora = new Date();
+        Paciente paciente = urgencia.getPaciente();
+        if (paciente == null) {
+            throw new RuntimeException("Urgencia sin paciente asociado");
+        }
+        EmpresaDto empresa = cargarEmpresa();
+        Patient fhirPatient = mapper.mapPaciente(paciente);
+        Organization fhirOrg = mapper.mapOrganizacion(empresa);
+        Reference patientRef = ref(fhirPatient);
+        Reference orgRef = ref(fhirOrg);
+        Reference practRef = null;
+        Practitioner fhirPractit = null;
+        if (urgencia.getProfesionalTriage() != null) {
+            fhirPractit = mapper.mapProfesional(urgencia.getProfesionalTriage());
+            practRef = ref(fhirPractit);
+        }
+        Encounter fhirEncounter = mapper.mapEncuentroUrgencia(urgencia, patientRef, practRef, orgRef);
+        Reference encounterRef = ref(fhirEncounter);
+        Date fechaUrgencia = urgencia.getFechaHoraIngreso() != null
+                ? Timestamp.valueOf(urgencia.getFechaHoraIngreso()) : ahora;
+        List<Observation> observations = buildSignosVitalesUrgencia(urgencia, patientRef, encounterRef, fechaUrgencia);
+        Composition composition = buildCompositionUrgencias(urgencia, fhirPatient, fhirPractit, fhirOrg,
+                fhirEncounter, observations, ahora);
+
+        Bundle bundle = new Bundle();
+        bundle.setId(bundleId);
+        bundle.setType(Bundle.BundleType.DOCUMENT);
+        bundle.setTimestamp(ahora);
+        bundle.getMeta().addProfile(PROFILE_RDA_URGENCIAS);
+        bundle.setIdentifier(new Identifier()
+                .setSystem("https://fhir.minsalud.gov.co/rda/bundle-id")
+                .setValue(bundleId));
+        addEntry(bundle, composition);
+        addEntry(bundle, fhirPatient);
+        if (fhirPractit != null) addEntry(bundle, fhirPractit);
+        addEntry(bundle, fhirOrg);
+        addEntry(bundle, fhirEncounter);
+        for (Observation o : observations) addEntry(bundle, o);
+        log.info("Bundle RDA Urgencias generado — bundleId:{} urgenciaId:{}", bundleId, urgencia.getId());
+        return bundle;
+    }
+
+    /** S11: Bundle RDA desde hospitalización. */
+    private Bundle buildBundleHospitalizacion(Hospitalizacion hosp) {
+        String bundleId = UUID.randomUUID().toString();
+        Date ahora = new Date();
+        Paciente paciente = hosp.getPaciente();
+        if (paciente == null) {
+            throw new RuntimeException("Hospitalización sin paciente asociado");
+        }
+        EmpresaDto empresa = cargarEmpresa();
+        Patient fhirPatient = mapper.mapPaciente(paciente);
+        Organization fhirOrg = mapper.mapOrganizacion(empresa);
+        Reference patientRef = ref(fhirPatient);
+        Reference orgRef = ref(fhirOrg);
+        Encounter fhirEncounter = mapper.mapEncuentroHospitalizacion(hosp, patientRef, orgRef);
+        Reference encounterRef = ref(fhirEncounter);
+        Composition composition = buildCompositionHospitalizacion(hosp, fhirPatient, fhirOrg, fhirEncounter, ahora);
+
+        Bundle bundle = new Bundle();
+        bundle.setId(bundleId);
+        bundle.setType(Bundle.BundleType.DOCUMENT);
+        bundle.setTimestamp(ahora);
+        bundle.getMeta().addProfile(PROFILE_RDA_HOSPITALIZACION);
+        bundle.setIdentifier(new Identifier()
+                .setSystem("https://fhir.minsalud.gov.co/rda/bundle-id")
+                .setValue(bundleId));
+        addEntry(bundle, composition);
+        addEntry(bundle, fhirPatient);
+        addEntry(bundle, fhirOrg);
+        addEntry(bundle, fhirEncounter);
+        log.info("Bundle RDA Hospitalización generado — bundleId:{} hospitalizacionId:{}", bundleId, hosp.getId());
         return bundle;
     }
 
@@ -255,6 +362,87 @@ public class RdaGeneratorService {
         return comp;
     }
 
+    /** S11: Composition para RDA de urgencias. */
+    private Composition buildCompositionUrgencias(UrgenciaRegistro urgencia,
+                                                  Patient patient, Practitioner practitioner,
+                                                  Organization org, Encounter encounter,
+                                                  List<Observation> observations, Date ahora) {
+        Composition comp = new Composition();
+        comp.setId(UUID.randomUUID().toString());
+        comp.setStatus(Composition.CompositionStatus.FINAL);
+        comp.setDate(ahora);
+        comp.getType()
+            .addCoding(new Coding().setSystem("http://loinc.org").setCode(LOINC_CONSULTA_EXTERNA).setDisplay("Consult note"))
+            .setText("RDA Urgencias");
+        comp.setTitle("RDA - Urgencias");
+        comp.setSubject(ref(patient));
+        comp.setEncounter(ref(encounter));
+        if (practitioner != null) comp.addAuthor(ref(practitioner));
+        else comp.addAuthor(ref(org));
+        comp.setCustodian(ref(org));
+        comp.setIdentifier(new Identifier()
+                .setSystem("https://fhir.minsalud.gov.co/rda/composition-id")
+                .setValue(UUID.randomUUID().toString()));
+
+        if (urgencia.getMotivoConsulta() != null) {
+            comp.addSection().setTitle("Motivo de Consulta")
+                .getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("46239-0").setDisplay("Chief complaint"));
+        }
+        if (urgencia.getNivelTriage() != null) {
+            Composition.SectionComponent sec = comp.addSection();
+            sec.setTitle("Triage");
+            sec.getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("88000-0").setDisplay("Triage"));
+        }
+        if (!observations.isEmpty()) {
+            Composition.SectionComponent secVit = comp.addSection();
+            secVit.setTitle("Signos Vitales");
+            secVit.getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("8716-3").setDisplay("Vital signs"));
+            observations.forEach(o -> secVit.addEntry(ref(o)));
+        }
+        if (urgencia.getAltaDiagnostico() != null || urgencia.getAltaTratamiento() != null
+                || urgencia.getAltaRecomendaciones() != null) {
+            Composition.SectionComponent secAlta = comp.addSection();
+            secAlta.setTitle("Alta de Urgencias");
+            secAlta.getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("18776-5").setDisplay("Plan of care note"));
+        }
+        return comp;
+    }
+
+    /** S11: Composition para RDA de hospitalización. */
+    private Composition buildCompositionHospitalizacion(Hospitalizacion hosp,
+                                                        Patient patient, Organization org,
+                                                        Encounter encounter, Date ahora) {
+        Composition comp = new Composition();
+        comp.setId(UUID.randomUUID().toString());
+        comp.setStatus(Composition.CompositionStatus.FINAL);
+        comp.setDate(ahora);
+        comp.getType()
+            .addCoding(new Coding().setSystem("http://loinc.org").setCode("11488-4").setDisplay("Consult note"))
+            .setText("RDA Hospitalización");
+        comp.setTitle("RDA - Hospitalización");
+        comp.setSubject(ref(patient));
+        comp.setEncounter(ref(encounter));
+        comp.addAuthor(ref(org));
+        comp.setCustodian(ref(org));
+        comp.setIdentifier(new Identifier()
+                .setSystem("https://fhir.minsalud.gov.co/rda/composition-id")
+                .setValue(UUID.randomUUID().toString()));
+
+        if (hosp.getServicio() != null) {
+            comp.addSection().setTitle("Servicio")
+                .getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("86422-5").setDisplay("Service"));
+        }
+        if (hosp.getEvolucionDiaria() != null) {
+            comp.addSection().setTitle("Evolución Diaria")
+                .getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("34117-2").setDisplay("History of hospitalizations"));
+        }
+        if (hosp.getEpicrisis() != null) {
+            comp.addSection().setTitle("Epicrisis")
+                .getCode().addCoding(new Coding().setSystem("http://loinc.org").setCode("34117-2").setDisplay("Epicrisis"));
+        }
+        return comp;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  SIGNOS VITALES
     // ═══════════════════════════════════════════════════════════════════════
@@ -291,6 +479,28 @@ public class RdaGeneratorService {
         if (a.getImc() != null) {
             list.add(mapper.mapSignoVital(mapper.getLoincImc(),
                     "BMI", a.getImc(), "kg/m2", patRef, encRef, fecha));
+        }
+        return list;
+    }
+
+    /** S11: Signos vitales desde registro de urgencia (campos sv_*). */
+    private List<Observation> buildSignosVitalesUrgencia(UrgenciaRegistro u,
+                                                        Reference patRef, Reference encRef, Date fecha) {
+        List<Observation> list = new ArrayList<>();
+        if (u.getSvPresionArterial() != null) {
+            list.add(mapper.mapPresionArterial(u.getSvPresionArterial(), patRef, encRef, fecha));
+        }
+        if (u.getSvFrecuenciaCardiaca() != null) {
+            list.add(mapper.mapSignoVital(mapper.getLoincFc(), "Heart rate", u.getSvFrecuenciaCardiaca(), "/min", patRef, encRef, fecha));
+        }
+        if (u.getSvFrecuenciaRespiratoria() != null) {
+            list.add(mapper.mapSignoVital(mapper.getLoincFr(), "Respiratory rate", u.getSvFrecuenciaRespiratoria(), "/min", patRef, encRef, fecha));
+        }
+        if (u.getSvTemperatura() != null) {
+            list.add(mapper.mapSignoVital(mapper.getLoincTemp(), "Body temperature", u.getSvTemperatura(), "Cel", patRef, encRef, fecha));
+        }
+        if (u.getSvPeso() != null) {
+            list.add(mapper.mapSignoVital(mapper.getLoincPeso(), "Body weight", u.getSvPeso(), "kg", patRef, encRef, fecha));
         }
         return list;
     }

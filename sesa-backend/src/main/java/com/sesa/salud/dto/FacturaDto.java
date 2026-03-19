@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -25,6 +26,7 @@ public class FacturaDto {
     private String epsNombre;
     private String epsCodigo;
     private Long ordenId;
+    private Long consultaId;
     private BigDecimal valorTotal;
     private String estado;
     private String descripcion;
@@ -37,4 +39,14 @@ public class FacturaDto {
     private String responsablePago;
     private BigDecimal cuotaModeradora;
     private String numeroAutorizacionEps;
+    // Facturación electrónica DIAN / FEV (Res. 2275/2023, FEV-RIPS)
+    private String dianEstado;
+    private String dianCufe;
+    private String dianQrUrl;
+    /** Días hábiles restantes para radicación ante EPS (plazo 22 d hábiles — normativa vigente). */
+    private Integer diasParaRadicacion;
+    /** true si ya pasaron los 22 días hábiles sin radicar. */
+    private Boolean vencidaRadicacion;
+    /** Detalle multiclínea (cuenta médica). */
+    private List<FacturaItemDto> items;
 }

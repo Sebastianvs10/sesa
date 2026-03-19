@@ -121,6 +121,40 @@ export interface EbsHomeVisitSummary {
   riskCronico?: boolean;
 }
 
+/** S13: DTO para sincronización de visitas EBS (offline-first). */
+export interface VisitaEbsSyncDto {
+  offlineUuid?: string;
+  serverId?: number;
+  clientUpdatedAt?: string;
+  householdId?: number;
+  familyGroupId?: number;
+  visitDate?: string;
+  visitType?: string;
+  tipoIntervencion?: string;
+  veredaCodigo?: string;
+  diagnosticoCie10?: string;
+  planCuidado?: string;
+  brigadeId?: number;
+  professionalId?: number;
+  motivo?: string;
+  notes?: string;
+  status?: string;
+  riskFlags?: Record<string, boolean | undefined>;
+}
+
+/** S13: Conflicto de sincronización. */
+export interface VisitaEbsConflictDto {
+  offlineUuid?: string;
+  serverId?: number;
+  message?: string;
+}
+
+/** S13: Respuesta del endpoint de sincronización. */
+export interface VisitaEbsSyncResponseDto {
+  savedIds: number[];
+  conflicts: VisitaEbsConflictDto[];
+}
+
 export interface EbsDashboardData {
   totalTerritorios: number;
   totalHogares: number;
@@ -284,6 +318,17 @@ export class EbsService {
     if (params?.periodFrom) httpParams = httpParams.set('periodFrom', params.periodFrom);
     if (params?.periodTo) httpParams = httpParams.set('periodTo', params.periodTo);
     return this.http.get<EbsReportDataDto>(`${this.apiUrl}/ebs/reports/data`, { params: httpParams });
+  }
+
+  /** S13: Visitas creadas después de una fecha (para pull de sincronización). */
+  listPendientesSincronizar(desde?: string): Observable<EbsHomeVisitSummary[]> {
+    const params = desde ? new HttpParams().set('desde', desde) : undefined;
+    return this.http.get<EbsHomeVisitSummary[]>(`${this.apiUrl}/ebs/visitas/pendientes-sincronizar`, { params });
+  }
+
+  /** S13: Envía visitas del cliente (push) y devuelve IDs guardados y conflictos. */
+  sincronizarVisitas(visitas: VisitaEbsSyncDto[]): Observable<VisitaEbsSyncResponseDto> {
+    return this.http.post<VisitaEbsSyncResponseDto>(`${this.apiUrl}/ebs/visitas/sincronizar`, visitas ?? []);
   }
 }
 

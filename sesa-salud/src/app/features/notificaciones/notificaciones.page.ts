@@ -47,7 +47,7 @@ import {
 import { AuthService } from '../../core/services/auth.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
-type MenuId = 'inbox' | 'important' | 'sent';
+type MenuId = 'inbox' | 'important' | 'sent' | 'archived' | 'trash';
 type CategoryId = 'GENERAL' | 'URGENTE' | 'INFORMATIVO' | '';
 
 interface CategoryFilter {
@@ -97,9 +97,11 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   faArchive = faArchive;
 
   menuActive = signal<MenuId>('inbox');
+  sidebarCollapsed = signal(false);
   categoryActive = signal<CategoryId>('');
   searchQuery = '';
   composeOpen = signal(false);
+  composePreview = signal(false);
   /** Orden: 'fecha-desc' | 'fecha-asc' */
   sortOrder = signal<'fecha-desc' | 'fecha-asc'>('fecha-desc');
   /** Filtro por tipo en header (vacío = todos) */
@@ -109,10 +111,15 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   estadoDropdownOpen = signal(false);
   /** Filtro por estado: todos | leídas | no leídas (solo en bandeja/importantes) */
   stateFilter = signal<'all' | 'read' | 'unread'>('all');
+  rowMenuOpenId = signal<number | null>(null);
 
   recibidas = signal<NotificacionDto[]>([]);
+  archivadas = signal<NotificacionDto[]>([]);
+  papelera = signal<NotificacionDto[]>([]);
   enviadas = signal<NotificacionDto[]>([]);
   totalRecibidas = signal(0);
+  totalArchivadas = signal(0);
+  totalPapelera = signal(0);
   totalEnviadas = signal(0);
   destinatarios = signal<DestinatarioDisponible[]>([]);
   loading = signal(false);
@@ -135,12 +142,14 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   /** Selección en la lista (checkboxes) */
   selectedListIds = new Set<number>();
+  readonly skeletonRows = [1, 2, 3, 4, 5, 6, 7];
 
   /** Si el formulario de redacción tiene contenido sin enviar (para confirmar cierre) */
   composeDirty = false;
 
   private currentUserId: number | null = null;
   private refreshCountSubscription?: Subscription;
+  private readonly prefsKey = 'sesa.notificaciones.preferences.v1';
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -149,6 +158,13 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     } else if (this.composeOpen()) {
       this.closeComposeWithConfirm();
     }
+    this.rowMenuOpenId.set(null);
+    this.closeDropdowns();
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.rowMenuOpenId.set(null);
   }
 
   filteredDestinatarios = computed(() => {
@@ -182,8 +198,10 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     const cat = this.categoryActive();
     const headerType = this.headerFilterType();
     const q = this.searchQuery.trim().toLowerCase();
-    let list: NotificacionDto[] =
-      menu === 'sent' ? this.enviadas() : this.recibidas();
+    let list: NotificacionDto[] = this.recibidas();
+    if (menu === 'sent') list = this.enviadas();
+    if (menu === 'archived') list = this.archivadas();
+    if (menu === 'trash') list = this.papelera();
     if (menu === 'important') {
       list = list.filter((n) => n.tipo === 'URGENTE');
     }
@@ -194,7 +212,7 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
       list = list.filter((n) => n.tipo === headerType);
     }
     const state = this.stateFilter();
-    if ((menu === 'inbox' || menu === 'important') && state !== 'all') {
+    if ((menu === 'inbox' || menu === 'important' || menu === 'archived') && state !== 'all') {
       list = list.filter((n) => (state === 'unread' ? this.isUnread(n) : !this.isUnread(n)));
     }
     if (q) {
@@ -246,9 +264,11 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   });
 
   totalElements = computed(() => {
-    return this.menuActive() === 'sent'
-      ? this.totalEnviadas()
-      : this.totalRecibidas();
+    const menu = this.menuActive();
+    if (menu === 'sent') return this.totalEnviadas();
+    if (menu === 'archived') return this.totalArchivadas();
+    if (menu === 'trash') return this.totalPapelera();
+    return this.totalRecibidas();
   });
 
   totalPages = computed(() => {
@@ -266,12 +286,15 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.restorePreferences();
     const user = this.authService.currentUser();
     this.currentUserId = user?.userId ?? null;
     this.isSuperAdmin = user?.role === 'SUPERADMINISTRADOR';
     this.isAdmin = user?.role === 'ADMIN' || this.isSuperAdmin;
 
     this.loadRecibidas();
+    this.loadArchivadas();
+    this.loadPapelera();
     this.loadEnviadas();
     this.loadNoLeidas();
     this.loadDestinatarios();
@@ -289,8 +312,16 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     this.error.set(null);
     this.success.set(null);
     this.currentPage.set(0);
+    this.persistPreferences();
     if (menu === 'inbox' || menu === 'important') this.loadRecibidas();
+    if (menu === 'archived') this.loadArchivadas();
+    if (menu === 'trash') this.loadPapelera();
     if (menu === 'sent') this.loadEnviadas();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((v) => !v);
+    this.persistPreferences();
   }
 
   setCategory(cat: CategoryId): void {
@@ -299,16 +330,19 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   setSortOrder(order: 'fecha-desc' | 'fecha-asc'): void {
     this.sortOrder.set(order);
+    this.persistPreferences();
   }
 
   setHeaderFilterType(tipo: CategoryId): void {
     this.headerFilterType.set(this.headerFilterType() === tipo ? '' : tipo);
     this.filterDropdownOpen.set(false);
+    this.persistPreferences();
   }
 
   setSortOrderAndClose(order: 'fecha-desc' | 'fecha-asc'): void {
     this.sortOrder.set(order);
     this.sortDropdownOpen.set(false);
+    this.persistPreferences();
   }
 
   closeDropdowns(): void {
@@ -338,10 +372,38 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   setEstadoFilter(value: 'all' | 'read' | 'unread'): void {
     this.stateFilter.set(value);
     this.estadoDropdownOpen.set(false);
+    this.persistPreferences();
   }
 
   onSearchChange(): void {
-    // Filtrado es vía computed filteredList
+    this.persistPreferences();
+  }
+
+  toggleRowMenu(id: number, ev: Event): void {
+    ev.stopPropagation();
+    this.rowMenuOpenId.set(this.rowMenuOpenId() === id ? null : id);
+  }
+
+  runRowAction(action: 'read' | 'unread' | 'important' | 'archive' | 'delete', notif: NotificacionDto, ev: Event): void {
+    ev.stopPropagation();
+    this.rowMenuOpenId.set(null);
+    if (action === 'read') {
+      this.quickMarkAsRead(notif, ev);
+      return;
+    }
+    if (action === 'unread') {
+      this.markAsUnread(notif);
+      return;
+    }
+    if (action === 'important') {
+      this.quickMarkImportant(notif, ev);
+      return;
+    }
+    if (action === 'archive') {
+      this.toggleArchive(notif);
+      return;
+    }
+    this.handleDeleteAction(notif);
   }
 
   /** Acción rápida: marcar como leída sin abrir (solo en bandeja/importantes) */
@@ -365,15 +427,81 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     this.toast.info('Próximamente podrás marcar como importante desde aquí.', 'Acción');
   }
 
-  /** Acción rápida: eliminar (placeholder si el backend no expone eliminación) */
   quickDelete(notif: NotificacionDto, ev: Event): void {
     ev.stopPropagation();
-    if (!window.confirm('¿Eliminar esta notificación? Esta acción no está disponible aún.')) return;
-    this.toast.info('Eliminación de notificaciones no disponible en esta versión.', 'Info');
+    this.handleDeleteAction(notif);
+  }
+
+  private toggleArchive(notif: NotificacionDto): void {
+    if (this.menuActive() === 'archived') {
+      this.notificacionService.desarchivar(notif.id).subscribe({
+        next: () => {
+          this.toast.success('Notificación movida a Recibidos', 'Listo');
+          this.refreshListsAfterStateChange();
+        },
+        error: (e) => this.toast.error(e.error?.error || 'No se pudo desarchivar', 'Error'),
+      });
+      return;
+    }
+    this.notificacionService.archivar(notif.id).subscribe({
+      next: () => {
+        this.toast.success('Notificación archivada', 'Listo');
+        this.refreshListsAfterStateChange();
+      },
+      error: (e) => this.toast.error(e.error?.error || 'No se pudo archivar', 'Error'),
+    });
+  }
+
+  private handleDeleteAction(notif: NotificacionDto): void {
+    if (this.menuActive() === 'trash') {
+      if (!window.confirm('¿Eliminar definitivamente esta notificación? Esta acción no se puede deshacer.')) return;
+      this.notificacionService.eliminarDefinitivo(notif.id).subscribe({
+        next: () => {
+          this.toast.success('Notificación eliminada definitivamente', 'Listo');
+          this.refreshListsAfterStateChange();
+        },
+        error: (e) => this.toast.error(e.error?.error || 'No se pudo eliminar definitivamente', 'Error'),
+      });
+      return;
+    }
+    if (!window.confirm('¿Mover esta notificación a papelera?')) return;
+    this.notificacionService.moverAPapelera(notif.id).subscribe({
+      next: () => {
+        this.toast.success('Notificación movida a papelera', 'Listo');
+        this.refreshListsAfterStateChange();
+      },
+      error: (e) => this.toast.error(e.error?.error || 'No se pudo mover a papelera', 'Error'),
+    });
+  }
+
+  restoreFromTrash(notif: NotificacionDto): void {
+    this.notificacionService.restaurar(notif.id).subscribe({
+      next: () => {
+        this.toast.success('Notificación restaurada', 'Listo');
+        this.refreshListsAfterStateChange();
+      },
+      error: (e) => this.toast.error(e.error?.error || 'No se pudo restaurar', 'Error'),
+    });
+  }
+
+  private refreshListsAfterStateChange(): void {
+    this.loadRecibidas();
+    this.loadArchivadas();
+    this.loadPapelera();
+    this.loadNoLeidas();
   }
 
   countImportant(): number {
     return this.recibidas().filter((n) => n.tipo === 'URGENTE').length;
+  }
+
+  folderCount(folder: 'inbox' | 'important' | 'sent' | 'archived' | 'trash' | 'drafts'): number {
+    if (folder === 'inbox') return this.noLeidas();
+    if (folder === 'important') return this.countImportant();
+    if (folder === 'sent') return this.totalEnviadas();
+    if (folder === 'archived') return this.totalArchivadas();
+    if (folder === 'trash') return this.totalPapelera();
+    return 0;
   }
 
   loadRecibidas(): void {
@@ -409,6 +537,38 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadArchivadas(): void {
+    this.loading.set(true);
+    const page = this.currentPage();
+    this.notificacionService.listArchivadas(page, this.pageSize).subscribe({
+      next: (p: PageResponse<NotificacionDto>) => {
+        this.archivadas.set(p.content);
+        this.totalArchivadas.set(p.totalElements);
+        this.loading.set(false);
+      },
+      error: (e) => {
+        this.error.set(e.error?.error || 'Error');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  loadPapelera(): void {
+    this.loading.set(true);
+    const page = this.currentPage();
+    this.notificacionService.listPapelera(page, this.pageSize).subscribe({
+      next: (p: PageResponse<NotificacionDto>) => {
+        this.papelera.set(p.content);
+        this.totalPapelera.set(p.totalElements);
+        this.loading.set(false);
+      },
+      error: (e) => {
+        this.error.set(e.error?.error || 'Error');
+        this.loading.set(false);
+      },
+    });
+  }
+
   loadNoLeidas(): void {
     this.notificacionService.countNoLeidas().subscribe({
       next: (n) => this.noLeidas.set(n),
@@ -425,8 +585,10 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   goToPage(page: number): void {
     this.currentPage.set(Math.max(0, Math.min(page, this.totalPages() - 1)));
-    if (this.menuActive() === 'sent') this.loadEnviadas();
-    else this.loadRecibidas();
+    if (this.menuActive() === 'sent') return this.loadEnviadas();
+    if (this.menuActive() === 'archived') return this.loadArchivadas();
+    if (this.menuActive() === 'trash') return this.loadPapelera();
+    this.loadRecibidas();
   }
 
   isAllSelected(): boolean {
@@ -558,12 +720,14 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   openCompose(): void {
     this.composeOpen.set(true);
+    this.composePreview.set(false);
     this.composeDirty = false;
     this.error.set(null);
   }
 
   closeCompose(): void {
     this.composeOpen.set(false);
+    this.composePreview.set(false);
     this.composeDirty = false;
   }
 
@@ -623,6 +787,7 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     const files = ev.dataTransfer?.files;
     if (files) {
       for (let i = 0; i < files.length; i++) this.adjuntos.push(files[i]);
+      this.composeDirty = true;
     }
   }
 
@@ -759,6 +924,8 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     // Refrescar bandeja de entrada y enviados tras un breve delay para que el backend persista
     setTimeout(() => {
       this.loadRecibidas();
+      this.loadArchivadas();
+      this.loadPapelera();
       this.loadEnviadas();
     }, 150);
     setTimeout(() => this.success.set(null), 5000);
@@ -766,7 +933,7 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   viewNotif(notif: NotificacionDto): void {
     this.selectedNotif.set(notif);
-    if (this.menuActive() === 'inbox' || this.menuActive() === 'important') {
+    if (this.menuActive() === 'inbox' || this.menuActive() === 'important' || this.menuActive() === 'archived') {
       this.notificacionService.marcarLeida(notif.id).subscribe({
         next: () => this.loadNoLeidas(),
         error: () => {},
@@ -779,7 +946,7 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   }
 
   isUnread(n: NotificacionDto): boolean {
-    if (this.menuActive() !== 'inbox' && this.menuActive() !== 'important')
+    if (this.menuActive() !== 'inbox' && this.menuActive() !== 'important' && this.menuActive() !== 'archived')
       return false;
     if (this.currentUserId == null) return true;
     const d = n.destinatarios?.find((x) => x.usuarioId === this.currentUserId);
@@ -793,6 +960,9 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   }
 
   emptyMessage(): string {
+    if (this.hasFilterEffect()) return 'No hay resultados con los filtros actuales.';
+    if (this.menuActive() === 'archived') return 'No tiene notificaciones archivadas.';
+    if (this.menuActive() === 'trash') return 'La papelera está vacía.';
     if (this.menuActive() === 'sent') return 'No ha enviado notificaciones.';
     if (this.menuActive() === 'important')
       return 'No tiene notificaciones importantes.';
@@ -807,10 +977,31 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     return (name || '?').charAt(0).toUpperCase();
   }
 
+  hasFilterEffect(): boolean {
+    return this.rawListCurrentMenu().length > 0 && this.filteredList().length === 0;
+  }
+
+  clearFilters(): void {
+    this.headerFilterType.set('');
+    this.stateFilter.set('all');
+    this.searchQuery = '';
+    this.sortOrder.set('fecha-desc');
+    this.persistPreferences();
+  }
+
   private stripHtml(html: string): string {
     const div = document.createElement('div');
     div.innerHTML = html;
     return (div.textContent || div.innerText || '').trim();
+  }
+
+  private rawListCurrentMenu(): NotificacionDto[] {
+    const menu = this.menuActive();
+    if (menu === 'sent') return this.enviadas();
+    if (menu === 'archived') return this.archivadas();
+    if (menu === 'trash') return this.papelera();
+    if (menu === 'important') return this.recibidas().filter((n) => n.tipo === 'URGENTE');
+    return this.recibidas();
   }
 
   downloadFile(
@@ -838,5 +1029,44 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   adjuntoPreviewUrl(notifId: number, adjId: number): string {
     return this.notificacionService.adjuntoUrl(notifId, adjId);
+  }
+
+  filePreviewUrl(file: File): string {
+    return URL.createObjectURL(file);
+  }
+
+  private persistPreferences(): void {
+    const payload = {
+      menu: this.menuActive(),
+      sortOrder: this.sortOrder(),
+      typeFilter: this.headerFilterType(),
+      stateFilter: this.stateFilter(),
+      searchQuery: this.searchQuery,
+      sidebarCollapsed: this.sidebarCollapsed(),
+    };
+    localStorage.setItem(this.prefsKey, JSON.stringify(payload));
+  }
+
+  private restorePreferences(): void {
+    try {
+      const raw = localStorage.getItem(this.prefsKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        menu?: MenuId;
+        sortOrder?: 'fecha-desc' | 'fecha-asc';
+        typeFilter?: CategoryId;
+        stateFilter?: 'all' | 'read' | 'unread';
+        searchQuery?: string;
+        sidebarCollapsed?: boolean;
+      };
+      if (parsed.menu) this.menuActive.set(parsed.menu);
+      if (parsed.sortOrder) this.sortOrder.set(parsed.sortOrder);
+      if (parsed.typeFilter !== undefined) this.headerFilterType.set(parsed.typeFilter);
+      if (parsed.stateFilter) this.stateFilter.set(parsed.stateFilter);
+      if (typeof parsed.searchQuery === 'string') this.searchQuery = parsed.searchQuery;
+      if (typeof parsed.sidebarCollapsed === 'boolean') this.sidebarCollapsed.set(parsed.sidebarCollapsed);
+    } catch {
+      // Ignorar errores de parseo para no bloquear la vista
+    }
   }
 }

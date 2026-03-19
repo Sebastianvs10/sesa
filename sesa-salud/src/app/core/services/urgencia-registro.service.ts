@@ -36,6 +36,11 @@ export interface UrgenciaRegistroDto {
   glasgowOcular?: number;
   glasgowVerbal?: number;
   glasgowMotor?: number;
+  /** S6: Datos de alta */
+  altaDiagnostico?: string;
+  altaTratamiento?: string;
+  altaRecomendaciones?: string;
+  altaProximaCita?: string;
 }
 
 export interface UrgenciaRegistroRequestDto {
@@ -105,6 +110,16 @@ export interface CumplimientoTriageDto {
 export interface UrgenciaTriagePatchDto {
   nivelTriage?: string;
   profesionalTriageId?: number;
+}
+
+/** S6: Body para dar alta o referencia (checklist + PDF). */
+export interface AltaReferenciaRequestDto {
+  diagnostico?: string;
+  tratamiento?: string;
+  recomendaciones?: string;
+  proximaCita?: string;
+  motivoReferencia?: string;
+  nivelReferencia?: string;
 }
 
 export interface SignosVitalesUrgenciaDto {
@@ -186,5 +201,15 @@ export class UrgenciaRegistroService {
   createSignosVitales(urgenciaId: number, dto: SignosVitalesUrgenciaRequestDto): Observable<SignosVitalesUrgenciaDto> {
     dto.urgenciaRegistroId = urgenciaId;
     return this.http.post<SignosVitalesUrgenciaDto>(`${this.apiUrl}/${urgenciaId}/signos-vitales`, dto);
+  }
+
+  /** S6: Dar alta (estado ALTA + datos para PDF). */
+  darAlta(id: number, body: AltaReferenciaRequestDto): Observable<UrgenciaRegistroDto> {
+    return this.http.post<UrgenciaRegistroDto>(`${this.apiUrl}/${id}/alta`, body ?? {});
+  }
+
+  /** S6: Descargar PDF de resumen de alta. */
+  getPdfAlta(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/alta/pdf`, { responseType: 'blob' });
   }
 }

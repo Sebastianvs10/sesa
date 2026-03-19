@@ -55,7 +55,7 @@
 ══════════════════════════════════════════════════════ */
 .fac-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
 
@@ -109,6 +109,16 @@
 .fac-kpi-card--danger .fac-kpi-icon {
   background: rgba(239, 68, 68, 0.1);
   color: var(--sesa-error);
+}
+
+.fac-kpi-card--info .fac-kpi-icon {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--sesa-secondary, #3b82f6);
+}
+
+.fac-kpi-card--alert .fac-kpi-icon {
+  background: rgba(234, 88, 12, 0.15);
+  color: var(--sesa-warning, #ea580c);
 }
 
 .fac-kpi-body {
@@ -210,6 +220,80 @@
 }
 
 /* ══════════════════════════════════════════════════════
+   ÓRDENES PENDIENTES DE FACTURAR
+══════════════════════════════════════════════════════ */
+.fac-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fac-section-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-section-desc {
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+.fac-ordenes-pendientes-loading,
+.fac-empty-ordenes {
+  padding: 1rem 0;
+}
+
+.fac-empty-ordenes p {
+  margin: 0;
+  color: var(--sesa-text-secondary);
+  font-size: 0.9rem;
+}
+
+.fac-ordenes-pendientes-wrap {
+  overflow-x: auto;
+}
+
+.fac-table--ordenes {
+  margin-top: 0;
+}
+
+.fac-orden-pendiente-row {
+  padding: 0.5rem 0;
+}
+
+.fac-tipo-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--sesa-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  color: var(--sesa-text-primary);
+}
+
+.fac-td-detalle {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fac-ordenes-total {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+/* ══════════════════════════════════════════════════════
    TABLA
 ══════════════════════════════════════════════════════ */
 .fac-table-header {
@@ -271,6 +355,10 @@
     opacity: 0.5;
     text-decoration: line-through;
   }
+
+  tbody tr.fac-row--vencida .fac-td-numero {
+    border-left: 3px solid var(--sesa-error);
+  }
 }
 
 /* Columnas específicas */
@@ -298,8 +386,32 @@
   width: fit-content;
 }
 
+.fac-tag-vencida {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--sesa-error);
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.fac-paciente {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .fac-paciente-nombre {
   font-weight: 500;
+}
+
+.fac-link-hc {
+  font-size: 0.75rem;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
 }
 
 .fac-doc-eps {
@@ -329,6 +441,25 @@
   color: var(--sesa-text-secondary);
   white-space: nowrap;
 }
+
+.fac-td-dian .fac-badge-dian { font-size: 0.7rem; }
+.fac-badge-dian--aceptada { background: rgba(34, 197, 94, 0.15); color: var(--sesa-success); }
+.fac-badge-dian--pendiente_dian,
+.fac-badge-dian--no_activa { background: rgba(245, 158, 11, 0.15); color: var(--sesa-warning); }
+.fac-badge-dian--rechazada { background: rgba(239, 68, 68, 0.15); color: var(--sesa-error); }
+
+.fac-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--sesa-border);
+  border-top-color: var(--sesa-secondary);
+  border-radius: 50%;
+  animation: fac-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+@keyframes fac-spin { to { transform: rotate(360deg); } }
 
 .fac-td-actions {
   white-space: nowrap;
@@ -546,6 +677,28 @@
   color: var(--sesa-text-secondary);
 }
 
+.fac-cups-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fac-cups-filter {
+  max-width: 320px;
+}
+
+.fac-cups-select {
+  min-width: 280px;
+  max-width: 100%;
+}
+
+.fac-cups-manual {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
 .fac-required {
   color: var(--sesa-error);
   margin-left: 0.1rem;
@@ -555,6 +708,469 @@
   color: var(--sesa-text-muted);
   font-weight: 400;
   font-size: 0.75rem;
+}
+
+/* Orden vinculada (flujo desde "Generar factura" en órdenes pendientes) */
+.fac-orden-vinculada {
+  padding: 0.75rem 1rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: var(--sesa-radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.fac-orden-vinculada-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sesa-success);
+  margin-bottom: 0.35rem;
+}
+
+.fac-orden-vinculada-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--sesa-text-primary);
+}
+
+.fac-orden-vinculada-paciente {
+  color: var(--sesa-text-secondary);
+}
+
+.fac-orden-vinculada-valor {
+  font-weight: 600;
+  color: var(--sesa-secondary);
+  margin-left: auto;
+}
+
+/* Pasos del proceso (identificación → servicio RIPS → financiación → valor) */
+.fac-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.fac-step:first-of-type {
+  margin-top: 0;
+}
+
+.fac-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--sesa-secondary);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.fac-step-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.fac-input-readonly {
+  background: var(--sesa-bg);
+  color: var(--sesa-text-secondary);
+  cursor: default;
+  border-color: var(--sesa-border);
+}
+
+/* Detalle multiclínea (ítems de factura) */
+.fac-items-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.fac-items-wrap {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+}
+
+.fac-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+
+  th {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-secondary);
+    font-weight: 600;
+    padding: 0.5rem 0.4rem;
+    text-align: left;
+    border-bottom: 1px solid var(--sesa-border);
+  }
+
+  td {
+    padding: 0.35rem 0.4rem;
+    border-bottom: 1px solid var(--sesa-border-light);
+    vertical-align: middle;
+  }
+
+  .fac-input-sm {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    min-width: 0;
+  }
+
+  .fac-input-num {
+    width: 4.5rem;
+  }
+
+  .fac-item-total {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.fac-items-sum {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  border-top: 1px solid var(--sesa-border);
+  font-size: 0.875rem;
+}
+
+.fac-valor-total {
+  font-weight: 600;
+  color: var(--sesa-secondary);
+}
+
+.fac-radicacion-contexto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--sesa-bg);
+  border-radius: var(--sesa-radius-md);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  strong { color: var(--sesa-text-primary); }
+}
+
+/* ── Alertas (dashboard predictivo) ───────────────── */
+.fac-alertas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.fac-alerta-card {
+  padding: 0.85rem 1rem;
+  border-radius: var(--sesa-radius-md);
+  border-left: 4px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &.fac-alerta--danger {
+    border-left-color: var(--sesa-danger, #dc2626);
+    background: rgba(220, 38, 38, 0.05);
+  }
+  &.fac-alerta--warning {
+    border-left-color: var(--sesa-warning, #d97706);
+    background: rgba(217, 119, 6, 0.06);
+  }
+  &.fac-alerta--info {
+    border-left-color: var(--sesa-info, #0ea5e9);
+    background: rgba(14, 165, 233, 0.05);
+  }
+}
+
+.fac-alerta-titulo {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+}
+
+.fac-alerta-mensaje {
+  font-size: 0.82rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fac-alerta-ref, .fac-alerta-dias {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-alerta-card .sesa-btn {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+}
+
+/* ── Bandeja del facturador ───────────────────────── */
+.fac-bandeja-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fac-bandeja-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  border-radius: var(--sesa-radius-md);
+  font-size: 0.875rem;
+
+  &.fac-bandeja-item--vencida {
+    border-color: var(--sesa-danger, #dc2626);
+    background: rgba(220, 38, 38, 0.04);
+  }
+}
+
+.fac-bandeja-tipo {
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  min-width: 4.5rem;
+}
+
+.fac-bandeja-ref {
+  font-family: var(--sesa-font-mono, monospace);
+  color: var(--sesa-text-secondary);
+}
+
+.fac-bandeja-desc {
+  color: var(--sesa-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fac-bandeja-dias {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  &.fac-bandeja-dias--vencida { color: var(--sesa-danger); font-weight: 600; }
+}
+
+/* ── Checklist pre-radicación ─────────────────────── */
+.fac-checklist-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sesa-border);
+  border-top-color: var(--sesa-primary);
+  border-radius: 50%;
+  animation: fac-spin 0.7s linear infinite;
+}
+
+@keyframes fac-spin {
+  to { transform: rotate(360deg); }
+}
+
+.fac-checklist-radicacion {
+  padding: 0.85rem 1rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+
+  &.fac-checklist--listo {
+    border-color: var(--sesa-success, #16a34a);
+    background: rgba(22, 163, 74, 0.06);
+  }
+  &.fac-checklist--bloqueado {
+    border-color: var(--sesa-danger, #dc2626);
+    background: rgba(220, 38, 38, 0.05);
+  }
+}
+
+.fac-checklist-resumen {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--sesa-text-primary);
+}
+
+.fac-checklist-errores, .fac-checklist-advertencias {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--sesa-text-secondary);
+
+  li { margin: 0.2rem 0; }
+}
+
+.fac-checklist-errores { color: var(--sesa-danger); }
+.fac-checklist-advertencias { color: var(--sesa-warning); }
+
+.fac-radicacion-ayuda {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  margin: -0.25rem 0 0.75rem;
+}
+
+/* ── Facturación por lote (órdenes) ───────────────── */
+.fac-ordenes-pendientes-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fac-lote-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.fac-lote-count {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-th-check, .fac-td-check {
+  width: 2.5rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.fac-th-check input, .fac-td-check input {
+  cursor: pointer;
+}
+
+.fac-label--help {
+  cursor: help;
+}
+
+/* ── Panel Trazabilidad (timeline) ────────────────────────────── */
+.fac-trazabilidad-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.fac-timeline-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.75rem;
+}
+
+.fac-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--sesa-border);
+  margin-left: 0.5rem;
+  padding-left: 1rem;
+}
+
+.fac-timeline-item {
+  position: relative;
+  padding-bottom: 1rem;
+
+  &:last-child { padding-bottom: 0; }
+}
+
+.fac-timeline-marker {
+  position: absolute;
+  left: -1.25rem;
+  top: 0.25rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sesa-border);
+
+  &[data-tipo="CREADA"] { background: var(--sesa-primary); }
+  &[data-tipo="EMITIDA_FEV"] { background: var(--sesa-info); }
+  &[data-tipo="RADICADA"] { background: #0ea5e9; }
+  &[data-tipo="GLOSA"] { background: var(--sesa-warning); }
+  &[data-tipo="PAGADA"] { background: var(--sesa-success); }
+  &[data-tipo="RECHAZADA"],
+  &[data-tipo="ANULADA"] { background: var(--sesa-danger); }
+}
+
+.fac-timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.fac-timeline-fecha {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.fac-timeline-titulo {
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+}
+
+.fac-timeline-desc {
+  font-size: 0.82rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fac-timeline-ref {
+  font-size: 0.8rem;
+  font-family: var(--sesa-font-mono, monospace);
+  color: var(--sesa-text-secondary);
+}
+
+/* ── Libro de facturación (filtros) ───────────────────────────── */
+.fac-libro-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.fac-libro-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  margin-right: 0.25rem;
+}
+
+.fac-libro-wrap .fac-input-sm {
+  max-width: 140px;
 }
 
 /* ── RIPS info panel ─────────────────────────────── */

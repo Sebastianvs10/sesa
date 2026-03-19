@@ -1,0 +1,14 @@
+<!-- Confirmación de cita por enlace (S3) - Autor: Ing. J Sebastian Vargas S -->
+<div class="cita-public-page">
+  <div class="cita-public-card">
+    @if (loading) {
+      <p class="cita-public-loading">Procesando...</p>
+    } @else if (success) {
+      <h1 class="cita-public-title cita-public-title--success">Cita confirmada</h1>
+      <p class="cita-public-mensaje">{{ mensaje }}</p>
+    } @else {
+      <h1 class="cita-public-title cita-public-title--error">No se pudo confirmar</h1>
+      <p class="cita-public-error">{{ error }}</p>
+    }
+  </div>
+</div>

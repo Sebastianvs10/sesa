@@ -4,6 +4,7 @@
 
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.ConsultaDocumentoDto;
 import com.sesa.salud.dto.PacienteDto;
 import com.sesa.salud.dto.PacienteRequestDto;
 import com.sesa.salud.service.PacienteService;
@@ -16,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/pacientes")
@@ -36,6 +39,15 @@ public class PacienteController {
             return pacienteService.search(q, pageable);
         }
         return pacienteService.findAll(pageable, activo);
+    }
+
+    @GetMapping("/consulta-documento")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
+    public ResponseEntity<ConsultaDocumentoDto> consultaPorDocumento(
+            @RequestParam("tipoDocumento") String tipoDocumento,
+            @RequestParam("documento") String documento) {
+        Optional<ConsultaDocumentoDto> opt = pacienteService.consultaPorDocumento(tipoDocumento, documento);
+        return opt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{id}")

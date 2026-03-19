@@ -9,6 +9,7 @@ import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.c
 import { PacienteDto, PacienteService } from '../../core/services/paciente.service';
 import { HospitalizacionDto, HospitalizacionService } from '../../core/services/hospitalizacion.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { RdaService } from '../../core/services/rda.service';
 
 @Component({
   standalone: true,
@@ -21,10 +22,13 @@ export class HospitalizacionPageComponent implements OnInit {
   private readonly pacienteService = inject(PacienteService);
   private readonly hospitalizacionService = inject(HospitalizacionService);
   private readonly toast = inject(SesaToastService);
+  private readonly rdaService = inject(RdaService);
 
   pacientes: PacienteDto[] = [];
   hospitalizaciones: HospitalizacionDto[] = [];
   error: string | null = null;
+  /** S11: ID de hospitalización cuyo RDA se está generando/enviando */
+  rdaEnviandoId: number | null = null;
 
   form = {
     pacienteId: null as number | null,
@@ -78,6 +82,24 @@ export class HospitalizacionPageComponent implements OnInit {
       error: (err) => {
         this.error = err?.error?.error || 'No se pudo crear hospitalización';
         this.toast.error(this.error!, 'Error');
+      },
+    });
+  }
+
+  /** S11: Generar y enviar RDA de Hospitalización (Res. 1888/2025). */
+  generarYEnviarRdaHospitalizacion(h: HospitalizacionDto): void {
+    this.rdaEnviandoId = h.id;
+    this.rdaService.generarYEnviarHospitalizacion(h.id).subscribe({
+      next: (status) => {
+        this.rdaEnviandoId = null;
+        this.toast.success(
+          `RDA ${this.rdaService.estadoLabel(status.estadoEnvio)}${status.idMinisterio ? ' — ID Ministerio: ' + status.idMinisterio : ''}`,
+          'RDA Hospitalización'
+        );
+      },
+      error: (err) => {
+        this.rdaEnviandoId = null;
+        this.toast.error(err?.error?.error || err?.message || 'Error al generar/enviar RDA', 'RDA Hospitalización');
       },
     });
   }

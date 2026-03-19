@@ -57,6 +57,7 @@ public class DataInitializer implements CommandLineRunner {
             role(RoleConstants.PSICOLOGO,           "Psicólogo"),
             role(RoleConstants.REGENTE_FARMACIA,    "Regente de Farmacia"),
             role(RoleConstants.RECEPCIONISTA,       "Recepcionista"),
+            role(RoleConstants.FACTURACION,         "Facturación"),
             role(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico"),
             role(RoleConstants.EBS,                  "Profesional EBS"),
             role(RoleConstants.COORDINADOR_TERRITORIAL, "Coordinador Territorial"),

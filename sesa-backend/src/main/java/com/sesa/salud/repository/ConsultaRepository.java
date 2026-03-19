@@ -15,6 +15,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
 
     List<Consulta> findByPaciente_IdOrderByFechaConsultaDesc(Long pacienteId, Pageable pageable);
 
+    long countByPaciente_IdAndFechaConsultaBetween(Long pacienteId, Instant desde, Instant hasta);
+
     boolean existsByPaciente_Id(Long pacienteId);
 
     List<Consulta> findByProfesional_IdOrderByFechaConsultaDesc(Long profesionalId, Pageable pageable);

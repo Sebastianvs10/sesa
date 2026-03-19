@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface PacienteDto {
@@ -60,6 +61,23 @@ export interface PacienteRequestDto {
   pertenenciaEtnica?: string;
 }
 
+/** Datos básicos devueltos por consulta por documento (ej. ADRES/BDUA). */
+export interface ConsultaDocumentoDto {
+  tipoDocumento?: string;
+  documento?: string;
+  nombres?: string;
+  apellidos?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  epsNombre?: string;
+  epsId?: number;
+  estadoAfiliacion?: string;
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;
@@ -83,6 +101,23 @@ export class PacienteService {
 
   get(id: number): Observable<PacienteDto> {
     return this.http.get<PacienteDto>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Consulta datos básicos por tipo y número de documento (ADRES/BDUA si está configurado).
+   * Retorna null si no hay integración o no hay datos.
+   */
+  consultaPorDocumento(tipoDocumento: string, documento: string): Observable<ConsultaDocumentoDto | null> {
+    const params = new HttpParams()
+      .set('tipoDocumento', tipoDocumento || 'CC')
+      .set('documento', documento.trim().replace(/\s/g, ''));
+    return this.http.get<ConsultaDocumentoDto>(`${this.apiUrl}/consulta-documento`, {
+      params,
+      observe: 'response',
+    }).pipe(
+      map((res) => (res.status === 204 || !res.body) ? null : res.body),
+      catchError(() => of(null)),
+    );
   }
 
   create(request: PacienteRequestDto): Observable<PacienteDto> {

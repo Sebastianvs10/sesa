@@ -9,10 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -100,5 +103,59 @@ public class ReporteController {
     @PreAuthorize("hasAnyRole('ADMIN','MEDICO','SUPERADMINISTRADOR','COORDINADOR_MEDICO','SUPERVISOR_APS','JEFE_ENFERMERIA','ENFERMERO','ODONTOLOGO','RECEPCIONISTA')")
     public List<IndicadorCalidadDto> indicadoresCalidad() {
         return reporteService.getIndicadoresCalidadRes256();
+    }
+
+    /** Score de riesgo del paciente para cabecera de historia clínica (S1). */
+    @GetMapping("/paciente/{pacienteId}/riesgo")
+    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','ODONTOLOGO','BACTERIOLOGO','ENFERMERO','JEFE_ENFERMERIA','AUXILIAR_ENFERMERIA','PSICOLOGO','REGENTE_FARMACIA','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    public PacienteRiesgoDto riesgoPaciente(@PathVariable Long pacienteId) {
+        return reporteService.getRiesgoPaciente(pacienteId);
+    }
+
+    /** S4: Panel de cumplimiento normativo. */
+    @GetMapping("/cumplimiento-normativo")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','COORDINADOR_MEDICO','REPORTES')")
+    public CumplimientoNormativoDto cumplimientoNormativo(
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta,
+            @RequestParam(required = false) Long profesionalId) {
+        return reporteService.getCumplimientoNormativo(desde, hasta, profesionalId);
+    }
+
+    /** S9: Recuperación de cartera — glosas por período. */
+    @GetMapping("/recuperacion-cartera")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','FACTURACION','RECEPCIONISTA')")
+    public RecuperacionCarteraDto recuperacionCartera(
+            @RequestParam(required = false) Instant desde,
+            @RequestParam(required = false) Instant hasta,
+            @RequestParam(required = false) Long contratoId) {
+        if (desde == null) desde = Instant.now().minusSeconds(30L * 24 * 60 * 60);
+        if (hasta == null) hasta = Instant.now();
+        return reporteService.recuperacionCartera(desde, hasta, contratoId);
+    }
+
+    /** S16: Evaluación de calidad de una consulta (auditoría HC). */
+    @GetMapping("/auditoria-hc/atencion/{consultaId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','COORDINADOR_MEDICO','REPORTES','MEDICO')")
+    public EvaluacionHcDto auditoriaHcAtencion(@PathVariable Long consultaId) {
+        return reporteService.evaluarAtencion(consultaId);
+    }
+
+    /** S16: Reporte de auditoría HC por profesional. */
+    @GetMapping("/auditoria-hc/por-profesional")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','COORDINADOR_MEDICO','REPORTES')")
+    public List<AuditoriaHcProfesionalDto> auditoriaHcPorProfesional(
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta) {
+        return reporteService.reporteAuditoriaHcPorProfesional(desde, hasta);
+    }
+
+    /** S16: Reporte de auditoría HC por servicio (tipo de consulta). */
+    @GetMapping("/auditoria-hc/por-servicio")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','COORDINADOR_MEDICO','REPORTES')")
+    public List<AuditoriaHcServicioDto> auditoriaHcPorServicio(
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta) {
+        return reporteService.reporteAuditoriaHcPorServicio(desde, hasta);
     }
 }

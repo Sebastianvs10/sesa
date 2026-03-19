@@ -160,4 +160,19 @@ public class EbsController {
             @RequestParam(value = "periodTo", required = false) String periodTo) {
         return ebsService.getReportData(reportType, periodFrom, periodTo);
     }
+
+    /** S13: Visitas creadas después de una fecha para sincronización (pull). */
+    @GetMapping("/visitas/pendientes-sincronizar")
+    @PreAuthorize(ROLES_EBS)
+    public List<EbsHomeVisitSummaryDto> listPendientesSincronizar(
+            @RequestParam(value = "desde", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant desde) {
+        return ebsService.listPendientesSincronizar(desde);
+    }
+
+    /** S13: Envía visitas del cliente y aplica last-write-wins (push). */
+    @PostMapping("/visitas/sincronizar")
+    @PreAuthorize(ROLES_EBS)
+    public VisitaEbsSyncResponseDto sincronizarVisitas(@RequestBody List<VisitaEbsSyncDto> visitas) {
+        return ebsService.sincronizarVisitas(visitas);
+    }
 }

@@ -14,6 +14,10 @@ import java.time.Instant;
 public class RdaStatusDto {
     private Long rdaId;
     private Long atencionId;
+    /** S11: ID del registro de urgencia cuando el RDA es tipo URGENCIAS. */
+    private Long urgenciaRegistroId;
+    /** S11: ID de la hospitalización cuando el RDA es tipo HOSPITALIZACION. */
+    private Long hospitalizacionId;
     private RdaEnvio.TipoRda tipoRda;
     private RdaEnvio.EstadoRda estadoEnvio;
     private String idMinisterio;

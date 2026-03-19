@@ -7,6 +7,7 @@ package com.sesa.salud.config;
 import com.sesa.salud.security.JwtAuthenticationFilter;
 import com.sesa.salud.security.LoginRateLimitFilter;
 import com.sesa.salud.security.TenantFilter;
+import com.sesa.salud.security.ApiKeyAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.core.Ordered;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,9 +41,30 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final TenantFilter tenantFilter;
     private final LoginRateLimitFilter loginRateLimitFilter;
+    private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 
     @Value("${sesa.cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
+
+    /**
+     * Registra filtros custom fuera de la cadena de Spring Security para evitar
+     * "Filter does not have a registered order" en 6.2+. Se ejecutan antes de la cadena.
+     */
+    @Bean
+    public FilterRegistrationBean<LoginRateLimitFilter> loginRateLimitFilterRegistration() {
+        FilterRegistrationBean<LoginRateLimitFilter> reg = new FilterRegistrationBean<>(loginRateLimitFilter);
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        reg.addUrlPatterns("/*");
+        return reg;
+    }
+
+    @Bean
+    public FilterRegistrationBean<ApiKeyAuthenticationFilter> apiKeyFilterRegistration() {
+        FilterRegistrationBean<ApiKeyAuthenticationFilter> reg = new FilterRegistrationBean<>(apiKeyAuthenticationFilter);
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+        reg.addUrlPatterns("/*");
+        return reg;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -81,6 +106,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/health", "/sync/status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cita/confirmar").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cita/cancelar").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/cita/cancelar").permitAll()
                         .requestMatchers(HttpMethod.GET, "/recetas/verificar/**").permitAll()
                         // Videoconsulta: unirse por enlace y señalización sin login (enlace compartido)
                         .requestMatchers(HttpMethod.GET, "/videoconsulta/salas/*").permitAll()
@@ -98,6 +126,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/empresas/current", "/empresas/logo").authenticated()
                         .requestMatchers("/empresas", "/empresas/**").hasAnyRole("ADMIN", "SUPERADMINISTRADOR")
+                        // S12: API integradores (autenticación por X-API-Key)
+                        .requestMatchers("/api/integracion/**").authenticated()
                         // /roles/usuario-actual: accesible para cualquier usuario autenticado
                         .requestMatchers(HttpMethod.GET, "/roles/usuario-actual").authenticated()
                         // El resto de /roles/** solo lo gestiona el SUPERADMINISTRADOR
@@ -116,7 +146,6 @@ public class SecurityConfig {
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write("{\"error\":\"Acceso denegado\",\"status\":403}");
                         }))
-                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(tenantFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -142,7 +171,8 @@ public class SecurityConfig {
                 "Accept",
                 "X-Requested-With",
                 "X-CSRF-Token",
-                "X-Tenant-Schema"));
+                "X-Tenant-Schema",
+                "X-API-Key"));
 
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);

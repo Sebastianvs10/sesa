@@ -91,6 +91,12 @@ export const ROL_META: Record<string, RolMeta> = {
   PSICOLOGO:           { icon: '🧠', color: '#7c3aed', descripcion: 'Atención psicológica: historia clínica y citas.', categoria: 'Clínico' },
   REGENTE_FARMACIA:    { icon: '💊', color: '#059669', descripcion: 'Dispensación y gestión del inventario farmacéutico.', categoria: 'Farmacia' },
   RECEPCIONISTA:       { icon: '📞', color: '#0284c7', descripcion: 'Registro de pacientes, agendamiento de citas y facturación básica.', categoria: 'Administrativo' },
+  FACTURACION:         { icon: '🧾', color: '#0d9488', descripcion: 'Facturación, historia clínica (consulta), laboratorios y módulos que requieran facturación.', categoria: 'Administrativo' },
+};
+
+/** Nombres para roles que pueden no venir aún del backend (se muestran igual en la UI). */
+const ROL_NOMBRE_FALLBACK: Record<string, string> = {
+  FACTURACION: 'Facturación',
 };
 
 @Component({
@@ -147,7 +153,21 @@ export class RolesPageComponent implements OnInit {
     this.error = null;
     this.rolesService.list().subscribe({
       next: (data) => {
-        this.roles = data ?? [];
+        const fromApi = data ?? [];
+        // Asegurar que todos los roles con metadata (p. ej. FACTURACION) aparezcan aunque el backend no los devuelva aún
+        const codigosConMeta = Object.keys(ROL_META);
+        const missing = codigosConMeta.filter(
+          (codigo) => !fromApi.some((r: RolDto) => r.codigo.toUpperCase() === codigo)
+        );
+        const merged: RolDto[] = [...fromApi];
+        for (const codigo of missing) {
+          merged.push({
+            codigo,
+            nombre: ROL_NOMBRE_FALLBACK[codigo] ?? this.getRolMeta(codigo).descripcion.split('.')[0] ?? codigo,
+            modulos: [],
+          });
+        }
+        this.roles = merged;
         this.loading = false;
       },
       error: (err) => {
@@ -193,21 +213,37 @@ export class RolesPageComponent implements OnInit {
 
   save(): void {
     if (!this.editingRol) return;
+    const modulos = Array.from(this.editingModulos);
     this.saving = true;
     this.error = null;
-    this.rolesService.updateModulos(this.editingRol, Array.from(this.editingModulos)).subscribe({
-      next: () => {
-        this.load();
-        this.cancelEdit();
-        this.saving = false;
-        // Refrescar permisos del sidebar para reflejar los cambios en tiempo real
-        this.permissionsService.load();
-      },
-      error: (err) => {
-        this.error = err?.error?.error || 'No se pudo guardar';
-        this.saving = false;
-      },
-    });
+    const doUpdate = () => {
+      this.rolesService.updateModulos(this.editingRol!, modulos).subscribe({
+        next: () => {
+          this.load();
+          this.cancelEdit();
+          this.saving = false;
+          this.permissionsService.load();
+        },
+        error: (err) => {
+          const msg = err?.error?.error || err?.message || '';
+          const rolNoExiste = msg.includes('Rol no válido') || err?.status === 400;
+          const nombre = ROL_NOMBRE_FALLBACK[this.editingRol!] ?? this.roles.find((r) => r.codigo === this.editingRol)?.nombre ?? this.editingRol!;
+          if (rolNoExiste) {
+            this.rolesService.create(this.editingRol!, nombre).subscribe({
+              next: () => doUpdate(),
+              error: (e) => {
+                this.error = e?.error?.error || 'No se pudo crear el rol';
+                this.saving = false;
+              },
+            });
+          } else {
+            this.error = msg || 'No se pudo guardar';
+            this.saving = false;
+          }
+        },
+      });
+    };
+    doUpdate();
   }
 
   isEditing(r: RolDto): boolean {

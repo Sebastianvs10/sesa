@@ -9,6 +9,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "facturas")
@@ -93,6 +95,12 @@ public class Factura {
 
     @Column(name = "dian_fecha_envio")
     private Instant dianFechaEnvio;
+
+    /** Detalle multiclínea (cuenta médica con varios ítems/CUPS). Si vacío, se usa codigoCups/valorTotal de cabecera. */
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("itemIndex ASC")
+    @Builder.Default
+    private List<FacturaItem> items = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

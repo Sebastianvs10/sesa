@@ -42,6 +42,13 @@ public class AtencionDto {
     private String examenesSolicitados;
     private String incapacidad;
     private String recomendaciones;
+    /** S6: Referencia (motivo, nivel, datos para PDF). */
+    private String referenciaMotivo;
+    private String referenciaNivel;
+    private String referenciaDiagnostico;
+    private String referenciaTratamiento;
+    private String referenciaRecomendaciones;
+    private String referenciaProximaCita;
     @Builder.Default
     private List<DiagnosticoDto> diagnosticos = new ArrayList<>();
     @Builder.Default

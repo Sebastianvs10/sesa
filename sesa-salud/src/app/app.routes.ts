@@ -49,6 +49,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'resultados',
+        loadComponent: () =>
+          import('./features/portal/portal-resultados.page').then(
+            (m) => m.PortalResultadosPageComponent,
+          ),
+      },
+      {
         path: 'ordenes',
         loadComponent: () =>
           import('./features/portal/portal-ordenes.page').then(
@@ -69,6 +76,13 @@ export const routes: Routes = [
             (m) => m.PortalPerfilPageComponent,
           ),
       },
+      {
+        path: 'cita/:citaId/cuestionario',
+        loadComponent: () =>
+          import('./features/portal/portal-cuestionario-cita.page').then(
+            (m) => m.PortalCuestionarioCitaPageComponent,
+          ),
+      },
     ],
   },
   {
@@ -83,6 +97,21 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/receta-electronica/verificar-receta.page').then(
         (m) => m.VerificarRecetaPageComponent,
+      ),
+  },
+  // S3: Confirmar/cancelar cita por enlace (público, sin auth)
+  {
+    path: 'cita/confirmar',
+    loadComponent: () =>
+      import('./features/cita/cita-confirmar.page').then(
+        (m) => m.CitaConfirmarPageComponent,
+      ),
+  },
+  {
+    path: 'cita/cancelar',
+    loadComponent: () =>
+      import('./features/cita/cita-cancelar.page').then(
+        (m) => m.CitaCancelarPageComponent,
       ),
   },
   {
@@ -219,6 +248,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'facturacion/glosas',
+    canActivate: [authGuard, roleGuard('FACTURACION')],
+    loadComponent: () =>
+      import('./features/facturacion/glosas-list.page').then(
+        (m) => m.GlosasListPageComponent,
+      ),
+  },
+  {
     path: 'reportes',
     canActivate: [authGuard, roleGuard('REPORTES')],
     loadComponent: () =>
@@ -267,6 +304,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'api-keys',
+    canActivate: [authGuard, roleGuard('EMPRESAS')],
+    loadComponent: () =>
+      import('./features/api-keys/api-keys.page').then(
+        (m) => m.ApiKeysPageComponent,
+      ),
+  },
+  {
     path: 'agenda',
     canActivate: [authGuard, roleGuard('AGENDA')],
     loadComponent: () =>
@@ -276,7 +321,7 @@ export const routes: Routes = [
   },
   {
     path: 'notificaciones',
-    canActivate: [authGuard, roleGuard('NOTIFICACIONES')],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/notificaciones/notificaciones.page').then(
         (m) => m.NotificacionesPageComponent,

@@ -32,6 +32,26 @@
     </nav>
 
     <main class="ebs-layout-main">
+      <!-- S13: indicador offline y sincronización -->
+      @if (!ebsSync.isOnline()) {
+        <div class="ebs-layout-sync ebs-layout-sync--offline" role="status">
+          <span class="ebs-layout-sync__icon" aria-hidden="true">📴</span>
+          <span>Sin conexión — las visitas se guardarán localmente y se enviarán al recuperar la red.</span>
+        </div>
+      } @else if (ebsSync.pendingCount() > 0) {
+        <div class="ebs-layout-sync ebs-layout-sync--pending" role="status">
+          <span class="ebs-layout-sync__text">{{ ebsSync.pendingCount() }} visita(s) pendientes de sincronizar.</span>
+          <button type="button" class="ebs-layout-sync__btn" [disabled]="ebsSync.syncing()" (click)="syncNow()">
+            {{ ebsSync.syncing() ? 'Sincronizando…' : 'Sincronizar ahora' }}
+          </button>
+        </div>
+      }
+      @if (ebsSync.lastMessage()) {
+        <div class="ebs-layout-sync ebs-layout-sync--message" role="alert">
+          <span>{{ ebsSync.lastMessage() }}</span>
+          <button type="button" class="ebs-layout-sync__dismiss" (click)="ebsSync.clearMessage()" aria-label="Cerrar">×</button>
+        </div>
+      }
       <router-outlet />
     </main>
   </div>

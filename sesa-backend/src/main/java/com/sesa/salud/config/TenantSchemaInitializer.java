@@ -101,6 +101,10 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 usuario_nombre   VARCHAR(200),
                 leido            BOOLEAN NOT NULL DEFAULT FALSE,
                 fecha_lectura    TIMESTAMPTZ,
+                archivado        BOOLEAN NOT NULL DEFAULT FALSE,
+                fecha_archivado  TIMESTAMPTZ,
+                eliminado        BOOLEAN NOT NULL DEFAULT FALSE,
+                fecha_eliminado  TIMESTAMPTZ,
                 CONSTRAINT fk_nd_notificacion FOREIGN KEY (notificacion_id) REFERENCES notificaciones(id)
             )
             """;
@@ -247,18 +251,158 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE facturas ADD COLUMN IF NOT EXISTS dian_fecha_envio TIMESTAMPTZ"
     );
 
+    /** S9: Glosas (rechazos de factura) y adjuntos. */
+    private static final String DDL_GLOSAS = """
+            CREATE TABLE IF NOT EXISTS glosas (
+                id BIGSERIAL PRIMARY KEY,
+                factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+                motivo_rechazo TEXT NOT NULL,
+                estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+                fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                fecha_respuesta TIMESTAMP,
+                observaciones TEXT,
+                creado_por_id BIGINT REFERENCES usuarios(id),
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+            """;
+    private static final String DDL_GLOSA_ADJUNTOS = """
+            CREATE TABLE IF NOT EXISTS glosa_adjuntos (
+                id BIGSERIAL PRIMARY KEY,
+                glosa_id BIGINT NOT NULL REFERENCES glosas(id) ON DELETE CASCADE,
+                nombre_archivo VARCHAR(255) NOT NULL,
+                tipo VARCHAR(50),
+                url_o_blob TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+    private static final List<String> DDL_GLOSAS_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_glosas_factura ON glosas (factura_id)",
+            "CREATE INDEX IF NOT EXISTS idx_glosas_estado ON glosas (estado)",
+            "CREATE INDEX IF NOT EXISTS idx_glosas_fecha_registro ON glosas (fecha_registro)",
+            "CREATE INDEX IF NOT EXISTS idx_glosa_adjuntos_glosa ON glosa_adjuntos (glosa_id)"
+    );
+
+    /** Detalle multiclínea de factura (cuenta médica). */
+    private static final String DDL_FACTURA_ITEMS = """
+            CREATE TABLE IF NOT EXISTS factura_items (
+                id BIGSERIAL PRIMARY KEY,
+                factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+                item_index INT NOT NULL DEFAULT 0,
+                codigo_cups VARCHAR(20),
+                descripcion_cups VARCHAR(500),
+                tipo_servicio VARCHAR(40),
+                cantidad INT NOT NULL DEFAULT 1,
+                valor_unitario NUMERIC(14,2) NOT NULL,
+                valor_total NUMERIC(14,2) NOT NULL,
+                orden_clinica_item_id BIGINT REFERENCES orden_clinica_items(id)
+            )
+            """;
+    private static final List<String> DDL_FACTURA_ITEMS_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_factura_items_factura ON factura_items (factura_id)"
+    );
+
+    /** Radicación de facturas ante EPS. */
+    private static final String DDL_RADICACIONES = """
+            CREATE TABLE IF NOT EXISTS radicaciones (
+                id BIGSERIAL PRIMARY KEY,
+                factura_id BIGINT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
+                fecha_radicacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                numero_radicado VARCHAR(80),
+                eps_codigo VARCHAR(20),
+                eps_nombre VARCHAR(200),
+                estado VARCHAR(30) NOT NULL DEFAULT 'RADICADA',
+                cuv VARCHAR(100),
+                observaciones TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+    private static final List<String> DDL_RADICACIONES_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_radicaciones_factura ON radicaciones (factura_id)",
+            "CREATE INDEX IF NOT EXISTS idx_radicaciones_fecha ON radicaciones (fecha_radicacion)",
+            "CREATE INDEX IF NOT EXISTS idx_radicaciones_estado ON radicaciones (estado)"
+    );
+
+    /** S10: Cuestionario pre-consulta (ePRO). */
+    private static final String DDL_CUESTIONARIO_PRECONSULTA = """
+            CREATE TABLE IF NOT EXISTS cuestionario_preconsulta (
+                id BIGSERIAL PRIMARY KEY,
+                cita_id BIGINT NOT NULL REFERENCES citas(id) ON DELETE CASCADE,
+                paciente_id BIGINT NOT NULL REFERENCES pacientes(id),
+                motivo_palabras TEXT,
+                dolor_eva INT,
+                ansiedad_eva INT,
+                medicamentos_actuales TEXT,
+                alergias_referidas TEXT,
+                enviado_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+    private static final List<String> DDL_CUESTIONARIO_PRECONSULTA_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_cuestionario_preconsulta_cita ON cuestionario_preconsulta (cita_id)",
+            "CREATE INDEX IF NOT EXISTS idx_cuestionario_preconsulta_paciente ON cuestionario_preconsulta (paciente_id)"
+    );
+
     // Recordatorios de cita y portal paciente (idempotente: ADD COLUMN IF NOT EXISTS).
     // Si aparece "no existe la columna p1_0.usuario_id", reiniciar el backend para que se apliquen estas migraciones.
     private static final List<String> DDL_RECORDATORIOS_MIGRATIONS = List.of(
             "ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS cita_id BIGINT",
+            "ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS archivado BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_archivado TIMESTAMPTZ",
+            "ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS eliminado BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE notificacion_destinatarios ADD COLUMN IF NOT EXISTS fecha_eliminado TIMESTAMPTZ",
             "ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_24h_enviado_at TIMESTAMPTZ",
             "ALTER TABLE citas ADD COLUMN IF NOT EXISTS recordatorio_1h_enviado_at TIMESTAMPTZ",
+            "ALTER TABLE citas ADD COLUMN IF NOT EXISTS token_confirmacion VARCHAR(64)",
+            "ALTER TABLE citas ADD COLUMN IF NOT EXISTS confirmado_at TIMESTAMPTZ",
+            "ALTER TABLE citas ADD COLUMN IF NOT EXISTS cancelado_desde_enlace_at TIMESTAMPTZ",
             "ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS usuario_id BIGINT"
+    );
+
+    /** Migraciones consultas: examen físico por subáreas (check = bien). */
+    private static final List<String> DDL_CONSULTAS_MIGRATIONS = List.of(
+            "ALTER TABLE consultas ADD COLUMN IF NOT EXISTS examen_fisico_estructurado TEXT"
     );
 
     /** Migraciones urgencias: fecha inicio atención para reporte de cumplimiento Res. 5596/2015. */
     private static final List<String> DDL_URGENCIAS_MIGRATIONS = List.of(
-            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS fecha_hora_inicio_atencion TIMESTAMP"
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS fecha_hora_inicio_atencion TIMESTAMP",
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_diagnostico TEXT",
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_tratamiento TEXT",
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_recomendaciones TEXT",
+            "ALTER TABLE urgencias ADD COLUMN IF NOT EXISTS alta_proxima_cita TEXT"
+    );
+
+    /** S11: RDA urgencias/hospitalización — columnas en rda_envios. */
+    private static final List<String> DDL_RDA_URGENCIAS_HOSPITALIZACION = List.of(
+            "ALTER TABLE rda_envios ADD COLUMN IF NOT EXISTS urgencia_registro_id BIGINT REFERENCES urgencias(id)",
+            "ALTER TABLE rda_envios ADD COLUMN IF NOT EXISTS hospitalizacion_id BIGINT REFERENCES hospitalizaciones(id)"
+    );
+
+    /** S12: Tabla API Keys para integradores. */
+    private static final List<String> DDL_API_KEYS = List.of(
+            """
+            CREATE TABLE IF NOT EXISTS api_keys (
+                id                BIGSERIAL PRIMARY KEY,
+                nombre_integrador VARCHAR(150) NOT NULL,
+                api_key_hash      VARCHAR(255) NOT NULL,
+                api_key_index     VARCHAR(64)  NOT NULL,
+                permisos          VARCHAR(200) NOT NULL DEFAULT 'LABORATORIO',
+                activo            BOOLEAN      NOT NULL DEFAULT TRUE,
+                created_at        TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_index ON api_keys (api_key_index)"
+    );
+
+    /** S6: Referencia (consulta/atención): motivo, nivel y datos para PDF. */
+    private static final List<String> DDL_ATENCIONES_REFERENCIA_MIGRATIONS = List.of(
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_motivo TEXT",
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_nivel VARCHAR(50)",
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_diagnostico TEXT",
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_tratamiento TEXT",
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_recomendaciones TEXT",
+            "ALTER TABLE atenciones ADD COLUMN IF NOT EXISTS referencia_proxima_cita TEXT"
     );
 
     private static final String DDL_SIGNOS_VITALES_URGENCIA = """
@@ -295,6 +439,26 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """;
+
+    /** Catálogo CUPS Colombia (procedimientos, consultas, lab, imagenología). */
+    private static final String DDL_CUPS_CATALOGO = """
+            CREATE TABLE IF NOT EXISTS cups_catalogo (
+                id              BIGSERIAL PRIMARY KEY,
+                codigo          VARCHAR(20) NOT NULL,
+                descripcion     VARCHAR(500) NOT NULL,
+                capitulo        VARCHAR(100),
+                tipo_servicio   VARCHAR(80) NOT NULL DEFAULT 'PROCEDIMIENTO',
+                precio_sugerido NUMERIC(14,2),
+                activo          BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uk_cups_catalogo_codigo UNIQUE (codigo)
+            )
+            """;
+    private static final List<String> DDL_CUPS_CATALOGO_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_cups_catalogo_codigo ON cups_catalogo (codigo)",
+            "CREATE INDEX IF NOT EXISTS idx_cups_catalogo_tipo ON cups_catalogo (tipo_servicio)",
+            "CREATE INDEX IF NOT EXISTS idx_cups_catalogo_activo ON cups_catalogo (activo) WHERE activo = TRUE"
+    );
 
     /** Consentimientos informados (Ley 23/1981, Res. 3380/1981). */
     private static final String DDL_CONSENTIMIENTOS_INFORMADOS = """
@@ -368,8 +532,19 @@ public class TenantSchemaInitializer implements CommandLineRunner {
     private static final List<String> DDL_ORDENES_RESULTADO_MIGRATIONS = List.of(
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado TEXT",
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS fecha_resultado TIMESTAMPTZ",
-            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_registrado_por_id BIGINT REFERENCES personal(id)"
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_registrado_por_id BIGINT REFERENCES personal(id)",
+            "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_critico BOOLEAN DEFAULT FALSE"
     );
+
+    private static final String DDL_RESULTADO_CRITICO_LECTURA = """
+            CREATE TABLE IF NOT EXISTS resultado_critico_lectura (
+                id BIGSERIAL PRIMARY KEY,
+                orden_clinica_id BIGINT NOT NULL REFERENCES ordenes_clinicas(id) ON DELETE CASCADE,
+                personal_id BIGINT NOT NULL REFERENCES personal(id) ON DELETE CASCADE,
+                leido_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uk_resultado_critico_lectura_orden_personal UNIQUE (orden_clinica_id, personal_id)
+            )
+            """;
 
     private static final List<String> DDL_FARMACIA_ORDENES_MIGRATIONS = List.of(
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS estado_dispensacion_farmacia VARCHAR(30) DEFAULT 'PENDIENTE'",
@@ -402,6 +577,52 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS diagnostico_cie10 VARCHAR(20)",
             "ALTER TABLE ebs_home_visits ADD COLUMN IF NOT EXISTS plan_cuidado TEXT"
     );
+
+    /** S15: Guías de práctica clínica (GPC). */
+    private static final String DDL_GUIA_GPC = """
+            CREATE TABLE IF NOT EXISTS guia_gpc (
+                id BIGSERIAL PRIMARY KEY,
+                codigo_cie10 VARCHAR(20) NOT NULL,
+                titulo VARCHAR(300) NOT NULL,
+                criterios_control TEXT,
+                medicamentos_primera_linea TEXT,
+                estudios_seguimiento TEXT,
+                fuente VARCHAR(200),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """;
+    private static final String DDL_GPC_SUGERENCIA_MOSTRADA = """
+            CREATE TABLE IF NOT EXISTS gpc_sugerencia_mostrada (
+                id BIGSERIAL PRIMARY KEY,
+                atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
+                codigo_cie10 VARCHAR(20) NOT NULL,
+                guia_id BIGINT NOT NULL REFERENCES guia_gpc(id) ON DELETE CASCADE,
+                mostrado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                profesional_id BIGINT REFERENCES personal(id)
+            )
+            """;
+    private static final List<String> DDL_GPC_INDEXES = List.of(
+            "CREATE INDEX IF NOT EXISTS idx_guia_gpc_codigo ON guia_gpc(codigo_cie10)",
+            "CREATE INDEX IF NOT EXISTS idx_gpc_sugerencia_atencion ON gpc_sugerencia_mostrada(atencion_id)",
+            "CREATE INDEX IF NOT EXISTS idx_gpc_sugerencia_guia ON gpc_sugerencia_mostrada(guia_id)"
+    );
+
+    /** S5: Reconciliación de medicamentos y alergias por atención. */
+    private static final String DDL_RECONCILIACION_ATENCION = """
+            CREATE TABLE IF NOT EXISTS reconciliacion_atencion (
+                id BIGSERIAL PRIMARY KEY,
+                atencion_id BIGINT NOT NULL REFERENCES atenciones(id) ON DELETE CASCADE,
+                profesional_id BIGINT NOT NULL REFERENCES personal(id),
+                medicamentos_referidos TEXT,
+                medicamentos_hc TEXT,
+                alergias_referidas TEXT,
+                alergias_hc TEXT,
+                reconciliado_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                observaciones TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE(atencion_id)
+            )
+            """;
 
     @Override
     public void run(String... args) {
@@ -526,6 +747,23 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 for (String migration : DDL_FACTURAS_ELECTRONICAS_MIGRATIONS) {
                     stmt.execute(migration);
                 }
+                stmt.execute(DDL_GLOSAS);
+                stmt.execute(DDL_GLOSA_ADJUNTOS);
+                for (String idx : DDL_GLOSAS_INDEXES) {
+                    stmt.execute(idx);
+                }
+                stmt.execute(DDL_FACTURA_ITEMS);
+                for (String idx : DDL_FACTURA_ITEMS_INDEXES) {
+                    stmt.execute(idx);
+                }
+                stmt.execute(DDL_RADICACIONES);
+                for (String idx : DDL_RADICACIONES_INDEXES) {
+                    stmt.execute(idx);
+                }
+                stmt.execute(DDL_CUESTIONARIO_PRECONSULTA);
+                for (String idx : DDL_CUESTIONARIO_PRECONSULTA_INDEXES) {
+                    stmt.execute(idx);
+                }
                 // índices
                 for (String idx : DDL_INDEXES) {
                     stmt.execute(idx);
@@ -539,20 +777,84 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 for (String migration : DDL_RECORDATORIOS_MIGRATIONS) {
                     stmt.execute(migration);
                 }
+                for (String migration : DDL_CONSULTAS_MIGRATIONS) {
+                    stmt.execute(migration);
+                }
                 for (String migration : DDL_URGENCIAS_MIGRATIONS) {
+                    stmt.execute(migration);
+                }
+                for (String migration : DDL_RDA_URGENCIAS_HOSPITALIZACION) {
+                    stmt.execute(migration);
+                }
+                for (String ddl : DDL_API_KEYS) {
+                    stmt.execute(ddl);
+                }
+                for (String migration : DDL_ATENCIONES_REFERENCIA_MIGRATIONS) {
                     stmt.execute(migration);
                 }
                 stmt.execute(DDL_SIGNOS_VITALES_URGENCIA);
                 stmt.execute(DDL_PLANTILLAS_SOAP);
+                // Seed plantillas SOAP por tipo de consulta (Res. 1995/412 — ver docs/PLANTILLAS-HC-COLOMBIA.md)
+                try {
+                    stmt.execute("""
+                        INSERT INTO plantillas_soap (nombre, motivo_tipo, contenido_subjetivo, contenido_objetivo, contenido_analisis, contenido_plan, codigo_cie10_sugerido)
+                        SELECT a.nombre, a.motivo_tipo, a.contenido_subjetivo, a.contenido_objetivo, a.contenido_analisis, a.contenido_plan, a.codigo_cie10_sugerido
+                        FROM (VALUES
+                          ('Primera Infancia / Infancia', 'PRIMERA_VEZ', 'Motivo: control crecimiento y desarrollo, vacunación o enfermedad aguda. Antecedentes perinatales, alimentación, hitos del desarrollo.', 'Peso, talla, perímetro cefálico, signos vitales. Examen físico por sistemas. Valoración antropométrica.', 'Clasificación según edad. Detección alteraciones crecimiento/desarrollo. Impresión diagnóstica.', 'Controles según edad, vacunación, educación a padres, remisiones, seguimiento.', 'Z00.1'),
+                          ('Prenatal 1ra vez', 'PRIMERA_VEZ', 'FUM, gestas/partos/abortos, motivo de consulta, antecedentes personales y familiares, medicamentos, alergias.', 'Examen físico general y obstétrico. TA, peso, talla. Fondo uterino si aplica. Laboratorio inicial (grupo, Rh, hemograma, glucemia, VDRL, VIH).', 'Edad gestacional, clasificación de riesgo (bajo/alto). Impresión diagnóstica.', 'Controles prenatales según normativa. Micronutrientes (ácido fólico, hierro). Educación. Paraclínicos. Referencia si riesgo alto.', 'Z34.0'),
+                          ('Prenatal Control', 'CONTROL', 'Evolución del embarazo, movimientos fetales, síntomas (edema, cefalea, sangrado). Adherencia a recomendaciones.', 'TA, peso, altura uterina, FCF, edema. Hallazgos al examen. Resultados paraclínicos del trimestre.', 'Edad gestacional, clasificación de riesgo, cumplimiento de controles. Impresión diagnóstica.', 'Próximo control, estudios de tamizaje según EG, educación, referencia si procede.', 'Z34.8'),
+                          ('Planificación 1ra vez Mujeres', 'PRIMERA_VEZ', 'Motivo: inicio de método anticonceptivo. Antecedentes ginecoobstétricos, ciclos, expectativas, contraindicaciones.', 'Examen físico general. TA. Examen ginecológico si aplica. Peso/talla.', 'Riesgo reproductivo. Método recomendado según perfil y preferencia. Impresión diagnóstica.', 'Método elegido, indicaciones de uso, seguimiento, signos de alarma, prevención ITS.', 'Z30.0'),
+                          ('Planificación Control Mujeres', 'CONTROL', 'Evolución con el método (tolerancia, cumplimiento, efectos adversos). Dudas, deseo de cambio de método.', 'TA, peso si aplica. Examen según método (revisión implante/DIU).', 'Efectividad y continuidad del método. Impresión diagnóstica.', 'Continuar método, cambio si procede, refuerzo educativo, próximo control.', 'Z30.4'),
+                          ('Control Adolescente / Jóven', 'CONTROL', 'Motivo: control, vacunación, salud sexual, salud mental o agudo. Antecedentes, hábitos, red de apoyo, riesgos.', 'Signos vitales, peso, talla, IMC. Examen físico por sistemas. Tamizajes según edad.', 'Clasificación de riesgo. Impresión diagnóstica. Necesidades de promoción y prevención.', 'Controles, vacunación (VPH, refuerzos), educación, referencia a planificación o salud mental.', 'Z00.1'),
+                          ('Control del Adulto / Vejez', 'CONTROL', 'Motivo: control, detección temprana, seguimiento crónico. Antecedentes, medicamentos, factores de riesgo cardiovascular.', 'Signos vitales, peso, talla, IMC. Examen físico. Tamizajes según edad y sexo.', 'Riesgo cardiovascular y otros. Impresión diagnóstica. Condiciones crónicas.', 'Controles periódicos, estilos de vida, medicación crónica, referencia a especialidad si aplica.', 'Z00.0'),
+                          ('Urgencias / Hospitalización', 'SEGUIMIENTO_AGUDO', 'Motivo de consulta/ingreso, enfermedad actual, antecedentes relevantes, medicamentos, alergias, último momento de bienestar.', 'Signos vitales, triage si aplica. Examen físico por sistemas. Paraclínicos de urgencia.', 'Impresión diagnóstica. Gravedad. Criterios de ingreso o alta.', 'Manejo (reanimación, medicación, procedimientos). Órdenes de enfermería. Alta o referencia. Seguimiento.', 'R07.4'),
+                          ('Enf Cardiovasculares 1ra vez', 'PRIMERA_VEZ', 'Valoración cardiovascular, HTA, dolor torácico o disnea. Antecedentes personales y familiares ECV. Tabaquismo, dieta, actividad física.', 'TA (varias tomas si HTA), FC, peso, talla, IMC. Examen cardiovascular. ECG si aplica. Laboratorio (glucemia, lípidos, creatinina).', 'Riesgo cardiovascular (escalas). Impresión diagnóstica (HTA, dislipidemia, riesgo alto).', 'Estilo de vida, medicación si indicada, controles, metas TA y lípidos, referencia cardiología si procede.', 'I10'),
+                          ('Anexo 3 - Autorización de servicios de salud', 'OTRO', 'Motivo de consulta relacionado con el procedimiento o servicio a autorizar. Antecedentes que justifican la solicitud.', 'Hallazgos que soportan la necesidad del servicio (examen, paraclínicos).', 'Justificación clínica para el procedimiento/servicio solicitado. Impresión diagnóstica.', 'Solicitud de autorización (Anexo 3). Procedimiento/servicio indicado. Seguimiento.', NULL)
+                        ) AS a(nombre, motivo_tipo, contenido_subjetivo, contenido_objetivo, contenido_analisis, contenido_plan, codigo_cie10_sugerido)
+                        WHERE NOT EXISTS (SELECT 1 FROM plantillas_soap LIMIT 1)
+                        """);
+                } catch (SQLException e) {
+                    log.trace("Plantillas SOAP seed: {}", e.getMessage());
+                }
+                stmt.execute(DDL_CUPS_CATALOGO);
+                for (String idx : DDL_CUPS_CATALOGO_INDEXES) {
+                    try { stmt.execute(idx); } catch (SQLException e) { log.trace("CUPS catalog index: {}", e.getMessage()); }
+                }
+                // Seed CUPS (idempotente): insertar procedimientos más usados; ON CONFLICT evita duplicados
+                try {
+                    stmt.execute("""
+                        INSERT INTO cups_catalogo (codigo, descripcion, capitulo, tipo_servicio, precio_sugerido) VALUES
+                          ('890201', 'Consulta médica general', 'Cap 15 - Consulta', 'CONSULTA', 55000),
+                          ('890202', 'Consulta médica especializada', 'Cap 15 - Consulta', 'CONSULTA', 85000),
+                          ('890203', 'Consulta de urgencias', 'Cap 15 - Consulta', 'CONSULTA', 95000),
+                          ('890301', 'Consulta de primera vez por odontología general', 'Cap 15 - Consulta', 'CONSULTA', 45000),
+                          ('890302', 'Consulta de control o seguimiento por odontología general', 'Cap 15 - Consulta', 'CONSULTA', 35000),
+                          ('903801', 'Hemograma completo', 'Cap 16 - Laboratorio', 'LABORATORIO', 25000),
+                          ('903802', 'Glicemia', 'Cap 16 - Laboratorio', 'LABORATORIO', 8000),
+                          ('903804', 'Perfil lipídico', 'Cap 16 - Laboratorio', 'LABORATORIO', 35000),
+                          ('903806', 'Creatinina', 'Cap 16 - Laboratorio', 'LABORATORIO', 12000),
+                          ('903810', 'Parcial de orina', 'Cap 16 - Laboratorio', 'LABORATORIO', 10000),
+                          ('881601', 'Radiografía de tórax PA', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 45000),
+                          ('881801', 'Ecografía abdominal', 'Cap 17 - Imagen', 'IMAGENOLOGIA', 85000),
+                          ('860001', 'Electrocardiograma', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 35000),
+                          ('870101', 'Curaciones', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 25000),
+                          ('870102', 'Sutura simple', 'Cap 18 - Procedimientos', 'PROCEDIMIENTO', 55000)
+                        ON CONFLICT (codigo) DO NOTHING
+                        """);
+                } catch (SQLException e) {
+                    log.trace("CUPS catalog seed: {}", e.getMessage());
+                }
                 stmt.execute(DDL_CONSENTIMIENTOS_INFORMADOS);
                 for (String migration : DDL_ORDENES_RESULTADO_MIGRATIONS) {
                     stmt.execute(migration);
                 }
+                stmt.execute(DDL_RESULTADO_CRITICO_LECTURA);
                 for (String migration : DDL_FARMACIA_ORDENES_MIGRATIONS) {
                     stmt.execute(migration);
                 }
                 stmt.execute(DDL_ORDEN_CLINICA_ITEMS);
                 stmt.execute("CREATE INDEX IF NOT EXISTS idx_orden_clinica_items_orden ON orden_clinica_items (orden_id)");
+                stmt.execute(DDL_RECONCILIACION_ATENCION);
                 for (String migration : DDL_EBS_IGAC_MIGRATIONS) {
                     stmt.execute(migration);
                 }
@@ -564,6 +866,24 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 for (String m : DDL_EBS_VISIT_MIGRATIONS) {
                     try { stmt.execute(m); } catch (SQLException e) { log.trace("EBS visit migration: {}", e.getMessage()); }
                 }
+                stmt.execute(DDL_GUIA_GPC);
+                stmt.execute(DDL_GPC_SUGERENCIA_MOSTRADA);
+                for (String idx : DDL_GPC_INDEXES) {
+                    try { stmt.execute(idx); } catch (SQLException e) { log.trace("GPC index: {}", e.getMessage()); }
+                }
+                // S15: asegurar que created_at tenga DEFAULT ahora() y no existan filas nulas (esquemas antiguos)
+                try {
+                    stmt.execute("ALTER TABLE guia_gpc ALTER COLUMN created_at SET DEFAULT NOW()");
+                    stmt.execute("UPDATE guia_gpc SET created_at = NOW() WHERE created_at IS NULL");
+                } catch (SQLException e) {
+                    log.trace("GPC created_at migration: {}", e.getMessage());
+                }
+                // S15: una fila de ejemplo si la tabla está vacía
+                stmt.execute("""
+                    INSERT INTO guia_gpc (codigo_cie10, titulo, criterios_control, medicamentos_primera_linea, estudios_seguimiento, fuente)
+                    SELECT 'E11', 'Diabetes mellitus tipo 2', 'Control de glicemia, HbA1c, presión arterial, peso y pie diabético.', 'Metformina como primera línea; considerar iDPP-4 o iSGLT2 según perfil.', 'HbA1c cada 3-6 meses; creatinina y perfil lipídico anual; fondo de ojo según criterio.', 'Guía de práctica clínica - MinSalud'
+                    WHERE NOT EXISTS (SELECT 1 FROM guia_gpc LIMIT 1)
+                    """);
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();

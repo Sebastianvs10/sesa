@@ -43,4 +43,9 @@ public class UrgenciaRegistroDto {
     private Integer glasgowOcular;
     private Integer glasgowVerbal;
     private Integer glasgowMotor;
+    /** S6: Datos de alta (diagnóstico, tratamiento, recomendaciones, próxima cita). */
+    private String altaDiagnostico;
+    private String altaTratamiento;
+    private String altaRecomendaciones;
+    private String altaProximaCita;
 }

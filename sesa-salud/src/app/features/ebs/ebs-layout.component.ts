@@ -8,6 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { EbsSyncService } from '../../core/services/ebs-sync.service';
 
 export interface EbsNavItem {
   label: string;
@@ -29,6 +30,7 @@ export interface EbsNavItem {
 })
 export class EbsLayoutComponent {
   private readonly auth = inject(AuthService);
+  readonly ebsSync = inject(EbsSyncService);
 
   readonly showMoreMenu = signal(false);
 
@@ -68,5 +70,9 @@ export class EbsLayoutComponent {
 
   closeMoreMenu(): void {
     this.showMoreMenu.set(false);
+  }
+
+  syncNow(): void {
+    this.ebsSync.syncNow();
   }
 }

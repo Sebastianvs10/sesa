@@ -39,4 +39,8 @@ public class OrdenClinicaDto {
     private Instant createdAt;
     /** Ítems de la orden (varios medicamentos/labs/procedimientos en una sola orden). */
     private List<OrdenClinicaItemDto> items;
+    /** Si el resultado fue marcado como crítico (S2). */
+    private Boolean resultadoCritico;
+    /** Si el usuario actual ya registró lectura del resultado crítico (S2). */
+    private Boolean leidoPorUsuarioActual;
 }

@@ -8,16 +8,74 @@
   flex-direction: column;
   gap: 14px;
   padding: 20px 24px;
-  background: var(--sesa-surface);
-  border: 1px solid var(--sesa-border);
-  border-radius: 16px;
+  background:
+    radial-gradient(1200px 420px at 8% -8%, color-mix(in srgb, var(--sesa-primary, #6366f1) 12%, transparent), transparent 56%),
+    radial-gradient(900px 360px at 90% 112%, color-mix(in srgb, var(--sesa-secondary, #8b5cf6) 9%, transparent), transparent 58%),
+    var(--sesa-surface);
+  border: 1px solid color-mix(in srgb, var(--sesa-border) 88%, var(--sesa-primary, #6366f1));
+  border-radius: 18px;
+  box-shadow:
+    0 22px 46px -28px rgba(20, 24, 40, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.odontograma-headline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.odontograma-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--sesa-text-primary);
+}
+
+.odontograma-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.odontograma-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    color: var(--sesa-text-secondary);
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--sesa-border);
+    background: var(--sesa-bg);
+  }
+
+  kbd {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--sesa-border);
+    background: var(--sesa-surface);
+    color: var(--sesa-text-primary);
+  }
 }
 
 // ── Toolbar de acciones ───────────────────────────────────────────────
 
 .odontograma-toolbar {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--sesa-border);
+  padding: 10px 12px;
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sesa-bg) 75%, transparent);
 }
 
 // ── Controles (modo + vista + zoom + CPOD) ────────────────────────────
@@ -28,6 +86,10 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sesa-bg) 82%, transparent);
 }
 
 .vista-zoom-row {
@@ -161,12 +223,105 @@
   &:hover { background: var(--sesa-surface-hover); }
 }
 
+.btn-visual-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--sesa-primary, #6366f1) 45%, var(--sesa-border));
+    background: var(--sesa-surface-hover);
+  }
+}
+
+.btn-visual-pill {
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sesa-secondary, #8b5cf6) 45%, var(--sesa-border));
+  position: relative;
+  transition: background 0.15s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s;
+  }
+
+  &--operativo {
+    background: color-mix(in srgb, #16a34a 62%, var(--sesa-border));
+
+    &::after {
+      transform: translateX(12px);
+    }
+  }
+}
+
+.btn-visual-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
+}
+
 .input-file-hidden {
   position: absolute;
   width: 0;
   height: 0;
   opacity: 0;
   pointer-events: none;
+}
+
+.mode-operativo {
+  .odontograma-svg {
+    background: color-mix(in srgb, var(--sesa-bg) 92%, #ffffff 8%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -10px 18px -16px rgba(36, 45, 70, 0.2);
+  }
+
+  .od-tooth-highlight,
+  .od-fissure-main,
+  .od-fissure-sub {
+    opacity: 0.35;
+  }
+
+  .od-tooth-contour {
+    stroke-width: 2.45;
+    opacity: 0.98;
+  }
+
+  .od-surface-segment {
+    stroke-width: 2.15;
+    fill-opacity: 0.98;
+  }
+
+  .od-surface-segment:hover {
+    stroke-width: 2.6;
+  }
+
+  .od-surface-segment.od-surface-active {
+    stroke-width: 2.9;
+    filter: drop-shadow(0 0 7px rgba(59, 130, 246, 0.34));
+  }
+
+  .od-number {
+    font-size: 14px;
+    font-weight: 900;
+  }
 }
 
 // ── Leyenda ────────────────────────────────────────────────────────────
@@ -216,10 +371,14 @@
   width: 100%;
   height: auto;
   display: block;
-  background: var(--sesa-bg);
-  border: 1px solid var(--sesa-border);
-  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sesa-bg) 86%, #ffffff 14%), var(--sesa-bg));
+  border: 1px solid color-mix(in srgb, var(--sesa-border) 86%, var(--sesa-primary, #6366f1));
+  border-radius: 16px;
   overflow: visible;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -18px 36px -34px rgba(36, 45, 70, 0.35);
 }
 
 .odontograma-titulo-svg {
@@ -237,8 +396,8 @@
   // Fondos de arcada — aspecto real: relleno marfil suave + borde + profundidad
   .arcada-bg {
     fill: var(--sesa-odontograma-arcada-fill, #f8f8f0);
-    stroke: var(--sesa-odontograma-arcada-stroke, #e8e4dc);
-    stroke-width: 1.2;
+    stroke: var(--sesa-odontograma-arcada-stroke, #ddd6c8);
+    stroke-width: 1.4;
     opacity: 1;
     transition: fill 0.2s, stroke 0.2s;
   }
@@ -249,8 +408,20 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
   }
   [data-theme='dark'] .arcada-bg {
-    fill: var(--sesa-odontograma-arcada-fill, #252420);
-    stroke: var(--sesa-odontograma-arcada-stroke, #3a3630);
+    fill: var(--sesa-odontograma-arcada-fill, #24231f);
+    stroke: var(--sesa-odontograma-arcada-stroke, #3f3a31);
+  }
+
+  .od-backplate {
+    fill: color-mix(in srgb, var(--sesa-bg) 90%, #ffffff 10%);
+    stroke: color-mix(in srgb, var(--sesa-border) 82%, var(--sesa-primary, #6366f1));
+    stroke-width: 1;
+  }
+
+  .od-clinical-panel {
+    fill: color-mix(in srgb, var(--sesa-surface) 92%, #ffffff 8%);
+    stroke: color-mix(in srgb, var(--sesa-border) 88%, #bfc7da);
+    stroke-width: 1;
   }
 
   // Etiquetas de cuadrante (01–04) — visibles y legibles
@@ -303,20 +474,63 @@
   }
 
   .odontograma-fdi {
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.12));
     &:hover:not(.pieza-ausente) {
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.14));
     }
     &.pieza-resaltada {
-      filter: drop-shadow(0 0 0 2px rgba(99, 102, 241, 0.5));
+      filter: drop-shadow(0 0 0 2px rgba(99, 102, 241, 0.45))
+        drop-shadow(0 8px 14px rgba(87, 108, 243, 0.2));
     }
   }
 
   // Cuerpo del diente — silueta anatómica (path) con borde esmalte
   .od-tooth-shape {
     stroke: var(--sesa-odontograma-tooth-stroke, #d4cfc4);
-    stroke-width: 1.4;
+    stroke-width: 1.7;
     transition: fill 0.2s, stroke 0.2s;
+  }
+
+  .od-tooth-contour {
+    fill: none;
+    stroke: color-mix(in srgb, #887752 62%, #ffffff);
+    stroke-width: 2.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.94;
+    pointer-events: none;
+  }
+
+  .od-tooth-highlight {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.64);
+    stroke-width: 0.95;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+
+  .od-tooth-shadow {
+    fill: none;
+    stroke: rgba(111, 96, 66, 0.28);
+    stroke-width: 1.45;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+
+  .od-fissure-main {
+    fill: none;
+    stroke: rgba(109, 93, 62, 0.42);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+
+  .od-fissure-sub {
+    fill: none;
+    stroke: rgba(109, 93, 62, 0.34);
+    stroke-width: 1.02;
+    stroke-linecap: round;
+    pointer-events: none;
   }
 
   .od-tooth {
@@ -355,6 +569,22 @@
   [data-theme='dark'] .od-tooth-shape {
     stroke: var(--sesa-odontograma-tooth-stroke, #3a3630);
   }
+  [data-theme='dark'] .od-tooth-contour {
+    stroke: color-mix(in srgb, #c0a56f 42%, #1b1b1b);
+    opacity: 0.82;
+  }
+  [data-theme='dark'] .od-tooth-highlight {
+    stroke: rgba(255, 255, 255, 0.14);
+  }
+  [data-theme='dark'] .od-tooth-shadow {
+    stroke: rgba(0, 0, 0, 0.45);
+  }
+  [data-theme='dark'] .od-fissure-main {
+    stroke: rgba(207, 180, 126, 0.26);
+  }
+  [data-theme='dark'] .od-fissure-sub {
+    stroke: rgba(207, 180, 126, 0.2);
+  }
   [data-theme='dark'] .od-tooth.crown {
     fill: url(#od-corona-d);
     stroke: #4b5563;
@@ -366,18 +596,21 @@
 
   // Segmentos del círculo de superficies (clicables)
   .od-surface-segment {
-    stroke: var(--sesa-border);
-    stroke-width: 1;
+    stroke: color-mix(in srgb, var(--sesa-text-secondary) 38%, var(--sesa-border));
+    stroke-width: 1.85;
     cursor: pointer;
-    transition: fill-opacity 0.15s, stroke 0.15s;
+    transition: fill-opacity 0.15s, stroke 0.15s, stroke-width 0.15s;
+    fill-opacity: 0.95;
     &:hover {
-      fill-opacity: 0.9;
-      stroke: var(--sesa-secondary);
-      stroke-width: 1.4;
+      fill-opacity: 0.98;
+      stroke: color-mix(in srgb, var(--sesa-secondary) 72%, #1f2937);
+      stroke-width: 2.35;
     }
     &.od-surface-active {
-      stroke: var(--sesa-secondary);
-      stroke-width: 1.8;
+      stroke: color-mix(in srgb, var(--sesa-secondary) 72%, #1f2937);
+      stroke-width: 2.65;
+      fill-opacity: 1;
+      filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.28));
     }
   }
 
@@ -390,9 +623,9 @@
   .od-surface-line,
   .od-surface-circle {
     stroke: var(--sesa-text-muted);
-    stroke-width: 1;
+    stroke-width: 1.2;
     fill: none;
-    opacity: 0.6;
+    opacity: 0.78;
     pointer-events: none;
   }
 
@@ -410,17 +643,18 @@
   // Número FDI
   .od-number {
     font-family: var(--sesa-font, inherit);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 13.5px;
+    font-weight: 800;
     fill: var(--sesa-text-primary);
     text-anchor: middle;
     pointer-events: none;
+    letter-spacing: 0.02em;
   }
 
   .pieza-overlay-resaltada {
     fill: rgba(99, 102, 241, 0.1);
     stroke: rgba(99, 102, 241, 0.35);
-    stroke-width: 1.5;
+    stroke-width: 1.8;
   }
 
   // Badge de número FDI
@@ -929,6 +1163,12 @@
 
 .odontograma-vista-anim {
   transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+:host ::ng-deep .pieza-group:focus-visible .pieza-overlay-resaltada {
+  stroke: var(--sesa-primary, #6366f1);
+  stroke-width: 2;
+  fill: color-mix(in srgb, var(--sesa-primary, #6366f1) 18%, transparent);
 }
 
 // ── Resumen de hallazgos ───────────────────────────────────────────────

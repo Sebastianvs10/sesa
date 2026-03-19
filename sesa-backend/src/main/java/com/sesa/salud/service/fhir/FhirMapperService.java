@@ -220,6 +220,64 @@ public class FhirMapperService {
         return fhir;
     }
 
+    /** S11: Encuentro FHIR desde registro de urgencias (clase EMER). */
+    public Encounter mapEncuentroUrgencia(com.sesa.salud.entity.UrgenciaRegistro urgencia,
+                                          Reference patientRef,
+                                          Reference practitionerRef,
+                                          Reference orgRef) {
+        Encounter fhir = new Encounter();
+        fhir.setId(UUID.randomUUID().toString());
+        fhir.setStatus(Encounter.EncounterStatus.FINISHED);
+        fhir.setClass_(new Coding()
+                .setSystem(SYS_ENCOUNTER_CLS)
+                .setCode("EMER")
+                .setDisplay("emergency"));
+        fhir.setSubject(patientRef);
+        if (practitionerRef != null) {
+            fhir.addParticipant().setIndividual(practitionerRef);
+        }
+        if (orgRef != null) {
+            fhir.setServiceProvider(orgRef);
+        }
+        java.time.LocalDateTime ingreso = urgencia.getFechaHoraIngreso();
+        if (ingreso != null) {
+            Date start = java.sql.Timestamp.valueOf(ingreso);
+            fhir.setPeriod(new Period().setStart(start).setEnd(start));
+        }
+        if (urgencia.getMotivoConsulta() != null) {
+            fhir.addReasonCode().setText(urgencia.getMotivoConsulta());
+        }
+        return fhir;
+    }
+
+    /** S11: Encuentro FHIR desde hospitalización (clase IMP). */
+    public Encounter mapEncuentroHospitalizacion(com.sesa.salud.entity.Hospitalizacion hosp,
+                                                Reference patientRef,
+                                                Reference orgRef) {
+        Encounter fhir = new Encounter();
+        fhir.setId(UUID.randomUUID().toString());
+        fhir.setStatus(Encounter.EncounterStatus.FINISHED);
+        fhir.setClass_(new Coding()
+                .setSystem(SYS_ENCOUNTER_CLS)
+                .setCode("IMP")
+                .setDisplay("inpatient encounter"));
+        fhir.setSubject(patientRef);
+        if (orgRef != null) {
+            fhir.setServiceProvider(orgRef);
+        }
+        java.time.LocalDateTime ingreso = hosp.getFechaIngreso();
+        java.time.LocalDateTime egreso = hosp.getFechaEgreso();
+        if (ingreso != null) {
+            Date start = java.sql.Timestamp.valueOf(ingreso);
+            Date end = egreso != null ? java.sql.Timestamp.valueOf(egreso) : start;
+            fhir.setPeriod(new Period().setStart(start).setEnd(end));
+        }
+        if (hosp.getServicio() != null) {
+            fhir.addReasonCode().setText(hosp.getServicio());
+        }
+        return fhir;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  CONDITION (Diagnóstico CIE-10)
     // ═══════════════════════════════════════════════════════════════════════

@@ -65,6 +65,11 @@ public class OrdenClinica {
     @Column(columnDefinition = "TEXT")
     private String resultado;
 
+    /** S2: Si el resultado fue marcado como crítico (alertas y trazabilidad de lectura). */
+    @Column(name = "resultado_critico", nullable = false)
+    @Builder.Default
+    private Boolean resultadoCritico = false;
+
     @Column(name = "fecha_resultado")
     private Instant fechaResultado;
 

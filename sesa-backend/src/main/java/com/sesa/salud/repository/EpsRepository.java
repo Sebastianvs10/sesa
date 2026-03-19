@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface EpsRepository extends JpaRepository<Eps, Long> {
     List<Eps> findByActivoTrue();
     Optional<Eps> findByCodigo(String codigo);
+    Optional<Eps> findFirstByNombreContainingIgnoreCase(String nombre);
 }

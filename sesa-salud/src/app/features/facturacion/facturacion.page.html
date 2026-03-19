@@ -7,6 +7,10 @@
       <p class="fac-subtitle">Cuentas médicas · RIPS · Glosas · Estados</p>
     </div>
     <div class="fac-header-actions">
+      <a routerLink="/facturacion/glosas" class="sesa-btn sesa-btn-outline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Glosas
+      </a>
       <button class="sesa-btn sesa-btn-secondary" type="button" (click)="abrirPanelRips()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Exportar RIPS
@@ -66,9 +70,102 @@
           <span class="fac-kpi-sub">{{ r.cantidadRechazada }} glosa{{ r.cantidadRechazada !== 1 ? 's' : '' }} · {{ r.cantidadAnulada }} anulada{{ r.cantidadAnulada !== 1 ? 's' : '' }}</span>
         </div>
       </div>
+      <div class="fac-kpi-card fac-kpi-card--info" title="Órdenes de medicamentos, laboratorio y procedimientos sin factura">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Órdenes por facturar</span>
+          <strong class="fac-kpi-value">{{ totalOrdenesPendientes() }}</strong>
+          <span class="fac-kpi-sub">sin factura asociada</span>
+        </div>
+      </div>
+      @if ((r.cantidadVencidaRadicacion ?? 0) > 0) {
+      <div class="fac-kpi-card fac-kpi-card--alert">
+        <div class="fac-kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="fac-kpi-body">
+          <span class="fac-kpi-label">Vencidas radicación (22 d háb.)</span>
+          <strong class="fac-kpi-value">{{ r.montoVencidoRadicacion | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          <span class="fac-kpi-sub">{{ r.cantidadVencidaRadicacion }} factura{{ r.cantidadVencidaRadicacion !== 1 ? 's' : '' }} sin radicar a tiempo</span>
+        </div>
+      </div>
+      }
       }
     }
   </div>
+
+  <!-- ═══════════════════════════════════ ALERTAS (Dashboard predictivo) ═══════════════ -->
+  @if (alertas(); as a) {
+    @if ((a.alertas && a.alertas.length) || a.totalGlosasPendientes > 0) {
+      <sesa-card>
+        <h2 class="fac-section-title">
+          <svg class="fac-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Alertas
+        </h2>
+        <p class="fac-section-desc">Facturas próximas a vencer o vencidas para radicación (22 días hábiles, Res. 558/2024) y glosas pendientes de respuesta.</p>
+        <div class="fac-alertas-grid">
+          @for (alerta of a.alertas; track (alerta.facturaId ?? alerta.glosaId ?? alerta.ordenId ?? $index)) {
+            <div class="fac-alerta-card fac-alerta--{{ alerta.tipo === 'VENCIDA_RADICACION' ? 'danger' : alerta.tipo === 'POR_VENCER_RADICACION' ? 'warning' : 'info' }}">
+              <span class="fac-alerta-titulo">{{ alerta.titulo }}</span>
+              <p class="fac-alerta-mensaje">{{ alerta.mensaje }}</p>
+              @if (alerta.numeroFactura) {
+                <span class="fac-alerta-ref">{{ alerta.numeroFactura }}</span>
+                @if (alerta.diasRestantes !== undefined && alerta.tipo !== 'GLOSA_PENDIENTE') {
+                  <span class="fac-alerta-dias">{{ alerta.diasRestantes }} d. háb.</span>
+                }
+              }
+              @if (alerta.facturaId && alerta.tipo !== 'GLOSA_PENDIENTE') {
+                <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button" (click)="abrirPanelRadicacionPorId(alerta.facturaId!)">Radicar</button>
+              }
+              @if (alerta.glosaId) {
+                <a [routerLink]="['/facturacion/glosas']" [queryParams]="{ facturaId: alerta.facturaId }" class="sesa-btn sesa-btn-sm sesa-btn-outline">Ver glosa</a>
+              }
+            </div>
+          }
+          @if (a.totalGlosasPendientes > 0 && (!a.alertas || a.alertas.length < 5)) {
+            <div class="fac-alerta-card fac-alerta--info">
+              <span class="fac-alerta-titulo">Glosas pendientes</span>
+              <p class="fac-alerta-mensaje">{{ a.totalGlosasPendientes }} glosa(s) sin respuesta.</p>
+              <a routerLink="/facturacion/glosas" class="sesa-btn sesa-btn-sm sesa-btn-outline">Ir a glosas</a>
+            </div>
+          }
+        </div>
+      </sesa-card>
+    }
+  }
+
+  <!-- ═══════════════════════════════════ BANDEJA DEL FACTURADOR ═══════════════════ -->
+  @if (bandeja(); as b) {
+    @if (b.tareas && b.tareas.length) {
+      <sesa-card>
+        <h2 class="fac-section-title">
+          <svg class="fac-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          Bandeja del facturador
+        </h2>
+        <p class="fac-section-desc">Tareas prioritarias: radicar facturas y responder glosas.</p>
+        <ul class="fac-bandeja-list">
+          @for (t of b.tareas; track (t.tipo + t.id)) {
+            <li class="fac-bandeja-item" [class.fac-bandeja-item--vencida]="t.vencida">
+              <span class="fac-bandeja-tipo">{{ t.tipo === 'RADICAR' ? 'Radicar' : 'Glosa' }}</span>
+              <span class="fac-bandeja-ref">{{ t.referencia }}</span>
+              <span class="fac-bandeja-desc">{{ t.descripcion }}</span>
+              @if (t.diasRestantes !== undefined && t.tipo === 'RADICAR') {
+                <span class="fac-bandeja-dias" [class.fac-bandeja-dias--vencida]="t.vencida">{{ t.vencida ? 'Vencida' : t.diasRestantes + ' d. háb.' }}</span>
+              }
+              @if (t.tipo === 'RADICAR' && t.id) {
+                <button class="sesa-btn sesa-btn-sm sesa-btn-primary" type="button" (click)="abrirPanelRadicacionPorId(t.id)">Radicar</button>
+              }
+              @if (t.tipo === 'RESPONDER_GLOSA') {
+                <a [routerLink]="['/facturacion/glosas']" class="sesa-btn sesa-btn-sm sesa-btn-outline">Responder</a>
+              }
+            </li>
+          }
+        </ul>
+      </sesa-card>
+    }
+  }
 
   <!-- ═══════════════════════════════════ FILTROS ═════════════════════════════════ -->
   <sesa-card>
@@ -109,6 +206,100 @@
         <button class="sesa-btn sesa-btn-outline" type="button" (click)="limpiarFiltros()">Limpiar</button>
       </div>
     </div>
+    <!-- Libro de facturación: export CSV por período -->
+    <div class="fac-libro-wrap">
+      <span class="fac-libro-label">Libro de facturación</span>
+      <input class="fac-input fac-input-sm" type="date" [(ngModel)]="libroDesde" name="libroDesde" />
+      <input class="fac-input fac-input-sm" type="date" [(ngModel)]="libroHasta" name="libroHasta" />
+      <select class="fac-input fac-input-sm" [(ngModel)]="libroEstado" name="libroEstado">
+        <option value="">Todos los estados</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="PAGADA">Pagada</option>
+        <option value="EN_PROCESO">En proceso</option>
+        <option value="RECHAZADA">Rechazada</option>
+        <option value="ANULADA">Anulada</option>
+      </select>
+      <button class="sesa-btn sesa-btn-outline" type="button" [disabled]="descargandoLibro()" (click)="descargarLibro()">
+        @if (descargandoLibro()) { <span class="fac-btn-spinner"></span> }
+        Descargar CSV
+      </button>
+    </div>
+  </sesa-card>
+
+  <!-- ═══════════════════════════════════ ÓRDENES PENDIENTES DE FACTURAR ═══════════════════ -->
+  <sesa-card>
+    <div class="fac-ordenes-pendientes-header">
+      <div>
+        <h2 class="fac-section-title">Órdenes pendientes de facturar</h2>
+        <p class="fac-section-desc">Órdenes de medicamentos, laboratorio y procedimientos sin factura asociada. Genere factura individual o seleccione varias para facturación por lote (una factura por paciente).</p>
+      </div>
+      @if (ordenesPendientes().length > 0 && ordenesSeleccionadas().size > 0) {
+        <div class="fac-lote-actions">
+          <span class="fac-lote-count">{{ ordenesSeleccionadas().size }} seleccionada(s)</span>
+          <button class="sesa-btn sesa-btn-primary" type="button" [disabled]="guardandoLote()" (click)="facturarLote()">
+            @if (guardandoLote()) { <span class="fac-btn-spinner"></span> }
+            Facturar seleccionadas por lote
+          </button>
+        </div>
+      }
+    </div>
+    @if (loadingOrdenesPendientes()) {
+      <div class="fac-ordenes-pendientes-loading">
+        @for (sk of [1,2,3]; track sk) {
+          <div class="fac-orden-pendiente-row fac-skeleton-row"><sesa-skeleton height="2rem" width="100%" /></div>
+        }
+      </div>
+    } @else if (ordenesPendientes().length === 0) {
+      <div class="fac-empty-ordenes">
+        <p>No hay órdenes pendientes de facturar. Todas las órdenes clínicas tienen factura asociada o aún no se han creado órdenes.</p>
+      </div>
+    } @else {
+      <div class="fac-ordenes-pendientes-wrap">
+        <table class="fac-table fac-table--ordenes">
+          <thead>
+            <tr>
+              <th class="fac-th-check">
+                <input type="checkbox" [checked]="ordenesSeleccionadas().size === ordenesPendientes().length && ordenesPendientes().length > 0"
+                  (change)="toggleTodasOrdenes($any($event.target).checked)" title="Seleccionar todas" />
+              </th>
+              <th>Orden</th>
+              <th>Paciente</th>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th>Valor est.</th>
+              <th>Fecha</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of ordenesPendientes(); track o.id) {
+              <tr>
+                <td class="fac-td-check">
+                  <input type="checkbox" [checked]="estaOrdenSeleccionada(o.id)" (change)="toggleOrdenSeleccionada(o.id)" />
+                </td>
+                <td class="fac-td-numero">#{{ o.id }}</td>
+                <td>
+                  <span class="fac-paciente-nombre">{{ o.pacienteNombre }}</span>
+                  @if (o.pacienteDocumento) {
+                    <span class="fac-doc">{{ o.pacienteDocumento }}</span>
+                  }
+                </td>
+                <td><span class="fac-tipo-badge">{{ o.tipo }}</span></td>
+                <td class="fac-td-detalle">{{ o.detalle || '—' }}</td>
+                <td class="fac-td-valor">{{ o.valorEstimado | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="fac-td-fecha">{{ o.fechaOrden | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <button class="sesa-btn sesa-btn-sm sesa-btn-primary" type="button" (click)="abrirPanelCrearDesdeOrden(o)">
+                    Generar factura
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="fac-ordenes-total">{{ totalOrdenesPendientes() }} orden{{ totalOrdenesPendientes() !== 1 ? 'es' : '' }} pendiente{{ totalOrdenesPendientes() !== 1 ? 's' : '' }} de facturar</p>
+      </div>
+    }
   </sesa-card>
 
   <!-- ═══════════════════════════════════ TABLA ═══════════════════════════════════ -->
@@ -132,6 +323,7 @@
             <th>Responsable</th>
             <th>Valor Total</th>
             <th>Estado</th>
+            <th>DIAN / FEV</th>
             <th>Fecha</th>
             <th>Acciones</th>
           </tr>
@@ -140,23 +332,29 @@
           @if (loading()) {
             @for (sk of [1,2,3,4,5]; track sk) {
               <tr>
-                @for (c of [1,2,3,4,5,6,7]; track c) {
+                @for (c of [1,2,3,4,5,6,7,8]; track c) {
                   <td><sesa-skeleton height="0.85rem" [width]="c === 7 ? '80px' : '100%'" /></td>
                 }
               </tr>
             }
           } @else {
             @for (f of facturas(); track f.id) {
-              <tr [class.fac-row--anulada]="f.estado === 'ANULADA'">
+              <tr [class.fac-row--anulada]="f.estado === 'ANULADA'" [class.fac-row--vencida]="f.vencidaRadicacion">
                 <td class="fac-td-numero">
                   <span class="fac-num">{{ f.numeroFactura || ('F-' + f.id) }}</span>
                   @if (f.ordenId) {
                     <span class="fac-orden-tag">Ord. {{ f.ordenId }}</span>
                   }
+                  @if (f.vencidaRadicacion) {
+                    <span class="fac-tag-vencida" title="Superó 22 días hábiles para radicación">Venc. rad.</span>
+                  }
                 </td>
                 <td>
                   <div class="fac-paciente">
                     <span class="fac-paciente-nombre">{{ f.pacienteNombre }}</span>
+                    @if (f.pacienteId) {
+                      <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: f.pacienteId }" class="fac-link-hc" title="Ver en historia clínica">Ver HC</a>
+                    }
                   </div>
                 </td>
                 <td>
@@ -188,13 +386,36 @@
                 <td>
                   <span class="fac-badge {{ estadoClass(f.estado) }}">{{ estadoLabel(f.estado) }}</span>
                 </td>
+                <td class="fac-td-dian">
+                  @if (f.dianEstado) {
+                    <span class="fac-badge fac-badge-dian fac-badge-dian--{{ (f.dianEstado || '').toLowerCase() }}" title="{{ f.dianCufe || f.dianEstado }}">
+                      {{ dianEstadoLabel(f.dianEstado) }}
+                    </span>
+                  } @else {
+                    <span class="fac-muted">—</span>
+                  }
+                </td>
                 <td class="fac-td-fecha">
                   {{ f.fechaFactura | date:'dd/MM/yyyy' }}
                 </td>
                 <td class="fac-td-actions">
                   @if (f.estado !== 'ANULADA') {
                     <div class="fac-actions-group">
+                      @if (f.estado === 'PENDIENTE' && f.dianEstado !== 'ACEPTADA') {
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button"
+                          title="Emitir factura electrónica DIAN/FEV"
+                          [disabled]="emitirElectronicaId() === f.id"
+                          (click)="emitirElectronica(f.id)">
+                          @if (emitirElectronicaId() === f.id) { <span class="fac-btn-spinner"></span> }
+                          Emitir FEV
+                        </button>
+                      }
                       @if (f.estado === 'PENDIENTE') {
+                        <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button"
+                          title="Registrar radicación ante EPS"
+                          (click)="abrirPanelRadicacion(f)">
+                          Radicar
+                        </button>
                         <button class="sesa-btn sesa-btn-sm sesa-btn-secondary" type="button"
                           title="Marcar pagada"
                           (click)="cambiarEstado(f, 'PAGADA')">
@@ -206,7 +427,13 @@
                           (click)="cambiarEstado(f, 'EN_PROCESO')">
                           Glosa
                         </button>
+                        <a [routerLink]="['/facturacion/glosas']" [queryParams]="{ facturaId: f.id }" class="sesa-btn sesa-btn-sm sesa-btn-outline" title="Ver glosas de esta factura">Ver glosas</a>
                       }
+                      <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button"
+                        title="Ver línea de tiempo: creada → FEV → radicada → glosa → estado"
+                        (click)="abrirTrazabilidad(f)">
+                        Trazabilidad
+                      </button>
                       @if (f.estado === 'EN_PROCESO') {
                         <button class="sesa-btn sesa-btn-sm sesa-btn-secondary" type="button"
                           (click)="cambiarEstado(f, 'PAGADA')">Pagar</button>
@@ -221,12 +448,13 @@
                     </div>
                   } @else {
                     <span class="fac-anulada-tag">Anulada</span>
+                    <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button" title="Ver trazabilidad" (click)="abrirTrazabilidad(f)">Trazabilidad</button>
                   }
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="fac-empty">
+                <td colspan="9" class="fac-empty">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   <p>No se encontraron facturas con los filtros seleccionados.</p>
                 </td>
@@ -264,10 +492,12 @@
 <!-- ════════════════════════════════ PANEL LATERAL ══════════════════════════════ -->
 @if (panelOpen()) {
   <div class="fac-overlay" (click)="cerrarPanel()" role="presentation"></div>
-  <aside class="fac-panel" role="dialog" [attr.aria-label]="panelMode() === 'crear' ? 'Nueva factura' : 'Exportar RIPS'">
+  <aside class="fac-panel" role="dialog" [attr.aria-label]="panelMode() === 'crear' ? 'Nueva factura' : (panelMode() === 'radicacion' ? 'Registrar radicación' : (panelMode() === 'trazabilidad' ? 'Trazabilidad factura' : 'Exportar RIPS'))">
     <div class="fac-panel-header">
       <h2 class="fac-panel-title">
         @if (panelMode() === 'crear') { Nueva Factura }
+        @else if (panelMode() === 'radicacion') { Registrar radicación }
+        @else if (panelMode() === 'trazabilidad') { Trazabilidad }
         @else { Exportar RIPS }
       </h2>
       <button class="sesa-btn sesa-btn-icon-only sesa-btn-outline" type="button" (click)="cerrarPanel()" aria-label="Cerrar panel">
@@ -275,68 +505,135 @@
       </button>
     </div>
 
-    <!-- ── Formulario nueva factura ─────────────────────────────── -->
+    <!-- ── Formulario nueva factura (flujo Colombia: identificación → servicio RIPS → financiación → valor) ── -->
     @if (panelMode() === 'crear') {
       <form class="fac-panel-form" (ngSubmit)="guardarFactura()">
+        @if (ordenOrigen(); as orden) {
+          <div class="fac-orden-vinculada" role="status">
+            <span class="fac-orden-vinculada-badge">Desde orden clínica</span>
+            <div class="fac-orden-vinculada-body">
+              <strong>Orden #{{ orden.id }}</strong> · {{ orden.tipo }}
+              <span class="fac-orden-vinculada-paciente">{{ orden.pacienteNombre }}</span>
+              @if (orden.valorEstimado != null && orden.valorEstimado > 0) {
+                <span class="fac-orden-vinculada-valor">{{ orden.valorEstimado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Paso 1: Identificación (paciente y número de factura) -->
+        <div class="fac-step">
+          <span class="fac-step-num">1</span>
+          <span class="fac-step-title">Identificación</span>
+        </div>
         <div class="fac-field">
           <label class="fac-label">
             N° Factura
-            <span class="fac-norm-hint">Se genera automáticamente FV-AAAA-NNNNNN</span>
+            <span class="fac-norm-hint">Automático FV-AAAA-NNNNNN</span>
           </label>
           <input class="fac-input" type="text" [(ngModel)]="form.numeroFactura" name="numeroFactura"
             placeholder="Dejar vacío para generación automática" />
         </div>
         <div class="fac-field">
           <label class="fac-label">Paciente <span class="fac-required">*</span></label>
-          <select class="fac-input" [(ngModel)]="form.pacienteId" name="pacienteId" required>
-            <option [ngValue]="0" disabled>Seleccione paciente...</option>
-            @for (p of pacientes(); track p.id) {
-              <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
-            }
-          </select>
+          @if (ordenOrigen()) {
+            <div class="fac-input fac-input-readonly">{{ ordenOrigen()?.pacienteNombre }} (Doc. {{ ordenOrigen()?.pacienteDocumento || '—' }})</div>
+            <input type="hidden" [(ngModel)]="form.pacienteId" name="pacienteId" />
+          } @else {
+            <select class="fac-input" [(ngModel)]="form.pacienteId" name="pacienteId" required>
+              <option [ngValue]="0" disabled>Seleccione paciente...</option>
+              @for (p of pacientes(); track p.id) {
+                <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
+              }
+            </select>
+          }
         </div>
 
-        <!-- ── Sección normativa CUPS / RIPS ── -->
-        <div class="fac-section-label">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-          Servicio prestado (RIPS — Res. 3374/2000)
+        <!-- Paso 2: Servicio prestado — RIPS / CUPS (Res. 2275/2023, soporte FEV) -->
+        <div class="fac-step">
+          <span class="fac-step-num">2</span>
+          <span class="fac-step-title">Servicio prestado (RIPS — Res. 2275/2023)</span>
         </div>
         <div class="fac-field">
-          <label class="fac-label">
-            Tipo de servicio <span class="fac-required">*</span>
-          </label>
+          <label class="fac-label">Tipo de servicio <span class="fac-required">*</span></label>
           <select class="fac-input" [(ngModel)]="form.tipoServicio" name="tipoServicio">
             <option value="">Seleccione tipo...</option>
-            <option value="CONSULTA_EXTERNA">Consulta externa</option>
-            <option value="URGENCIAS">Urgencias</option>
-            <option value="HOSPITALIZACION">Hospitalización</option>
-            <option value="PROCEDIMIENTO">Procedimiento quirúrgico/médico</option>
-            <option value="LABORATORIO">Laboratorio</option>
-            <option value="IMAGEN">Imágenes diagnósticas</option>
-            <option value="MEDICAMENTO">Medicamento / farmacia</option>
+            <option value="CONSULTA_EXTERNA">Consulta externa (AC)</option>
+            <option value="URGENCIAS">Urgencias (AU)</option>
+            <option value="HOSPITALIZACION">Hospitalización (AH)</option>
+            <option value="PROCEDIMIENTO">Procedimiento / Imagen (AP)</option>
+            <option value="LABORATORIO">Laboratorio (AP)</option>
+            <option value="IMAGEN">Imágenes diagnósticas (AP)</option>
+            <option value="MEDICAMENTO">Medicamento / Farmacia (AM)</option>
+            <option value="COMPUESTA">Orden compuesta (varios ítems)</option>
             <option value="ODONTOLOGIA">Odontología</option>
           </select>
         </div>
         <div class="fac-field">
-          <label class="fac-label">Código CUPS del procedimiento</label>
-          <div style="display:flex;gap:0.5rem">
-            <select class="fac-input" style="width:120px" (change)="seleccionarCups($any($event.target).value)">
-              <option value="">— CUPS —</option>
-              @for (c of catalogoCups; track c.codigo) {
-                <option [value]="c.codigo">{{ c.codigo }} – {{ c.descripcion }}</option>
-              }
-            </select>
-            <input class="fac-input" type="text" [(ngModel)]="form.codigoCups" name="codigoCups"
-              placeholder="Cód. CUPS" style="width:110px;text-transform:uppercase" />
-            <input class="fac-input" type="text" [(ngModel)]="form.descripcionCups" name="descripcionCups"
-              placeholder="Descripción del procedimiento" style="flex:1" />
-          </div>
+          <label class="fac-label fac-label--help" title="Código según Res. 2275/2023 (antes 3374/2000). Clasificación Única de Procedimientos en Salud para RIPS y cuenta médica.">Código CUPS (Clasificación Única de Procedimientos en Salud)</label>
+          @if (loadingCups()) {
+            <p class="fac-field-hint">Cargando catálogo CUPS…</p>
+          } @else {
+            <div class="fac-cups-row">
+              <input class="fac-input fac-cups-filter" type="text" [ngModel]="filtroCups()" (ngModelChange)="filtroCups.set($event)"
+                name="filtroCups" placeholder="Buscar por código o nombre…" title="Filtrar lista CUPS" />
+              <select class="fac-input fac-cups-select" (change)="seleccionarCups($any($event.target).value)" name="cupsSelect">
+                <option value="">— Seleccione CUPS —</option>
+                @for (c of catalogoCupsFiltrados(); track c.codigo) {
+                  <option [value]="c.codigo">{{ c.codigo }} – {{ c.descripcion }}</option>
+                }
+              </select>
+            </div>
+            <div class="fac-cups-manual">
+              <input class="fac-input" type="text" [(ngModel)]="form.codigoCups" name="codigoCups"
+                placeholder="Cód. CUPS" style="width:110px;text-transform:uppercase" />
+              <input class="fac-input" type="text" [(ngModel)]="form.descripcionCups" name="descripcionCups"
+                placeholder="Descripción del procedimiento" style="flex:1" />
+            </div>
+            <div class="fac-items-actions">
+              <button class="sesa-btn sesa-btn-sm sesa-btn-outline" type="button" (click)="agregarItemFactura()">
+                Agregar ítem
+              </button>
+              <button class="sesa-btn sesa-btn-sm sesa-btn-secondary" type="button" (click)="aplicarCupsAItem()">
+                Aplicar CUPS a ítem
+              </button>
+            </div>
+            @if (form.items?.length) {
+              <div class="fac-items-wrap">
+                <table class="fac-items-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Descripción</th>
+                      <th>Cant.</th>
+                      <th>V. unit.</th>
+                      <th>V. total</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (it of form.items; track $index) {
+                      <tr>
+                        <td><input class="fac-input fac-input-sm" type="text" [(ngModel)]="it.codigoCups" name="codigo{{$index}}" (blur)="actualizarTotalDesdeItems()" /></td>
+                        <td><input class="fac-input fac-input-sm" type="text" [(ngModel)]="it.descripcionCups" name="desc{{$index}}" (blur)="actualizarTotalDesdeItems()" /></td>
+                        <td><input class="fac-input fac-input-sm fac-input-num" type="number" min="1" [(ngModel)]="it.cantidad" name="cant{{$index}}" (ngModelChange)="actualizarTotalDesdeItems()" /></td>
+                        <td><input class="fac-input fac-input-sm fac-input-num" type="number" min="0" step="100" [(ngModel)]="it.valorUnitario" name="vunit{{$index}}" (ngModelChange)="actualizarTotalDesdeItems()" /></td>
+                        <td class="fac-item-total">{{ (it.valorTotal ?? 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                        <td><button class="sesa-btn sesa-btn-icon-only sesa-btn-outline sesa-btn-sm" type="button" (click)="quitarItemFactura($index)" aria-label="Quitar ítem">×</button></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <p class="fac-items-sum">Total ítems: {{ form.valorTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+              </div>
+            }
+          }
         </div>
 
-        <!-- ── Responsable del pago ── -->
-        <div class="fac-section-label">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/></svg>
-          Financiación y pago
+        <!-- Paso 3: Financiación (responsable, autorización, cuota moderadora) -->
+        <div class="fac-step">
+          <span class="fac-step-num">3</span>
+          <span class="fac-step-title">Financiación y pago</span>
         </div>
         <div class="fac-field">
           <label class="fac-label">Responsable del pago</label>
@@ -351,43 +648,145 @@
           </select>
         </div>
         <div class="fac-field">
-          <label class="fac-label">N° Autorización EPS</label>
+          <label class="fac-label fac-label--help" title="Obligatorio para radicación ante EPS. Plazo radicación: 22 días hábiles (Res. 558/2024).">N° Autorización EPS</label>
           <input class="fac-input" type="text" [(ngModel)]="form.numeroAutorizacionEps" name="numeroAutorizacionEps"
-            placeholder="Número de autorización (si aplica)" />
+            placeholder="Número de autorización (requerido para radicación)" />
         </div>
         <div class="fac-field">
           <label class="fac-label">Cuota moderadora / Copago (COP)</label>
           <input class="fac-input" type="number" min="0" step="100" [(ngModel)]="form.cuotaModeradora" name="cuotaModeradora"
             placeholder="0" />
-          <span class="fac-field-hint">Valor a cargo del paciente (Ley 100/1993 Art. 187)</span>
+          <span class="fac-field-hint">Ley 100/1993 Art. 187 — valor a cargo del paciente</span>
         </div>
 
-        <!-- ── Totales ── -->
+        <!-- Paso 4: Valor total y estado -->
+        <div class="fac-step">
+          <span class="fac-step-num">4</span>
+          <span class="fac-step-title">Valor y estado</span>
+        </div>
         <div class="fac-field">
-          <label class="fac-label">Valor Total del servicio (COP) <span class="fac-required">*</span></label>
-          <input class="fac-input" type="number" min="0" step="100" [(ngModel)]="form.valorTotal" name="valorTotal"
-            placeholder="0" required />
+          <label class="fac-label">Valor total del servicio (COP) <span class="fac-required">*</span></label>
+          @if (form.items?.length) {
+            <div class="fac-input fac-input-readonly fac-valor-total">{{ form.valorTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+          } @else {
+            <input class="fac-input" type="number" min="0" step="100" [(ngModel)]="form.valorTotal" name="valorTotal"
+              placeholder="0" required />
+          }
         </div>
         <div class="fac-field">
           <label class="fac-label">Estado inicial</label>
           <select class="fac-input" [(ngModel)]="form.estado" name="estado">
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="EN_PROCESO">En proceso</option>
+            <option value="PENDIENTE">Pendiente (por radicar)</option>
+            <option value="EN_PROCESO">En proceso (glosa)</option>
             <option value="PAGADA">Pagada</option>
           </select>
         </div>
         <div class="fac-field">
           <label class="fac-label">Concepto / Descripción adicional</label>
           <textarea class="fac-input fac-textarea" [(ngModel)]="form.descripcion" name="descripcion"
-            rows="2" placeholder="Observaciones adicionales..."></textarea>
+            rows="2" placeholder="Observaciones para la cuenta médica..."></textarea>
         </div>
         <div class="fac-panel-footer">
           <button class="sesa-btn sesa-btn-outline" type="button" (click)="cerrarPanel()">Cancelar</button>
           <button class="sesa-btn sesa-btn-primary" type="submit" [disabled]="saving()">
-            @if (saving()) { Guardando... } @else { Crear Factura }
+            @if (saving()) { Guardando... } @else { Crear factura }
           </button>
         </div>
       </form>
+    }
+
+    <!-- ── Panel Radicación ──────────────────────────────────────── -->
+    @if (panelMode() === 'radicacion' && facturaParaRadicacion(); as fac) {
+      <div class="fac-panel-form">
+        <div class="fac-radicacion-contexto">
+          <strong>Factura {{ fac.numeroFactura || ('#' + fac.id) }}</strong>
+          <span>{{ fac.pacienteNombre }}</span>
+          <span>{{ fac.valorTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+        <!-- Checklist pre-radicación (Res. 558/2024 — plazo 22 d. hábiles) -->
+        @if (loadingChecklist()) {
+          <div class="fac-checklist-loading"><span class="fac-spinner"></span> Verificando requisitos...</div>
+        } @else {
+          @if (checklistRadicacion(); as checklist) {
+            <div class="fac-checklist-radicacion" [class.fac-checklist--listo]="checklist.listo" [class.fac-checklist--bloqueado]="!checklist.listo && checklist.errores && checklist.errores.length">
+              <p class="fac-checklist-resumen">{{ checklist.resumen }}</p>
+              @if (checklist.errores && checklist.errores.length) {
+                <ul class="fac-checklist-errores" role="list">
+                  @for (err of checklist.errores; track err) { <li>{{ err }}</li> }
+                </ul>
+              }
+              @if (checklist.advertencias && checklist.advertencias.length) {
+                <ul class="fac-checklist-advertencias" role="list">
+                  @for (adv of checklist.advertencias; track adv) { <li>{{ adv }}</li> }
+                </ul>
+              }
+            </div>
+          }
+        }
+        <p class="fac-radicacion-ayuda" title="Res. 558/2024">Plazo para radicar: 22 días hábiles desde la fecha de factura.</p>
+        <div class="fac-field">
+          <label class="fac-label">Fecha de radicación <span class="fac-required">*</span></label>
+          <input class="fac-input" type="date" [(ngModel)]="formRadicacion.fechaRadicacion" name="fechaRadicacion" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">N° Radicado ante EPS</label>
+          <input class="fac-input" type="text" [(ngModel)]="formRadicacion.numeroRadicado" name="numeroRadicado"
+            placeholder="Número asignado por la EPS" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">CUV (Código Único de Validación)</label>
+          <input class="fac-input" type="text" [(ngModel)]="formRadicacion.cuv" name="cuv"
+            placeholder="Opcional — según Ministerio" />
+        </div>
+        <div class="fac-field">
+          <label class="fac-label">Observaciones</label>
+          <textarea class="fac-input fac-textarea" [(ngModel)]="formRadicacion.observaciones" name="observacionesRad"
+            rows="2" placeholder="Notas sobre la radicación..."></textarea>
+        </div>
+        <div class="fac-panel-footer">
+          <button class="sesa-btn sesa-btn-outline" type="button" (click)="cerrarPanel()">Cancelar</button>
+          <button class="sesa-btn sesa-btn-primary" type="button" (click)="guardarRadicacion()"
+            [disabled]="savingRadicacion() || radicacionBloqueadaPorChecklist()">
+            @if (savingRadicacion()) { Guardando... } @else { Registrar radicación }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ── Panel Trazabilidad (timeline) ───────────────────────── -->
+    @if (panelMode() === 'trazabilidad' && facturaTrazabilidad(); as fac) {
+      <div class="fac-panel-form">
+        <div class="fac-radicacion-contexto fac-trazabilidad-resumen">
+          <strong>{{ fac.numeroFactura || ('#' + fac.id) }}</strong>
+          <span>{{ fac.pacienteNombre }}</span>
+          <span>{{ fac.valorTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+          <span class="fac-badge {{ estadoClass(fac.estado) }}">{{ estadoLabel(fac.estado) }}</span>
+        </div>
+        <h3 class="fac-timeline-title">Línea de tiempo</h3>
+        @if (loadingTimeline()) {
+          <div class="fac-checklist-loading"><span class="fac-spinner"></span> Cargando...</div>
+        } @else if (timeline().length === 0) {
+          <p class="fac-muted">No hay eventos registrados.</p>
+        } @else {
+          <ol class="fac-timeline">
+            @for (ev of timeline(); track $index) {
+              <li class="fac-timeline-item {{ timelineEventClass(ev.tipo) }}">
+                <span class="fac-timeline-marker" [attr.data-tipo]="ev.tipo"></span>
+                <div class="fac-timeline-content">
+                  <span class="fac-timeline-fecha">{{ ev.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+                  <strong class="fac-timeline-titulo">{{ ev.titulo }}</strong>
+                  @if (ev.descripcion) {
+                    <p class="fac-timeline-desc">{{ ev.descripcion }}</p>
+                  }
+                  @if (ev.referencia) {
+                    <span class="fac-timeline-ref">{{ ev.referencia }}</span>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </div>
     }
 
     <!-- ── Panel RIPS ──────────────────────────────────────────── -->
@@ -396,8 +795,8 @@
         <div class="fac-rips-info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fac-rips-icon" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <div>
-            <p class="fac-rips-desc"><strong>RIPS estructurado Res. 3374/2000</strong> — Genera los archivos CT, US, AP y AC separados para reporte a EPS/SISPRO/ADRES.</p>
-            <p class="fac-rips-desc fac-rips-desc--small">CT: datos paciente · US: servicios · AP: procedimientos · AC: consultas</p>
+            <p class="fac-rips-desc"><strong>RIPS Res. 2275/2023</strong> — Genera archivos estructurados (CT, US, AP, AC, AM) para soporte de la FEV y radicación ante EPS/SISPRO.</p>
+            <p class="fac-rips-desc fac-rips-desc--small">CT: control · US: usuarios · AP: procedimientos · AC: consultas · AM: medicamentos</p>
           </div>
         </div>
         <div class="fac-field">

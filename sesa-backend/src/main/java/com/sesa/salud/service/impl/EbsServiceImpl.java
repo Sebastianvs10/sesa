@@ -10,6 +10,7 @@ import com.sesa.salud.entity.EbsBrigade;
 import com.sesa.salud.entity.EbsBrigadeTeam;
 import com.sesa.salud.entity.EbsTerritoryTeam;
 import com.sesa.salud.entity.EbsAlert;
+import com.sesa.salud.entity.EbsFamilyGroup;
 import com.sesa.salud.entity.EbsHomeVisit;
 import com.sesa.salud.entity.EbsHousehold;
 import com.sesa.salud.entity.EbsTerritory;
@@ -17,6 +18,7 @@ import com.sesa.salud.entity.Personal;
 import com.sesa.salud.repository.EbsAlertRepository;
 import com.sesa.salud.repository.EbsBrigadeRepository;
 import com.sesa.salud.repository.EbsBrigadeTeamRepository;
+import com.sesa.salud.repository.EbsFamilyGroupRepository;
 import com.sesa.salud.repository.EbsHomeVisitRepository;
 import com.sesa.salud.repository.EbsHouseholdRepository;
 import com.sesa.salud.repository.EbsTerritoryRepository;
@@ -54,6 +56,7 @@ public class EbsServiceImpl implements EbsService {
     private final EbsBrigadeRepository ebsBrigadeRepository;
     private final EbsTerritoryTeamRepository territoryTeamRepository;
     private final EbsBrigadeTeamRepository brigadeTeamRepository;
+    private final EbsFamilyGroupRepository familyGroupRepository;
     private final EbsAlertRepository alertRepository;
     private final PersonalRepository personalRepository;
     private final IgacService igacService;
@@ -245,23 +248,7 @@ public class EbsServiceImpl implements EbsService {
         for (EbsHomeVisit v : visits) {
             if (dateFrom != null && v.getVisitDate().isBefore(dateFrom)) continue;
             if (dateTo != null && !v.getVisitDate().isBefore(dateTo)) continue;
-            String profName = v.getProfessional() != null
-                ? (v.getProfessional().getNombres() + " " + (v.getProfessional().getApellidos() != null ? v.getProfessional().getApellidos() : "")).trim()
-                : null;
-            result.add(EbsHomeVisitSummaryDto.builder()
-                .id(v.getId())
-                .householdId(v.getHousehold().getId())
-                .householdAddress(v.getHousehold().getAddressText())
-                .territoryId(v.getHousehold().getTerritory().getId())
-                .territoryName(v.getHousehold().getTerritory().getName())
-                .professionalId(v.getProfessional() != null ? v.getProfessional().getId() : null)
-                .professionalName(profName)
-                .visitDate(v.getVisitDate())
-                .visitType(v.getVisitType())
-                .motivo(v.getMotivo())
-                .notes(v.getNotes())
-                .status(v.getStatus())
-                .build());
+            result.add(toVisitSummary(v));
         }
         return result;
     }
@@ -526,6 +513,132 @@ public class EbsServiceImpl implements EbsService {
             .visitedHouseholds(BigDecimal.valueOf(visitedHouseholds))
             .coveragePercent(coveragePercent)
             .rows(rows)
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EbsHomeVisitSummaryDto> listPendientesSincronizar(Instant desde) {
+        if (desde == null) desde = Instant.EPOCH;
+        List<EbsHomeVisit> visits = homeVisitRepository.findByCreatedAtAfterOrderByCreatedAtAsc(desde);
+        List<EbsHomeVisitSummaryDto> result = new ArrayList<>();
+        for (EbsHomeVisit v : visits) {
+            result.add(toVisitSummary(v));
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public VisitaEbsSyncResponseDto sincronizarVisitas(List<VisitaEbsSyncDto> visitas) {
+        List<Long> savedIds = new ArrayList<>();
+        List<VisitaEbsConflictDto> conflicts = new ArrayList<>();
+        if (visitas == null) return VisitaEbsSyncResponseDto.builder().savedIds(savedIds).conflicts(conflicts).build();
+        for (VisitaEbsSyncDto dto : visitas) {
+            Instant clientUpdated = null;
+            if (dto.getClientUpdatedAt() != null && !dto.getClientUpdatedAt().isBlank()) {
+                try {
+                    clientUpdated = Instant.parse(dto.getClientUpdatedAt());
+                } catch (Exception ignored) {}
+            }
+            EbsHomeVisit existing = null;
+            if (dto.getServerId() != null) {
+                existing = homeVisitRepository.findById(dto.getServerId()).orElse(null);
+            }
+            if (existing == null && dto.getOfflineUuid() != null) {
+                existing = homeVisitRepository.findByOfflineUuid(dto.getOfflineUuid()).orElse(null);
+            }
+            if (existing != null) {
+                if (existing.getCreatedAt() != null && clientUpdated != null && existing.getCreatedAt().isAfter(clientUpdated)) {
+                    conflicts.add(new VisitaEbsConflictDto(dto.getOfflineUuid(), existing.getId(), "El servidor tiene una versión más reciente"));
+                    continue;
+                }
+                applySyncDtoToVisit(dto, existing);
+                existing = homeVisitRepository.save(existing);
+                savedIds.add(existing.getId());
+            } else {
+                EbsHomeVisit newVisit = buildVisitFromSyncDto(dto);
+                if (newVisit == null) continue;
+                newVisit = homeVisitRepository.save(newVisit);
+                savedIds.add(newVisit.getId());
+            }
+        }
+        return VisitaEbsSyncResponseDto.builder().savedIds(savedIds).conflicts(conflicts).build();
+    }
+
+    private static EbsHomeVisitSummaryDto toVisitSummary(EbsHomeVisit v) {
+        String profName = v.getProfessional() != null
+            ? (v.getProfessional().getNombres() + " " + (v.getProfessional().getApellidos() != null ? v.getProfessional().getApellidos() : "")).trim()
+            : null;
+        return EbsHomeVisitSummaryDto.builder()
+            .id(v.getId())
+            .householdId(v.getHousehold().getId())
+            .householdAddress(v.getHousehold().getAddressText())
+            .territoryId(v.getHousehold().getTerritory().getId())
+            .territoryName(v.getHousehold().getTerritory().getName())
+            .professionalId(v.getProfessional() != null ? v.getProfessional().getId() : null)
+            .professionalName(profName)
+            .visitDate(v.getVisitDate())
+            .visitType(v.getVisitType())
+            .motivo(v.getMotivo())
+            .notes(v.getNotes())
+            .status(v.getStatus())
+            .build();
+    }
+
+    private void applySyncDtoToVisit(VisitaEbsSyncDto dto, EbsHomeVisit visit) {
+        Instant visitDate = visit.getVisitDate();
+        if (dto.getVisitDate() != null && !dto.getVisitDate().isBlank()) {
+            try { visitDate = Instant.parse(dto.getVisitDate()); } catch (Exception ignored) {}
+        }
+        visit.setVisitDate(visitDate);
+        visit.setVisitType(dto.getVisitType() != null ? dto.getVisitType() : visit.getVisitType());
+        visit.setTipoIntervencion(dto.getTipoIntervencion());
+        visit.setVeredaCodigo(dto.getVeredaCodigo());
+        visit.setDiagnosticoCie10(dto.getDiagnosticoCie10());
+        visit.setPlanCuidado(dto.getPlanCuidado());
+        visit.setMotivo(dto.getMotivo());
+        visit.setNotes(dto.getNotes());
+        visit.setStatus(dto.getStatus() != null ? dto.getStatus() : visit.getStatus());
+        visit.setSyncStatus("SYNCED");
+        if (dto.getBrigadeId() != null) {
+            visit.setBrigade(ebsBrigadeRepository.findById(dto.getBrigadeId()).orElse(null));
+        }
+        if (dto.getProfessionalId() != null) {
+            visit.setProfessional(personalRepository.findById(dto.getProfessionalId()).orElse(null));
+        }
+        if (dto.getFamilyGroupId() != null) {
+            visit.setFamilyGroup(familyGroupRepository.findById(dto.getFamilyGroupId()).orElse(null));
+        }
+    }
+
+    private EbsHomeVisit buildVisitFromSyncDto(VisitaEbsSyncDto dto) {
+        if (dto.getHouseholdId() == null) return null;
+        EbsHousehold household = householdRepository.findById(dto.getHouseholdId()).orElse(null);
+        if (household == null) return null;
+        Instant visitDate = Instant.now();
+        if (dto.getVisitDate() != null && !dto.getVisitDate().isBlank()) {
+            try { visitDate = Instant.parse(dto.getVisitDate()); } catch (Exception ignored) {}
+        }
+        Personal professional = dto.getProfessionalId() != null ? personalRepository.findById(dto.getProfessionalId()).orElse(null) : null;
+        EbsBrigade brigade = dto.getBrigadeId() != null ? ebsBrigadeRepository.findById(dto.getBrigadeId()).orElse(null) : null;
+        EbsFamilyGroup familyGroup = dto.getFamilyGroupId() != null ? familyGroupRepository.findById(dto.getFamilyGroupId()).orElse(null) : null;
+        return EbsHomeVisit.builder()
+            .household(household)
+            .familyGroup(familyGroup)
+            .visitDate(visitDate)
+            .visitType(dto.getVisitType() != null ? dto.getVisitType() : "DOMICILIARIA_APS")
+            .tipoIntervencion(dto.getTipoIntervencion())
+            .veredaCodigo(dto.getVeredaCodigo())
+            .diagnosticoCie10(dto.getDiagnosticoCie10())
+            .planCuidado(dto.getPlanCuidado())
+            .brigade(brigade)
+            .motivo(dto.getMotivo())
+            .notes(dto.getNotes())
+            .professional(professional)
+            .status(dto.getStatus() != null ? dto.getStatus() : "COMPLETADA")
+            .offlineUuid(dto.getOfflineUuid())
+            .syncStatus("SYNCED")
             .build();
     }
 }

@@ -20,6 +20,7 @@ import { NotaEnfermeriaService, NotaEnfermeriaDto, NotaEnfermeriaRequestDto } fr
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { SesaJspdfService } from '../../core/services/sesa-jspdf.service';
+import { RdaService } from '../../core/services/rda.service';
 
 export type NivelTriage = 'I' | 'II' | 'III' | 'IV' | 'V' | 'TODOS';
 export type EstadoFiltro = 'TODOS' | 'EN_ESPERA' | 'EN_ATENCION' | 'EN_OBSERVACION' | 'ALTA' | 'HOSPITALIZADO' | 'REFERIDO';
@@ -43,6 +44,7 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   private readonly toast = inject(SesaToastService);
   private readonly router = inject(Router);
   private readonly sesaPdf = inject(SesaJspdfService);
+  private readonly rdaService = inject(RdaService);
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -60,6 +62,14 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   checklistAlergias = signal(false);
   resumenAlta = signal('');
   instruccionesAlta = signal('');
+  /** S6: Modal de alta con checklist */
+  mostrarModalAlta = signal(false);
+  formAltaDiagnostico = signal('');
+  formAltaTratamiento = signal('');
+  formAltaRecomendaciones = signal('');
+  formAltaProximaCita = signal('');
+  /** S11: RDA urgencias — enviando */
+  rdaEnviando = signal(false);
 
   // Filtros
   filtroTriage = signal<NivelTriage>('TODOS');
@@ -273,6 +283,14 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
       this.estadoPendienteChecklist.set(nuevoEstado);
       return;
     }
+    if (nuevoEstado === 'ALTA') {
+      this.formAltaDiagnostico.set(sel.altaDiagnostico ?? '');
+      this.formAltaTratamiento.set(sel.altaTratamiento ?? '');
+      this.formAltaRecomendaciones.set(sel.altaRecomendaciones ?? '');
+      this.formAltaProximaCita.set(sel.altaProximaCita ?? '');
+      this.mostrarModalAlta.set(true);
+      return;
+    }
     this.ejecutarCambioEstado(nuevoEstado);
   }
 
@@ -292,6 +310,93 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   cancelarChecklistAtencion(): void {
     this.mostrarChecklistAtencion.set(false);
     this.estadoPendienteChecklist.set(null);
+  }
+
+  cancelarModalAlta(): void {
+    this.mostrarModalAlta.set(false);
+  }
+
+  /** S6: Cerrar alta — POST con checklist y cierra modal. */
+  cerrarAlta(): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
+    this.guardando.set(true);
+    this.urgenciaService.darAlta(sel.id, {
+      diagnostico: this.formAltaDiagnostico() || undefined,
+      tratamiento: this.formAltaTratamiento() || undefined,
+      recomendaciones: this.formAltaRecomendaciones() || undefined,
+      proximaCita: this.formAltaProximaCita() || undefined,
+    }).subscribe({
+      next: (updated) => {
+        this.urgencias.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
+        this.seleccionada.set(updated);
+        this.mostrarModalAlta.set(false);
+        this.guardando.set(false);
+        this.toast.success('Alta registrada. Puede descargar el PDF para el paciente.', 'Alta');
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.error || 'Error al registrar alta', 'Error');
+        this.guardando.set(false);
+      },
+    });
+  }
+
+  /** S6: Descargar PDF de resumen de alta (backend). */
+  descargarPdfAlta(): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
+    this.guardando.set(true);
+    this.urgenciaService.getPdfAlta(sel.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `alta-urgencia-${sel.id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.guardando.set(false);
+        this.toast.success('PDF descargado', 'Alta');
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.error || 'Error al generar PDF', 'Error');
+        this.guardando.set(false);
+      },
+    });
+  }
+
+  /** S6: Guardar datos de alta y luego descargar PDF (para uso desde el modal). */
+  guardarYDescargarPdfAlta(): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
+    this.guardando.set(true);
+    this.urgenciaService.darAlta(sel.id, {
+      diagnostico: this.formAltaDiagnostico() || undefined,
+      tratamiento: this.formAltaTratamiento() || undefined,
+      recomendaciones: this.formAltaRecomendaciones() || undefined,
+      proximaCita: this.formAltaProximaCita() || undefined,
+    }).subscribe({
+      next: (updated) => {
+        this.urgencias.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
+        this.seleccionada.set(updated);
+        this.urgenciaService.getPdfAlta(sel.id).subscribe({
+          next: (blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `alta-urgencia-${sel.id}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.guardando.set(false);
+            this.toast.success('Alta guardada y PDF descargado', 'Alta');
+          },
+          error: () => { this.guardando.set(false); },
+        });
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.error || 'Error al registrar alta', 'Error');
+        this.guardando.set(false);
+      },
+    });
   }
 
   private ejecutarCambioEstado(nuevoEstado: string): void {
@@ -363,6 +468,10 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
   setInstruccionesAlta(val: string): void { this.instruccionesAlta.set(val); }
   setChecklistIdentificacion(val: boolean): void { this.checklistIdentificacion.set(val); }
   setChecklistAlergias(val: boolean): void { this.checklistAlergias.set(val); }
+  setFormAltaDiagnostico(val: string): void { this.formAltaDiagnostico.set(val); }
+  setFormAltaTratamiento(val: string): void { this.formAltaTratamiento.set(val); }
+  setFormAltaRecomendaciones(val: string): void { this.formAltaRecomendaciones.set(val); }
+  setFormAltaProximaCita(val: string): void { this.formAltaProximaCita.set(val); }
 
   // ── Evoluciones SOAP ──────────────────────────────────────────────────────
   guardarEvolucion(): void {
@@ -723,5 +832,25 @@ export class UrgenciasPageComponent implements OnInit, OnDestroy {
 
   setSonidoAlertas(val: boolean): void {
     this.sonidoAlertas.set(val);
+  }
+
+  /** S11: Generar y enviar RDA de Urgencias (Res. 1888/2025). */
+  generarYEnviarRdaUrgencia(): void {
+    const sel = this.seleccionada();
+    if (!sel) return;
+    this.rdaEnviando.set(true);
+    this.rdaService.generarYEnviarUrgencia(sel.id).subscribe({
+      next: (status) => {
+        this.rdaEnviando.set(false);
+        this.toast.success(
+          `RDA ${this.rdaService.estadoLabel(status.estadoEnvio)} — ${status.idMinisterio ? 'ID Ministerio: ' + status.idMinisterio : ''}`,
+          'RDA Urgencias'
+        );
+      },
+      error: (err) => {
+        this.rdaEnviando.set(false);
+        this.toast.error(err?.error?.error || err?.message || 'Error al generar/enviar RDA', 'RDA Urgencias');
+      },
+    });
   }
 }

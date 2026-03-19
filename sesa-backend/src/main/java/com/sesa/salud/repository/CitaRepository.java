@@ -46,4 +46,6 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     @Query("SELECT c FROM Cita c WHERE c.fechaHora BETWEEN :inicio AND :fin AND c.estado = 'AGENDADA' AND c.recordatorio1hEnviadoAt IS NULL")
     List<Cita> findParaRecordatorio1h(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
+    /** S3: Buscar cita por token de confirmación (enlace público). */
+    java.util.Optional<Cita> findByTokenConfirmacion(String tokenConfirmacion);
 }

@@ -7,6 +7,8 @@
 package com.sesa.salud.service.fhir;
 
 import com.sesa.salud.dto.rda.RdaStatusDto;
+import com.sesa.salud.dto.RdaRecibidoResumenDto;
+import com.sesa.salud.dto.RdaRecibidoDetalleDto;
 import com.sesa.salud.entity.Atencion;
 import com.sesa.salud.entity.RdaEnvio;
 import com.sesa.salud.repository.AtencionRepository;
@@ -63,6 +65,40 @@ public class RdaService {
         return toDto(rdaEnvio);
     }
 
+    /** S11: Genera el RDA de Urgencias para un registro de urgencia. */
+    @Transactional
+    public RdaStatusDto generarRdaUrgencias(Long urgenciaRegistroId) {
+        String bundleJson = generatorService.generarRdaUrgencias(urgenciaRegistroId);
+        RdaEnvio rdaEnvio = RdaEnvio.builder()
+                .urgenciaRegistroId(urgenciaRegistroId)
+                .tipoRda(RdaEnvio.TipoRda.URGENCIAS)
+                .estadoEnvio(RdaEnvio.EstadoRda.PENDIENTE)
+                .bundleJson(bundleJson)
+                .fechaGeneracion(Instant.now())
+                .tenantSchema(TenantContextHolder.getTenantSchema())
+                .build();
+        rdaEnvio = rdaEnvioRepository.save(rdaEnvio);
+        log.info("RDA Urgencias generado — id:{} urgenciaRegistroId:{}", rdaEnvio.getId(), urgenciaRegistroId);
+        return toDto(rdaEnvio);
+    }
+
+    /** S11: Genera el RDA de Hospitalización para un ingreso. */
+    @Transactional
+    public RdaStatusDto generarRdaHospitalizacion(Long hospitalizacionId) {
+        String bundleJson = generatorService.generarRdaHospitalizacion(hospitalizacionId);
+        RdaEnvio rdaEnvio = RdaEnvio.builder()
+                .hospitalizacionId(hospitalizacionId)
+                .tipoRda(RdaEnvio.TipoRda.HOSPITALIZACION)
+                .estadoEnvio(RdaEnvio.EstadoRda.PENDIENTE)
+                .bundleJson(bundleJson)
+                .fechaGeneracion(Instant.now())
+                .tenantSchema(TenantContextHolder.getTenantSchema())
+                .build();
+        rdaEnvio = rdaEnvioRepository.save(rdaEnvio);
+        log.info("RDA Hospitalización generado — id:{} hospitalizacionId:{}", rdaEnvio.getId(), hospitalizacionId);
+        return toDto(rdaEnvio);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  ENVIAR AL MINISTERIO
     // ═══════════════════════════════════════════════════════════════════════
@@ -77,11 +113,56 @@ public class RdaService {
                 .orElseThrow(() -> new RuntimeException(
                         "No hay RDA generado para la atención " + atencionId +
                         ". Genérelo primero."));
+        return enviarRdaEnvio(rdaEnvio);
+    }
 
+    /**
+     * Genera Y envía el RDA en un solo paso (flujo recomendado).
+     */
+    @Transactional
+    public RdaStatusDto generarYEnviar(Long atencionId, RdaEnvio.TipoRda tipoRda) {
+        generarRda(atencionId, tipoRda);
+        return enviarAlMinisterio(atencionId, tipoRda);
+    }
+
+    /** S11: Envía el RDA más reciente de una urgencia al Ministerio. */
+    @Transactional
+    public RdaStatusDto enviarAlMinisterioUrgencias(Long urgenciaRegistroId) {
+        RdaEnvio rdaEnvio = rdaEnvioRepository
+                .findFirstByUrgenciaRegistroIdAndTipoRdaOrderByFechaGeneracionDesc(urgenciaRegistroId, RdaEnvio.TipoRda.URGENCIAS)
+                .orElseThrow(() -> new RuntimeException(
+                        "No hay RDA generado para la urgencia " + urgenciaRegistroId + ". Genérelo primero."));
+        return enviarRdaEnvio(rdaEnvio);
+    }
+
+    /** S11: Envía el RDA más reciente de una hospitalización al Ministerio. */
+    @Transactional
+    public RdaStatusDto enviarAlMinisterioHospitalizacion(Long hospitalizacionId) {
+        RdaEnvio rdaEnvio = rdaEnvioRepository
+                .findFirstByHospitalizacionIdAndTipoRdaOrderByFechaGeneracionDesc(hospitalizacionId, RdaEnvio.TipoRda.HOSPITALIZACION)
+                .orElseThrow(() -> new RuntimeException(
+                        "No hay RDA generado para la hospitalización " + hospitalizacionId + ". Genérelo primero."));
+        return enviarRdaEnvio(rdaEnvio);
+    }
+
+    /** S11: Genera y envía RDA de urgencias en un paso. */
+    @Transactional
+    public RdaStatusDto generarYEnviarUrgencias(Long urgenciaRegistroId) {
+        generarRdaUrgencias(urgenciaRegistroId);
+        return enviarAlMinisterioUrgencias(urgenciaRegistroId);
+    }
+
+    /** S11: Genera y envía RDA de hospitalización en un paso. */
+    @Transactional
+    public RdaStatusDto generarYEnviarHospitalizacion(Long hospitalizacionId) {
+        generarRdaHospitalizacion(hospitalizacionId);
+        return enviarAlMinisterioHospitalizacion(hospitalizacionId);
+    }
+
+    private RdaStatusDto enviarRdaEnvio(RdaEnvio rdaEnvio) {
         if (rdaEnvio.getEstadoEnvio() == RdaEnvio.EstadoRda.CONFIRMADO) {
             throw new RuntimeException("El RDA ya fue confirmado por el Ministerio.");
         }
-
         try {
             String idMinisterio = ministerioClient.enviarBundle(rdaEnvio.getBundleJson());
             rdaEnvio.setEstadoEnvio(RdaEnvio.EstadoRda.ENVIADO);
@@ -92,21 +173,11 @@ public class RdaService {
         } catch (Exception e) {
             rdaEnvio.setEstadoEnvio(RdaEnvio.EstadoRda.ERROR);
             rdaEnvio.setErrorMensaje(e.getMessage());
-            rdaEnvio.setReintentos(rdaEnvio.getReintentos() + 1);
+            rdaEnvio.setReintentos(rdaEnvio.getReintentos() != null ? rdaEnvio.getReintentos() + 1 : 1);
             log.error("Error enviando RDA al Ministerio: {}", e.getMessage());
         }
-
         rdaEnvio = rdaEnvioRepository.save(rdaEnvio);
         return toDto(rdaEnvio);
-    }
-
-    /**
-     * Genera Y envía el RDA en un solo paso (flujo recomendado).
-     */
-    @Transactional
-    public RdaStatusDto generarYEnviar(Long atencionId, RdaEnvio.TipoRda tipoRda) {
-        generarRda(atencionId, tipoRda);
-        return enviarAlMinisterio(atencionId, tipoRda);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -135,6 +206,18 @@ public class RdaService {
         return envio.getBundleJson();
     }
 
+    /** S17: RDA recibidos de otras IPS (IHCE). Por ahora devuelve lista vacía; integrar con API del Ministerio cuando exista. */
+    @Transactional(readOnly = true)
+    public List<RdaRecibidoResumenDto> obtenerRdaRecibidosPaciente(Long pacienteId) {
+        return List.of();
+    }
+
+    /** S17: Detalle de un RDA recibido. Por ahora devuelve null si no hay integración. */
+    @Transactional(readOnly = true)
+    public RdaRecibidoDetalleDto getRdaRecibidoDetalle(Long id) {
+        return null;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  MAPPER
     // ═══════════════════════════════════════════════════════════════════════
@@ -143,6 +226,8 @@ public class RdaService {
         return RdaStatusDto.builder()
                 .rdaId(e.getId())
                 .atencionId(e.getAtencionId())
+                .urgenciaRegistroId(e.getUrgenciaRegistroId())
+                .hospitalizacionId(e.getHospitalizacionId())
                 .tipoRda(e.getTipoRda())
                 .estadoEnvio(e.getEstadoEnvio())
                 .idMinisterio(e.getIdMinisterio())
