@@ -1071,58 +1071,223 @@
 @media (max-width: 960px) {
   .sesa-login {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     height: auto;
     min-height: 100dvh;
+    min-height: 100svh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 
   .sesa-login-bg {
-    min-height: 40vh;
-    padding: 1.75rem;
+    min-height: clamp(11rem, 28svh, 15.5rem);
+    padding: max(1rem, env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-right, 0px))
+      1rem max(1.25rem, env(safe-area-inset-left, 0px));
+    flex-shrink: 0;
+  }
+
+  .sesa-login-bg-brand {
+    margin-bottom: 0.25rem;
   }
 
   .sesa-login-bg-content {
-    padding: 1.5rem 0 1.25rem;
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    padding: 0.75rem 0 0.85rem;
     max-width: 100%;
+  }
+
+  .sesa-login-bg-badge {
+    margin-bottom: 0.65rem;
+    font-size: 0.62rem;
+    padding: 0.28rem 0.75rem;
   }
 
   .sesa-login-bg-title {
     max-width: 100%;
+    font-size: clamp(1.2rem, 5.2vw, 1.55rem);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
   }
 
   .sesa-login-bg-subtitle {
     max-width: 100%;
-  }
-
-  .sesa-login-panel {
-    padding: 1.5rem;
-    align-items: flex-start;
-    padding-top: 2rem;
-  }
-
-  .sesa-login-panel-inner {
-    max-width: 100%;
-    border-radius: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .sesa-login-bg {
-    min-height: 36vh;
-    padding: 1.25rem;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .sesa-login-bg-features {
     display: none;
   }
 
+  .sesa-login-bg-stats {
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+    gap: 0.5rem;
+  }
+
+  .sesa-login-bg-stat-value {
+    font-size: 0.82rem;
+  }
+
+  .sesa-login-bg-stat-label {
+    font-size: 0.55rem;
+  }
+
+  .sesa-login-bg-stat-divider {
+    height: 1.5rem;
+  }
+
+  /* Orbes menos pesados en móvil */
+  .sesa-login-bg::before,
+  .sesa-login-bg::after {
+    filter: blur(72px);
+  }
+
   .sesa-login-panel {
-    padding: 1rem;
+    flex: 1 1 auto;
+    min-height: min-content;
+    padding: 1rem max(1rem, env(safe-area-inset-right, 0px))
+      max(1.25rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+    padding-top: 1.25rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+    box-shadow: none;
+  }
+
+  .sesa-login-theme-toggle {
+    top: max(0.65rem, env(safe-area-inset-top, 0px));
+    right: max(0.65rem, env(safe-area-inset-right, 0px));
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
   }
 
   .sesa-login-panel-inner {
-    padding: 1.25rem;
-    border-radius: 16px;
+    max-width: 100%;
+    width: 100%;
+    border-radius: clamp(14px, 3.5vw, 20px);
+    padding: 1.15rem 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sesa-login-logo-img {
+    max-width: 9.5rem;
+    max-height: 2.75rem;
+  }
+
+  .sesa-login-card-divider {
+    margin: 0.65rem 0 1rem;
+  }
+
+  .sesa-login-main-title {
+    font-size: 1.28rem;
+  }
+
+  .sesa-login-main-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  /* iOS: evita zoom al enfocar inputs (mín. 16px) */
+  :host ::ng-deep .sesa-login-form .sesa-input-icon input,
+  .sesa-input-icon input {
+    font-size: 16px !important;
+  }
+
+  .sesa-login-mode-btn {
+    min-height: 44px;
+    font-size: 0.8rem;
+  }
+
+  .sesa-input-icon {
+    min-height: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .sesa-login-form .sesa-btn-primary {
+    min-height: 48px;
+    height: auto;
+  }
+
+  .sesa-login-row--between {
+    flex-wrap: wrap;
+    gap: 0.65rem 0.5rem;
+    align-items: flex-start;
+  }
+
+  .sesa-login-footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    row-gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sesa-login-bg {
+    min-height: clamp(10rem, 26svh, 13rem);
+    padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+  }
+
+  .sesa-login-bg-stats {
+    flex-wrap: wrap;
+    justify-content: space-around;
+    row-gap: 0.35rem;
+  }
+
+  .sesa-login-bg-stat {
+    flex: 1 1 28%;
+    min-width: 4.5rem;
+  }
+
+  .sesa-login-bg-stat-divider {
+    display: none;
+  }
+
+  .sesa-login-panel {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
+  .sesa-login-panel-inner {
+    padding: 1rem 1rem;
+    border-radius: 14px;
+  }
+
+  .sesa-login-row--between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sesa-login-remember {
+    font-size: 0.8rem;
+  }
+
+  .sesa-link-inline {
+    align-self: center;
+    text-align: center;
+    padding: 0.15rem 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .sesa-login-bg-subtitle {
+    -webkit-line-clamp: 2;
+  }
+
+  .sesa-login-bg-stat-value {
+    font-size: 0.75rem;
   }
 }
 
