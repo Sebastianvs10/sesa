@@ -96,6 +96,13 @@ En el proyecto `sesa-salud` (Angular):
 
 CORS está configurado para permitir origen `http://localhost:4200`.
 
+## Producción (Render + Docker)
+
+- **Dockerfile** en esta carpeta: build multi-stage (Maven + JRE 17), usuario no root.
+- Perfil **`prod`**: `application-prod.yml` exige `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_PASSWORD` y `SESA_JWT_SECRET` por entorno; validación adicional en `ProductionEnvironmentValidator`.
+- **Health check (Render):** ruta `/api/actuator/health`.
+- Variables y pasos detallados: `../docs/DESPLIEGUE-ENTORNOS.md` y `../render.yaml` (raíz del monorepo).
+
 ## Estructura del proyecto
 
 ```

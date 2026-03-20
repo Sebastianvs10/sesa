@@ -1,0 +1,14 @@
+# Render Blueprint — API SESA (Docker). Secretos solo en el panel: Environment.
+# Doc: https://render.com/docs/blueprint-spec
+# Autor: Ing. J Sebastian Vargas S
+services:
+  - type: web
+    name: sesa-api
+    runtime: docker
+    dockerfilePath: ./sesa-backend/Dockerfile
+    dockerContext: ./sesa-backend
+    healthCheckPath: /api/actuator/health
+    # Secretos y JDBC: Environment en el panel de Render (no en Git).
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod

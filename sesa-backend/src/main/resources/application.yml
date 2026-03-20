@@ -1,3 +1,5 @@
+# Desarrollo local (sin perfil activo o con spring.profiles.active=dev si se añade).
+# Producción: SPRING_PROFILES_ACTIVE=prod + application-prod.yml
 spring:
   application:
     name: sesa-backend

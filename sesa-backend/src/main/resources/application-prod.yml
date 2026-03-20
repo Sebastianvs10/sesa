@@ -1,20 +1,27 @@
-# Producción: editar url, username, password, jwt.secret y cors según el entorno
+# Perfil prod: Render, VM u otros. Secretos SOLO por variables de entorno (panel Render).
+# Arranque local con prod: exportar SPRING_DATASOURCE_*, SESA_JWT_SECRET, etc.
+# Autor: Ing. J Sebastian Vargas S
 spring:
   application:
     name: sesa-backend
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/sesa_prod
-    username: sesa_dbuser
-    password: cambiar_password_produccion
+    # Obligatorios en producción real (Render + Neon, etc.)
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME:sesa_dbuser}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      # Instancias pequeñas (free): pocos hilos; subir con SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE si crece el plan
+      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:8}
+      minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:2}
       connection-timeout: 20000
-      connection-test-query: SELECT 1
-      max-lifetime: 1800000
+      max-lifetime: 1740000
       idle-timeout: 600000
+      connection-test-query: SELECT 1
 
   jpa:
     hibernate:
@@ -24,10 +31,15 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
     open-in-view: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+  shutdown: graceful
+  # Render termina TLS; encadenar X-Forwarded-* para URLs y seguridad
+  forward-headers-strategy: framework
   servlet:
     context-path: /api
   compression:
@@ -35,15 +47,20 @@ server:
     min-response-size: 1024
   error:
     include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
 
 sesa:
   jwt:
-    secret: cambiar_jwt_secret_produccion_minimo_256_bits_para_hs256
-    expiration-ms: 86400000
+    secret: ${SESA_JWT_SECRET}
+    expiration-ms: ${SESA_JWT_EXPIRATION_MS:86400000}
   upload:
-    path: /var/sesa/uploads
+    path: ${SESA_UPLOAD_PATH:/tmp/sesa/uploads}
   cors:
-    allowed-origins: https://app.sesa.com
+    allowed-origins: ${SESA_CORS_ALLOWED_ORIGINS:https://appsesa.online,https://www.appsesa.online,https://app.appsesa.online}
+  recordatorios:
+    cron: ${SESA_RECORDATORIOS_CRON:0 0 * * * ?}
+  frontend-url: ${SESA_FRONTEND_URL:https://appsesa.online}
 
 logging:
   level:
@@ -55,14 +72,20 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
-    name: /var/log/sesa/application.log
-    max-size: 100MB
-    max-history: 30
+    name: ${LOGGING_FILE_NAME:/tmp/sesa-application.log}
+    max-size: 50MB
+    max-history: 14
 
 management:
   endpoints:
     web:
-      exposure: include=health,info
+      base-path: /actuator
+      exposure:
+        include: health
   endpoint:
     health:
-      show-details: when-authorized
+      probes:
+        enabled: true
+      show-details: never
+    info:
+      enabled: false
