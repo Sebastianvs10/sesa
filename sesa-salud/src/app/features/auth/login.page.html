@@ -91,20 +91,30 @@
 
     <div class="sesa-login-panel-inner">
 
-      <!-- Logo compacto centrado -->
-      <div class="sesa-login-logo-full">
-        <img src="/logo.png" alt="SESA" class="sesa-login-logo-img" width="448" height="120" />
-      </div>
+      <header class="sesa-login-card-head">
+        <div class="sesa-login-logo-full">
+          <img src="/logo.png" alt="SESA" class="sesa-login-logo-img" width="448" height="120" />
+        </div>
+        <div class="sesa-login-card-divider" aria-hidden="true"></div>
+        <p class="sesa-login-label">Acceso al portal</p>
+        <h1 class="sesa-login-main-title">Iniciar sesión</h1>
+        <p class="sesa-login-main-subtitle">Accede de forma segura a tus módulos.</p>
+      </header>
 
-      <!-- Divisor luminoso -->
-      <div class="sesa-login-card-divider"></div>
+      <form class="sesa-login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
 
-      <!-- Encabezado alineado a la izquierda -->
-      <p class="sesa-login-label">Acceso al portal</p>
-      <h1 class="sesa-login-main-title">Iniciar sesión</h1>
-      <p class="sesa-login-main-subtitle">Accede de forma segura a tus módulos.</p>
-
-      <form class="sesa-login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        @if (errorMessage) {
+          <div class="sesa-login-error" role="alert" aria-live="assertive">
+            <span class="sesa-login-error__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </span>
+            <span class="sesa-login-error__text">{{ errorMessage }}</span>
+          </div>
+        }
 
         <!-- Selector de modo: correo o identificación -->
         <div class="sesa-login-mode-toggle">
@@ -187,12 +197,6 @@
             (keydown.space)="$event.preventDefault(); openRecoveryModal()"
             >¿Olvidaste tu contraseña?</a>
         </div>
-
-        @if (errorMessage) {
-          <div class="sesa-login-error" role="alert">
-            {{ errorMessage }}
-          </div>
-        }
 
         <div class="sesa-login-actions">
           <button

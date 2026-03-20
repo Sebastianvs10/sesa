@@ -395,7 +395,13 @@
   }
 }
 
-/* ── Logo compacto dentro del card ── */
+/* ── Cabecera del card: logo + títulos centrados ── */
+.sesa-login-card-head {
+  text-align: center;
+  margin-bottom: 0.15rem;
+}
+
+/* ── Logo dentro del card (más protagonista) ── */
 .sesa-login-logo-full {
   display: flex;
   align-items: center;
@@ -403,16 +409,22 @@
   margin-bottom: 0;
 }
 
+.sesa-login-card-head .sesa-login-logo-full {
+  margin-bottom: 0.25rem;
+}
+
 .sesa-login-logo-img {
   width: 100%;
-  max-width: 11rem;
+  max-width: 17.5rem;
   height: auto;
-  max-height: 3.2rem;
+  max-height: 4.85rem;
   object-fit: contain;
-  transition: filter 0.3s ease, transform 0.3s ease;
+  transition:
+    filter var(--sesa-motion-base, 180ms) ease,
+    transform var(--sesa-motion-base, 180ms) var(--sesa-ease-standard, ease);
 
   &:hover {
-    transform: scale(1.03);
+    transform: scale(1.02);
   }
 }
 
@@ -421,6 +433,11 @@
 }
 
 /* ── Divisor card ── */
+.sesa-login-card-head .sesa-login-card-divider {
+  margin: 0.75rem auto 1rem;
+  max-width: min(100%, 280px);
+}
+
 .sesa-login-card-divider {
   width: 100%;
   height: 1px;
@@ -459,11 +476,12 @@
 }
 
 .sesa-login-main-title {
-  margin: 0 0 0.4rem;
-  font-size: 1.45rem;
+  margin: 0 auto 0.4rem;
+  max-width: 22rem;
+  font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.025em;
-  color: #0f172a;
+  color: var(--sesa-text-primary, #0f172a);
   line-height: 1.2;
 }
 
@@ -472,9 +490,10 @@
 }
 
 .sesa-login-main-subtitle {
-  margin: 0 0 1.25rem;
+  margin: 0 auto 1.25rem;
+  max-width: 22rem;
   color: var(--sesa-text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
@@ -870,24 +889,50 @@
   color: #5dccc5;
 }
 
-/* ── Error message ── */
+/* ── Mensaje de error (credenciales, red, servidor) — visible arriba del formulario ── */
 .sesa-login-error {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 11px;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: 0.8rem;
+  align-items: flex-start;
+  gap: var(--sesa-space-3, 0.75rem);
+  padding: var(--sesa-space-3, 0.75rem) var(--sesa-space-4, 1rem);
+  margin-bottom: 0.15rem;
+  border-radius: var(--sesa-radius-md, 10px);
+  background: var(--sesa-error-bg, #fee2e2);
+  color: var(--sesa-error-border, #b91c1c);
+  font-size: 0.8125rem;
   font-weight: 500;
-  border: 1px solid #fecaca;
-  animation: sesaFadeIn 0.22s ease-out;
+  line-height: 1.45;
+  border: 1px solid color-mix(in srgb, var(--sesa-error, #ef4444) 22%, var(--sesa-border, #e2e8f0));
+  border-left: 3px solid var(--sesa-error, #ef4444);
+  box-shadow: var(--sesa-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+  animation: sesaFadeIn var(--sesa-motion-base, 180ms) var(--sesa-ease-standard, ease) forwards;
+}
+
+.sesa-login-error__icon {
+  flex-shrink: 0;
+  margin-top: 0.06rem;
+  color: var(--sesa-error, #ef4444);
+  opacity: 0.95;
+}
+
+.sesa-login-error__icon svg {
+  display: block;
+}
+
+.sesa-login-error__text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 [data-theme='dark'] .sesa-login-error {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.25);
+  background: var(--sesa-error-bg, rgba(239, 68, 68, 0.12));
+  border-color: color-mix(in srgb, var(--sesa-error-border, #f87171) 35%, transparent);
+  color: #fca5a5;
+  border-left-color: var(--sesa-error-border, #f87171);
+}
+
+[data-theme='dark'] .sesa-login-error__icon {
   color: #f87171;
 }
 
@@ -1137,8 +1182,8 @@
   }
 
   .sesa-login-logo-img {
-    max-width: 8.75rem;
-    max-height: 2.4rem;
+    max-width: 12.5rem;
+    max-height: 3.5rem;
   }
 
   .sesa-login-card-divider {
@@ -1317,11 +1362,15 @@
   }
 
   .sesa-login-logo-img {
-    max-height: 2.8rem;
+    max-height: 3.6rem;
   }
 
   .sesa-login-card-divider {
     margin: 0.6rem 0 1rem;
+  }
+
+  .sesa-login-card-head .sesa-login-card-divider {
+    margin: 0.5rem auto 0.85rem;
   }
 
   .sesa-login-bg-features li:last-child {

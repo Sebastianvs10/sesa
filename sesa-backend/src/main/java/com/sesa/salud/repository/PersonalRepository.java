@@ -30,6 +30,26 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
     Page<Personal> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
             String nombres, String apellidos, Pageable pageable);
 
+    /**
+     * Personal operativo: excluye filas cuyo usuario vinculado tenga rol ADMIN o SUPERADMINISTRADOR
+     * (gestión de administradores va en /usuarios).
+     */
+    @Query("""
+            SELECT p FROM Personal p LEFT JOIN p.usuario u
+            WHERE p.activo = true
+              AND (u IS NULL OR ('ADMIN' NOT MEMBER OF u.roles AND 'SUPERADMINISTRADOR' NOT MEMBER OF u.roles))
+            """)
+    Page<Personal> findActiveExcludingAdministrativeUsers(Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Personal p LEFT JOIN p.usuario u
+            WHERE p.activo = true
+              AND (u IS NULL OR ('ADMIN' NOT MEMBER OF u.roles AND 'SUPERADMINISTRADOR' NOT MEMBER OF u.roles))
+              AND (LOWER(p.nombres) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR LOWER(COALESCE(p.apellidos, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+            """)
+    Page<Personal> searchActiveExcludingAdministrativeUsers(@Param("q") String q, Pageable pageable);
+
     /** Obtiene el personal activo con alguno de los roles indicados (para filtro de profesionales). */
     @Query("SELECT p FROM Personal p WHERE p.activo = true AND p.rol IN :roles ORDER BY p.nombres")
     List<Personal> findByRolIn(@Param("roles") java.util.List<String> roles);

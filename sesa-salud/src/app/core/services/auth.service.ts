@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -175,51 +175,12 @@ export class AuthService {
           localStorage.setItem(ROL_ACTIVO_KEY, user.rolActivo ?? '');
         }
       }),
-      catchError((err) => {
-        // Loguear el error completo en consola para debugging
+      catchError((err: HttpErrorResponse) => {
         console.error('Error en login:', err);
-        // Relanzar el error para que lo maneje el componente
-        return throwError(() => new Error(
-          this.getErrorMessage(err) || 'Error de autenticación'
-        ));
+        // Propagar HttpErrorResponse para que el login pueda leer status y body (message del API).
+        return throwError(() => err);
       })
     );
-  }
-
-  private getErrorMessage(error: any): string {
-    if (!error) {
-      return 'Error desconocido';
-    }
-
-    // Error HTTP
-    if (error.status === 401 || error.status === 403) {
-      return 'Correo o contraseña incorrectos.';
-    }
-
-    if (error.status === 0) {
-      return 'No se pudo conectar al servidor. Verifica que esté en ejecución.';
-    }
-
-    // Render (plan free): el servicio duerme; el proxy puede responder 504 si el arranque supera el tiempo límite.
-    if (error.status === 504) {
-      return 'El servidor tardó demasiado en responder (p. ej. servicio en frío). Espera 1 minuto, recarga y vuelve a intentar.';
-    }
-
-    if (error.status >= 500) {
-      return 'Error en el servidor. Por favor, intenta más tarde.';
-    }
-
-    // Error con mensaje del servidor
-    if (error.error?.error) {
-      return error.error.error;
-    }
-
-    if (error.error?.message) {
-      return error.error.message;
-    }
-
-    // Error genérico
-    return 'Error de conexión. Verifica tu conexión a internet.';
   }
 
   /**

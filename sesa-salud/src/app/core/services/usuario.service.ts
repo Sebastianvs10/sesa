@@ -28,6 +28,17 @@ export interface PageResponse<T> {
   number: number;
 }
 
+/** Chips del formulario Usuarios Adm: solo alcance administrativo (el resto va en Personal). */
+export const ROLES_USUARIOS_ADM_SUPER: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'ADMIN', label: 'Administrador del sistema' },
+  { value: 'SUPERADMINISTRADOR', label: 'Superadministrador' },
+];
+
+/** Solo ADMIN: usuario conectado sin rol SUPERADMINISTRADOR. */
+export const ROLES_USUARIOS_ADM_ADMIN_ONLY: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'ADMIN', label: 'Administrador del sistema' },
+];
+
 export const ROLES_USUARIO = [
   { value: 'SUPERADMINISTRADOR',  label: 'Super Usuario' },
   { value: 'ADMIN',               label: 'Administrador del Sistema' },

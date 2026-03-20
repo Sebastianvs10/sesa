@@ -137,24 +137,26 @@
             <div class="panel-body">
                 <div class="form-grid">
                     <div class="fg full">
-                        <label>Zona corporal</label>
-                        <select [(ngModel)]="formData.zonaCorporal" (change)="onZoneSelected($event)">
-                            <option value="">-- Selecciona --</option>
-                            <optgroup label="Frontal">
-                                <option *ngFor="let z of zones" [value]="z.id" [hidden]="z.view !== 'front'">{{ z.label
-                                    }}</option>
-                            </optgroup>
-                            <optgroup label="Posterior">
-                                <option *ngFor="let z of zones" [value]="z.id" [hidden]="z.view !== 'back'">{{ z.label
-                                    }}</option>
-                            </optgroup>
-                        </select>
+                        <label for="dolor-zona">Zona corporal</label>
+                        <sesa-combobox-select
+                          inputId="dolor-zona"
+                          [(ngModel)]="formData.zonaCorporal"
+                          (ngModelChange)="onZonaCorporalModelChange()"
+                          [options]="zonaComboOptions"
+                          placeholder="Buscar zona (frontal o posterior)…"
+                          sectionLabel="Zonas corporales"
+                          ariaLabel="Zona corporal"
+                        />
                     </div>
-                    <div class="fg"><label>Tipo</label>
-                        <select [(ngModel)]="formData.tipoDolor">
-                            <option value="">-- Tipo --</option>
-                            <option *ngFor="let t of tiposDolor" [value]="t">{{ t }}</option>
-                        </select>
+                    <div class="fg"><label for="dolor-tipo">Tipo</label>
+                        <sesa-combobox-select
+                          inputId="dolor-tipo"
+                          [(ngModel)]="formData.tipoDolor"
+                          [options]="tipoDolorComboOptions"
+                          placeholder="Buscar tipo de dolor…"
+                          sectionLabel="Tipos de dolor"
+                          ariaLabel="Tipo de dolor"
+                        />
                     </div>
                     <div class="fg"><label>Intensidad (EVA)</label>
                         <div class="eva-wrap">
@@ -165,17 +167,25 @@
                                 formData.intensidad }}</span>
                         </div>
                     </div>
-                    <div class="fg"><label>Severidad</label>
-                        <select [(ngModel)]="formData.severidad">
-                            <option *ngFor="let s of severidades" [value]="s">{{ s | titlecase }}</option>
-                        </select>
+                    <div class="fg"><label for="dolor-severidad">Severidad</label>
+                        <sesa-combobox-select
+                          inputId="dolor-severidad"
+                          [(ngModel)]="formData.severidad"
+                          [options]="severidadComboOptions"
+                          placeholder="Severidad…"
+                          sectionLabel="Severidad"
+                          ariaLabel="Severidad del dolor"
+                        />
                     </div>
-                    <div class="fg"><label>Estado</label>
-                        <select [(ngModel)]="formData.estado">
-                            <option value="activo">Activo</option>
-                            <option value="tratamiento">En tratamiento</option>
-                            <option value="resuelto">Resuelto</option>
-                        </select>
+                    <div class="fg"><label for="dolor-estado">Estado</label>
+                        <sesa-combobox-select
+                          inputId="dolor-estado"
+                          [(ngModel)]="formData.estado"
+                          [options]="estadoComboOptions"
+                          placeholder="Estado…"
+                          sectionLabel="Estado clínico"
+                          ariaLabel="Estado del dolor"
+                        />
                     </div>
                     <div class="fg"><label>Fecha inicio</label><input type="date" [(ngModel)]="formData.fechaInicio">
                     </div>

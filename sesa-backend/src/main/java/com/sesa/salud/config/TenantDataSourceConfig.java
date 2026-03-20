@@ -22,8 +22,12 @@ import java.sql.SQLException;
 @Configuration
 public class TenantDataSourceConfig {
 
+    /**
+     * Método estático para que el BeanPostProcessor se registre sin forzar CGLIB en esta
+     * {@code @Configuration} (evita el WARN de elegibilidad de post-procesado en arranque).
+     */
     @Bean
-    public BeanPostProcessor dataSourceWrapper() {
+    public static BeanPostProcessor dataSourceWrapper() {
         return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {

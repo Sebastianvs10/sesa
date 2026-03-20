@@ -17,6 +17,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,7 @@ public class GlobalExceptionHandler {
         log.warn("Intento de acceso con credenciales inválidas");
         Map<String, Object> body = new HashMap<>();
         body.put(ERROR_KEY, "Credenciales inválidas");
+        body.put(MESSAGE_KEY, e.getMessage() != null ? e.getMessage() : "Credenciales inválidas");
         body.put(STATUS_KEY, HttpStatus.UNAUTHORIZED.value());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
@@ -91,6 +93,18 @@ public class GlobalExceptionHandler {
         body.put(MESSAGE_KEY, "Verifique el formato JSON");
         body.put(STATUS_KEY, HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUpload(MaxUploadSizeExceededException e) {
+        log.warn("Archivo multipart demasiado grande: {}", e.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Archivo demasiado grande");
+        body.put(
+                MESSAGE_KEY,
+                "La foto o la firma supera el tamaño máximo permitido. Use una imagen más pequeña (p. ej. comprimir JPG/PNG) o pida al administrador aumentar spring.servlet.multipart.max-file-size.");
+        body.put(STATUS_KEY, HttpStatus.PAYLOAD_TOO_LARGE.value());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(body);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -56,7 +56,7 @@ export const MODULOS_GRUPOS: ModuloGrupo[] = [
     items: [
       { codigo: 'FACTURACION',    label: 'Facturación',       icon: '🧾' },
       { codigo: 'REPORTES',       label: 'Reportes',          icon: '📈' },
-      { codigo: 'USUARIOS',       label: 'Usuarios',          icon: '👤' },
+      { codigo: 'USUARIOS',       label: 'Usuarios Adm',      icon: '👤' },
       { codigo: 'PERSONAL',       label: 'Personal',          icon: '🪪' },
       { codigo: 'EMPRESAS',       label: 'Empresas',          icon: '🏢' },
       { codigo: 'NOTIFICACIONES', label: 'Notificaciones',    icon: '🔔' },

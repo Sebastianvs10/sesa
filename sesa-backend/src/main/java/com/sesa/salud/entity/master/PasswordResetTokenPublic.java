@@ -11,7 +11,10 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "password_reset_tokens_public", schema = "public")
+@Table(
+        name = "password_reset_tokens_public",
+        schema = "public",
+        uniqueConstraints = @UniqueConstraint(name = "uk_pwd_reset_public_token", columnNames = "token"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,7 +32,7 @@ public class PasswordResetTokenPublic {
     @Column(name = "tenant_schema", nullable = false, length = 63)
     private String tenantSchema;
 
-    @Column(nullable = false, unique = true, length = 128)
+    @Column(nullable = false, length = 128)
     private String token;
 
     @Column(name = "expira_en", nullable = false)

@@ -57,13 +57,14 @@
       <div class="sesa-form-grid">
         <div class="sesa-form-col-2">
           <sesa-form-field label="Tipo de Documento">
-            <select [(ngModel)]="nuevoTipoDocumento">
-              <option value="CC">Cédula de Ciudadanía (CC)</option>
-              <option value="TI">Tarjeta de Identidad (TI)</option>
-              <option value="CE">Cédula de Extranjería (CE)</option>
-              <option value="PA">Pasaporte (PA)</option>
-              <option value="RC">Registro Civil (RC)</option>
-            </select>
+            <sesa-combobox-select
+              inputId="bp-tipo-doc"
+              [(ngModel)]="nuevoTipoDocumento"
+              [options]="comboTipoDocOptions"
+              placeholder="Buscar tipo de documento…"
+              sectionLabel="Tipos de documento"
+              ariaLabel="Tipo de documento"
+            />
           </sesa-form-field>
           <sesa-form-field label="Número de Documento *">
             <input
@@ -96,12 +97,15 @@
 
         <div class="sesa-form-col-2">
           <sesa-form-field label="Sexo">
-            <select [(ngModel)]="nuevoSexo" [disabled]="creando">
-              <option value="">Seleccionar</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-              <option value="O">Otro</option>
-            </select>
+            <sesa-combobox-select
+              inputId="bp-sexo"
+              [(ngModel)]="nuevoSexo"
+              [options]="comboSexoOptions"
+              [disabled]="creando"
+              placeholder="Buscar o seleccionar…"
+              sectionLabel="Sexo"
+              ariaLabel="Sexo"
+            />
           </sesa-form-field>
           <sesa-form-field label="Fecha de Nacimiento">
             <input

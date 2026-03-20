@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,6 +40,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final PersonalRepository personalRepository;
     private final UsuarioRepository usuarioRepository;
     private final TenantUsuarioLoginRepository tenantUsuarioLoginRepository;
+    private final TenantUsuarioLoginSyncService tenantUsuarioLoginSyncService;
     private final PasswordEncoder passwordEncoder;
 
     private static final java.util.Map<String, String> EXT_TO_MIME = java.util.Map.of(
@@ -48,7 +50,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     @Transactional(readOnly = true)
     public Page<PersonalDto> findAll(Pageable pageable) {
-        return personalRepository.findByActivoTrue(pageable).map(this::toDto);
+        return personalRepository.findActiveExcludingAdministrativeUsers(pageable).map(this::toDto);
     }
 
     @Override
@@ -58,8 +60,7 @@ public class PersonalServiceImpl implements PersonalService {
             return findAll(pageable);
         }
         String t = q.trim();
-        return personalRepository.findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
-                t, t, pageable).map(this::toDto);
+        return personalRepository.searchActiveExcludingAdministrativeUsers(t, pageable).map(this::toDto);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class PersonalServiceImpl implements PersonalService {
         if (TenantContextHolder.PUBLIC.equals(schema)) {
             throw new IllegalArgumentException("No se puede crear personal en el esquema public");
         }
-        String email = dto.getEmail() != null ? dto.getEmail().trim() : null;
+        String email = dto.getEmail() != null ? dto.getEmail().trim().toLowerCase(Locale.ROOT) : null;
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("El correo electrónico es obligatorio para crear personal con acceso");
         }
@@ -186,11 +187,22 @@ public class PersonalServiceImpl implements PersonalService {
         p.setSegundoApellido(dto.getSegundoApellido());
         p.setCelular(dto.getCelular());
         if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            p.setEmail(dto.getEmail().trim());
+            String newEmail = dto.getEmail().trim().toLowerCase(Locale.ROOT);
             if (p.getUsuario() != null) {
-                p.getUsuario().setEmail(p.getEmail());
+                String oldEmail = p.getUsuario().getEmail();
+                if (!newEmail.equals(oldEmail)) {
+                    if (usuarioRepository.existsByEmailAndIdNot(newEmail, p.getUsuario().getId())) {
+                        throw new IllegalArgumentException("Ya existe otro usuario con ese correo en esta empresa");
+                    }
+                    String tenantSchema = TenantContextHolder.getTenantSchema();
+                    tenantUsuarioLoginSyncService.renameLoginEmail(oldEmail, newEmail, tenantSchema);
+                }
+                p.setEmail(newEmail);
+                p.getUsuario().setEmail(newEmail);
                 p.getUsuario().setNombreCompleto(buildNombreCompleto(dto));
                 usuarioRepository.save(p.getUsuario());
+            } else {
+                p.setEmail(newEmail);
             }
         }
         // Sincronizar multi-rol con Usuario.roles

@@ -5,11 +5,21 @@ import { Router } from '@angular/router';
 import { PacienteService, PacienteDto } from '../../core/services/paciente.service';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
+import {
+  SesaComboboxSelectComponent,
+  SesaComboboxOption,
+} from '../../shared/components/sesa-combobox-select/sesa-combobox-select.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-buscar-paciente-page',
-  imports: [CommonModule, FormsModule, SesaCardComponent, SesaFormFieldComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SesaCardComponent,
+    SesaFormFieldComponent,
+    SesaComboboxSelectComponent,
+  ],
   templateUrl: './buscar-paciente.page.html',
   styleUrl: './buscar-paciente.page.scss',
 })
@@ -34,6 +44,21 @@ export class BuscarPacientePageComponent {
   nuevoTipoDocumento = 'CC';
   creando = false;
   errorCreacion: string | null = null;
+
+  readonly comboTipoDocOptions: SesaComboboxOption[] = [
+    { value: 'CC', label: 'Cédula de Ciudadanía (CC)' },
+    { value: 'TI', label: 'Tarjeta de Identidad (TI)' },
+    { value: 'CE', label: 'Cédula de Extranjería (CE)' },
+    { value: 'PA', label: 'Pasaporte (PA)' },
+    { value: 'RC', label: 'Registro Civil (RC)' },
+  ];
+
+  readonly comboSexoOptions: SesaComboboxOption[] = [
+    { value: '', label: 'Seleccionar' },
+    { value: 'M', label: 'Masculino' },
+    { value: 'F', label: 'Femenino' },
+    { value: 'O', label: 'Otro' },
+  ];
 
   buscarPaciente(): void {
     if (!this.documento.trim()) {

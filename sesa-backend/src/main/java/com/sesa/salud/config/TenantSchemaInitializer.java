@@ -632,13 +632,9 @@ public class TenantSchemaInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Aplicar también en schema public (usuarios superadmin)
-        try {
-            applyDdlToSchema(TenantContextHolder.PUBLIC);
-            log.info("TenantSchemaInitializer: schema 'public' verificado/actualizado");
-        } catch (Exception ex) {
-            log.error("TenantSchemaInitializer: error al aplicar DDL en schema 'public': {}", ex.getMessage());
-        }
+        // No aplicar este DDL en schema public: incluye FK a personal, pacientes, etc., que solo existen
+        // en esquemas de empresa. En public Hibernate (ddl-auto) + inicializadores dedicados
+        // (p. ej. PasswordResetPublicSchemaInitializer, IgacPublicSchemaInitializer) bastan.
 
         List<String> schemas = empresaRepository.findAll()
                 .stream()

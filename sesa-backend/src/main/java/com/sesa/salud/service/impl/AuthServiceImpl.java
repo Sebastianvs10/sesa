@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -310,7 +311,7 @@ public class AuthServiceImpl implements AuthService {
      */
     private String resolveEmail(String input) {
         if (input.contains("@")) {
-            return input;
+            return input.trim().toLowerCase(Locale.ROOT);
         }
         String found = empresaRepository.findAll().stream()
                 .map(e -> e.getSchemaName())

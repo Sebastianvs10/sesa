@@ -2,6 +2,10 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DolorService, DolorDto, DolorRequestDto } from '../../../core/services/dolor.service';
+import {
+  SesaComboboxSelectComponent,
+  SesaComboboxOption,
+} from '../../../shared/components/sesa-combobox-select/sesa-combobox-select.component';
 
 interface BodyZone {
     id: string;
@@ -19,7 +23,7 @@ interface BodyZone {
 @Component({
     standalone: true,
     selector: 'sesa-dolores-panel',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, SesaComboboxSelectComponent],
     templateUrl: './dolores-panel.component.html',
     styleUrl: './dolores-panel.component.scss',
 })
@@ -49,6 +53,11 @@ export class DoloresPanelComponent implements OnInit, OnChanges {
 
     tiposDolor = ['Agudo', 'Crónico', 'Punzante', 'Sordo', 'Urente', 'Opresivo', 'Cólico', 'Pulsátil', 'Lancinante', 'Referido'];
     severidades = ['leve', 'moderada', 'grave'];
+
+    zonaComboOptions: SesaComboboxOption[] = [];
+    tipoDolorComboOptions: SesaComboboxOption[] = [];
+    severidadComboOptions: SesaComboboxOption[] = [];
+    estadoComboOptions: SesaComboboxOption[] = [];
 
     get totalDolores() { return this.dolores.length; }
     get activeDolores() { return this.dolores.filter(d => d.estado === 'activo').length; }
@@ -115,7 +124,33 @@ export class DoloresPanelComponent implements OnInit, OnChanges {
         { id: 'talon_i', label: 'Talón Izq.', dotX: 125, dotY: 600, labelX: 6, labelY: 92, side: 'left', view: 'back' },
     ];
 
-    ngOnInit() { this.loadDolores(); }
+    ngOnInit() {
+        this.buildComboOptions();
+        this.loadDolores();
+    }
+
+    private buildComboOptions(): void {
+        const front = this.zones
+            .filter((z) => z.view === 'front')
+            .map((z) => ({ value: z.id, label: `Frontal · ${z.label}` }));
+        const back = this.zones
+            .filter((z) => z.view === 'back')
+            .map((z) => ({ value: z.id, label: `Posterior · ${z.label}` }));
+        this.zonaComboOptions = [{ value: '', label: '-- Selecciona zona --' }, ...front, ...back];
+        this.tipoDolorComboOptions = [
+            { value: '', label: '-- Tipo --' },
+            ...this.tiposDolor.map((t) => ({ value: t, label: t })),
+        ];
+        this.severidadComboOptions = this.severidades.map((s) => ({
+            value: s,
+            label: s.charAt(0).toUpperCase() + s.slice(1),
+        }));
+        this.estadoComboOptions = [
+            { value: 'activo', label: 'Activo' },
+            { value: 'tratamiento', label: 'En tratamiento' },
+            { value: 'resuelto', label: 'Resuelto' },
+        ];
+    }
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['pacienteId'] && !changes['pacienteId'].firstChange) this.loadDolores();
@@ -252,8 +287,8 @@ export class DoloresPanelComponent implements OnInit, OnChanges {
     getDaysSince(d: string) { return Math.floor((Date.now() - new Date(d).getTime()) / 864e5); }
     formatDate(d?: string) { if (!d) return '—'; const x = new Date(d); return isNaN(x.getTime()) ? '—' : x.toLocaleDateString(); }
 
-    onZoneSelected(e: Event) {
-        const z = this.zones.find(x => x.id === (e.target as HTMLSelectElement).value);
+    onZonaCorporalModelChange(): void {
+        const z = this.zones.find((x) => x.id === this.formData.zonaCorporal);
         if (z) {
             this.formData.zonaLabel = z.label;
             this.formData.vista = z.view;

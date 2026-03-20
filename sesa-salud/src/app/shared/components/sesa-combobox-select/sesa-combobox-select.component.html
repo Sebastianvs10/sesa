@@ -1,0 +1,130 @@
+<div
+  class="sesa-combo"
+  [class.sesa-combo--open]="open"
+  [class.sesa-combo--disabled]="disabled"
+>
+  <div class="sesa-combo__trigger">
+    <svg
+      class="sesa-combo__search-icon"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+    <input
+      class="sesa-combo__input"
+      type="text"
+      [id]="inputId"
+      [placeholder]="placeholder"
+      [attr.aria-label]="ariaLabel || placeholder"
+      [attr.aria-expanded]="open"
+      aria-haspopup="listbox"
+      role="combobox"
+      [disabled]="disabled"
+      [(ngModel)]="searchText"
+      (ngModelChange)="onSearchInput()"
+      (focus)="onFocusInput()"
+      (blur)="onBlurInput()"
+      autocomplete="off"
+    />
+    <button
+      type="button"
+      class="sesa-combo__chevron"
+      (mousedown)="toggleDrop($event)"
+      tabindex="-1"
+      [attr.aria-label]="open ? 'Cerrar lista' : 'Abrir lista'"
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+  </div>
+
+  @if (open) {
+    <div class="sesa-combo__dropdown" role="listbox">
+      <div class="sesa-combo__section-label">{{ dropdownSectionLabel }}</div>
+      @for (opt of filtered; track opt.value) {
+        <button
+          type="button"
+          class="sesa-combo__option"
+          [class.sesa-combo__option--selected]="isSelected(opt)"
+          (mousedown)="selectOption(opt, $event)"
+          role="option"
+          [attr.aria-selected]="isSelected(opt)"
+        >
+          <svg
+            class="sesa-combo__option-icon"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"
+            />
+            <path d="m8.5 8.5 7 7" />
+          </svg>
+          {{ opt.label }}
+          @if (isSelected(opt)) {
+            <svg
+              class="sesa-combo__check"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          }
+        </button>
+      }
+      @if (filtered.length === 0) {
+        <div class="sesa-combo__empty">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+          </svg>
+          Sin coincidencias
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -3,9 +3,11 @@
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, ElementRef, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash, faSun, faMoon, faEnvelope, faIdCard } from '@fortawesome/free-solid-svg-icons';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
@@ -31,7 +33,7 @@ import { SesaPasswordRecoveryModalComponent } from '../../shared/components/sesa
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
-export class LoginPageComponent implements OnInit {
+export class LoginPageComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   loading = signal(false);
   /** Tras login multi-rol: modal de elección de perfil */
@@ -60,6 +62,8 @@ export class LoginPageComponent implements OnInit {
   /** Referencia al enlace que abre el modal — se re-enfoca al cerrar (ciclo de foco accesible). */
   private readonly forgotPwdLinkRef = viewChild<ElementRef<HTMLElement>>('forgotPwdLink');
 
+  private readonly formSubs = new Subscription();
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -78,6 +82,17 @@ export class LoginPageComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
     }
+    this.formSubs.add(
+      this.loginForm.valueChanges.subscribe(() => {
+        if (this.errorMessage) {
+          this.errorMessage = null;
+        }
+      }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.formSubs.unsubscribe();
   }
 
   openRecoveryModal(): void {
@@ -94,6 +109,7 @@ export class LoginPageComponent implements OnInit {
     this.errorMessage = null;
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
+      this.errorMessage = 'Completa correo o identificación y contraseña correctamente.';
       return;
     }
     const { email, password } = this.loginForm.getRawValue();
@@ -101,6 +117,7 @@ export class LoginPageComponent implements OnInit {
     this.authService.login({ email, password }).subscribe({
       next: () => {
         this.loading.set(false);
+        this.errorMessage = null;
         const roles = this.authService.currentRoles();
         if (roles.length > 1) {
           const u = this.authService.currentUser();
@@ -113,18 +130,44 @@ export class LoginPageComponent implements OnInit {
         }
         this.finishLoginAndNavigate();
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.loading.set(false);
-        if (err.status === 401) {
-          this.errorMessage = 'Correo o contraseña incorrectos.';
-        } else if (err.error?.message) {
-          this.errorMessage = err.error.message;
-        } else {
-          this.errorMessage = 'Error de conexión. Comprueba que el backend esté en ejecución.';
-        }
-        this.toast.error(this.errorMessage!, 'Error de acceso');
+        const httpErr = err instanceof HttpErrorResponse ? err : null;
+        this.errorMessage = httpErr ? this.resolveLoginError(httpErr) : 'No se pudo iniciar sesión. Vuelve a intentarlo.';
+        this.toast.error(this.errorMessage, 'Error de acceso');
       },
     });
+  }
+
+  /** Mensaje claro según respuesta HTTP o fallo de red. */
+  private resolveLoginError(err: HttpErrorResponse): string {
+    if (err.status === 401) {
+      const api401 = err.error?.message ?? err.error?.error;
+      if (typeof api401 === 'string' && api401.trim().length > 0) {
+        return api401.trim();
+      }
+      return 'Correo o contraseña incorrectos. Verifica tus datos o usa «¿Olvidaste tu contraseña?».';
+    }
+    if (err.status === 403) {
+      return 'Acceso denegado. Tu cuenta podría estar deshabilitada; contacta al administrador.';
+    }
+    if (err.status === 429) {
+      return 'Demasiados intentos. Espera un momento e inténtalo de nuevo.';
+    }
+    if (err.status === 502 || err.status === 503) {
+      return 'El servicio no está disponible temporalmente. Intenta de nuevo en unos minutos.';
+    }
+    if (err.status === 0) {
+      return 'No hay conexión con el servidor. Comprueba tu red y que la API esté en ejecución.';
+    }
+    const apiMsg = err.error?.message ?? err.error?.error;
+    if (typeof apiMsg === 'string' && apiMsg.trim().length > 0) {
+      return apiMsg.trim();
+    }
+    if (err.status >= 500) {
+      return 'Error en el servidor. Intenta de nuevo más tarde.';
+    }
+    return 'No se pudo iniciar sesión. Vuelve a intentarlo.';
   }
 
   finishLoginAndNavigate(): void {
@@ -158,6 +201,7 @@ export class LoginPageComponent implements OnInit {
   }
 
   setLoginMode(mode: 'email' | 'identificacion'): void {
+    this.errorMessage = null;
     this.loginMode = mode;
     const ctrl = this.loginForm.get('email');
     if (ctrl) {

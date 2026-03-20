@@ -142,7 +142,7 @@ const SIDEBAR_CATALOG: SidebarSection[] = [
       // Gestión empresas: solo SUPERADMINISTRADOR
       { codigo: 'EMPRESAS', label: 'Gestión empresas', route: '/empresas',    icon: faBuildingColumns, superAdminOnly: true },
       { codigo: 'PERSONAL',       label: 'Personal',        route: '/personal',      icon: faUserTie },
-      { codigo: 'USUARIOS',       label: 'Usuarios',        route: '/usuarios',      icon: faShieldHalved },
+      { codigo: 'USUARIOS',       label: 'Usuarios Adm',    route: '/usuarios',      icon: faShieldHalved },
       { codigo: 'REPORTES',       label: 'Reportes',        route: '/reportes',      icon: faChartBar },
       { codigo: 'NOTIFICACIONES', label: 'Notificaciones',  route: '/notificaciones',icon: faBell },
       { codigo: 'ROLES',          label: 'Roles del sistema',route: '/roles',        icon: faShieldHalved },

@@ -40,7 +40,7 @@ export class SesaBreadcrumbComponent implements OnInit, OnDestroy {
     'mi-empresa': 'Mi empresa',
     empresas: 'Empresas',
     personal: 'Personal',
-    usuarios: 'Usuarios',
+    usuarios: 'Usuarios Adm',
     login: 'Iniciar sesión',
   };
 

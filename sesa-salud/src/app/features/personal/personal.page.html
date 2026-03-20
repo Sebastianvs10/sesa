@@ -3,7 +3,7 @@
   <!-- ═══ ENCABEZADO COMPARTIDO (sin márgenes, solo margen inferior mínimo) ═══ -->
   <sesa-page-header
     title="Gestión de personal"
-    subtitle="Administre el equipo profesional y sus accesos al sistema."
+    subtitle="Equipo operativo y clínico. No incluye cuentas solo administrativas; los administradores del tenant se crean en Usuarios Adm."
     backLink="/inicio"
     backLabel="Volver"
     backAriaLabel="Volver al inicio">
@@ -29,418 +29,6 @@
     </div>
   </div>
 
-  <!-- ═══ FORM PANEL ════════════════════════════════════════════════════════ -->
-  @if (showForm) {
-    <div class="pp-form-panel">
-      <div class="pp-form-panel-head">
-        <div class="pp-form-panel-head-left">
-          <div class="pp-form-panel-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <div>
-            <h2 class="pp-form-panel-title">{{ editingId != null ? 'Editar integrante' : 'Nuevo integrante' }}</h2>
-            <p class="pp-form-panel-subtitle">Complete los campos del formulario</p>
-          </div>
-        </div>
-        <button type="button" class="pp-close-btn" (click)="cancelForm()" title="Cerrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-
-      @if (saveError) {
-        <div class="pp-alert pp-alert--error">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          {{ saveError }}
-        </div>
-      }
-
-      <div class="pp-form-body">
-      <!-- §1 Identificación -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--blue"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          Datos de identificación
-        </div>
-        <div class="pp-fields pp-fields--2">
-          <div class="pp-field">
-            <label class="pp-label">Tipo de documento</label>
-            <select class="pp-select" id="tipoDocumento" [(ngModel)]="form.tipoDocumento">
-              <option value="">Seleccione…</option>
-              <option value="CC">CC — Cédula de Ciudadanía</option>
-              <option value="CE">CE — Cédula de Extranjería</option>
-              <option value="PA">PA — Pasaporte</option>
-              <option value="PEP">PEP — Permiso Especial de Permanencia</option>
-              <option value="TI">TI — Tarjeta de Identidad</option>
-              <option value="RC">RC — Registro Civil</option>
-            </select>
-          </div>
-          <div class="pp-field">
-            <label class="pp-label">Número de documento</label>
-            <div class="pp-input-wrap">
-              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <input class="pp-input pp-input--icon" id="identificacion" type="text"
-                [(ngModel)]="form.identificacion" placeholder="Número de documento" />
-            </div>
-          </div>
-        </div>
-        <div class="pp-fields pp-fields--4 pp-fields--mt">
-          <div class="pp-field">
-            <label class="pp-label">Primer nombre <span class="pp-required">*</span></label>
-            <input class="pp-input" id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label">Segundo nombre</label>
-            <input class="pp-input" id="segundoNombre" type="text" [(ngModel)]="form.segundoNombre" placeholder="Opcional" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label">Primer apellido <span class="pp-required">*</span></label>
-            <input class="pp-input" id="primerApellido" type="text" [(ngModel)]="form.primerApellido" placeholder="Primer apellido" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label">Segundo apellido</label>
-            <input class="pp-input" id="segundoApellido" type="text" [(ngModel)]="form.segundoApellido" placeholder="Opcional" />
-          </div>
-        </div>
-      </div>
-
-      <!-- §2 Contacto -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--teal"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-          Información de contacto
-        </div>
-        <div class="pp-fields pp-fields--2">
-          <div class="pp-field">
-            <label class="pp-label">Celular <span class="pp-required">*</span></label>
-            <div class="pp-input-wrap">
-              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.07 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 17z"/>
-              </svg>
-              <input class="pp-input pp-input--icon" id="celular" type="tel"
-                [(ngModel)]="form.celular" placeholder="+57 300 000 0000" />
-            </div>
-          </div>
-          <div class="pp-field">
-            <label class="pp-label">Correo electrónico <span class="pp-required">*</span></label>
-            <div class="pp-input-wrap">
-              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <input class="pp-input pp-input--icon" id="email" type="email"
-                [(ngModel)]="form.email" placeholder="correo&#64;empresa.com" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- §3 Acceso (solo crear) -->
-      @if (editingId == null) {
-        <div class="pp-form-section">
-          <div class="pp-section-title">
-            <span class="pp-section-dot pp-dot--purple"></span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            Credenciales de acceso
-          </div>
-          <div class="pp-fields pp-fields--1half">
-            <div class="pp-field">
-              <label class="pp-label">Contraseña <span class="pp-required">*</span></label>
-              <div class="pp-input-wrap">
-                <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                <input class="pp-input pp-input--icon" id="password" type="password"
-                  [(ngModel)]="form.password" placeholder="Contraseña para el acceso" />
-              </div>
-              <span class="pp-field-hint">El integrante iniciará sesión con su correo y esta contraseña.</span>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- §4 Roles y permisos (multi-rol) -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--amber"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-          Roles y permisos <span class="pp-required">*</span>
-        </div>
-        <p class="pp-section-hint">Seleccione uno o más roles. El primer rol marcado es el rol principal de acceso.</p>
-        <div class="pp-roles-grid">
-          @for (r of rolesPersonal; track r.value) {
-            @if (!r.disabled) {
-              <label class="pp-role-chip" [class.pp-role-chip--selected]="isRolSelected(r.value)">
-                <input type="checkbox"
-                  [checked]="isRolSelected(r.value)"
-                  (change)="toggleRol(r.value)"
-                  [disabled]="r.disabled ?? false" />
-                <span class="pp-role-chip-dot pp-role--{{ roleClass(r.value) }}"></span>
-                <span class="pp-role-chip-label">{{ r.label }}</span>
-                @if (selectedRoles.indexOf(r.value) === 0) {
-                  <span class="pp-role-primary-badge">Principal</span>
-                }
-              </label>
-            }
-          }
-        </div>
-        @if (selectedRoles.length > 0) {
-          <div class="pp-selected-roles-summary">
-            <span class="pp-summary-label">Roles seleccionados:</span>
-            @for (r of selectedRoles; track r) {
-              <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- §5 Archivos -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--green"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-          </svg>
-          Archivos del profesional
-        </div>
-        <div class="pp-fields pp-fields--2">
-          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!fotoFile">
-            <input type="file" accept=".png,.jpg,.jpeg,.webp" (change)="onFotoSelected($event)" hidden />
-            <div class="pp-upload-content">
-              <div class="pp-upload-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
-                  <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                </svg>
-              </div>
-              <span class="pp-upload-title">Foto del profesional</span>
-              @if (fotoFile) {
-                <span class="pp-upload-selected">{{ fotoFile.name }}</span>
-              } @else {
-                <span class="pp-upload-hint">PNG, JPG, WEBP · Clic para seleccionar</span>
-              }
-            </div>
-          </label>
-          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!firmaFile">
-            <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" (change)="onFirmaSelected($event)" hidden />
-            <div class="pp-upload-content">
-              <div class="pp-upload-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-                  <path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>
-                </svg>
-              </div>
-              <span class="pp-upload-title">Firma del profesional</span>
-              @if (firmaFile) {
-                <span class="pp-upload-selected">{{ firmaFile.name }}</span>
-              } @else {
-                <span class="pp-upload-hint">PNG, JPG, WEBP, SVG · Clic para seleccionar</span>
-              }
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <!-- §6 Habilitación profesional (Res. 1449/2016 RETHUS / Ley 23/1981) -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--indigo"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          Habilitación profesional
-          <span class="pp-normative-tag">Res. 1449/2016 · RETHUS</span>
-        </div>
-        <div class="pp-fields pp-fields--3">
-          <div class="pp-field">
-            <label class="pp-label" for="tarjetaProfesional">Tarjeta Profesional / Ocupacional</label>
-            <input id="tarjetaProfesional" type="text" class="pp-input"
-              placeholder="Ej. TP-12345-2015"
-              [(ngModel)]="form.tarjetaProfesional" maxlength="30" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="especialidadFormal">Especialidad formal</label>
-            <input id="especialidadFormal" type="text" class="pp-input"
-              placeholder="Ej. Medicina General, Odontología…"
-              [(ngModel)]="form.especialidadFormal" maxlength="150" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="numeroRethus">Número RETHUS</label>
-            <input id="numeroRethus" type="text" class="pp-input"
-              placeholder="Ej. 123456789"
-              [(ngModel)]="form.numeroRethus" maxlength="30" />
-            <small class="pp-field-hint">Registro Único Nacional del Talento Humano en Salud</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- §7 Datos demográficos (RIPS Res. 3374/2000 / SISPRO) -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--teal"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          Datos demográficos
-          <span class="pp-normative-tag">Res. 3374/2000 · SISPRO</span>
-        </div>
-        <div class="pp-fields pp-fields--3">
-          <div class="pp-field">
-            <label class="pp-label" for="fechaNacimiento">Fecha de nacimiento</label>
-            <input id="fechaNacimiento" type="date" class="pp-input" [(ngModel)]="form.fechaNacimiento" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="sexo">Sexo biológico</label>
-            <select id="sexo" class="pp-select" [(ngModel)]="form.sexo">
-              <option value="">Seleccione…</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- §8 Lugar de práctica (Res. 2003/2014) -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--green"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-          Lugar de práctica
-          <span class="pp-normative-tag">Res. 2003/2014</span>
-        </div>
-        <div class="pp-fields pp-fields--2">
-          <div class="pp-field">
-            <label class="pp-label" for="municipio">Código municipio DIVIPOLA</label>
-            <input id="municipio" type="text" class="pp-input"
-              placeholder="Ej. 11001 (Bogotá)" [(ngModel)]="form.municipio" maxlength="10" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="departamento">Código departamento DIVIPOLA</label>
-            <input id="departamento" type="text" class="pp-input"
-              placeholder="Ej. 11 (Cundinamarca)" [(ngModel)]="form.departamento" maxlength="10" />
-          </div>
-        </div>
-      </div>
-
-      <!-- §9 Vínculo laboral (Circular 047/2007 Min. Protección Social) -->
-      <div class="pp-form-section">
-        <div class="pp-section-title">
-          <span class="pp-section-dot pp-dot--amber"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-          </svg>
-          Vínculo laboral
-          <span class="pp-normative-tag">Circular 047/2007</span>
-        </div>
-        <div class="pp-fields pp-fields--3">
-          <div class="pp-field">
-            <label class="pp-label" for="tipoVinculacion">Tipo de vinculación</label>
-            <select id="tipoVinculacion" class="pp-select" [(ngModel)]="form.tipoVinculacion">
-              <option value="">Seleccione…</option>
-              <option value="PLANTA">Planta</option>
-              <option value="CONTRATO">Contrato</option>
-              <option value="PRESTADOR">Prestador de servicios</option>
-              <option value="CONVENIO">Convenio / Rotatorio</option>
-            </select>
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="fechaIngreso">Fecha de ingreso</label>
-            <input id="fechaIngreso" type="date" class="pp-input" [(ngModel)]="form.fechaIngreso" />
-          </div>
-          <div class="pp-field">
-            <label class="pp-label" for="fechaRetiro">Fecha de retiro</label>
-            <input id="fechaRetiro" type="date" class="pp-input" [(ngModel)]="form.fechaRetiro" />
-            <small class="pp-field-hint">Dejar vacío si el profesional continúa activo.</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- §10 Estado -->
-      <div class="pp-form-section pp-form-section--row pp-form-section--full">
-        <div class="pp-toggle-group">
-          <label class="pp-toggle">
-            <input type="checkbox" [(ngModel)]="form.activo" />
-            <span class="pp-toggle-track"></span>
-          </label>
-          <div class="pp-toggle-info">
-            <span class="pp-toggle-label">Integrante activo</span>
-            <span class="pp-toggle-hint">Habilitado para iniciar sesión en el sistema</span>
-          </div>
-        </div>
-      </div>
-
-      </div><!-- /.pp-form-body -->
-
-      <!-- Footer del formulario -->
-      <div class="pp-form-footer">
-        <button type="button" class="pp-btn pp-btn--ghost" (click)="cancelForm()" [disabled]="saving">
-          Cancelar
-        </button>
-        <button type="button" class="pp-btn pp-btn--primary" (click)="save()" [disabled]="saving">
-          @if (saving) {
-            <span class="pp-spinner" aria-hidden="true"></span>
-            Guardando…
-          } @else {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            {{ editingId != null ? 'Actualizar integrante' : 'Crear integrante' }}
-          }
-        </button>
-      </div>
-    </div>
-  }
-
   <!-- ═══ TARJETA DE LISTA ═══════════════════════════════════════════════ -->
   <div class="pp-card">
     <div class="pp-card-head">
@@ -456,24 +44,18 @@
 
       @if (isSuperAdmin) {
         <div class="pp-empresa-select">
-          <label for="empresa" class="pp-empresa-label">Empresa</label>
-          <select
-            id="empresa"
-            class="pp-empresa-control"
-            [ngModel]="selectedSchema"
-            (ngModelChange)="selectedSchema = $event; onEmpresaChange()"
+          <label for="empresa-combo" class="pp-empresa-label">Empresa</label>
+          <sesa-combobox-select
+            class="pp-empresa-combo"
+            inputId="empresa-combo"
+            [options]="empresaComboOptions"
+            [ngModel]="schemaSelectValue"
+            (ngModelChange)="onEmpresaComboChange($event)"
             [disabled]="loadingEmpresas"
-          >
-            @if (loadingEmpresas) {
-              <option value="">Cargando empresas…</option>
-            } @else {
-              <option [ngValue]="null">Seleccione empresa…</option>
-              <option value="public">Public (administración)</option>
-              @for (e of empresas; track e.id) {
-                <option [ngValue]="e.schemaName">{{ e.razonSocial }} ({{ e.schemaName }})</option>
-              }
-            }
-          </select>
+            [placeholder]="loadingEmpresas ? 'Cargando empresas…' : 'Buscar empresa o schema…'"
+            sectionLabel="Empresas disponibles"
+            ariaLabel="Empresa o schema del tenant"
+          />
         </div>
       }
     </div>
@@ -689,4 +271,522 @@
   </div>
 
   </div><!-- /.pp-content -->
+  @if (showForm) {
+    <div class="pp-integrante-modal-host">
+      <div
+        class="pp-integrante-modal-backdrop"
+        role="presentation"
+        aria-hidden="true"
+        (click)="cancelForm()"
+      ></div>
+      <div
+        class="pp-integrante-modal-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pp-form-panel-main-title"
+      >
+        <div class="pp-integrante-modal-glow" aria-hidden="true"></div>
+        <div class="pp-integrante-modal-ring" aria-hidden="true"></div>
+        <div class="pp-form-panel pp-form-panel--modal">
+      <div class="pp-form-panel-head">
+        <div class="pp-form-panel-head__inner">
+          <div class="pp-form-panel-head-left">
+            <div class="pp-form-panel-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="pp-form-panel-title" id="pp-form-panel-main-title">{{ editingId != null ? 'Editar integrante' : 'Nuevo integrante' }}</h2>
+              <div
+                #wizardHeadingTarget
+                id="pp-wizard-step-context"
+                class="pp-form-panel-subtitle pp-form-panel-subtitle--focusable"
+                tabindex="-1"
+                role="group"
+                [attr.aria-label]="'Paso ' + (formStep + 1) + ' de ' + (lastFormStepIndex + 1) + ': ' + formSteps[formStep].title + '. ' + formSteps[formStep].subtitle"
+              >
+                <span class="pp-form-panel-step" aria-hidden="true">Paso {{ formStep + 1 }} de {{ lastFormStepIndex + 1 }}</span>
+                <span class="pp-form-panel-step-hint">{{ formSteps[formStep].subtitle }}</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="pp-close-btn" (click)="cancelForm()" title="Cerrar formulario" aria-label="Cerrar formulario">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      @if (saveError) {
+        <div class="pp-alert pp-alert--error" role="alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ saveError }}
+        </div>
+      }
+
+      <nav class="pp-wizard-nav" aria-label="Pasos del formulario de integrante">
+        <ol class="pp-wizard-pills">
+          @for (st of formSteps; track st.id; let idx = $index) {
+            <li class="pp-wizard-pills__item">
+              <button
+                type="button"
+                class="pp-wizard-pill"
+                [class.pp-wizard-pill--active]="formStep === idx"
+                [class.pp-wizard-pill--done]="formStep > idx"
+                [disabled]="idx >= formStep"
+                (click)="goToFormStep(idx)"
+                [attr.aria-current]="formStep === idx ? 'step' : null"
+              >
+                <span class="pp-wizard-pill__index" aria-hidden="true">{{ idx + 1 }}</span>
+                <span class="pp-wizard-pill__label">{{ st.title }}</span>
+              </button>
+            </li>
+          }
+        </ol>
+        <div
+          class="pp-wizard-progress"
+          role="progressbar"
+          [attr.aria-valuenow]="formStep + 1"
+          aria-valuemin="1"
+          [attr.aria-valuemax]="lastFormStepIndex + 1"
+          [attr.aria-valuetext]="'Paso ' + (formStep + 1) + ' de ' + (lastFormStepIndex + 1)"
+          aria-label="Progreso del formulario de integrante"
+        >
+          <div class="pp-wizard-progress__rail" aria-hidden="true">
+            <div class="pp-wizard-progress__fill" [style.width.%]="wizardProgressPercent"></div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="pp-integrante-modal-scroll">
+      <div
+        class="pp-form-body pp-form-body--wizard"
+        [class.pp-form-body--step-wide]="formStep === 2"
+      >
+      @if (formStep === 0) {
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--blue"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Datos de identificación
+        </div>
+        <div class="pp-fields pp-fields--identity-doc pp-fields--gap-lg">
+          <div class="pp-field pp-field--doc-tipo">
+            <label class="pp-label" for="tipoDocumento">Tipo de documento</label>
+            <sesa-combobox-select
+              inputId="tipoDocumento"
+              [(ngModel)]="form.tipoDocumento"
+              [options]="comboDocTipoOptions"
+              placeholder="Buscar tipo de documento…"
+              sectionLabel="Tipos de documento"
+              ariaLabel="Tipo de documento"
+            />
+          </div>
+          <div class="pp-field pp-field--doc-numero">
+            <label class="pp-label" for="identificacion">Número de documento</label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 7h16M4 12h10M4 17h14"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="identificacion" type="text" inputmode="numeric" autocomplete="off"
+                [(ngModel)]="form.identificacion" placeholder="Solo números, sin puntos" />
+            </div>
+          </div>
+        </div>
+        <div class="pp-fields pp-fields--names pp-fields--mt">
+          <div class="pp-field">
+            <label class="pp-label">Primer nombre <span class="pp-required">*</span></label>
+            <input class="pp-input" id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Segundo nombre</label>
+            <input class="pp-input" id="segundoNombre" type="text" [(ngModel)]="form.segundoNombre" placeholder="Opcional" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Primer apellido <span class="pp-required">*</span></label>
+            <input class="pp-input" id="primerApellido" type="text" [(ngModel)]="form.primerApellido" placeholder="Primer apellido" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Segundo apellido</label>
+            <input class="pp-input" id="segundoApellido" type="text" [(ngModel)]="form.segundoApellido" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      }
+
+      @if (formStep === 1) {
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--teal"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Información de contacto
+        </div>
+        <div class="pp-fields pp-fields--2 pp-fields--gap-lg">
+          <div class="pp-field">
+            <label class="pp-label">Celular <span class="pp-required">*</span></label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.07 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 17z"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="celular" type="tel"
+                [(ngModel)]="form.celular" placeholder="+57 300 000 0000" />
+            </div>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Correo electrónico <span class="pp-required">*</span></label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="email" type="email"
+                [(ngModel)]="form.email" placeholder="correo&#64;empresa.com" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      @if (editingId == null) {
+        <div class="pp-form-section">
+          <div class="pp-section-title">
+            <span class="pp-section-dot pp-dot--purple"></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Credenciales de acceso
+          </div>
+          <div class="pp-fields pp-fields--1half">
+            <div class="pp-field">
+              <label class="pp-label">Contraseña <span class="pp-required">*</span></label>
+              <div class="pp-input-wrap">
+                <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input class="pp-input pp-input--icon" id="password" type="password"
+                  [(ngModel)]="form.password" placeholder="Contraseña para el acceso" />
+              </div>
+              <span class="pp-field-hint">El integrante iniciará sesión con su correo y esta contraseña.</span>
+            </div>
+          </div>
+        </div>
+      }
+      }
+
+      @if (formStep === 2) {
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Roles y permisos <span class="pp-required">*</span>
+        </div>
+        <p class="pp-section-hint">Seleccione uno o más roles. El primer rol marcado es el rol principal de acceso.</p>
+        <div class="pp-roles-grid">
+          @for (r of rolesPersonal; track r.value) {
+            @if (!r.disabled) {
+              <label class="pp-role-chip" [class.pp-role-chip--selected]="isRolSelected(r.value)">
+                <input type="checkbox"
+                  [checked]="isRolSelected(r.value)"
+                  (change)="toggleRol(r.value)"
+                  [disabled]="r.disabled ?? false" />
+                <span class="pp-role-chip-dot pp-role--{{ roleClass(r.value) }}"></span>
+                <span class="pp-role-chip-label">{{ r.label }}</span>
+                @if (selectedRoles.indexOf(r.value) === 0) {
+                  <span class="pp-role-primary-badge">Principal</span>
+                }
+              </label>
+            }
+          }
+        </div>
+        @if (selectedRoles.length > 0) {
+          <div class="pp-selected-roles-summary">
+            <span class="pp-summary-label">Roles seleccionados:</span>
+            @for (r of selectedRoles; track r) {
+              <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--green"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Archivos del profesional
+        </div>
+        <div class="pp-fields pp-fields--2 pp-fields--gap-lg">
+          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!fotoFile || !!fotoPreviewUrl"
+            [class.pp-upload-area--has-preview]="!!fotoPreviewUrl">
+            <input type="file" accept=".png,.jpg,.jpeg,.webp" (change)="onFotoSelected($event)" hidden />
+            <div class="pp-upload-content">
+              @if (fotoPreviewUrl) {
+                <img [src]="fotoPreviewUrl" alt="Vista previa de la foto del profesional" class="pp-upload-preview"
+                  width="160" height="160" loading="lazy" decoding="async" />
+              } @else {
+                <div class="pp-upload-icon-wrap" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                  </svg>
+                </div>
+              }
+              <span class="pp-upload-title">Foto del profesional</span>
+              @if (fotoFile) {
+                <span class="pp-upload-selected">{{ fotoFile.name }}</span>
+              } @else if (fotoPreviewUrl) {
+                <span class="pp-upload-hint">Clic para cambiar la imagen</span>
+              } @else {
+                <span class="pp-upload-hint">PNG, JPG, WEBP · Clic para seleccionar</span>
+              }
+            </div>
+          </label>
+          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!firmaFile || !!firmaPreviewUrl"
+            [class.pp-upload-area--has-preview]="!!firmaPreviewUrl">
+            <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" (change)="onFirmaSelected($event)" hidden />
+            <div class="pp-upload-content">
+              @if (firmaPreviewUrl) {
+                <img [src]="firmaPreviewUrl" alt="Vista previa de la firma del profesional" class="pp-upload-preview pp-upload-preview--firma"
+                  width="160" height="120" loading="lazy" decoding="async" />
+              } @else {
+                <div class="pp-upload-icon-wrap" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                    <path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>
+                  </svg>
+                </div>
+              }
+              <span class="pp-upload-title">Firma del profesional</span>
+              @if (firmaFile) {
+                <span class="pp-upload-selected">{{ firmaFile.name }}</span>
+              } @else if (firmaPreviewUrl) {
+                <span class="pp-upload-hint">Clic para cambiar la imagen</span>
+              } @else {
+                <span class="pp-upload-hint">PNG, JPG, WEBP, SVG · Clic para seleccionar</span>
+              }
+            </div>
+          </label>
+        </div>
+      </div>
+      }
+
+      @if (formStep === 3) {
+      <p class="pp-wizard-normative-intro">
+        Complete los bloques normativos según aplique al integrante. Los campos son opcionales salvo los indicados en pasos anteriores.
+      </p>
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--indigo"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Habilitación profesional
+          <span class="pp-normative-tag">Res. 1449/2016 · RETHUS</span>
+        </div>
+        <div class="pp-fields pp-fields--3 pp-fields--gap-lg">
+          <div class="pp-field">
+            <label class="pp-label" for="tarjetaProfesional">Tarjeta Profesional / Ocupacional</label>
+            <input id="tarjetaProfesional" type="text" class="pp-input"
+              placeholder="Ej. TP-12345-2015"
+              [(ngModel)]="form.tarjetaProfesional" maxlength="30" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="especialidadFormal">Especialidad formal</label>
+            <input id="especialidadFormal" type="text" class="pp-input"
+              placeholder="Ej. Medicina General, Odontología…"
+              [(ngModel)]="form.especialidadFormal" maxlength="150" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="numeroRethus">Número RETHUS</label>
+            <input id="numeroRethus" type="text" class="pp-input"
+              placeholder="Ej. 123456789"
+              [(ngModel)]="form.numeroRethus" maxlength="30" />
+            <small class="pp-field-hint">Registro Único Nacional del Talento Humano en Salud</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--teal"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Datos demográficos
+          <span class="pp-normative-tag">Res. 3374/2000 · SISPRO</span>
+        </div>
+        <div class="pp-fields pp-fields--2 pp-fields--gap-lg">
+          <div class="pp-field">
+            <label class="pp-label" for="fechaNacimiento">Fecha de nacimiento</label>
+            <input id="fechaNacimiento" type="date" class="pp-input" [(ngModel)]="form.fechaNacimiento" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="sexo">Sexo biológico</label>
+            <sesa-combobox-select
+              inputId="sexo"
+              [(ngModel)]="form.sexo"
+              [options]="comboSexoOptions"
+              placeholder="Buscar o seleccionar…"
+              sectionLabel="Sexo biológico (RIPS)"
+              ariaLabel="Sexo biológico"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--green"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Lugar de práctica
+          <span class="pp-normative-tag">Res. 2003/2014</span>
+        </div>
+        <div class="pp-fields pp-fields--2 pp-fields--gap-lg">
+          <div class="pp-field">
+            <label class="pp-label" for="municipio">Código municipio DIVIPOLA</label>
+            <input id="municipio" type="text" class="pp-input"
+              placeholder="Ej. 11001 (Bogotá)" [(ngModel)]="form.municipio" maxlength="10" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="departamento">Código departamento DIVIPOLA</label>
+            <input id="departamento" type="text" class="pp-input"
+              placeholder="Ej. 11 (Cundinamarca)" [(ngModel)]="form.departamento" maxlength="10" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          Vínculo laboral
+          <span class="pp-normative-tag">Circular 047/2007</span>
+        </div>
+        <div class="pp-fields pp-fields--3 pp-fields--gap-lg">
+          <div class="pp-field">
+            <label class="pp-label" for="tipoVinculacion">Tipo de vinculación</label>
+            <sesa-combobox-select
+              inputId="tipoVinculacion"
+              [(ngModel)]="form.tipoVinculacion"
+              [options]="comboVinculacionOptions"
+              placeholder="Buscar tipo de vinculación…"
+              sectionLabel="Tipos de vinculación"
+              ariaLabel="Tipo de vinculación laboral"
+            />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaIngreso">Fecha de ingreso</label>
+            <input id="fechaIngreso" type="date" class="pp-input" [(ngModel)]="form.fechaIngreso" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaRetiro">Fecha de retiro</label>
+            <input id="fechaRetiro" type="date" class="pp-input" [(ngModel)]="form.fechaRetiro" />
+            <small class="pp-field-hint">Dejar vacío si el profesional continúa activo.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-form-section pp-form-section--row pp-form-section--full">
+        <div class="pp-toggle-group">
+          <label class="pp-toggle">
+            <input type="checkbox" [(ngModel)]="form.activo" />
+            <span class="pp-toggle-track"></span>
+          </label>
+          <div class="pp-toggle-info">
+            <span class="pp-toggle-label">Integrante activo</span>
+            <span class="pp-toggle-hint">Habilitado para iniciar sesión en el sistema</span>
+          </div>
+        </div>
+      </div>
+      }
+
+      </div><!-- /.pp-form-body -->
+      </div><!-- /.pp-integrante-modal-scroll -->
+
+      <div class="pp-form-footer">
+        <button type="button" class="pp-btn pp-btn--ghost" (click)="cancelForm()" [disabled]="saving">
+          Cancelar
+        </button>
+        <div class="pp-form-footer__actions">
+          @if (formStep > 0) {
+            <button type="button" class="pp-btn pp-btn--ghost" (click)="previousFormStep()" [disabled]="saving">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Atrás
+            </button>
+          }
+          @if (formStep < lastFormStepIndex) {
+            <button type="button" class="pp-btn pp-btn--primary" (click)="nextFormStep()" [disabled]="saving">
+              Continuar
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          } @else {
+            <button type="button" class="pp-btn pp-btn--primary" (click)="save()" [disabled]="saving">
+              @if (saving) {
+                <span class="pp-spinner" aria-hidden="true"></span>
+                Guardando…
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                {{ editingId != null ? 'Actualizar integrante' : 'Crear integrante' }}
+              }
+            </button>
+          }
+        </div>
+      </div>
+        </div><!-- /.pp-form-panel -->
+      </div><!-- /.pp-integrante-modal-shell -->
+    </div><!-- /.pp-integrante-modal-host -->
+  }
+
 </section>

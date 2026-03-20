@@ -17,6 +17,10 @@ spring:
       minimum-idle: 2
       connection-timeout: 10000
       connection-test-query: SELECT 1
+      # Antes del ddl-auto de Hibernate: alinea el nombre de la UNIQUE(token) legada (PostgreSQL *_token_key)
+      # con uk_pwd_reset_public_token de la entidad y evita SQLWarning al arrancar.
+      connection-init-sql: >-
+        DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid JOIN pg_namespace n ON n.oid = t.relnamespace WHERE n.nspname = 'public' AND t.relname = 'password_reset_tokens_public' AND c.conname = 'password_reset_tokens_public_token_key') THEN ALTER TABLE public.password_reset_tokens_public RENAME CONSTRAINT password_reset_tokens_public_token_key TO uk_pwd_reset_public_token; END IF; END $$
 
   jpa:
     hibernate:
@@ -27,10 +31,19 @@ spring:
         format_sql: true
     open-in-view: false
 
+  # Foto/firma de personal: multipart hacia el API. Entre comillas: el ':' del default ${...:8MB} rompe YAML sin quotes.
+  servlet:
+    multipart:
+      max-file-size: "${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:8MB}"
+      max-request-size: "${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:20MB}"
+
 server:
   port: 8000
   servlet:
     context-path: /api
+  tomcat:
+    # Tamaño máximo del cuerpo POST (debe ser >= multipart max-request-size).
+    max-http-form-post-size: "${SERVER_TOMCAT_MAX_HTTP_FORM_POST_SIZE:20MB}"
 
 # JWT para OAuth2 Resource Server (emitido por nuestro login)
 sesa:

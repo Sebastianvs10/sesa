@@ -36,6 +36,12 @@ spring:
           time_zone: UTC
     open-in-view: false
 
+  servlet:
+    multipart:
+      # Entre comillas: evita que YAML interprete mal el ':' dentro de ${VAR:8MB}
+      max-file-size: "${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:8MB}"
+      max-request-size: "${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:20MB}"
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
@@ -43,6 +49,8 @@ server:
   forward-headers-strategy: framework
   servlet:
     context-path: /api
+  tomcat:
+    max-http-form-post-size: "${SERVER_TOMCAT_MAX_HTTP_FORM_POST_SIZE:20MB}"
   compression:
     enabled: true
     min-response-size: 1024
@@ -62,6 +70,7 @@ sesa:
       min-processing-ms: ${SESA_PASSWORD_RESET_MIN_PROCESSING_MS:400}
   upload:
     path: ${SESA_UPLOAD_PATH:/tmp/sesa/uploads}
+  # Incluir el dominio de Vercel (preview o producción), p. ej. https://tu-app.vercel.app
   cors:
     allowed-origins: ${SESA_CORS_ALLOWED_ORIGINS:https://appsesa.online,https://www.appsesa.online,https://app.appsesa.online}
   recordatorios:

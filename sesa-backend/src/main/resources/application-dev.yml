@@ -22,10 +22,17 @@ spring:
         format_sql: true
     open-in-view: false
 
+  servlet:
+    multipart:
+      max-file-size: "${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:8MB}"
+      max-request-size: "${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:20MB}"
+
 server:
   port: 8000
   servlet:
     context-path: /api
+  tomcat:
+    max-http-form-post-size: "${SERVER_TOMCAT_MAX_HTTP_FORM_POST_SIZE:20MB}"
 
 # JWT para OAuth2 Resource Server (emitido por nuestro login)
 sesa:
