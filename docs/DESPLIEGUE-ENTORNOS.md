@@ -24,6 +24,12 @@ Dominio de producción: **appsesa.online** (front: `https://appsesa.online` y va
 
 Por defecto, `SESA_FRONTEND_URL` es **https://appsesa.online** y CORS incluye **https://appsesa.online**, **https://www.appsesa.online** y **https://app.appsesa.online**. Si solo usas un origen en producción, define `SESA_CORS_ALLOWED_ORIGINS` con esa URL exacta. Secretos y credenciales solo en el panel del proveedor, no en Git.
 
+### Esquema vacío en Neon (error `Schema-validation: missing table [...]`)
+
+Con base de datos **nueva**, no existen tablas. En `application-prod` el valor por defecto de **`SESA_JPA_DDL_AUTO`** es **`update`**: Hibernate crea/ajusta tablas del modelo (incl. `public.archivo_almacenamiento` y demás entidades) en el **primer arranque**.
+
+Cuando el esquema ya esté fijo y quieras solo comprobar coincidencia con el modelo, en Render añade **`SESA_JPA_DDL_AUTO=validate`** (y mantén migraciones/SQL alineados con las entidades).
+
 ### Render (API con Docker)
 
 1. **New → Web Service** → conecta el repo. **Root Directory** vacío si usas `render.yaml` en la raíz del monorepo; si importas solo `sesa-backend`, apunta ahí.
