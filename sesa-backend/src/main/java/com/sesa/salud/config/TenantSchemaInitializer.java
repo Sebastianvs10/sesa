@@ -552,7 +552,8 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(30)",
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(120)",
             "ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS duracion_dias INT",
-            "ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id)"
+            "ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id)",
+            "CREATE INDEX IF NOT EXISTS idx_dispensaciones_orden ON farmacia_dispensaciones (orden_clinica_id)"
     );
 
     private static final List<String> DDL_FARMACIA_MEDICAMENTOS_MIGRATIONS = List.of(

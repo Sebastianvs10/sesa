@@ -1062,14 +1062,14 @@ CREATE INDEX IF NOT EXISTS idx_dolores_historia  ON dolores (historia_clinica_id
 -- farmacia
 CREATE INDEX IF NOT EXISTS idx_dispensaciones_medicamento ON farmacia_dispensaciones (medicamento_id);
 CREATE INDEX IF NOT EXISTS idx_dispensaciones_paciente    ON farmacia_dispensaciones (paciente_id);
-CREATE INDEX IF NOT EXISTS idx_dispensaciones_orden ON farmacia_dispensaciones (orden_clinica_id);
--- Migraciones farmacia / órdenes clínicas
+-- Migraciones farmacia / órdenes clínicas (columna orden_clinica_id antes del índice)
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS estado_dispensacion_farmacia VARCHAR(30) DEFAULT 'PENDIENTE';
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS cantidad_prescrita INT;
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS unidad_medida VARCHAR(30);
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(120);
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS duracion_dias INT;
 ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id);
+CREATE INDEX IF NOT EXISTS idx_dispensaciones_orden ON farmacia_dispensaciones (orden_clinica_id);
 
 -- S2: Resultados críticos — flag en orden y trazabilidad de lectura
 ALTER TABLE ordenes_clinicas ADD COLUMN IF NOT EXISTS resultado_critico BOOLEAN DEFAULT FALSE;

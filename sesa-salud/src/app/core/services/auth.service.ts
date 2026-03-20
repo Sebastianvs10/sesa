@@ -217,6 +217,11 @@ export class AuthService {
       return 'No se pudo conectar al servidor. Verifica que esté en ejecución.';
     }
 
+    // Render (plan free): el servicio duerme; el proxy puede responder 504 si el arranque supera el tiempo límite.
+    if (error.status === 504) {
+      return 'El servidor tardó demasiado en responder (p. ej. servicio en frío). Espera 1 minuto, recarga y vuelve a intentar.';
+    }
+
     if (error.status >= 500) {
       return 'Error en el servidor. Por favor, intenta más tarde.';
     }
