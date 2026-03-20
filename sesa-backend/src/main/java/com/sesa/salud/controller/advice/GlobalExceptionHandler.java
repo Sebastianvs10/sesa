@@ -4,6 +4,7 @@
 
 package com.sesa.salud.controller.advice;
 
+import com.sesa.salud.exception.PasswordResetException;
 import com.sesa.salud.exception.VideoconsultaTokenInvalidoException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +28,16 @@ public class GlobalExceptionHandler {
     private static final String ERROR_KEY = "error";
     private static final String MESSAGE_KEY = "message";
     private static final String STATUS_KEY = "status";
+
+    @ExceptionHandler(PasswordResetException.class)
+    public ResponseEntity<Map<String, Object>> handlePasswordReset(PasswordResetException e) {
+        log.debug("Recuperación de contraseña: {}", e.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put(ERROR_KEY, "Recuperación de contraseña");
+        body.put(MESSAGE_KEY, e.getMessage());
+        body.put(STATUS_KEY, e.getStatus().value());
+        return ResponseEntity.status(e.getStatus()).body(body);
+    }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {

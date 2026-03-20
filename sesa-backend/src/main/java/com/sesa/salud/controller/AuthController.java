@@ -7,6 +7,7 @@ package com.sesa.salud.controller;
 import com.sesa.salud.dto.auth.AccesoAuditoriaDto;
 import com.sesa.salud.dto.auth.PasswordResetConfirmDto;
 import com.sesa.salud.dto.auth.PasswordResetRequestDto;
+import com.sesa.salud.dto.auth.PasswordResetRequestResponse;
 import com.sesa.salud.dto.auth.LoginRequest;
 import com.sesa.salud.dto.auth.LoginResponse;
 import com.sesa.salud.service.AuthService;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -38,18 +38,17 @@ public class AuthController {
     }
 
     @PostMapping("/password/request-reset")
-    public ResponseEntity<Map<String, String>> requestReset(@Valid @RequestBody PasswordResetRequestDto dto) {
-        String token = authService.requestPasswordReset(dto.getEmail());
-        return ResponseEntity.ok(Map.of(
-                "message", "Solicitud procesada. Usa el token para restablecer contraseña.",
-                "token", token
-        ));
+    public ResponseEntity<PasswordResetRequestResponse> requestReset(@Valid @RequestBody PasswordResetRequestDto dto) {
+        PasswordResetRequestResponse body = authService.requestPasswordReset(dto.getEmail());
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/password/reset")
-    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody PasswordResetConfirmDto dto) {
+    public ResponseEntity<PasswordResetRequestResponse> resetPassword(@Valid @RequestBody PasswordResetConfirmDto dto) {
         authService.resetPassword(dto.getToken(), dto.getNewPassword());
-        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
+        return ResponseEntity.ok(PasswordResetRequestResponse.builder()
+                .message("Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.")
+                .build());
     }
 
     @GetMapping("/auditoria")

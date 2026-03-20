@@ -8,4 +8,6 @@ import { DEPLOY_API_URL } from './deploy-api-url.generated';
 export const environment = {
   production: true,
   apiUrl: DEPLOY_API_URL,
+  /** Mostrar ayuda si el backend devuelve devToken (solo con expose-token en servidor). */
+  passwordResetHintDevToken: false,
 };

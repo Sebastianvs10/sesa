@@ -37,6 +37,15 @@ sesa:
   jwt:
     secret: MiClaveSecretaMuyLargaParaFirmarJWTMinimo256BitsParaHS256
     expiration-ms: 86400000  # 24 horas
+
+  # Recuperación de contraseña (tokens en public.password_reset_tokens_public)
+  auth:
+    password-reset:
+      # true = incluye devToken en JSON (solo desarrollo; nunca en producción expuesto a Internet)
+      expose-token: ${SESA_PASSWORD_RESET_EXPOSE_TOKEN:true}
+      token-ttl-minutes: 30
+      # Mitiga enumeración de correos midiendo tiempos de respuesta
+      min-processing-ms: 400
   upload:
     path: ./uploads
 

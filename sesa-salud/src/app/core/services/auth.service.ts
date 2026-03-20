@@ -38,15 +38,6 @@ export interface LoginResponse {
   empresaLogoUuid?: string;
 }
 
-export interface PasswordResetRequestDto {
-  email: string;
-}
-
-export interface PasswordResetConfirmDto {
-  token: string;
-  newPassword: string;
-}
-
 const TOKEN_KEY       = 'sesa_access_token';
 const USER_KEY        = 'sesa_user';
 const ROL_ACTIVO_KEY  = 'sesa_rol_activo';
@@ -193,14 +184,6 @@ export class AuthService {
         ));
       })
     );
-  }
-
-  requestPasswordReset(dto: PasswordResetRequestDto): Observable<{ message: string; token?: string }> {
-    return this.http.post<{ message: string; token?: string }>(`${this.apiUrl}/auth/password/request-reset`, dto);
-  }
-
-  resetPassword(dto: PasswordResetConfirmDto): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/auth/password/reset`, dto);
   }
 
   private getErrorMessage(error: any): string {

@@ -34,6 +34,8 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private static final int  MAX_ATTEMPTS = 5;
     private static final long WINDOW_MS    = 60_000L; // 1 minuto
     private static final String LOGIN_SUFFIX = "/auth/login";
+    private static final String PASSWORD_REQUEST_SUFFIX = "/auth/password/request-reset";
+    private static final String PASSWORD_RESET_SUFFIX = "/auth/password/reset";
 
     /** IP → [intentos, inicio-de-ventana-ms] */
     private final ConcurrentHashMap<String, long[]> windowMap = new ConcurrentHashMap<>();
@@ -68,8 +70,13 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private boolean isLoginRequest(HttpServletRequest req) {
-        return "POST".equalsIgnoreCase(req.getMethod())
-                && req.getRequestURI().endsWith(LOGIN_SUFFIX);
+        if (!"POST".equalsIgnoreCase(req.getMethod())) {
+            return false;
+        }
+        String uri = req.getRequestURI();
+        return uri.endsWith(LOGIN_SUFFIX)
+                || uri.endsWith(PASSWORD_REQUEST_SUFFIX)
+                || uri.endsWith(PASSWORD_RESET_SUFFIX);
     }
 
     /**

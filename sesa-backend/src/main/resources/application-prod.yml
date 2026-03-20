@@ -55,6 +55,11 @@ sesa:
   jwt:
     secret: ${SESA_JWT_SECRET}
     expiration-ms: ${SESA_JWT_EXPIRATION_MS:86400000}
+  auth:
+    password-reset:
+      expose-token: ${SESA_PASSWORD_RESET_EXPOSE_TOKEN:false}
+      token-ttl-minutes: ${SESA_PASSWORD_RESET_TTL_MINUTES:30}
+      min-processing-ms: ${SESA_PASSWORD_RESET_MIN_PROCESSING_MS:400}
   upload:
     path: ${SESA_UPLOAD_PATH:/tmp/sesa/uploads}
   cors:

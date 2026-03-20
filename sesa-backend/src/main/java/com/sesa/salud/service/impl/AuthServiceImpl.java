@@ -7,32 +7,42 @@ package com.sesa.salud.service.impl;
 import com.sesa.salud.dto.auth.AccesoAuditoriaDto;
 import com.sesa.salud.dto.auth.LoginRequest;
 import com.sesa.salud.dto.auth.LoginResponse;
+import com.sesa.salud.dto.auth.PasswordResetRequestResponse;
 import com.sesa.salud.entity.AccesoAuditoria;
-import com.sesa.salud.entity.PasswordResetToken;
 import com.sesa.salud.entity.Usuario;
+import com.sesa.salud.entity.master.PasswordResetTokenPublic;
+import com.sesa.salud.exception.PasswordResetException;
 import com.sesa.salud.repository.AccesoAuditoriaRepository;
-import com.sesa.salud.repository.PasswordResetTokenRepository;
 import com.sesa.salud.repository.PersonalRepository;
 import com.sesa.salud.repository.UsuarioRepository;
 import com.sesa.salud.repository.master.EmpresaRepository;
+import com.sesa.salud.repository.master.PasswordResetTokenPublicRepository;
 import com.sesa.salud.repository.master.TenantUsuarioLoginRepository;
 import com.sesa.salud.security.JwtTokenProvider;
 import com.sesa.salud.service.AuthService;
 import com.sesa.salud.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.HexFormat;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
+
+    private static final String RESET_OK_MESSAGE = "Si el correo está registrado en SESA, recibirás instrucciones para restablecer tu contraseña.";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UsuarioRepository usuarioRepository;
     private final PersonalRepository personalRepository;
@@ -41,10 +51,19 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AccesoAuditoriaRepository accesoAuditoriaRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetTokenPublicRepository passwordResetTokenPublicRepository;
 
     @Value("${sesa.jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    @Value("${sesa.auth.password-reset.expose-token:false}")
+    private boolean exposePasswordResetToken;
+
+    @Value("${sesa.auth.password-reset.token-ttl-minutes:30}")
+    private long passwordResetTokenTtlMinutes;
+
+    @Value("${sesa.auth.password-reset.min-processing-ms:400}")
+    private long passwordResetMinProcessingMs;
 
     /**
      * Login: determina el tenant (schema) del usuario desde tenant_usuario_login (public),
@@ -140,51 +159,120 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String requestPasswordReset(String email) {
-        String normalized = email.trim().toLowerCase();
-        String schema = tenantUsuarioLoginRepository.findByEmail(normalized)
-                .map(t -> t.getSchemaName())
-                .orElseThrow(() -> new RuntimeException("No existe cuenta para ese correo"));
+    @Transactional
+    public PasswordResetRequestResponse requestPasswordReset(String email) {
+        long start = System.nanoTime();
+        String normalized = email == null ? "" : email.trim().toLowerCase();
+        String issuedToken = null;
 
         try {
-            TenantContextHolder.setTenantSchema(schema);
-            usuarioRepository.findByEmail(normalized)
-                    .orElseThrow(() -> new RuntimeException("No existe cuenta para ese correo"));
+            if (normalized.isEmpty()) {
+                return buildResetRequestResponse(null);
+            }
 
-            String token = UUID.randomUUID().toString().replace("-", "");
-            PasswordResetToken resetToken = PasswordResetToken.builder()
+            var tenantOpt = tenantUsuarioLoginRepository.findByEmail(normalized);
+            if (tenantOpt.isEmpty()) {
+                log.debug("Recuperación: correo sin registro de tenant (respuesta uniforme)");
+                return buildResetRequestResponse(null);
+            }
+
+            String schema = tenantOpt.get().getSchemaName();
+            try {
+                TenantContextHolder.setTenantSchema(schema);
+                var usuarioOpt = usuarioRepository.findByEmail(normalized);
+                if (usuarioOpt.isEmpty() || !Boolean.TRUE.equals(usuarioOpt.get().getActivo())) {
+                    log.debug("Recuperación: usuario inexistente o inactivo en tenant (respuesta uniforme)");
+                    return buildResetRequestResponse(null);
+                }
+            } finally {
+                TenantContextHolder.clear();
+            }
+
+            passwordResetTokenPublicRepository.deletePendingByEmail(normalized);
+            issuedToken = generateSecureToken();
+            long ttlMinutes = Math.max(5, Math.min(passwordResetTokenTtlMinutes, 120));
+            PasswordResetTokenPublic entity = PasswordResetTokenPublic.builder()
                     .email(normalized)
-                    .token(token)
-                    .expiraEn(Instant.now().plusSeconds(30 * 60))
+                    .tenantSchema(schema)
+                    .token(issuedToken)
+                    .expiraEn(Instant.now().plusSeconds(ttlMinutes * 60))
                     .usado(false)
                     .build();
-            passwordResetTokenRepository.save(resetToken);
-            logAcceso(normalized, "RESET_REQUEST", "Solicitud de recuperación");
-            return token;
+            passwordResetTokenPublicRepository.save(entity);
+            logAcceso(normalized, "RESET_REQUEST", "Solicitud de recuperación (token en public)");
+            log.info("Recuperación: token emitido para tenant {}", schema);
+        } catch (Exception ex) {
+            log.error("Recuperación: error interno al generar token: {}", ex.getMessage());
+            issuedToken = null;
         } finally {
-            TenantContextHolder.clear();
+            ensureMinProcessingTime(start);
+        }
+
+        return buildResetRequestResponse(issuedToken);
+    }
+
+    private PasswordResetRequestResponse buildResetRequestResponse(String token) {
+        PasswordResetRequestResponse.PasswordResetRequestResponseBuilder b = PasswordResetRequestResponse.builder()
+                .message(RESET_OK_MESSAGE);
+        if (exposePasswordResetToken && token != null) {
+            b.devToken(token);
+        }
+        return b.build();
+    }
+
+    private void ensureMinProcessingTime(long startNanos) {
+        long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+        long wait = passwordResetMinProcessingMs - elapsedMs;
+        if (wait > 0) {
+            try {
+                Thread.sleep(wait);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
+    private static String generateSecureToken() {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes);
+    }
+
     @Override
+    @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
-        if (Boolean.TRUE.equals(resetToken.getUsado()) || resetToken.getExpiraEn().isBefore(Instant.now())) {
-            throw new RuntimeException("Token expirado o usado");
+        String rawToken = token == null ? "" : token.trim();
+        if (rawToken.isEmpty()) {
+            throw new PasswordResetException(HttpStatus.BAD_REQUEST, "Código de verificación inválido.");
         }
-        String email = resetToken.getEmail();
-        String schema = tenantUsuarioLoginRepository.findByEmail(email)
-                .map(t -> t.getSchemaName())
-                .orElseThrow(() -> new RuntimeException("No existe tenant asociado al correo"));
+
+        PasswordResetTokenPublic resetRow = passwordResetTokenPublicRepository.findByToken(rawToken)
+                .orElseThrow(() -> new PasswordResetException(
+                        HttpStatus.BAD_REQUEST,
+                        "El código no es válido o ya fue utilizado. Solicita uno nuevo."));
+
+        if (Boolean.TRUE.equals(resetRow.getUsado()) || resetRow.getExpiraEn().isBefore(Instant.now())) {
+            throw new PasswordResetException(
+                    HttpStatus.BAD_REQUEST,
+                    "El código expiró o ya fue usado. Solicita una nueva recuperación.");
+        }
+
+        String email = resetRow.getEmail();
+        String schema = resetRow.getTenantSchema();
+        if (schema == null || schema.isBlank()) {
+            throw new PasswordResetException(
+                    HttpStatus.BAD_REQUEST, "No se pudo completar la operación.");
+        }
+
         try {
             TenantContextHolder.setTenantSchema(schema);
             Usuario usuario = usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                    .orElseThrow(() -> new PasswordResetException(
+                            HttpStatus.BAD_REQUEST, "No se pudo completar la operación."));
             usuario.setPasswordHash(passwordEncoder.encode(newPassword));
             usuarioRepository.save(usuario);
-            resetToken.setUsado(true);
-            passwordResetTokenRepository.save(resetToken);
+            resetRow.setUsado(true);
+            passwordResetTokenPublicRepository.save(resetRow);
             logAcceso(email, "RESET_OK", "Contraseña restablecida");
         } finally {
             TenantContextHolder.clear();

@@ -1,5 +1,5 @@
 /**
- * Login — spinner en autenticación, toast errores/éxito.
+ * Login — autenticación, recuperación de contraseña (dos pasos), toast y estados de carga.
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule } from '@angular/common';
@@ -7,14 +7,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faEye, faEyeSlash, faSun, faMoon, faEnvelope, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faSun, faMoon, faEnvelope, faIdCard, faArrowLeft, faKey } from '@fortawesome/free-solid-svg-icons';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
 import { AuthService } from '../../core/services/auth.service';
+import { PasswordRecoveryService, PasswordRecoveryError } from '../../core/services/password-recovery.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
 import { PermissionsService } from '../../core/services/permissions.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { SesaLoginRolePickerComponent } from '../../shared/components/sesa-login-role-picker/sesa-login-role-picker.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -39,8 +41,16 @@ export class LoginPageComponent implements OnInit {
   showReset = false;
   passwordVisible = false;
   resetPasswordVisible = false;
+  resetConfirmPasswordVisible = false;
+  /** Paso 1 = correo, 2 = código + nueva contraseña */
+  recoveryStep = signal<1 | 2>(1);
+  resetRequestLoading = signal(false);
+  resetConfirmLoading = signal(false);
   /** Modo: 'email' = correo electrónico, 'identificacion' = número de identificación */
   loginMode: 'email' | 'identificacion' = 'email';
+
+  /** Misma regla que backend (letra + número, mín. 8). */
+  readonly passwordRecoveryPattern = /^(?=.*[A-Za-zÁÉÍÓÚáéíóúÑñ])(?=.*\d).+$/;
 
   faEye = faEye;
   faEyeSlash = faEyeSlash;
@@ -48,6 +58,8 @@ export class LoginPageComponent implements OnInit {
   faMoon = faMoon;
   faEnvelope = faEnvelope;
   faIdCard = faIdCard;
+  faArrowLeft = faArrowLeft;
+  faKey = faKey;
 
   themeService = inject(ThemeService);
   private readonly toast = inject(SesaToastService);
@@ -56,11 +68,11 @@ export class LoginPageComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
+    private passwordRecovery: PasswordRecoveryService,
     private empresaCurrent: EmpresaCurrentService,
     private permissionsService: PermissionsService
   ) {
     this.loginForm = this.fb.group({
-      /** Acepta correo electrónico o número de identificación según loginMode */
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
       remember: [false],
@@ -69,8 +81,12 @@ export class LoginPageComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
     });
     this.resetConfirmForm = this.fb.group({
-      token: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      token: ['', [Validators.required, Validators.maxLength(128)]],
+      newPassword: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.pattern(this.passwordRecoveryPattern)],
+      ],
+      confirmPassword: ['', Validators.required],
     });
   }
 
@@ -117,7 +133,6 @@ export class LoginPageComponent implements OnInit {
     });
   }
 
-  /** Después de elegir rol (o un solo rol): empresa + permisos + dashboard */
   finishLoginAndNavigate(): void {
     this.empresaCurrent.load();
     this.permissionsService.load(this.authService.rolActivo());
@@ -141,6 +156,10 @@ export class LoginPageComponent implements OnInit {
 
   toggleResetPasswordVisibility(): void {
     this.resetPasswordVisible = !this.resetPasswordVisible;
+  }
+
+  toggleResetConfirmPasswordVisibility(): void {
+    this.resetConfirmPasswordVisible = !this.resetConfirmPasswordVisible;
   }
 
   getLoginFieldError(): string {
@@ -169,42 +188,86 @@ export class LoginPageComponent implements OnInit {
     this.showReset = !this.showReset;
     this.resetMessage = null;
     this.errorMessage = null;
+    if (!this.showReset) {
+      this.recoveryStep.set(1);
+      this.resetRequestForm.reset();
+      this.resetConfirmForm.reset();
+    }
+  }
+
+  backToRecoveryRequest(): void {
+    this.recoveryStep.set(1);
+    this.resetMessage = null;
+    this.errorMessage = null;
+  }
+
+  getNewPasswordFieldError(): string {
+    const c = this.resetConfirmForm.get('newPassword');
+    if (!c?.invalid || !c.touched) return '';
+    if (c.hasError('required')) return 'La contraseña es obligatoria';
+    if (c.hasError('minlength')) return 'Mínimo 8 caracteres';
+    if (c.hasError('pattern')) return 'Incluye al menos una letra y un número';
+    return '';
   }
 
   solicitarReset(): void {
     this.resetMessage = null;
+    this.errorMessage = null;
     if (this.resetRequestForm.invalid) {
       this.resetRequestForm.markAllAsTouched();
       return;
     }
     const { email } = this.resetRequestForm.getRawValue();
-    this.authService.requestPasswordReset({ email }).subscribe({
+    this.resetRequestLoading.set(true);
+    this.passwordRecovery.requestCode(email).subscribe({
       next: (res) => {
-        this.resetMessage = `${res.message}${res.token ? ' Token: ' + res.token : ''}`;
-        this.toast.success('Solicitud enviada. Revisa tu correo.', 'Recuperación');
+        this.resetRequestLoading.set(false);
+        this.resetMessage = res.message;
+        this.recoveryStep.set(2);
+        if (environment.passwordResetHintDevToken && res.devToken) {
+          this.resetConfirmForm.patchValue({ token: res.devToken });
+          this.toast.info('Código de prueba aplicado (solo desarrollo).', 'Recuperación');
+        }
+        this.toast.success('Siguiente paso: introduce el código y tu nueva contraseña.', 'Solicitud registrada');
       },
-      error: (err) => {
-        this.errorMessage = err?.error?.error || 'No se pudo procesar la solicitud';
-        this.toast.error(this.errorMessage!, 'Error');
+      error: (err: PasswordRecoveryError) => {
+        this.resetRequestLoading.set(false);
+        const msg = err?.message ?? 'No se pudo enviar la solicitud.';
+        this.errorMessage = msg;
+        this.toast.error(msg, 'Recuperación');
       },
     });
   }
 
   confirmarReset(): void {
     this.resetMessage = null;
+    this.errorMessage = null;
     if (this.resetConfirmForm.invalid) {
       this.resetConfirmForm.markAllAsTouched();
       return;
     }
-    const { token, newPassword } = this.resetConfirmForm.getRawValue();
-    this.authService.resetPassword({ token, newPassword }).subscribe({
+    const { token, newPassword, confirmPassword } = this.resetConfirmForm.getRawValue();
+    if (newPassword !== confirmPassword) {
+      this.errorMessage = 'Las contraseñas no coinciden.';
+      this.toast.error(this.errorMessage, 'Validación');
+      return;
+    }
+    this.resetConfirmLoading.set(true);
+    this.passwordRecovery.confirmNewPassword(token, newPassword).subscribe({
       next: (res) => {
+        this.resetConfirmLoading.set(false);
         this.resetMessage = res.message;
-        this.toast.success('Contraseña restablecida correctamente. Inicia sesión.', 'Contraseña restablecida');
+        this.recoveryStep.set(1);
+        this.resetRequestForm.reset();
+        this.resetConfirmForm.reset();
+        this.showReset = false;
+        this.toast.success(res.message, 'Contraseña actualizada');
       },
-      error: (err) => {
-        this.errorMessage = err?.error?.error || 'No se pudo restablecer la contraseña';
-        this.toast.error(this.errorMessage!, 'Error');
+      error: (err: PasswordRecoveryError) => {
+        this.resetConfirmLoading.set(false);
+        const msg = err?.message ?? 'No se pudo actualizar la contraseña.';
+        this.errorMessage = msg;
+        this.toast.error(msg, 'Recuperación');
       },
     });
   }
