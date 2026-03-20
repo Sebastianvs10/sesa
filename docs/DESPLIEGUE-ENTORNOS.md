@@ -13,6 +13,8 @@ Dominio de producción: **appsesa.online** (front: `https://appsesa.online` y va
 
 **Vercel:** enlaza DNS **appsesa.online** (o **app.appsesa.online**) al proyecto. Build Command: `npm run build`. **Output:** `dist/sesa-salud/browser`.
 
+**URL del API en el build:** el script `prebuild` usa por defecto `https://sesa-api.onrender.com/api` (o `SESA_API_URL` / `SESAAPI_URL` si está definida en Vercel). En **Render**, `SESA_CORS_ALLOWED_ORIGINS` debe incluir el **origen exacto** del front (ej. `https://tu-app.vercel.app` o la URL larga de preview `https://….vercel.app`), sin barra final. Cada preview de Vercel tiene URL distinta: hay que añadirla en CORS o usar un dominio fijo.
+
 ## Backend (`sesa-backend`)
 
 | Entorno | Perfil | Archivo principal |

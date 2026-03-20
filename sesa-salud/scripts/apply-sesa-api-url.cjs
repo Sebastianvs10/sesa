@@ -10,8 +10,8 @@ const path = require('path');
 const outFile = path.join(__dirname, '../src/environments/deploy-api-url.generated.ts');
 const fromEnv =
   process.env.SESA_API_URL || process.env.SESAAPI_URL || process.env.SESAAPIURL;
-/** API en subdominio del mismo dominio de producción appsesa.online */
-const defaultUrl = 'https://api.appsesa.online/api';
+// Por defecto API desplegada (Render). Override: SESA_API_URL para api.appsesa.online u otro host.
+const defaultUrl = 'https://sesa-api.onrender.com/api';
 const apiUrl = (fromEnv && String(fromEnv).trim()) || defaultUrl;
 
 const content = `/**
