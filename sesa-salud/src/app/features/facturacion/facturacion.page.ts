@@ -3,7 +3,7 @@
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
@@ -31,6 +31,7 @@ import { RadicacionRequestDto, RadicacionService } from '../../core/services/rad
 
 type EstadoFactura = 'PENDIENTE' | 'EN_PROCESO' | 'PAGADA' | 'RECHAZADA' | 'ANULADA';
 type PanelMode = 'crear' | 'rips' | 'radicacion' | 'trazabilidad';
+type FacTab = 'resumen' | 'facturas' | 'ordenes' | 'exportar';
 
 @Component({
   standalone: true,
@@ -38,6 +39,7 @@ type PanelMode = 'crear' | 'rips' | 'radicacion' | 'trazabilidad';
   imports: [CommonModule, FormsModule, RouterLink, SesaCardComponent, SesaSkeletonComponent, CurrencyPipe, DatePipe],
   templateUrl: './facturacion.page.html',
   styleUrl: './facturacion.page.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FacturacionPageComponent implements OnInit {
   private readonly facturaService = inject(FacturaService);
@@ -46,6 +48,16 @@ export class FacturacionPageComponent implements OnInit {
   private readonly radicacionService = inject(RadicacionService);
   private readonly toast = inject(SesaToastService);
   private readonly confirm = inject(SesaConfirmDialogService);
+
+  /* ── Navegación por tabs ──────────────────────────────────── */
+  activeTab = signal<FacTab>('resumen');
+
+  /** Número de alertas activas para el badge del tab Resumen. */
+  alertCount = computed(() => {
+    const a = this.alertas();
+    if (!a) return 0;
+    return (a.alertas?.length ?? 0) + (a.totalGlosasPendientes > 0 ? 1 : 0);
+  });
 
   /* ── Estado principal ─────────────────────────────────────── */
   pacientes = signal<PacienteDto[]>([]);

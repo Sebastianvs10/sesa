@@ -90,6 +90,7 @@ public class OrdenClinica {
 
     @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("ordenItemIndex ASC")
+    @org.hibernate.annotations.BatchSize(size = 30)
     @Builder.Default
     private List<OrdenClinicaItem> items = new ArrayList<>();
 

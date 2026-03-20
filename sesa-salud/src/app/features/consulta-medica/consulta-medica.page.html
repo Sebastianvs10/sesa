@@ -1,6 +1,51 @@
 <div class="cm-page">
 
   <!-- ════════════════════════════════════════════════════════════════════
+       TOOLBAR — encabezado sticky con identidad y acciones
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="cm-toolbar">
+    <div class="cm-toolbar__brand">
+      <div class="cm-toolbar__icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.3.3 0 1 0 .2.3"/>
+          <path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/>
+          <circle cx="20" cy="10" r="2"/>
+        </svg>
+      </div>
+      <div class="cm-toolbar__meta">
+        <h1 class="cm-toolbar__title">Consulta Médica</h1>
+        <span class="cm-toolbar__date">{{ formatFechaDisplay() }}</span>
+      </div>
+      @if (citasFiltradas().length > 0) {
+        <span class="cm-toolbar__count">{{ citasFiltradas().length }} cita{{ citasFiltradas().length !== 1 ? 's' : '' }}</span>
+      }
+    </div>
+
+    <div class="cm-toolbar__actions">
+      <div class="cm-search">
+        <fa-icon [icon]="faSearch" class="cm-search__icon"></fa-icon>
+        <input
+          class="cm-search__input"
+          type="text"
+          placeholder="Buscar paciente, documento, servicio…"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          aria-label="Buscar en consultas"
+        />
+      </div>
+      <button class="cm-toolbar-btn" (click)="cargarCitas()" title="Recargar consultas" aria-label="Recargar">
+        <fa-icon [icon]="faRotateRight"></fa-icon>
+      </button>
+      <button class="cm-toolbar-btn" (click)="imprimirListado()" title="Imprimir listado" aria-label="Imprimir">
+        <fa-icon [icon]="faPrint"></fa-icon>
+      </button>
+      <button class="cm-toolbar-btn" (click)="exportarExcel()" title="Exportar a Excel" aria-label="Exportar Excel">
+        <fa-icon [icon]="faFileExcel"></fa-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
        ALERTA DE CITAS PRÓXIMAS (≤ 15 min)
   ════════════════════════════════════════════════════════════════════════ -->
   @if (citasProximas().length > 0) {
@@ -8,7 +53,7 @@
       <fa-icon [icon]="faBell" class="cm-alert-proximas__icon"></fa-icon>
       <span>
         <strong>{{ citasProximas().length }} cita{{ citasProximas().length > 1 ? 's' : '' }}</strong>
-        próxima{{ citasProximas().length > 1 ? 's' : '' }} en los siguientes 15 minutos:
+        próxima{{ citasProximas().length > 1 ? 's' : '' }} en los próximos 15 min:
         @for (c of citasProximas(); track c.id) {
           <span class="cm-alert-proximas__nombre">{{ c.pacienteNombreCompleto }} ({{ formatHora(c.fechaHora) }})</span>
         }
@@ -17,351 +62,321 @@
   }
 
   <!-- ════════════════════════════════════════════════════════════════════
-       LAYOUT PRINCIPAL: izquierda (calendario + filtros) | derecha (citas)
+       LAYOUT PRINCIPAL: sidebar (izquierda) | contenido (derecha)
   ════════════════════════════════════════════════════════════════════════ -->
-  <div class="cm-layout">
+  <div class="cm-body">
+    <div class="cm-layout">
 
-    <!-- ─── PANEL IZQUIERDO ─────────────────────────────────────────── -->
-    <aside class="cm-sidebar">
+      <!-- ─── SIDEBAR ─────────────────────────────────────────────── -->
+      <aside class="cm-sidebar">
 
-      <!-- Reloj del día -->
-      <div class="cm-clock">
-        <span class="cm-clock__time">{{ horaActual() }}</span>
-        <span class="cm-clock__date">{{ formatFechaDisplay() }}</span>
-        @if (!esHoy()) {
-          <button class="cm-btn cm-btn--ghost cm-btn--sm" (click)="irHoy()">
-            Volver a hoy
-          </button>
-        }
-      </div>
-
-      <!-- Mini calendario -->
-      <div class="cm-calendar-wrap">
-        <sesa-calendar
-          [selectedDate]="selectedDateStr()"
-          (dateSelected)="onDateSelected($event)"
-        />
-      </div>
-
-      <!-- Filtro por profesional (solo ADMIN / SUPERADMIN) -->
-      @if (isAdmin()) {
-        <div class="cm-prof-filter">
-          <div class="cm-prof-filter__title">
-            <fa-icon [icon]="faFilter"></fa-icon>
-            Filtrar por profesional
-          </div>
-          <div class="cm-prof-chips">
-            <button
-              class="cm-chip"
-              [class.cm-chip--active]="selectedProfesionalId() === null"
-              (click)="seleccionarProfesional(null)"
-            >Todos</button>
-            @for (p of profesionales(); track p.id) {
-              <button
-                class="cm-chip"
-                [class.cm-chip--active]="selectedProfesionalId() === p.id"
-                (click)="seleccionarProfesional(p.id)"
-                [title]="nombreRol(p.rol)"
-              >
-                {{ p.nombre }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Filtro por estado -->
-      <div class="cm-estado-filter">
-        <div class="cm-prof-filter__title">
-          <fa-icon [icon]="faFilter"></fa-icon>
-          Estado
-        </div>
-        <div class="cm-prof-chips">
-          <button class="cm-chip" [class.cm-chip--active]="selectedEstadoFiltro() === ''" (click)="selectedEstadoFiltro.set('')">Todos</button>
-          <button class="cm-chip cm-chip--agendada" [class.cm-chip--active]="selectedEstadoFiltro() === 'AGENDADA'" (click)="selectedEstadoFiltro.set('AGENDADA')">Agendadas</button>
-          <button class="cm-chip cm-chip--atendida" [class.cm-chip--active]="selectedEstadoFiltro() === 'ATENDIDA'" (click)="selectedEstadoFiltro.set('ATENDIDA')">Atendidas</button>
-          <button class="cm-chip cm-chip--cancelada" [class.cm-chip--active]="selectedEstadoFiltro() === 'CANCELADA'" (click)="selectedEstadoFiltro.set('CANCELADA')">Canceladas</button>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- ─── PANEL DERECHO ─────────────────────────────────────────────── -->
-    <section class="cm-main">
-
-      <!-- ENCABEZADO con buscador y acciones -->
-      <div class="cm-header">
-        <div class="cm-header__left">
-          <h1 class="cm-header__title">
-            <fa-icon [icon]="faStethoscope"></fa-icon>
-            Consulta Médica
-          </h1>
-          <span class="cm-header__sub">{{ formatFechaDisplay() }}</span>
-        </div>
-        <div class="cm-header__right">
-          <div class="cm-search">
-            <fa-icon [icon]="faSearch" class="cm-search__icon"></fa-icon>
-            <input
-              class="cm-search__input"
-              type="text"
-              placeholder="Buscar paciente, documento, servicio…"
-              [value]="searchQuery()"
-              (input)="searchQuery.set($any($event.target).value)"
-              aria-label="Buscar en consultas"
-            />
-          </div>
-          <button class="cm-btn cm-btn--ghost" (click)="cargarCitas()" title="Recargar">
-            <fa-icon [icon]="faRotateRight"></fa-icon>
-          </button>
-          <button class="cm-btn cm-btn--ghost" (click)="imprimirListado()" title="Imprimir">
-            <fa-icon [icon]="faPrint"></fa-icon>
-          </button>
-          <button class="cm-btn cm-btn--ghost" (click)="exportarExcel()" title="Exportar Excel">
-            <fa-icon [icon]="faFileExcel"></fa-icon>
-          </button>
-        </div>
-      </div>
-
-      <!-- TARJETAS DE MÉTRICAS -->
-      <div class="cm-stats">
-        <div class="cm-stat-card">
-          <span class="cm-stat-card__val">{{ totalCitas() }}</span>
-          <span class="cm-stat-card__lbl">Total del día</span>
-        </div>
-        <div class="cm-stat-card cm-stat-card--agendada">
-          <span class="cm-stat-card__val">{{ agendadas() }}</span>
-          <span class="cm-stat-card__lbl">Pendientes</span>
-        </div>
-        <div class="cm-stat-card cm-stat-card--atendida">
-          <span class="cm-stat-card__val">{{ atendidas() }}</span>
-          <span class="cm-stat-card__lbl">Atendidas</span>
-        </div>
-        <div class="cm-stat-card cm-stat-card--pct">
-          <span class="cm-stat-card__val">{{ pctAsistencia() }}%</span>
-          <span class="cm-stat-card__lbl">Asistencia</span>
-          <div class="cm-stat-card__bar">
-            <div class="cm-stat-card__bar-fill" [style.width.%]="pctAsistencia()"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ESTADO DE CARGA -->
-      @if (loading()) {
-        <div class="cm-loading">
-          <div class="cm-spinner"></div>
-          <span>Cargando consultas…</span>
-        </div>
-      }
-
-      <!-- ESTADO VACÍO -->
-      @if (!loading() && citasFiltradas().length === 0) {
-        <div class="cm-empty">
-          <fa-icon [icon]="faCalendarDays" class="cm-empty__icon"></fa-icon>
-          <p class="cm-empty__title">
-            @if (searchQuery() || selectedEstadoFiltro()) {
-              Sin resultados para el filtro aplicado
-            } @else {
-              No hay consultas agendadas para este día
-            }
-          </p>
-          <p class="cm-empty__sub">Selecciona otra fecha en el calendario</p>
-        </div>
-      }
-
-      <!-- LISTADO DE CITAS -->
-      @if (!loading() && citasFiltradas().length > 0) {
-        <div class="cm-list" role="list">
-          @for (cita of citasFiltradas(); track cita.id; let i = $index) {
-            <article
-              class="cm-card"
-              [class.cm-card--proxima]="esProxima(cita)"
-              role="listitem"
-            >
-              <!-- Acento lateral de color según estado -->
-              <div class="cm-card__accent" [ngClass]="getCardAccentClass(cita.estado)"></div>
-
-              <!-- CABECERA DE LA TARJETA: hora + nombre + badge estado -->
-              <div class="cm-card__head">
-                <div class="cm-card__hora-wrap">
-                  <fa-icon [icon]="faClock" class="cm-card__hora-icon"></fa-icon>
-                  <span class="cm-card__hora">{{ formatHora(cita.fechaHora) }}</span>
-                  @if (esProxima(cita)) {
-                    <span class="cm-card__proxima-badge">
-                      <fa-icon [icon]="faBell"></fa-icon>
-                      Próxima
-                    </span>
-                  }
-                </div>
-                <div class="cm-card__nombre-wrap">
-                  <h2 class="cm-card__nombre">{{ cita.pacienteNombreCompleto }}</h2>
-                  <span class="cm-card__servicio">{{ cita.servicio }}</span>
-                </div>
-                <span class="cm-badge" [ngClass]="getEstadoBadgeClass(cita.estado)">
-                  {{ cita.estado }}
-                </span>
-              </div>
-
-              <!-- CUERPO: info del paciente -->
-              <div class="cm-card__body">
-
-                <div class="cm-card__info-grid">
-                  <!-- Documento -->
-                  <div class="cm-card__info-item">
-                    <fa-icon [icon]="faIdCard" class="cm-card__info-icon"></fa-icon>
-                    <span>{{ tipoDocLabel(cita.pacienteTipoDocumento) }} {{ cita.pacienteDocumento }}</span>
-                  </div>
-
-                  <!-- Edad y Sexo -->
-                  @if (cita.pacienteEdad || cita.pacienteSexo) {
-                    <div class="cm-card__info-item">
-                      <fa-icon [icon]="faUser" class="cm-card__info-icon"></fa-icon>
-                      <span>
-                        @if (cita.pacienteEdad) { {{ cita.pacienteEdad }} años }
-                        @if (cita.pacienteEdad && cita.pacienteSexo) { · }
-                        @if (cita.pacienteSexo) { {{ cita.pacienteSexo }} }
-                        @if (cita.pacienteGrupoSanguineo) { · {{ cita.pacienteGrupoSanguineo }} }
-                      </span>
-                    </div>
-                  }
-
-                  <!-- Teléfono -->
-                  @if (cita.pacienteTelefono) {
-                    <div class="cm-card__info-item">
-                      <fa-icon [icon]="faPhone" class="cm-card__info-icon"></fa-icon>
-                      <span>{{ cita.pacienteTelefono }}</span>
-                    </div>
-                  }
-
-                  <!-- EPS -->
-                  @if (cita.pacienteEps) {
-                    <div class="cm-card__info-item">
-                      <fa-icon [icon]="faHospital" class="cm-card__info-icon"></fa-icon>
-                      <span>{{ cita.pacienteEps }}</span>
-                    </div>
-                  }
-
-                  <!-- Última atención -->
-                  @if (cita.ultimaAtencion) {
-                    <div class="cm-card__info-item">
-                      <fa-icon [icon]="faFileMedical" class="cm-card__info-icon"></fa-icon>
-                      <span>Última atención: {{ formatFechaCorta(cita.ultimaAtencion) }}</span>
-                    </div>
-                  }
-
-                  <!-- Profesional (solo admin) -->
-                  @if (isAdmin() && selectedProfesionalId() === null) {
-                    <div class="cm-card__info-item">
-                      <fa-icon [icon]="faStethoscope" class="cm-card__info-icon"></fa-icon>
-                      <span>{{ cita.profesionalNombre }} · {{ nombreRol(cita.profesionalRol) }}</span>
-                    </div>
-                  }
-                </div>
-
-                <!-- ALERTAS / INDICADORES CLÍNICOS -->
-                <div class="cm-card__alerts">
-                  @if (!cita.tieneHistoriaClinica) {
-                    <span class="cm-card__alert cm-card__alert--warn" title="Sin Historia Clínica registrada">
-                      <fa-icon [icon]="faExclamationTriangle"></fa-icon>
-                      Sin HC
-                    </span>
-                  } @else {
-                    <span class="cm-card__alert cm-card__alert--ok" title="Tiene Historia Clínica">
-                      <fa-icon [icon]="faCheckCircle"></fa-icon>
-                      HC
-                    </span>
-                  }
-                  @if (cita.tieneFacturasPendientes) {
-                    <span class="cm-card__alert cm-card__alert--danger" title="Tiene facturas pendientes de pago">
-                      <fa-icon [icon]="faMoneyBillWave"></fa-icon>
-                      Fac. pendiente
-                    </span>
-                  }
-                </div>
-
-                <!-- Nota de cancelación si aplica -->
-                @if (cita.estado === 'CANCELADA' && cita.motivoCancelacion) {
-                  <div class="cm-card__cancel-note">
-                    <fa-icon [icon]="faTimesCircle"></fa-icon>
-                    Motivo: {{ cita.motivoCancelacion }}
-                  </div>
-                }
-              </div>
-
-              <!-- PIE DE LA TARJETA: acciones -->
-              <div class="cm-card__actions">
-                <button
-                  class="cm-btn cm-btn--primary cm-btn--sm"
-                  (click)="irAHistoriaClinica(cita)"
-                  title="Abrir Historia Clínica del paciente"
-                >
-                  <fa-icon [icon]="faFileAlt"></fa-icon>
-                  Historia Clínica
-                </button>
-
-                @if (cita.estado === 'AGENDADA') {
-                  <button
-                    class="cm-btn cm-btn--success cm-btn--sm"
-                    (click)="marcarAtendida(cita)"
-                    title="Marcar como atendida"
-                  >
-                    <fa-icon [icon]="faCheckCircle"></fa-icon>
-                    Atendida
-                  </button>
-
-                  <button
-                    class="cm-btn cm-btn--danger cm-btn--sm"
-                    (click)="abrirCancelModal(cita)"
-                    title="Cancelar cita"
-                  >
-                    <fa-icon [icon]="faTimesCircle"></fa-icon>
-                    Cancelar
-                  </button>
-                }
-
-                <button
-                  class="cm-btn cm-btn--ghost cm-btn--sm"
-                  (click)="verDetalle(cita)"
-                  title="Ver detalles del paciente"
-                >
-                  <fa-icon [icon]="faCircleInfo"></fa-icon>
-                  Detalles
-                </button>
-
-                <button
-                  class="cm-btn cm-btn--ghost cm-btn--sm"
-                  (click)="generarFactura(cita)"
-                  title="Generar factura"
-                >
-                  <fa-icon [icon]="faNotesMedical"></fa-icon>
-                  Factura
-                </button>
-
-                <button
-                  type="button"
-                  class="cm-btn cm-btn--primary cm-btn--sm"
-                  (click)="iniciarVideoconsulta(cita)"
-                  title="Iniciar videoconsulta WebRTC"
-                >
-                  <fa-icon [icon]="faVideo"></fa-icon>
-                  Videoconsulta
-                </button>
-
-                <button
-                  class="cm-btn cm-btn--ghost cm-btn--sm"
-                  (click)="abrirRecetaElectronica(cita)"
-                  title="Emitir receta electrónica con QR verificable"
-                >
-                  <fa-icon [icon]="faFilePrescription"></fa-icon>
-                  Receta QR
-                </button>
-              </div>
-
-            </article>
+        <!-- Reloj del día -->
+        <div class="cm-clock">
+          <span class="cm-clock__time">{{ horaActual() }}</span>
+          <span class="cm-clock__date">{{ formatFechaDisplay() }}</span>
+          @if (!esHoy()) {
+            <button class="cm-btn cm-btn--ghost cm-btn--sm" (click)="irHoy()">
+              Volver a hoy
+            </button>
           }
         </div>
-      }
 
-    </section>
+        <!-- Mini calendario -->
+        <div class="cm-calendar-wrap">
+          <sesa-calendar
+            [selectedDate]="selectedDateStr()"
+            (dateSelected)="onDateSelected($event)"
+          />
+        </div>
+
+        <!-- Filtros -->
+        <div class="cm-sidebar-filters">
+
+          <!-- Filtro por profesional (solo ADMIN / SUPERADMIN) -->
+          @if (isAdmin()) {
+            <div class="cm-filter-group">
+              <div class="cm-filter-group__label">
+                <fa-icon [icon]="faFilter"></fa-icon>
+                Profesional
+              </div>
+              <div class="cm-chips">
+                <button
+                  class="cm-chip"
+                  [class.cm-chip--active]="selectedProfesionalId() === null"
+                  (click)="seleccionarProfesional(null)"
+                >Todos</button>
+                @for (p of profesionales(); track p.id) {
+                  <button
+                    class="cm-chip"
+                    [class.cm-chip--active]="selectedProfesionalId() === p.id"
+                    (click)="seleccionarProfesional(p.id)"
+                    [title]="nombreRol(p.rol)"
+                  >{{ p.nombre }}</button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Filtro por estado -->
+          <div class="cm-filter-group">
+            <div class="cm-filter-group__label">
+              <fa-icon [icon]="faFilter"></fa-icon>
+              Estado
+            </div>
+            <div class="cm-chips">
+              <button class="cm-chip" [class.cm-chip--active]="selectedEstadoFiltro() === ''" (click)="selectedEstadoFiltro.set('')">Todos</button>
+              <button class="cm-chip cm-chip--agendada" [class.cm-chip--active]="selectedEstadoFiltro() === 'AGENDADA'" (click)="selectedEstadoFiltro.set('AGENDADA')">Agendadas</button>
+              <button class="cm-chip cm-chip--atendida" [class.cm-chip--active]="selectedEstadoFiltro() === 'ATENDIDA'" (click)="selectedEstadoFiltro.set('ATENDIDA')">Atendidas</button>
+              <button class="cm-chip cm-chip--cancelada" [class.cm-chip--active]="selectedEstadoFiltro() === 'CANCELADA'" (click)="selectedEstadoFiltro.set('CANCELADA')">Canceladas</button>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- ─── CONTENIDO PRINCIPAL ──────────────────────────────────── -->
+      <section class="cm-main">
+
+        <!-- KPIs del día -->
+        <div class="cm-stats">
+          <div class="cm-stat-card cm-stat-card--total">
+            <div class="cm-stat-card__icon" aria-hidden="true">
+              <fa-icon [icon]="faCalendarDays"></fa-icon>
+            </div>
+            <div class="cm-stat-card__data">
+              <span class="cm-stat-card__val">{{ totalCitas() }}</span>
+              <span class="cm-stat-card__lbl">Total del día</span>
+            </div>
+          </div>
+
+          <div class="cm-stat-card cm-stat-card--agendada">
+            <div class="cm-stat-card__icon" aria-hidden="true">
+              <fa-icon [icon]="faClock"></fa-icon>
+            </div>
+            <div class="cm-stat-card__data">
+              <span class="cm-stat-card__val">{{ agendadas() }}</span>
+              <span class="cm-stat-card__lbl">Pendientes</span>
+            </div>
+          </div>
+
+          <div class="cm-stat-card cm-stat-card--atendida">
+            <div class="cm-stat-card__icon" aria-hidden="true">
+              <fa-icon [icon]="faCheckCircle"></fa-icon>
+            </div>
+            <div class="cm-stat-card__data">
+              <span class="cm-stat-card__val">{{ atendidas() }}</span>
+              <span class="cm-stat-card__lbl">Atendidas</span>
+            </div>
+          </div>
+
+          <div class="cm-stat-card cm-stat-card--pct">
+            <div class="cm-stat-card__icon" aria-hidden="true">
+              <fa-icon [icon]="faStethoscope"></fa-icon>
+            </div>
+            <div class="cm-stat-card__data">
+              <span class="cm-stat-card__val">{{ pctAsistencia() }}%</span>
+              <span class="cm-stat-card__lbl">Asistencia</span>
+              <div class="cm-stat-card__bar">
+                <div class="cm-stat-card__bar-fill" [style.width.%]="pctAsistencia()"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESTADO DE CARGA -->
+        @if (loading()) {
+          <div class="cm-loading">
+            <div class="cm-spinner"></div>
+            <span>Cargando consultas…</span>
+          </div>
+        }
+
+        <!-- ESTADO VACÍO -->
+        @if (!loading() && citasFiltradas().length === 0) {
+          <div class="cm-empty">
+            <div class="cm-empty__icon-wrap" aria-hidden="true">
+              <fa-icon [icon]="faCalendarDays"></fa-icon>
+            </div>
+            <p class="cm-empty__title">
+              @if (searchQuery() || selectedEstadoFiltro()) {
+                Sin resultados para el filtro aplicado
+              } @else {
+                No hay consultas agendadas para este día
+              }
+            </p>
+            <p class="cm-empty__sub">Selecciona otra fecha en el calendario lateral</p>
+          </div>
+        }
+
+        <!-- LISTADO DE CITAS -->
+        @if (!loading() && citasFiltradas().length > 0) {
+          <div class="cm-list" role="list">
+            @for (cita of citasFiltradas(); track cita.id) {
+              <article
+                class="cm-card"
+                [class.cm-card--proxima]="esProxima(cita)"
+                [class.cm-card--atendida]="cita.estado === 'ATENDIDA'"
+                [class.cm-card--cancelada]="cita.estado === 'CANCELADA'"
+                role="listitem"
+              >
+                <!-- Acento lateral semántico -->
+                <div class="cm-card__accent" [ngClass]="getCardAccentClass(cita.estado)"></div>
+
+                <!-- CABECERA -->
+                <div class="cm-card__head">
+                  <!-- Columna hora -->
+                  <div class="cm-card__hora-col">
+                    <span class="cm-card__hora">{{ formatHora(cita.fechaHora) }}</span>
+                    @if (esProxima(cita)) {
+                      <span class="cm-card__proxima-badge" aria-label="Próxima cita">
+                        <fa-icon [icon]="faBell"></fa-icon>
+                        Próxima
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Columna paciente -->
+                  <div class="cm-card__patient-col">
+                    <h2 class="cm-card__nombre">{{ cita.pacienteNombreCompleto }}</h2>
+                    <div class="cm-card__meta-row">
+                      <span class="cm-card__servicio">{{ cita.servicio }}</span>
+                      @if (!cita.tieneHistoriaClinica) {
+                        <span class="cm-card__pill cm-card__pill--warn" title="Sin Historia Clínica registrada">Sin HC</span>
+                      }
+                      @if (cita.tieneFacturasPendientes) {
+                        <span class="cm-card__pill cm-card__pill--danger" title="Facturas pendientes de pago">Fac. pendiente</span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Badge de estado -->
+                  <span class="cm-badge" [ngClass]="getEstadoBadgeClass(cita.estado)">
+                    <span class="cm-badge__dot"></span>
+                    {{ estadoLabel(cita.estado) }}
+                  </span>
+                </div>
+
+                <!-- INFORMACIÓN DEL PACIENTE -->
+                <div class="cm-card__body">
+                  <div class="cm-card__info-grid">
+
+                    <div class="cm-card__info-item">
+                      <fa-icon [icon]="faIdCard" class="cm-card__info-icon"></fa-icon>
+                      <span>{{ tipoDocLabel(cita.pacienteTipoDocumento) }} {{ cita.pacienteDocumento }}</span>
+                    </div>
+
+                    @if (cita.pacienteEdad || cita.pacienteSexo) {
+                      <div class="cm-card__info-item">
+                        <fa-icon [icon]="faUser" class="cm-card__info-icon"></fa-icon>
+                        <span>
+                          @if (cita.pacienteEdad) { {{ cita.pacienteEdad }} años }
+                          @if (cita.pacienteEdad && cita.pacienteSexo) { · }
+                          @if (cita.pacienteSexo) { {{ cita.pacienteSexo }} }
+                          @if (cita.pacienteGrupoSanguineo) { · {{ cita.pacienteGrupoSanguineo }} }
+                        </span>
+                      </div>
+                    }
+
+                    @if (cita.pacienteTelefono) {
+                      <div class="cm-card__info-item">
+                        <fa-icon [icon]="faPhone" class="cm-card__info-icon"></fa-icon>
+                        <span>{{ cita.pacienteTelefono }}</span>
+                      </div>
+                    }
+
+                    @if (cita.pacienteEps) {
+                      <div class="cm-card__info-item">
+                        <fa-icon [icon]="faHospital" class="cm-card__info-icon"></fa-icon>
+                        <span>{{ cita.pacienteEps }}</span>
+                      </div>
+                    }
+
+                    @if (cita.ultimaAtencion) {
+                      <div class="cm-card__info-item">
+                        <fa-icon [icon]="faFileMedical" class="cm-card__info-icon"></fa-icon>
+                        <span>Última atención: {{ formatFechaCorta(cita.ultimaAtencion) }}</span>
+                      </div>
+                    }
+
+                    @if (isAdmin() && selectedProfesionalId() === null) {
+                      <div class="cm-card__info-item">
+                        <fa-icon [icon]="faStethoscope" class="cm-card__info-icon"></fa-icon>
+                        <span>{{ cita.profesionalNombre }} · {{ nombreRol(cita.profesionalRol) }}</span>
+                      </div>
+                    }
+
+                  </div>
+
+                  <!-- Nota de cancelación -->
+                  @if (cita.estado === 'CANCELADA' && cita.motivoCancelacion) {
+                    <div class="cm-card__cancel-note">
+                      <fa-icon [icon]="faTimesCircle"></fa-icon>
+                      Motivo: {{ cita.motivoCancelacion }}
+                    </div>
+                  }
+                </div>
+
+                <!-- ACCIONES: dos filas según jerarquía -->
+                <div class="cm-card__actions">
+                  <!-- Primarias: acción clínica principal + estado -->
+                  <div class="cm-card__actions-primary">
+                    <button
+                      class="cm-btn cm-btn--primary cm-btn--sm"
+                      (click)="irAHistoriaClinica(cita)"
+                      title="Abrir Historia Clínica"
+                    >
+                      <fa-icon [icon]="faFileAlt"></fa-icon>
+                      Historia Clínica
+                    </button>
+
+                    @if (cita.estado === 'AGENDADA') {
+                      <button
+                        class="cm-btn cm-btn--success cm-btn--sm"
+                        (click)="marcarAtendida(cita)"
+                        title="Marcar cita como atendida"
+                      >
+                        <fa-icon [icon]="faCheckCircle"></fa-icon>
+                        Atendida
+                      </button>
+                      <button
+                        class="cm-btn cm-btn--danger cm-btn--sm"
+                        (click)="abrirCancelModal(cita)"
+                        title="Cancelar esta cita"
+                      >
+                        <fa-icon [icon]="faTimesCircle"></fa-icon>
+                        Cancelar
+                      </button>
+                    }
+                  </div>
+
+                  <!-- Secundarias: acciones de soporte -->
+                  <div class="cm-card__actions-secondary">
+                    <button class="cm-btn cm-btn--ghost cm-btn--xs" (click)="verDetalle(cita)" title="Ver detalles completos">
+                      <fa-icon [icon]="faCircleInfo"></fa-icon>
+                      Detalles
+                    </button>
+                    <button class="cm-btn cm-btn--ghost cm-btn--xs" (click)="generarFactura(cita)" title="Ir a facturación">
+                      <fa-icon [icon]="faNotesMedical"></fa-icon>
+                      Factura
+                    </button>
+                    <button class="cm-btn cm-btn--ghost cm-btn--xs" (click)="iniciarVideoconsulta(cita)" title="Iniciar videoconsulta">
+                      <fa-icon [icon]="faVideo"></fa-icon>
+                      Videoconsulta
+                    </button>
+                    <button class="cm-btn cm-btn--ghost cm-btn--xs" (click)="abrirRecetaElectronica(cita)" title="Emitir receta electrónica con QR">
+                      <fa-icon [icon]="faFilePrescription"></fa-icon>
+                      Receta QR
+                    </button>
+                  </div>
+                </div>
+
+              </article>
+            }
+          </div>
+        }
+
+      </section>
+    </div>
   </div>
 
 </div>
@@ -446,6 +461,7 @@
             </div>
           </div>
         </div>
+
         <div class="cm-detalle-section">
           <h4 class="cm-detalle-section__title">Información de la cita</h4>
           <div class="cm-detalle-grid">
@@ -459,7 +475,10 @@
             </div>
             <div class="cm-detalle-item">
               <span class="cm-detalle-item__lbl">Estado</span>
-              <span class="cm-badge" [ngClass]="getEstadoBadgeClass(c.estado)">{{ c.estado }}</span>
+              <span class="cm-badge" [ngClass]="getEstadoBadgeClass(c.estado)">
+                <span class="cm-badge__dot"></span>
+                {{ estadoLabel(c.estado) }}
+              </span>
             </div>
             <div class="cm-detalle-item">
               <span class="cm-detalle-item__lbl">Profesional</span>
@@ -471,12 +490,14 @@
             </div>
           </div>
         </div>
+
         @if (c.notas) {
           <div class="cm-detalle-section">
             <h4 class="cm-detalle-section__title">Notas de la cita</h4>
             <p class="cm-detalle-notas">{{ c.notas }}</p>
           </div>
         }
+
         <div class="cm-detalle-alerts">
           <div class="cm-detalle-alert-item" [class.cm-detalle-alert-item--ok]="c.tieneHistoriaClinica" [class.cm-detalle-alert-item--warn]="!c.tieneHistoriaClinica">
             <fa-icon [icon]="c.tieneHistoriaClinica ? faCheckCircle : faExclamationTriangle"></fa-icon>

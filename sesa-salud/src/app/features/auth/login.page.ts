@@ -14,11 +14,12 @@ import { EmpresaCurrentService } from '../../core/services/empresa-current.servi
 import { PermissionsService } from '../../core/services/permissions.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaLoginRolePickerComponent } from '../../shared/components/sesa-login-role-picker/sesa-login-role-picker.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-login-page',
-  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule, SesaFormFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule, SesaFormFieldComponent, SesaLoginRolePickerComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -27,6 +28,12 @@ export class LoginPageComponent implements OnInit {
   resetRequestForm: FormGroup;
   resetConfirmForm: FormGroup;
   loading = signal(false);
+  /** Tras login multi-rol: modal de elección de perfil */
+  showRolePicker = signal(false);
+  rolePickerRoles = signal<string[]>([]);
+  rolePickerUserName = signal('');
+  rolePickerEmpresa = signal<string | undefined>(undefined);
+  rolePickerSuggested = signal<string | undefined>(undefined);
   errorMessage: string | null = null;
   resetMessage: string | null = null;
   showReset = false;
@@ -84,10 +91,17 @@ export class LoginPageComponent implements OnInit {
     this.authService.login({ email, password }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.empresaCurrent.load();
-        // Cargar módulos del rol activo (rol primario al iniciar sesión)
-        this.permissionsService.load(this.authService.rolActivo());
-        this.router.navigate(['/dashboard']);
+        const roles = this.authService.currentRoles();
+        if (roles.length > 1) {
+          const u = this.authService.currentUser();
+          this.rolePickerRoles.set([...roles]);
+          this.rolePickerUserName.set(u?.nombreCompleto ?? '');
+          this.rolePickerEmpresa.set(u?.empresaNombre);
+          this.rolePickerSuggested.set(u?.rolActivo ?? u?.role);
+          this.showRolePicker.set(true);
+          return;
+        }
+        this.finishLoginAndNavigate();
       },
       error: (err) => {
         this.loading.set(false);
@@ -101,6 +115,24 @@ export class LoginPageComponent implements OnInit {
         this.toast.error(this.errorMessage!, 'Error de acceso');
       },
     });
+  }
+
+  /** Después de elegir rol (o un solo rol): empresa + permisos + dashboard */
+  finishLoginAndNavigate(): void {
+    this.empresaCurrent.load();
+    this.permissionsService.load(this.authService.rolActivo());
+    this.router.navigate(['/dashboard']);
+  }
+
+  onRolePicked(rol: string): void {
+    this.authService.switchRole(rol);
+    this.showRolePicker.set(false);
+    this.finishLoginAndNavigate();
+  }
+
+  onRolePickerCancel(): void {
+    this.showRolePicker.set(false);
+    this.authService.logout();
   }
 
   togglePasswordVisibility(): void {

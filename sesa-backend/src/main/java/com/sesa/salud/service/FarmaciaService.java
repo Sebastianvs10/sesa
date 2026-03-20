@@ -5,12 +5,19 @@
 package com.sesa.salud.service;
 
 import com.sesa.salud.dto.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FarmaciaService {
-    List<FarmaciaMedicamentoDto> listMedicamentos(Pageable pageable);
+    Page<FarmaciaMedicamentoDto> listMedicamentos(String q, boolean soloStock, Pageable pageable);
+
+    FarmaciaIndicadoresDto indicadoresInventario();
+
+    Optional<FarmaciaMedicamentoDto> findMedicamentoPorCodigoBarras(String codigo);
+
     FarmaciaMedicamentoDto createMedicamento(FarmaciaMedicamentoRequestDto dto);
     FarmaciaMedicamentoDto updateMedicamento(Long id, FarmaciaMedicamentoRequestDto dto);
     void deleteMedicamento(Long id);
@@ -18,8 +25,6 @@ public interface FarmaciaService {
     List<FarmaciaDispensacionDto> listDispensacionesByPaciente(Long pacienteId, Pageable pageable);
     FarmaciaDispensacionDto dispensar(FarmaciaDispensacionRequestDto dto);
 
-    /** Órdenes clínicas tipo MEDICAMENTO pendientes o parciales de dispensar (para regente). */
-    List<OrdenFarmaciaPendienteDto> listOrdenesPendientes(Pageable pageable);
-    /** Dispensar una orden médica: varias líneas (medicamento, lote, cantidad); descuenta stock y vincula a la orden. */
+    Page<OrdenFarmaciaPendienteDto> listOrdenesPendientes(String q, Pageable pageable);
     List<FarmaciaDispensacionDto> dispensarOrden(DispensarOrdenRequestDto dto);
 }

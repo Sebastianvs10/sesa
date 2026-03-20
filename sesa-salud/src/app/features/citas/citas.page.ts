@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { SesaSkeletonComponent } from '../../shared/components/sesa-skeleton/sesa-skeleton.component';
 import { SesaEmptyStateComponent } from '../../shared/components/sesa-empty-state/sesa-empty-state.component';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
@@ -46,7 +45,6 @@ type WizardStep = 1 | 2 | 3;
   imports: [
     CommonModule,
     FormsModule,
-    SesaCardComponent,
     SesaSkeletonComponent,
     SesaEmptyStateComponent,
   ],
@@ -159,6 +157,14 @@ export class CitasPageComponent implements OnInit, OnDestroy {
   reprogramarDate       = '';
   reprogramarTime       = '';
   savingReprogramar     = signal(false);
+  normExpanded          = signal(false);   // acordeón campos normativos
+
+  /* ── Timeline ─────────────────────────────────────────────────────────── */
+  selectedCitaDetail = signal<CitaDto | null>(null);
+  agendaView         = signal<'table' | 'timeline'>('table');
+  readonly TL_SLOT_PX  = 40;    // px por slot de 30 min
+  readonly TL_START    = 7;     // 7:00
+  readonly TL_END      = 19;    // 19:00
 
   /* ── Computed ─────────────────────────────────────────────────────────── */
   citasListaFiltradas = computed(() => {
@@ -188,6 +194,68 @@ export class CitasPageComponent implements OnInit, OnDestroy {
            !!this.selectedProfesional() && !!this.selectedDay() && !!this.selectedSlot();
   });
 
+  listDateDisplay = computed(() => {
+    const d = new Date(this.listDate() + 'T00:00:00');
+    return d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  });
+
+  timelineCitasLayout = computed(() => {
+    const citas = this.citasListaFiltradas();
+    const getCitaEnd = (c: CitaDto) => {
+      if (!c.fechaHora) return new Date();
+      const start = new Date(c.fechaHora);
+      return new Date(start.getTime() + (c.duracionEstimadaMin ?? 30) * 60000);
+    };
+    return citas.map(c => {
+      const startC = c.fechaHora ? new Date(c.fechaHora) : new Date();
+      const endC   = getCitaEnd(c);
+      const overlapping = citas.filter(o => {
+        const s = o.fechaHora ? new Date(o.fechaHora) : new Date();
+        const e = getCitaEnd(o);
+        return startC < e && endC > s;
+      });
+      const col = overlapping.indexOf(c);
+      return { cita: c, col, totalCols: overlapping.length };
+    });
+  });
+
+  /** Profesionales únicos en las citas filtradas (para columnas del timeline). */
+  timelineProfesionales = computed(() => {
+    const seen = new Set<number>();
+    const result: { id: number; nombre: string }[] = [];
+    for (const c of this.citasListaFiltradas()) {
+      const id = c.profesionalId ?? 0;
+      if (!seen.has(id)) {
+        seen.add(id);
+        result.push({ id, nombre: c.profesionalNombre || 'Sin asignar' });
+      }
+    }
+    return result;
+  });
+
+  /** Layout de citas por profesional con manejo de solapamientos. */
+  citasLayoutByProfesional = computed(() => {
+    const map = new Map<number, { cita: CitaDto; col: number; totalCols: number }[]>();
+    const getCitaEnd = (c: CitaDto) => {
+      if (!c.fechaHora) return new Date();
+      const start = new Date(c.fechaHora);
+      return new Date(start.getTime() + (c.duracionEstimadaMin ?? 30) * 60000);
+    };
+    for (const prof of this.timelineProfesionales()) {
+      const profCitas = this.citasListaFiltradas().filter(c => (c.profesionalId ?? 0) === prof.id);
+      map.set(prof.id, profCitas.map(c => {
+        const startC = c.fechaHora ? new Date(c.fechaHora) : new Date();
+        const endC   = getCitaEnd(c);
+        const overlapping = profCitas.filter(o => {
+          const s = o.fechaHora ? new Date(o.fechaHora) : new Date();
+          return startC < getCitaEnd(o) && endC > s;
+        });
+        return { cita: c, col: overlapping.indexOf(c), totalCols: overlapping.length };
+      }));
+    }
+    return map;
+  });
+
   /* ─────────────────────────────────────────────────────────────────── */
   ngOnInit(): void {
     this._setupPatientSearch();
@@ -204,7 +272,10 @@ export class CitasPageComponent implements OnInit, OnDestroy {
   /* ── Tabs ─────────────────────────────────────────────────────────── */
   setTab(tab: CitaTab): void {
     this.activeTab.set(tab);
-    if (tab === 'lista') this.cargarCitasFecha(this.listDate());
+    if (tab === 'lista') {
+      this.cargarCitasFecha(this.listDate());
+      this.selectedCitaDetail.set(null);
+    }
   }
 
   /* ── Búsqueda de paciente ─────────────────────────────────────────── */
@@ -534,6 +605,7 @@ export class CitasPageComponent implements OnInit, OnDestroy {
   onListDateChange(fecha: string): void {
     this.listDate.set(fecha);
     this.cargarCitasFecha(fecha);
+    this.selectedCitaDetail.set(null);
   }
 
   /* ── Acciones sobre citas ─────────────────────────────────────────── */
@@ -704,6 +776,94 @@ export class CitasPageComponent implements OnInit, OnDestroy {
       { label: 'Tarde',   slots: all.filter(s => parseInt(s.time) >= 12 && parseInt(s.time) < 18) },
       { label: 'Noche',   slots: all.filter(s => parseInt(s.time) >= 18) },
     ].filter(g => g.slots.length > 0);
+  }
+
+  /* ── Timeline methods ─────────────────────────────────────────────── */
+  selectCitaDetail(cita: CitaDto): void {
+    this.selectedCitaDetail.set(
+      this.selectedCitaDetail()?.id === cita.id ? null : cita
+    );
+  }
+
+  closeCitaDetail(): void {
+    this.selectedCitaDetail.set(null);
+  }
+
+  citaTopPx(cita: CitaDto): number {
+    if (!cita.fechaHora) return 0;
+    const d = new Date(cita.fechaHora);
+    const mins = (d.getHours() - this.TL_START) * 60 + d.getMinutes();
+    return Math.max(0, (mins / 30) * this.TL_SLOT_PX);
+  }
+
+  citaHeightPx(cita: CitaDto): number {
+    const dur = cita.duracionEstimadaMin ?? 30;
+    return Math.max((dur / 30) * this.TL_SLOT_PX - 4, Math.round(this.TL_SLOT_PX * 0.65));
+  }
+
+  currentTimePx(): number {
+    const now = new Date();
+    const mins = (now.getHours() - this.TL_START) * 60 + now.getMinutes();
+    if (mins < 0 || mins > (this.TL_END - this.TL_START) * 60) return -1;
+    return (mins / 30) * this.TL_SLOT_PX;
+  }
+
+  isListDateToday(): boolean {
+    return this.listDate() === this._today();
+  }
+
+  private _dateToStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  prevDay(): void {
+    const d = new Date(this.listDate() + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    const str = this._dateToStr(d);
+    this.listDate.set(str);
+    this.cargarCitasFecha(str);
+    this.selectedCitaDetail.set(null);
+  }
+
+  nextDay(): void {
+    const d = new Date(this.listDate() + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const str = this._dateToStr(d);
+    this.listDate.set(str);
+    this.cargarCitasFecha(str);
+    this.selectedCitaDetail.set(null);
+  }
+
+  goToday(): void {
+    const str = this._today();
+    this.listDate.set(str);
+    this.cargarCitasFecha(str);
+    this.selectedCitaDetail.set(null);
+  }
+
+  get timelineHourRows(): { label: string; half: boolean }[] {
+    const rows: { label: string; half: boolean }[] = [];
+    for (let h = this.TL_START; h < this.TL_END; h++) {
+      rows.push({ label: `${String(h).padStart(2, '0')}:00`, half: false });
+      rows.push({ label: '', half: true });
+    }
+    return rows;
+  }
+
+  getLayoutForProfesional(profId: number): { cita: CitaDto; col: number; totalCols: number }[] {
+    return this.citasLayoutByProfesional().get(profId) ?? [];
+  }
+
+  citaStateClass(estado?: string): string {
+    const map: Record<string, string> = {
+      PENDIENTE:    'tl-card--pending',
+      CONFIRMADA:   'tl-card--confirmed',
+      ATENDIDO:     'tl-card--attended',
+      CANCELADA:    'tl-card--cancelled',
+      REPROGRAMADA: 'tl-card--reprogrammed',
+      NO_ASISTIO:   'tl-card--no-show',
+    };
+    return map[(estado ?? '').toUpperCase()] ?? 'tl-card--pending';
   }
 
   // ── Indicador de oportunidad Res. 2953/2014 ────────────────────────

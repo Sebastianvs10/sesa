@@ -121,7 +121,7 @@ Para medicamentos con `controlado = true`: validar número de fórmula, médico 
 - Las **órdenes de medicamento** se crean en Historia Clínica (OrdenClinica con `tipo = 'MEDICAMENTO'`). El campo `detalle` contiene la prescripción (medicamento, dosis, cantidad, etc.).
 - **Farmacia** consume:
   - `GET /ordenes-clinicas/paciente/{id}` filtrado por tipo MEDICAMENTO, o
-  - `GET /farmacia/ordenes-pendientes` (órdenes MEDICAMENTO no dispensadas o parcialmente dispensadas).
+  - `GET /farmacia/ordenes-pendientes` — **paginado** (`page`, `size`, opcional `q` para filtrar en servidor); respuesta tipo Spring `Page` con `content` y `totalElements`.
 - Al **dispensar**, se envía `ordenId` + ítems (medicamento, lote, cantidad entregada). El backend actualiza estado de la orden (y opcionalmente resultado) y genera salida de inventario y kardex.
 - **Facturación:** Los ítems dispensados pueden enviarse a facturación (cuenta paciente/EPS) en una fase posterior.
 

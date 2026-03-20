@@ -839,6 +839,7 @@ CREATE TABLE IF NOT EXISTS farmacia_medicamentos (
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
     lote VARCHAR(80),
+    codigo_barras VARCHAR(64),
     fecha_vencimiento DATE,
     cantidad INT NOT NULL DEFAULT 0,
     precio NUMERIC(14,2),

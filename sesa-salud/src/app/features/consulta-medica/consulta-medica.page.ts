@@ -435,4 +435,12 @@ export class ConsultaMedicaPageComponent implements OnInit, OnDestroy {
   trackByCitaId(_: number, c: ConsultaMedicaDto): number {
     return c.id;
   }
+
+  estadoLabel(estado: string): string {
+    const map: Record<string, string> = {
+      AGENDADA: 'Agendada', ATENDIDA: 'Atendida',
+      CANCELADA: 'Cancelada', EN_SALA: 'En sala',
+    };
+    return map[estado] ?? estado;
+  }
 }

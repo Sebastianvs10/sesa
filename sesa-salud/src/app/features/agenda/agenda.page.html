@@ -56,14 +56,96 @@
             Cerrar mes
           </button>
         }
-        <button class="ag-btn ag-btn--ghost" (click)="exportarExcel()" title="Exportar Excel">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg>
-          Excel
-        </button>
-        <button class="ag-btn ag-btn--ghost" (click)="exportarPDF()" title="Exportar PDF">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-          PDF
-        </button>
+        <!-- ── Export dropdown premium ── -->
+        <div class="ag-export-wrap">
+          <button
+            type="button"
+            class="ag-btn ag-btn--ghost ag-export-trigger"
+            [class.ag-export-trigger--open]="showExportMenu()"
+            [class.ag-export-trigger--busy]="exportandoExcel() || exportandoPDF()"
+            (click)="toggleExportMenu()"
+            [attr.aria-expanded]="showExportMenu()"
+            aria-haspopup="true"
+            title="Exportar agenda">
+            @if (exportandoExcel() || exportandoPDF()) {
+              <span class="ag-export-spin" aria-hidden="true"></span>
+              Generando…
+            } @else {
+              <svg class="ag-export-trigger-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h8a2 2 0 002-2v-1M12 8l-2 2m0 0l-2-2m2 2V3"/>
+              </svg>
+              Exportar
+              <svg class="ag-export-chevron" [class.ag-export-chevron--open]="showExportMenu()" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M4.5 6l3.5 3.5L11.5 6"/>
+              </svg>
+            }
+          </button>
+
+          @if (showExportMenu()) {
+            <!-- Backdrop para cerrar al click fuera -->
+            <div class="ag-export-backdrop" (click)="cerrarExportMenu()" aria-hidden="true"></div>
+
+            <!-- Menú dropdown -->
+            <div class="ag-export-menu" role="menu" aria-label="Opciones de exportación">
+
+              <div class="ag-export-menu-header">
+                <span class="ag-export-menu-title">Exportar agenda</span>
+                <span class="ag-export-menu-sub">{{ mesLabel }} · {{ turnosFiltrados().length }} turnos</span>
+              </div>
+
+              <!-- Opción Excel -->
+              <button
+                type="button"
+                class="ag-export-item"
+                role="menuitem"
+                [disabled]="exportandoExcel() || exportandoPDF()"
+                (click)="exportarExcel()">
+                <span class="ag-export-item-icon ag-export-item-icon--excel" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 17v-2m3 2v-4m3 4v-6M3 20h18M3 4h18M9 4v4M5 4h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z"/>
+                  </svg>
+                </span>
+                <div class="ag-export-item-body">
+                  <span class="ag-export-item-title">Exportar a Excel</span>
+                  <span class="ag-export-item-desc">3 hojas: Turnos · Resumen · KPIs</span>
+                </div>
+                <span class="ag-export-item-badge ag-export-item-badge--excel">XLSX</span>
+              </button>
+
+              <!-- Opción PDF -->
+              <button
+                type="button"
+                class="ag-export-item"
+                role="menuitem"
+                [disabled]="exportandoExcel() || exportandoPDF()"
+                (click)="exportarPDF()">
+                <span class="ag-export-item-icon ag-export-item-icon--pdf" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 13h1.5a1.5 1.5 0 000-3H9v6m4-6h2m-2 3h1"/>
+                  </svg>
+                </span>
+                <div class="ag-export-item-body">
+                  <span class="ag-export-item-title">Exportar a PDF</span>
+                  <span class="ag-export-item-desc">Header SESA, KPIs y tabla detallada</span>
+                </div>
+                <span class="ag-export-item-badge ag-export-item-badge--pdf">PDF</span>
+              </button>
+
+              <!-- Separador + info -->
+              <div class="ag-export-menu-footer">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" width="12" height="12">
+                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/>
+                </svg>
+                Incluye los filtros activos aplicados
+              </div>
+
+            </div>
+          }
+        </div>
       </div>
     </div>
   </header>

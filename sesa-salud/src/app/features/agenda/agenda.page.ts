@@ -11,6 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 import { AgendaService } from './agenda.service';
 import { AgendaValidationService } from './agenda-validation.service';
+import { AgendaExportService } from './agenda-export.service';
 import {
   Profesional, Turno, DiaCalendario, ResumenProfesional,
   TipoTurno, ServicioClinico, EstadoProgramacion, AlertaTipo,
@@ -27,10 +28,11 @@ import {
 })
 export class AgendaPageComponent implements OnInit {
   /* ── Servicios ─────────────────────────────────────────────────── */
-  private readonly auth       = inject(AuthService);
-  private readonly agendaSvc  = inject(AgendaService);
-  private readonly validar    = inject(AgendaValidationService);
-  private readonly toast      = inject(SesaToastService);
+  private readonly auth        = inject(AuthService);
+  private readonly agendaSvc   = inject(AgendaService);
+  private readonly validar     = inject(AgendaValidationService);
+  private readonly toast       = inject(SesaToastService);
+  private readonly exportSvc   = inject(AgendaExportService);
 
   /* ── Estado del calendario ──────────────────────────────────────── */
   currentDate  = signal(new Date());
@@ -55,10 +57,21 @@ export class AgendaPageComponent implements OnInit {
   draggingId = signal<string | null>(null);
 
   /* ── Vista ──────────────────────────────────────────────────────── */
-  showDashboard = signal(true);
+  showDashboard   = signal(true);
+  showExportMenu  = signal(false);
+  exportandoExcel = signal(false);
+  exportandoPDF   = signal(false);
 
   toggleDashboard(): void {
     this.showDashboard.update(v => !v);
+  }
+
+  toggleExportMenu(): void {
+    this.showExportMenu.update(v => !v);
+  }
+
+  cerrarExportMenu(): void {
+    this.showExportMenu.set(false);
   }
 
   /* ── Catálogos expuestos al template ────────────────────────────── */
@@ -364,12 +377,63 @@ export class AgendaPageComponent implements OnInit {
   }
 
   /* ── Exportar ───────────────────────────────────────────────────── */
+
+  private buildExportPayload() {
+    return {
+      turnos:          this.turnosFiltrados(),
+      profesionales:   this.profesionales(),
+      resumenes:       this.resumenes(),
+      dashStats:       this.dashStats(),
+      filtroServicio:  this.filtroServicio(),
+      filtroTipo:      this.filtroTipo(),
+      estadoMes:       this.estadoMes(),
+      mesLabel:        this.mesLabel,
+      generadoPor:     this.auth.currentUser()?.nombreCompleto ?? this.auth.currentUser()?.email ?? 'SESA',
+    };
+  }
+
   exportarExcel(): void {
-    this.toast.info('Exportación a Excel en desarrollo. Disponible en próxima versión.', 'Próximamente');
+    if (this.exportandoExcel()) return;
+    this.cerrarExportMenu();
+    const payload = this.buildExportPayload();
+    if (!payload.turnos.length) {
+      this.toast.warning('No hay turnos para exportar con los filtros actuales.', 'Sin datos');
+      return;
+    }
+    this.exportandoExcel.set(true);
+    this.exportSvc.exportarExcel(payload)
+      .then(() => {
+        this.toast.success(
+          `Excel generado con ${payload.turnos.length} turnos en 3 hojas.`,
+          'Exportación exitosa'
+        );
+      })
+      .catch(() => {
+        this.toast.error('No se pudo generar el archivo Excel.', 'Error de exportación');
+      })
+      .finally(() => this.exportandoExcel.set(false));
   }
 
   exportarPDF(): void {
-    this.toast.info('Exportación a PDF en desarrollo. Disponible en próxima versión.', 'Próximamente');
+    if (this.exportandoPDF()) return;
+    this.cerrarExportMenu();
+    const payload = this.buildExportPayload();
+    if (!payload.turnos.length) {
+      this.toast.warning('No hay turnos para exportar con los filtros actuales.', 'Sin datos');
+      return;
+    }
+    this.exportandoPDF.set(true);
+    this.exportSvc.exportarPDF(payload)
+      .then(() => {
+        this.toast.success(
+          `PDF generado: header corporativo, KPIs y ${payload.turnos.length} turnos.`,
+          'PDF exportado'
+        );
+      })
+      .catch(() => {
+        this.toast.error('No se pudo generar el PDF.', 'Error de exportación');
+      })
+      .finally(() => this.exportandoPDF.set(false));
   }
 
   /* ── Drag & drop (HTML5 nativo) ─────────────────────────────────── */

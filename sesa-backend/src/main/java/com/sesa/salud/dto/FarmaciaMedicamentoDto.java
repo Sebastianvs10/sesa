@@ -17,6 +17,8 @@ public class FarmaciaMedicamentoDto {
     private Long id;
     private String nombre;
     private String lote;
+    /** Código de barras para escaneo en mostrador. */
+    private String codigoBarras;
     private LocalDate fechaVencimiento;
     private Integer cantidad;
     private BigDecimal precio;

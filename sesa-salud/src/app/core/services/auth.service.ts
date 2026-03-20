@@ -239,12 +239,15 @@ export class AuthService {
    * Solo se puede cambiar a roles que el usuario tenga asignados.
    */
   switchRole(rol: string): void {
-    if (!this.currentRoles().includes(rol)) return;
-    this.rolActivoSignal.set(rol);
-    localStorage.setItem(ROL_ACTIVO_KEY, rol);
+    const norm = (r: string) => r.toUpperCase().replace(/^ROLE_/, '');
+    const target = norm(rol);
+    const match = this.currentRoles().find((r) => norm(r) === target);
+    if (!match) return;
+    this.rolActivoSignal.set(match);
+    localStorage.setItem(ROL_ACTIVO_KEY, match);
     const current = this.userSignal();
     if (current) {
-      const updated = { ...current, rolActivo: rol };
+      const updated = { ...current, rolActivo: match };
       this.userSignal.set(updated);
       localStorage.setItem(USER_KEY, JSON.stringify(updated));
     }

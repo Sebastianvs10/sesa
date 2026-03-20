@@ -28,6 +28,13 @@ public class HospitalizacionServiceImpl implements HospitalizacionService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<HospitalizacionDto> findAll(Pageable pageable) {
+        return hospitalizacionRepository.findAll(pageable)
+                .stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<HospitalizacionDto> findByPacienteId(Long pacienteId, Pageable pageable) {
         return hospitalizacionRepository.findByPaciente_IdOrderByFechaIngresoDesc(pacienteId, pageable)
                 .stream().map(this::toDto).collect(Collectors.toList());
@@ -102,6 +109,7 @@ public class HospitalizacionServiceImpl implements HospitalizacionService {
                 .id(h.getId())
                 .pacienteId(h.getPaciente().getId())
                 .pacienteNombre(pacienteNombre.trim())
+                .pacienteDocumento(h.getPaciente().getDocumento())
                 .servicio(h.getServicio())
                 .cama(h.getCama())
                 .estado(h.getEstado())

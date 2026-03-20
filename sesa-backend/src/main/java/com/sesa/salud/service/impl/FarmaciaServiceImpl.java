@@ -17,12 +17,15 @@ import com.sesa.salud.repository.OrdenClinicaRepository;
 import com.sesa.salud.repository.PacienteRepository;
 import com.sesa.salud.service.FarmaciaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,8 +42,31 @@ public class FarmaciaServiceImpl implements FarmaciaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FarmaciaMedicamentoDto> listMedicamentos(Pageable pageable) {
-        return medicamentoRepository.findAll(pageable).stream().map(this::toMedicamentoDto).collect(Collectors.toList());
+    public Page<FarmaciaMedicamentoDto> listMedicamentos(String q, boolean soloStock, Pageable pageable) {
+        String param = (q == null || q.isBlank()) ? "" : q.trim();
+        return medicamentoRepository.searchPaged(param, soloStock, pageable).map(this::toMedicamentoDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FarmaciaIndicadoresDto indicadoresInventario() {
+        LocalDate hoy = LocalDate.now();
+        LocalDate en30 = hoy.plusDays(30);
+        return FarmaciaIndicadoresDto.builder()
+                .totalSkusActivos(medicamentoRepository.countActivos())
+                .stockBajo(medicamentoRepository.countStockBajo())
+                .proximosAVencer30Dias(medicamentoRepository.countProximosAVencer(hoy, en30))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<FarmaciaMedicamentoDto> findMedicamentoPorCodigoBarras(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            return Optional.empty();
+        }
+        return medicamentoRepository.findFirstByCodigoBarrasIgnoreCaseAndActivoTrue(codigo.trim())
+                .map(this::toMedicamentoDto);
     }
 
     @Override
@@ -49,6 +75,7 @@ public class FarmaciaServiceImpl implements FarmaciaService {
         FarmaciaMedicamento m = FarmaciaMedicamento.builder()
                 .nombre(dto.getNombre())
                 .lote(dto.getLote())
+                .codigoBarras(dto.getCodigoBarras() != null ? dto.getCodigoBarras().trim() : null)
                 .fechaVencimiento(dto.getFechaVencimiento())
                 .cantidad(dto.getCantidad() != null ? dto.getCantidad() : 0)
                 .precio(dto.getPrecio())
@@ -113,19 +140,12 @@ public class FarmaciaServiceImpl implements FarmaciaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrdenFarmaciaPendienteDto> listOrdenesPendientes(Pageable pageable) {
+    public Page<OrdenFarmaciaPendienteDto> listOrdenesPendientes(String q, Pageable pageable) {
         List<String> estados = List.of("PENDIENTE", "PARCIAL");
-        List<OrdenClinica> ordenes = ordenClinicaRepository.findOrdenesFarmaciaPendientes(estados, pageable);
-        return ordenes.stream()
-                .filter(o -> {
-                    if ("MEDICAMENTO".equalsIgnoreCase(o.getTipo())) return true;
-                    if ("COMPUESTA".equalsIgnoreCase(o.getTipo()) && o.getItems() != null) {
-                        return o.getItems().stream().anyMatch(it -> "MEDICAMENTO".equalsIgnoreCase(it.getTipo()));
-                    }
-                    return false;
-                })
-                .map(this::toOrdenFarmaciaPendienteDto)
-                .collect(Collectors.toList());
+        String trimmed = q != null ? q.trim() : "";
+        String search = trimmed.isEmpty() ? null : trimmed;
+        Page<OrdenClinica> page = ordenClinicaRepository.findOrdenesFarmaciaPendientesPage(estados, search, pageable);
+        return page.map(this::toOrdenFarmaciaPendienteDto);
     }
 
     @Override
@@ -228,6 +248,7 @@ public class FarmaciaServiceImpl implements FarmaciaService {
                 .id(m.getId())
                 .nombre(m.getNombre())
                 .lote(m.getLote())
+                .codigoBarras(m.getCodigoBarras())
                 .fechaVencimiento(m.getFechaVencimiento())
                 .cantidad(m.getCantidad())
                 .precio(m.getPrecio())

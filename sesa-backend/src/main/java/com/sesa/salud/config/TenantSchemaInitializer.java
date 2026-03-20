@@ -555,6 +555,11 @@ public class TenantSchemaInitializer implements CommandLineRunner {
             "ALTER TABLE farmacia_dispensaciones ADD COLUMN IF NOT EXISTS orden_clinica_id BIGINT REFERENCES ordenes_clinicas(id)"
     );
 
+    private static final List<String> DDL_FARMACIA_MEDICAMENTOS_MIGRATIONS = List.of(
+            "ALTER TABLE farmacia_medicamentos ADD COLUMN IF NOT EXISTS codigo_barras VARCHAR(64)",
+            "CREATE INDEX IF NOT EXISTS idx_farmacia_medicamentos_codigo_barras ON farmacia_medicamentos (LOWER(codigo_barras)) WHERE codigo_barras IS NOT NULL AND activo = true"
+    );
+
     private static final String DDL_ORDEN_CLINICA_ITEMS = """
             CREATE TABLE IF NOT EXISTS orden_clinica_items (
                 id BIGSERIAL PRIMARY KEY,
@@ -850,6 +855,9 @@ public class TenantSchemaInitializer implements CommandLineRunner {
                 }
                 stmt.execute(DDL_RESULTADO_CRITICO_LECTURA);
                 for (String migration : DDL_FARMACIA_ORDENES_MIGRATIONS) {
+                    stmt.execute(migration);
+                }
+                for (String migration : DDL_FARMACIA_MEDICAMENTOS_MIGRATIONS) {
                     stmt.execute(migration);
                 }
                 stmt.execute(DDL_ORDEN_CLINICA_ITEMS);

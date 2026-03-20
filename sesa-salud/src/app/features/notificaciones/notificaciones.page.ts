@@ -3,7 +3,7 @@
  * Sidebar, búsqueda, acciones masivas, panel Redactar con editor rich text y adjuntos.
  * Autor: Ing. J Sebastian Vargas S
  */
-import { Component, OnInit, OnDestroy, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -33,6 +33,8 @@ import {
   faExpand,
   faStar,
   faArchive,
+  faTriangleExclamation,
+  faCircleQuestion,
 } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { interval, Subscription } from 'rxjs';
@@ -49,6 +51,15 @@ import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.
 
 type MenuId = 'inbox' | 'important' | 'sent' | 'archived' | 'trash';
 type CategoryId = 'GENERAL' | 'URGENTE' | 'INFORMATIVO' | '';
+
+interface ConfirmModalState {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger: boolean;
+  resolve: ((result: boolean) => void) | null;
+}
 
 interface CategoryFilter {
   id: CategoryId;
@@ -95,6 +106,8 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   faExpand = faExpand;
   faStar = faStar;
   faArchive = faArchive;
+  faTriangleExclamation = faTriangleExclamation;
+  faCircleQuestion = faCircleQuestion;
 
   menuActive = signal<MenuId>('inbox');
   sidebarCollapsed = signal(false);
@@ -147,12 +160,30 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
   /** Si el formulario de redacción tiene contenido sin enviar (para confirmar cierre) */
   composeDirty = false;
 
+  /** IDs de filas que están animando salida (swipe exit) */
+  exitingRowIds = signal<Set<number>>(new Set());
+
+  /** Estado del modal de confirmación custom */
+  confirmModal = signal<ConfirmModalState>({
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirmar',
+    danger: false,
+    resolve: null,
+  });
+
+  private readonly originalTitle = document.title;
   private currentUserId: number | null = null;
   private refreshCountSubscription?: Subscription;
   private readonly prefsKey = 'sesa.notificaciones.preferences.v1';
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.confirmModal().open) {
+      this.onConfirmCancel();
+      return;
+    }
     if (this.selectedNotif()) {
       this.closeDetail();
     } else if (this.composeOpen()) {
@@ -277,11 +308,47 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     return t <= 0 ? 1 : Math.ceil(t / s);
   });
 
+  /** Números de página visibles en la paginación (ventana deslizante de hasta 7) */
+  pageNumbers = computed((): number[] => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    const max = 7;
+    if (total <= max) {
+      for (let i = 0; i < total; i++) pages.push(i);
+      return pages;
+    }
+    let start = Math.max(0, current - 3);
+    let end = Math.min(total - 1, start + max - 1);
+    if (end - start < max - 1) start = Math.max(0, end - max + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  });
+
+  /** Etiqueta legible del tipo de notificación */
+  tipoLabel(tipo: string): string {
+    const map: Record<string, string> = { URGENTE: 'Urgente', GENERAL: 'General', INFORMATIVO: 'Informativo' };
+    return map[tipo] ?? tipo;
+  }
+
+  /** KPI: total no leídas en la bandeja activa */
+  unreadCurrentPage = computed(() => {
+    const menu = this.menuActive();
+    if (menu !== 'inbox' && menu !== 'important') return 0;
+    return this.filteredList().filter((n) => this.isUnread(n)).length;
+  });
+
   constructor() {
     this.form = this.fb.group({
       titulo: ['', [Validators.required, Validators.maxLength(255)]],
       contenido: ['', [Validators.required]],
       tipo: ['GENERAL'],
+    });
+
+    // Actualiza el título del tab del navegador con el conteo de no leídas
+    effect(() => {
+      const count = this.noLeidas();
+      document.title = count > 0 ? `(${count}) Notificaciones — SESA` : 'Notificaciones — SESA';
     });
   }
 
@@ -304,6 +371,7 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.refreshCountSubscription?.unsubscribe();
+    document.title = this.originalTitle;
   }
 
   setMenu(menu: MenuId): void {
@@ -432,8 +500,49 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     this.handleDeleteAction(notif);
   }
 
-  private toggleArchive(notif: NotificacionDto): void {
+  /** Abre el modal de confirmación y devuelve una promesa que resuelve true/false */
+  private showConfirm(
+    title: string,
+    message: string,
+    confirmLabel = 'Confirmar',
+    danger = false
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.confirmModal.set({ open: true, title, message, confirmLabel, danger, resolve });
+    });
+  }
+
+  onConfirmAccept(): void {
+    const modal = this.confirmModal();
+    if (modal.resolve) modal.resolve(true);
+    this.confirmModal.update((m) => ({ ...m, open: false, resolve: null }));
+  }
+
+  onConfirmCancel(): void {
+    const modal = this.confirmModal();
+    if (modal.resolve) modal.resolve(false);
+    this.confirmModal.update((m) => ({ ...m, open: false, resolve: null }));
+  }
+
+  isExiting(id: number): boolean {
+    return this.exitingRowIds().has(id);
+  }
+
+  /** Anima la salida de una fila y devuelve una promesa que resuelve tras la animación */
+  private animateRowExit(id: number): Promise<void> {
+    return new Promise((resolve) => {
+      this.exitingRowIds.update((s) => new Set([...s, id]));
+      setTimeout(() => {
+        this.exitingRowIds.update((s) => { const n = new Set(s); n.delete(id); return n; });
+        resolve();
+      }, 280);
+    });
+  }
+
+  private async toggleArchive(notif: NotificacionDto): Promise<void> {
     if (this.menuActive() === 'archived') {
+      await this.animateRowExit(notif.id);
+      if (this.selectedNotif()?.id === notif.id) this.selectedNotif.set(null);
       this.notificacionService.desarchivar(notif.id).subscribe({
         next: () => {
           this.toast.success('Notificación movida a Recibidos', 'Listo');
@@ -443,6 +552,8 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
       });
       return;
     }
+    await this.animateRowExit(notif.id);
+    if (this.selectedNotif()?.id === notif.id) this.selectedNotif.set(null);
     this.notificacionService.archivar(notif.id).subscribe({
       next: () => {
         this.toast.success('Notificación archivada', 'Listo');
@@ -452,9 +563,17 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private handleDeleteAction(notif: NotificacionDto): void {
+  private async handleDeleteAction(notif: NotificacionDto): Promise<void> {
     if (this.menuActive() === 'trash') {
-      if (!window.confirm('¿Eliminar definitivamente esta notificación? Esta acción no se puede deshacer.')) return;
+      const ok = await this.showConfirm(
+        'Eliminar definitivamente',
+        'Esta acción no se puede deshacer. La notificación se eliminará de forma permanente.',
+        'Eliminar',
+        true
+      );
+      if (!ok) return;
+      await this.animateRowExit(notif.id);
+      if (this.selectedNotif()?.id === notif.id) this.selectedNotif.set(null);
       this.notificacionService.eliminarDefinitivo(notif.id).subscribe({
         next: () => {
           this.toast.success('Notificación eliminada definitivamente', 'Listo');
@@ -464,7 +583,15 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    if (!window.confirm('¿Mover esta notificación a papelera?')) return;
+    const ok = await this.showConfirm(
+      'Mover a papelera',
+      '¿Mover esta notificación a la papelera? Podrás restaurarla más tarde.',
+      'Mover a papelera',
+      false
+    );
+    if (!ok) return;
+    await this.animateRowExit(notif.id);
+    if (this.selectedNotif()?.id === notif.id) this.selectedNotif.set(null);
     this.notificacionService.moverAPapelera(notif.id).subscribe({
       next: () => {
         this.toast.success('Notificación movida a papelera', 'Listo');
@@ -731,11 +858,15 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     this.composeDirty = false;
   }
 
-  closeComposeWithConfirm(): void {
+  async closeComposeWithConfirm(): Promise<void> {
     if (this.composeDirty && (this.form.value.titulo?.trim() || this.form.value.contenido?.trim() || this.adjuntos.length > 0)) {
-      if (window.confirm('¿Descartar el borrador? Los cambios no se guardarán.')) {
-        this.closeCompose();
-      }
+      const ok = await this.showConfirm(
+        'Descartar borrador',
+        'El mensaje no ha sido enviado. ¿Descartar los cambios?',
+        'Descartar',
+        false
+      );
+      if (ok) this.closeCompose();
     } else {
       this.closeCompose();
     }
@@ -957,6 +1088,12 @@ export class NotificacionesPageComponent implements OnInit, OnDestroy {
     const text = this.stripHtml(n.contenido || '');
     if (text.length <= maxLen) return text;
     return text.slice(0, maxLen) + '…';
+  }
+
+  contentPreviewLong(n: NotificacionDto): string {
+    const text = this.stripHtml(n.contenido || '');
+    if (text.length <= 200) return text;
+    return text.slice(0, 200) + '…';
   }
 
   emptyMessage(): string {

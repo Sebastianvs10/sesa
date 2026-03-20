@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface HospitalizacionService {
+    List<HospitalizacionDto> findAll(Pageable pageable);
     List<HospitalizacionDto> findByPacienteId(Long pacienteId, Pageable pageable);
     List<HospitalizacionDto> findByEstado(String estado, Pageable pageable);
     HospitalizacionDto findById(Long id);
