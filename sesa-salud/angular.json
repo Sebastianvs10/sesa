@@ -43,7 +43,18 @@
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "core-js",
+              "raf",
+              "rgbcolor",
+              "html2canvas",
+              "leaflet",
+              "qrcode",
+              "dijkstrajs",
+              "xlsx"
+            ]
           },
           "configurations": {
             "production": {
