@@ -1069,9 +1069,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 960px) {
+  /* Formulario primero (orden visual), hero como franja de confianza al final */
   .sesa-login {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     height: auto;
     min-height: 100dvh;
     min-height: 100svh;
@@ -1082,120 +1083,155 @@
     overscroll-behavior-y: contain;
   }
 
-  .sesa-login-bg {
-    min-height: clamp(11rem, 28svh, 15.5rem);
-    padding: max(1rem, env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-right, 0px))
-      1rem max(1.25rem, env(safe-area-inset-left, 0px));
-    flex-shrink: 0;
-  }
-
-  .sesa-login-bg-brand {
-    margin-bottom: 0.25rem;
-  }
-
-  .sesa-login-bg-content {
-    flex: 0 1 auto;
-    justify-content: flex-start;
-    padding: 0.75rem 0 0.85rem;
-    max-width: 100%;
-  }
-
-  .sesa-login-bg-badge {
-    margin-bottom: 0.65rem;
-    font-size: 0.62rem;
-    padding: 0.28rem 0.75rem;
-  }
-
-  .sesa-login-bg-title {
-    max-width: 100%;
-    font-size: clamp(1.2rem, 5.2vw, 1.55rem);
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
-  }
-
-  .sesa-login-bg-subtitle {
-    max-width: 100%;
-    font-size: 0.8rem;
-    line-height: 1.55;
-    margin-bottom: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .sesa-login-bg-features {
-    display: none;
-  }
-
-  .sesa-login-bg-stats {
-    padding: 0.65rem 0.85rem;
-    border-radius: 12px;
-    gap: 0.5rem;
-  }
-
-  .sesa-login-bg-stat-value {
-    font-size: 0.82rem;
-  }
-
-  .sesa-login-bg-stat-label {
-    font-size: 0.55rem;
-  }
-
-  .sesa-login-bg-stat-divider {
-    height: 1.5rem;
-  }
-
-  /* Orbes menos pesados en móvil */
-  .sesa-login-bg::before,
-  .sesa-login-bg::after {
-    filter: blur(72px);
-  }
-
   .sesa-login-panel {
+    order: -1;
     flex: 1 1 auto;
-    min-height: min-content;
-    padding: 1rem max(1rem, env(safe-area-inset-right, 0px))
-      max(1.25rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
-    padding-top: 1.25rem;
-    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: flex-start;
+    min-height: 100svh;
+    padding: max(0.65rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+      max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+    /* Superficie neutra tipo SaaS (Linear / Stripe): el card es el protagonista */
+    background: var(--sesa-bg, #f8f9fb);
     box-shadow: none;
   }
 
+  [data-theme='dark'] .sesa-login-panel {
+    background: var(--sesa-bg, #0f1117);
+  }
+
+  /* Aurora del panel muy sutil en móvil */
+  .sesa-login-panel::before,
+  .sesa-login-panel::after {
+    opacity: 0.18;
+  }
+
+  [data-theme='dark'] .sesa-login-panel::before,
+  [data-theme='dark'] .sesa-login-panel::after {
+    opacity: 0.28;
+  }
+
+  .sesa-login-particles {
+    display: none;
+  }
+
   .sesa-login-theme-toggle {
-    top: max(0.65rem, env(safe-area-inset-top, 0px));
-    right: max(0.65rem, env(safe-area-inset-right, 0px));
+    position: fixed;
+    top: max(0.6rem, env(safe-area-inset-top, 0px));
+    right: max(0.6rem, env(safe-area-inset-right, 0px));
+    z-index: 60;
     width: 42px;
     height: 42px;
     min-width: 42px;
     min-height: 42px;
+    box-shadow: var(--sesa-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+  }
+
+  [data-theme='dark'] .sesa-login-theme-toggle {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
   }
 
   .sesa-login-panel-inner {
-    max-width: 100%;
+    position: relative;
+    z-index: 1;
     width: 100%;
-    border-radius: clamp(14px, 3.5vw, 20px);
-    padding: 1.15rem 1.15rem;
-    margin-bottom: 0.5rem;
+    max-width: 420px;
+    margin-inline: auto;
+    margin-top: clamp(0.25rem, 2svh, 1rem);
+    margin-bottom: auto;
+    padding: 1rem 1.1rem 1.15rem;
+    border-radius: var(--sesa-radius-lg, 14px);
+    border: 1px solid var(--sesa-border, rgba(15, 23, 42, 0.08));
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 12px 40px -8px rgba(15, 23, 42, 0.12),
+      0 24px 64px -16px rgba(15, 23, 42, 0.08);
+  }
+
+  [data-theme='dark'] .sesa-login-panel-inner {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 16px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  .sesa-login-logo-full {
+    margin-bottom: 0;
   }
 
   .sesa-login-logo-img {
-    max-width: 9.5rem;
-    max-height: 2.75rem;
+    max-width: 8.75rem;
+    max-height: 2.4rem;
   }
 
   .sesa-login-card-divider {
-    margin: 0.65rem 0 1rem;
+    margin: 0.45rem 0 0.6rem;
+  }
+
+  .sesa-login-label {
+    margin-bottom: 0.15rem;
   }
 
   .sesa-login-main-title {
-    font-size: 1.28rem;
+    font-size: 1.32rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
   }
 
   .sesa-login-main-subtitle {
     font-size: 0.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
+    line-height: 1.45;
+  }
+
+  .sesa-login-form {
+    gap: 0.75rem;
+  }
+
+  /* Hero: solo confianza al scroll, sin duplicar logo ni copy largo */
+  .sesa-login-bg {
+    order: 1;
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 1rem max(1rem, env(safe-area-inset-left, 0px)) max(1.35rem, env(safe-area-inset-bottom, 0px))
+      max(1rem, env(safe-area-inset-right, 0px));
+    justify-content: center;
+  }
+
+  .sesa-login-bg-brand,
+  .sesa-login-bg-content {
+    display: none !important;
+  }
+
+  .sesa-login-bg::before,
+  .sesa-login-bg::after {
+    display: none;
+  }
+
+  .sesa-login-bg-stats {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 22rem;
+    margin: 0 auto;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--sesa-radius-lg, 14px);
+    gap: 0.5rem;
+  }
+
+  .sesa-login-bg-stat-value {
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sesa-login-bg-stat-label {
+    font-size: 0.52rem;
+  }
+
+  .sesa-login-bg-stat-divider {
+    height: 1.35rem;
   }
 
   /* iOS: evita zoom al enfocar inputs (mín. 16px) */
@@ -1227,6 +1263,8 @@
   }
 
   .sesa-login-footer-links {
+    margin-top: 0.4rem;
+    padding-top: 0.65rem;
     flex-wrap: wrap;
     justify-content: center;
     text-align: center;
@@ -1235,34 +1273,35 @@
 }
 
 @media (max-width: 480px) {
-  .sesa-login-bg {
-    min-height: clamp(10rem, 26svh, 13rem);
-    padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+  .sesa-login-panel-inner {
+    padding: 0.9rem 1rem 1rem;
+    border-radius: var(--sesa-radius-md, 12px);
+    max-width: 100%;
+  }
+
+  .sesa-login-main-title {
+    font-size: 1.22rem;
   }
 
   .sesa-login-bg-stats {
-    flex-wrap: wrap;
-    justify-content: space-around;
-    row-gap: 0.35rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    max-width: 100%;
+    padding: 0.6rem 0.65rem;
   }
 
   .sesa-login-bg-stat {
-    flex: 1 1 28%;
-    min-width: 4.5rem;
+    flex: 1;
+    min-width: 0;
   }
 
   .sesa-login-bg-stat-divider {
-    display: none;
+    display: block;
+    height: 1.25rem;
   }
 
-  .sesa-login-panel {
-    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
-  }
-
-  .sesa-login-panel-inner {
-    padding: 1rem 1rem;
-    border-radius: 14px;
+  .sesa-login-bg-stat-value {
+    font-size: 0.72rem;
   }
 
   .sesa-login-row--between {
@@ -1282,12 +1321,12 @@
 }
 
 @media (max-width: 380px) {
-  .sesa-login-bg-subtitle {
-    -webkit-line-clamp: 2;
+  .sesa-login-bg-stat-value {
+    font-size: 0.68rem;
   }
 
-  .sesa-login-bg-stat-value {
-    font-size: 0.75rem;
+  .sesa-login-bg-stat-label {
+    font-size: 0.48rem;
   }
 }
 
