@@ -158,6 +158,39 @@ public class AtencionServiceImpl implements AtencionService {
         atencionRepository.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public AtencionDto guardarReferencia(Long id, AltaReferenciaRequestDto request) {
+        Atencion a = atencionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Atención no encontrada: " + id));
+        if (request != null) {
+            a.setReferenciaMotivo(request.getMotivoReferencia());
+            a.setReferenciaNivel(request.getNivelReferencia());
+            a.setReferenciaDiagnostico(request.getDiagnostico());
+            a.setReferenciaTratamiento(request.getTratamiento());
+            a.setReferenciaRecomendaciones(request.getRecomendaciones());
+            a.setReferenciaProximaCita(request.getProximaCita());
+        }
+        return toDto(atencionRepository.save(a));
+    }
+
+    @Override
+    @Transactional
+    public AtencionDto actualizarSignosVitales(Long id, SignosVitalesIntegracionDto dto) {
+        Atencion a = atencionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Atención no encontrada: " + id));
+        if (dto != null) {
+            if (dto.getPresionArterial() != null) a.setPresionArterial(dto.getPresionArterial());
+            if (dto.getFrecuenciaCardiaca() != null) a.setFrecuenciaCardiaca(dto.getFrecuenciaCardiaca());
+            if (dto.getFrecuenciaRespiratoria() != null) a.setFrecuenciaRespiratoria(dto.getFrecuenciaRespiratoria());
+            if (dto.getTemperatura() != null) a.setTemperatura(dto.getTemperatura());
+            if (dto.getPeso() != null) a.setPeso(dto.getPeso());
+            if (dto.getTalla() != null) a.setTalla(dto.getTalla());
+            if (dto.getImc() != null) a.setImc(dto.getImc());
+        }
+        return toDto(atencionRepository.save(a));
+    }
+
     private AtencionDto toDto(Atencion a) {
         Personal p = a.getProfesional();
         String profNombre = (p.getNombres() != null ? p.getNombres() : "") + " " + (p.getApellidos() != null ? p.getApellidos() : "");
@@ -191,6 +224,12 @@ public class AtencionServiceImpl implements AtencionService {
                 .examenesSolicitados(a.getExamenesSolicitados())
                 .incapacidad(a.getIncapacidad())
                 .recomendaciones(a.getRecomendaciones())
+                .referenciaMotivo(a.getReferenciaMotivo())
+                .referenciaNivel(a.getReferenciaNivel())
+                .referenciaDiagnostico(a.getReferenciaDiagnostico())
+                .referenciaTratamiento(a.getReferenciaTratamiento())
+                .referenciaRecomendaciones(a.getReferenciaRecomendaciones())
+                .referenciaProximaCita(a.getReferenciaProximaCita())
                 .diagnosticos(a.getDiagnosticos() != null ? a.getDiagnosticos().stream()
                         .map(d -> DiagnosticoDto.builder().id(d.getId()).codigoCie10(d.getCodigoCie10())
                                 .descripcion(d.getDescripcion()).tipo(d.getTipo()).build())

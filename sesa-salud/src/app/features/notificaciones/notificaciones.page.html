@@ -1,271 +1,587 @@
-<div class="sesa-notif-page">
+<!-- Bandeja de notificaciones — split view SaaS -->
+<!-- Autor: Ing. J Sebastian Vargas S -->
+<div class="mail-app" [class.mail-app--collapsed]="sidebarCollapsed()" [class.mail-app--split]="selectedNotif()">
 
-  <!-- ========== Pestañas ========== -->
-  <div class="sesa-notif-tabs">
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'recibidas'"
-      (click)="switchTab('recibidas')">
-      <fa-icon [icon]="faInbox" class="sesa-notif-tab-icon"></fa-icon>
-      Recibidas
-      @if (noLeidas() > 0) {
-        <span class="sesa-notif-badge">{{ noLeidas() }}</span>
+  <!-- ─── SIDEBAR ─────────────────────────────────────────────── -->
+  <aside class="mail-sidebar">
+    <div class="mail-sidebar-top">
+      <button type="button" class="mail-toggle-btn" (click)="toggleSidebar()" [title]="sidebarCollapsed() ? 'Expandir panel' : 'Contraer panel'">
+        <fa-icon [icon]="faArrowLeft" [class.rotated]="sidebarCollapsed()"></fa-icon>
+      </button>
+      @if (!sidebarCollapsed()) {
+        <button type="button" class="mail-new-btn" (click)="openCompose()" aria-label="Nuevo mensaje">
+          <fa-icon [icon]="faPlus"></fa-icon>
+          <span>Nuevo mensaje</span>
+        </button>
+      } @else {
+        <button type="button" class="mail-new-btn mail-new-btn--icon" (click)="openCompose()" aria-label="Nuevo mensaje">
+          <fa-icon [icon]="faPlus"></fa-icon>
+        </button>
       }
-    </button>
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'enviadas'"
-      (click)="switchTab('enviadas')">
-      <fa-icon [icon]="faPaperPlane" class="sesa-notif-tab-icon"></fa-icon>
-      Enviadas
-    </button>
-    <button
-      class="sesa-notif-tab"
-      [class.sesa-notif-tab--active]="tab() === 'redactar'"
-      (click)="switchTab('redactar')">
-      <fa-icon [icon]="faPenToSquare" class="sesa-notif-tab-icon"></fa-icon>
-      Redactar
-    </button>
-  </div>
-
-  <!-- ========== Alertas ========== -->
-  @if (error()) {
-    <div class="sesa-notif-alert sesa-notif-alert--error">
-      {{ error() }}
-      <button (click)="error.set(null)">&times;</button>
     </div>
-  }
-  @if (success()) {
-    <div class="sesa-notif-alert sesa-notif-alert--success">
-      {{ success() }}
-      <button (click)="success.set(null)">&times;</button>
+
+    <!-- Carpetas -->
+    <nav class="mail-folder-nav" aria-label="Carpetas">
+      <button type="button" class="mail-folder-item" [class.mail-folder-item--active]="menuActive() === 'inbox'" (click)="setMenu('inbox')" title="Recibidos">
+        <span class="folder-icon"><fa-icon [icon]="faInbox"></fa-icon></span>
+        @if (!sidebarCollapsed()) {
+          <span class="folder-label">Recibidos</span>
+          @if (folderCount('inbox') > 0) { <span class="folder-badge folder-badge--primary">{{ folderCount('inbox') }}</span> }
+        } @else if (folderCount('inbox') > 0) {
+          <span class="folder-badge folder-badge--dot"></span>
+        }
+      </button>
+
+      <button type="button" class="mail-folder-item" [class.mail-folder-item--active]="menuActive() === 'important'" (click)="setMenu('important')" title="Importantes">
+        <span class="folder-icon"><fa-icon [icon]="faStar"></fa-icon></span>
+        @if (!sidebarCollapsed()) {
+          <span class="folder-label">Importantes</span>
+          @if (folderCount('important') > 0) { <span class="folder-badge folder-badge--warn">{{ folderCount('important') }}</span> }
+        }
+      </button>
+
+      <button type="button" class="mail-folder-item" [class.mail-folder-item--active]="menuActive() === 'sent'" (click)="setMenu('sent')" title="Enviadas">
+        <span class="folder-icon"><fa-icon [icon]="faPaperPlane"></fa-icon></span>
+        @if (!sidebarCollapsed()) {
+          <span class="folder-label">Enviadas</span>
+          @if (folderCount('sent') > 0) { <span class="folder-badge">{{ folderCount('sent') }}</span> }
+        }
+      </button>
+
+      <div class="folder-divider"></div>
+
+      <button type="button" class="mail-folder-item" [class.mail-folder-item--active]="menuActive() === 'archived'" (click)="setMenu('archived')" title="Archivadas">
+        <span class="folder-icon"><fa-icon [icon]="faArchive"></fa-icon></span>
+        @if (!sidebarCollapsed()) {
+          <span class="folder-label">Archivadas</span>
+          @if (folderCount('archived') > 0) { <span class="folder-badge">{{ folderCount('archived') }}</span> }
+        }
+      </button>
+
+      <button type="button" class="mail-folder-item" [class.mail-folder-item--active]="menuActive() === 'trash'" (click)="setMenu('trash')" title="Papelera">
+        <span class="folder-icon"><fa-icon [icon]="faTrashCan"></fa-icon></span>
+        @if (!sidebarCollapsed()) {
+          <span class="folder-label">Papelera</span>
+          @if (folderCount('trash') > 0) { <span class="folder-badge folder-badge--muted">{{ folderCount('trash') }}</span> }
+        }
+      </button>
+    </nav>
+
+    <!-- Categorías (tipo de notificación) -->
+    @if (!sidebarCollapsed()) {
+      <div class="mail-sidebar-section">
+        <p class="sidebar-section-label">Categorías</p>
+        <nav class="mail-cat-nav" aria-label="Filtrar por categoría">
+          <button type="button" class="mail-cat-item" [class.mail-cat-item--active]="headerFilterType() === ''" (click)="setHeaderFilterType('')">
+            <span class="cat-icon cat-icon--all"></span>
+            <span>Todas</span>
+            <span class="cat-count">{{ totalElements() }}</span>
+          </button>
+          <button type="button" class="mail-cat-item mail-cat-item--urgent" [class.mail-cat-item--active]="headerFilterType() === 'URGENTE'" (click)="setHeaderFilterType('URGENTE')">
+            <span class="cat-icon cat-icon--urgent"></span>
+            <span>Urgentes</span>
+            <span class="cat-count">{{ categoryFilters()[1].count }}</span>
+          </button>
+          <button type="button" class="mail-cat-item" [class.mail-cat-item--active]="headerFilterType() === 'GENERAL'" (click)="setHeaderFilterType('GENERAL')">
+            <span class="cat-icon cat-icon--general"></span>
+            <span>Generales</span>
+            <span class="cat-count">{{ categoryFilters()[0].count }}</span>
+          </button>
+          <button type="button" class="mail-cat-item mail-cat-item--info" [class.mail-cat-item--active]="headerFilterType() === 'INFORMATIVO'" (click)="setHeaderFilterType('INFORMATIVO')">
+            <span class="cat-icon cat-icon--info"></span>
+            <span>Informativos</span>
+            <span class="cat-count">{{ categoryFilters()[2].count }}</span>
+          </button>
+        </nav>
+      </div>
+    }
+
+    <div class="mail-sidebar-footer">
+      @if (!sidebarCollapsed()) {
+        <div class="mail-sidebar-kpi">
+          <span class="kpi-label">No leídas</span>
+          <span class="kpi-value">{{ noLeidas() }}</span>
+        </div>
+      }
     </div>
-  }
+  </aside>
 
-  <!-- ========== Panel principal ========== -->
-  <div class="sesa-notif-body">
+  <!-- ─── CONTENIDO PRINCIPAL ──────────────────────────────────── -->
+  <main class="mail-main">
 
-    <!-- ===== DETALLE (overlay) ===== -->
-    @if (selectedNotif(); as n) {
-      <div class="sesa-notif-detail">
-        <div class="sesa-notif-detail-header">
-          <h2>{{ n.titulo }}</h2>
-          <button class="sesa-notif-close" (click)="closeDetail()">&times;</button>
-        </div>
-        <div class="sesa-notif-detail-meta">
-          <span class="sesa-notif-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-          <span>De: <strong>{{ n.remitenteNombre || 'Sistema' }}</strong></span>
-          <span>{{ n.fechaEnvio | date:'medium' }}</span>
-        </div>
-        <div class="sesa-notif-detail-content" [innerHTML]="n.contenido"></div>
-
-        @if (n.adjuntos && n.adjuntos.length > 0) {
-          <div class="sesa-notif-adjuntos-section">
-            <h4>Adjuntos ({{ n.adjuntos.length }})</h4>
-            <div class="sesa-notif-adjuntos-grid">
-              @for (adj of n.adjuntos; track adj.id) {
-                <div class="sesa-notif-adjunto-card">
-                  @if (isImageType(adj.contentType)) {
-                    <img [src]="adjuntoPreviewUrl(n.id, adj.id)" [alt]="adj.nombreArchivo" class="sesa-notif-adjunto-preview" />
-                  } @else if (isVideoType(adj.contentType)) {
-                    <video [src]="adjuntoPreviewUrl(n.id, adj.id)" class="sesa-notif-adjunto-preview" controls></video>
-                  } @else {
-                    <div class="sesa-notif-adjunto-icon"><fa-icon [icon]="faPaperclip"></fa-icon></div>
-                  }
-                  <div class="sesa-notif-adjunto-info">
-                    <span class="sesa-notif-adjunto-name">{{ adj.nombreArchivo }}</span>
-                    @if (adj.tamano) {
-                      <span class="sesa-notif-adjunto-size">{{ formatFileSize(adj.tamano) }}</span>
-                    }
-                  </div>
-                  <button class="sesa-notif-adjunto-dl" (click)="downloadFile(n.id, adj)">Descargar</button>
-                </div>
-              }
-            </div>
+    <!-- TOPBAR (simplificado: estado + search + sort) -->
+    <header class="mail-topbar">
+      <div class="mail-topbar-left">
+        @if (menuActive() === 'inbox' || menuActive() === 'important' || menuActive() === 'archived') {
+          <div class="mail-chips-group" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="mail-chip" [class.mail-chip--active]="stateFilter() === 'all'" (click)="setEstadoFilter('all')">Todas</button>
+            <button type="button" class="mail-chip" [class.mail-chip--active]="stateFilter() === 'unread'" (click)="setEstadoFilter('unread')">
+              No leídas
+              @if (noLeidas() > 0) { <span class="chip-count">{{ noLeidas() }}</span> }
+            </button>
+            <button type="button" class="mail-chip" [class.mail-chip--active]="stateFilter() === 'read'" (click)="setEstadoFilter('read')">Leídas</button>
           </div>
         }
-
-        @if (n.destinatarios && n.destinatarios.length > 0) {
-          <div class="sesa-notif-destinatarios-section">
-            <h4>Destinatarios ({{ n.destinatarios.length }})</h4>
-            <div class="sesa-notif-destinatarios-list">
-              @for (d of n.destinatarios; track d.usuarioId) {
-                <div class="sesa-notif-dest-item">
-                  <span class="sesa-notif-dest-avatar">{{ (d.usuarioNombre || d.usuarioEmail || '?').charAt(0).toUpperCase() }}</span>
-                  <span class="sesa-notif-dest-name">{{ d.usuarioNombre || d.usuarioEmail }}</span>
-                  @if (d.leido) {
-                    <span class="sesa-notif-dest-leido">Leído</span>
-                  } @else {
-                    <span class="sesa-notif-dest-no-leido">No leído</span>
-                  }
-                </div>
-              }
-            </div>
-          </div>
+        @if (headerFilterType()) {
+          <span class="active-filter-pill" (click)="setHeaderFilterType('')" title="Quitar filtro de categoría">
+            {{ tipoLabel(headerFilterType()) }}
+            <fa-icon [icon]="faTimes"></fa-icon>
+          </span>
         }
       </div>
-    } @else {
-      <!-- ===== LISTA RECIBIDAS ===== -->
-      @if (tab() === 'recibidas') {
-        <div class="sesa-notif-list">
-          @if (loading()) {
-            <div class="sesa-notif-loading">
-              <div class="sesa-spinner"></div>
-              <span>Cargando...</span>
-            </div>
-          } @else if (recibidas().length === 0) {
-            <div class="sesa-notif-empty">
-              <fa-icon [icon]="faInbox" class="sesa-notif-empty-icon"></fa-icon>
-              <p>No tiene notificaciones recibidas.</p>
-            </div>
-          } @else {
-            @for (n of recibidas(); track n.id) {
-              <button class="sesa-notif-row" (click)="viewNotif(n)">
-                <div class="sesa-notif-row-left">
-                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-                  <span class="sesa-notif-row-avatar">{{ (n.remitenteNombre || '?').charAt(0).toUpperCase() }}</span>
-                </div>
-                <div class="sesa-notif-row-body">
-                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
-                  <div class="sesa-notif-row-from">{{ n.remitenteNombre || 'Sistema' }}</div>
-                </div>
-                <div class="sesa-notif-row-right">
-                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
-                  @if (n.adjuntos && n.adjuntos.length > 0) {
-                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
-                  }
-                </div>
-              </button>
-            }
+
+      <div class="mail-topbar-right">
+        <div class="mail-sort-toggle" role="group" aria-label="Ordenar">
+          <button type="button" class="mail-sort-btn" [class.mail-sort-btn--active]="sortOrder() === 'fecha-desc'" (click)="setSortOrder('fecha-desc')" title="Recientes primero">
+            <fa-icon [icon]="faSortDown"></fa-icon>
+          </button>
+          <button type="button" class="mail-sort-btn" [class.mail-sort-btn--active]="sortOrder() === 'fecha-asc'" (click)="setSortOrder('fecha-asc')" title="Antiguas primero">
+            <fa-icon [icon]="faSortUp"></fa-icon>
+          </button>
+        </div>
+        <div class="mail-search">
+          <fa-icon [icon]="faSearch" class="mail-search-icon"></fa-icon>
+          <input type="search" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Buscar…" aria-label="Buscar" />
+          @if (searchQuery) {
+            <button type="button" class="mail-search-clear" (click)="searchQuery = ''; onSearchChange()" aria-label="Limpiar búsqueda">
+              <fa-icon [icon]="faTimes"></fa-icon>
+            </button>
           }
         </div>
-      }
+      </div>
+    </header>
 
-      <!-- ===== LISTA ENVIADAS ===== -->
-      @if (tab() === 'enviadas') {
-        <div class="sesa-notif-list">
-          @if (loading()) {
-            <div class="sesa-notif-loading">
-              <div class="sesa-spinner"></div>
-              <span>Cargando...</span>
-            </div>
-          } @else if (enviadas().length === 0) {
-            <div class="sesa-notif-empty">
-              <fa-icon [icon]="faPaperPlane" class="sesa-notif-empty-icon"></fa-icon>
-              <p>No ha enviado notificaciones.</p>
-            </div>
-          } @else {
-            @for (n of enviadas(); track n.id) {
-              <button class="sesa-notif-row" (click)="viewNotif(n)">
-                <div class="sesa-notif-row-left">
-                  <span class="sesa-notif-row-tipo sesa-notif-tipo--{{ n.tipo | lowercase }}">{{ n.tipo }}</span>
-                </div>
-                <div class="sesa-notif-row-body">
-                  <div class="sesa-notif-row-title">{{ n.titulo }}</div>
-                  <div class="sesa-notif-row-from">Para: {{ n.destinatarios?.length || 0 }} destinatarios</div>
-                </div>
-                <div class="sesa-notif-row-right">
-                  <span class="sesa-notif-row-date">{{ n.fechaEnvio | date:'short' }}</span>
-                  @if (n.adjuntos && n.adjuntos.length > 0) {
-                    <span class="sesa-notif-row-clip"><fa-icon [icon]="faPaperclip"></fa-icon>{{ n.adjuntos.length }}</span>
-                  }
-                </div>
-              </button>
-            }
+    <!-- BARRA DE SELECCIÓN MASIVA -->
+    @if (hasSelection()) {
+      <div class="mail-bulk-bar" role="toolbar" aria-label="Acciones para selección">
+        <div class="bulk-info">
+          <fa-icon [icon]="faCheckDouble"></fa-icon>
+          <span><strong>{{ selectedCount() }}</strong> seleccionadas</span>
+        </div>
+        <div class="bulk-actions">
+          @if (menuActive() === 'inbox' || menuActive() === 'important') {
+            <button type="button" class="bulk-btn" (click)="markSelectedAsRead()">
+              <fa-icon [icon]="faEnvelopeOpen"></fa-icon><span>Leídas</span>
+            </button>
+            <button type="button" class="bulk-btn" (click)="markSelectedAsUnread()">
+              <fa-icon [icon]="faEnvelope"></fa-icon><span>No leídas</span>
+            </button>
           }
+          <button type="button" class="bulk-btn bulk-btn--archive" (click)="archiveSelected()">
+            <fa-icon [icon]="faArchive"></fa-icon><span>Archivar</span>
+          </button>
+          <button type="button" class="bulk-btn bulk-btn--danger" (click)="deleteSelected()">
+            <fa-icon [icon]="faTrashCan"></fa-icon><span>Eliminar</span>
+          </button>
         </div>
-      }
-
-      <!-- ===== REDACTAR ===== -->
-      @if (tab() === 'redactar') {
-        <div class="sesa-notif-compose">
-          <form [formGroup]="form" (ngSubmit)="send()" class="sesa-notif-compose-form">
-            <div class="sesa-notif-compose-left">
-              <div class="sesa-field">
-                <label class="sesa-label">Título *</label>
-                <input class="sesa-input" formControlName="titulo" placeholder="Asunto de la notificación" />
-              </div>
-
-              <div class="sesa-field">
-                <label class="sesa-label">Tipo</label>
-                <select class="sesa-input" formControlName="tipo">
-                  <option value="GENERAL">General</option>
-                  <option value="URGENTE">Urgente</option>
-                  <option value="INFORMATIVO">Informativo</option>
-                </select>
-              </div>
-
-              <div class="sesa-field sesa-field--grow">
-                <label class="sesa-label">Contenido *</label>
-                <textarea
-                  class="sesa-input sesa-textarea"
-                  formControlName="contenido"
-                  placeholder="Escriba el contenido de la notificación (admite HTML)..."
-                  rows="10"></textarea>
-              </div>
-
-              <div class="sesa-field">
-                <label class="sesa-label">Adjuntos</label>
-                <div class="sesa-adjuntos-upload">
-                  <label class="sesa-upload-btn">
-                    <input type="file" multiple (change)="onFilesSelected($event)" hidden />
-                    <fa-icon [icon]="faPaperclip"></fa-icon>
-                    <span> Agregar archivos</span>
-                  </label>
-                  @if (adjuntos.length > 0) {
-                    <div class="sesa-adjuntos-list">
-                      @for (f of adjuntos; track $index) {
-                        <div class="sesa-adjunto-chip">
-                          <span>{{ f.name }} ({{ formatFileSize(f.size) }})</span>
-                          <button type="button" (click)="removeAdjunto($index)">&times;</button>
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <div class="sesa-notif-compose-right">
-              <label class="sesa-label">Destinatarios *</label>
-              <div class="sesa-dest-toolbar">
-                <input
-                  class="sesa-input sesa-dest-search"
-                  [(ngModel)]="searchUsuarios"
-                  [ngModelOptions]="{ standalone: true }"
-                  placeholder="Buscar usuario..." />
-                <button type="button" class="sesa-btn-sm" (click)="selectAll()">Todos</button>
-                <button type="button" class="sesa-btn-sm" (click)="deselectAll()">Ninguno</button>
-              </div>
-              <div class="sesa-dest-grid">
-                @for (u of filteredUsuarios(); track u.id) {
-                  <label class="sesa-dest-option" [class.sesa-dest-option--selected]="isSelected(u.id)">
-                    <input
-                      type="checkbox"
-                      [checked]="isSelected(u.id)"
-                      (change)="toggleDestinatario(u.id)" />
-                    <div class="sesa-dest-option-info">
-                      <span class="sesa-dest-option-name">{{ u.nombreCompleto }}</span>
-                      <span class="sesa-dest-option-email">{{ u.email }}</span>
-                    </div>
-                  </label>
-                }
-              </div>
-              <div class="sesa-dest-count">{{ selectedIds.size }} seleccionado(s)</div>
-            </div>
-
-            <div class="sesa-notif-compose-actions">
-              <button type="submit" class="sesa-btn sesa-btn--primary" [disabled]="loading()">
-                @if (loading()) {
-                  <span class="sesa-spinner-sm"></span> Enviando...
-                } @else {
-                  Enviar notificación
-                }
-              </button>
-            </div>
-          </form>
-        </div>
-      }
+        <button type="button" class="bulk-close" (click)="clearSelection()" aria-label="Cancelar selección">
+          <fa-icon [icon]="faTimes"></fa-icon>
+        </button>
+      </div>
     }
-  </div>
+
+    <!-- SPLIT CONTAINER: lista + detalle inline -->
+    <div class="mail-split-container">
+
+      <!-- LISTA -->
+      <section class="mail-list-pane" aria-label="Lista de notificaciones">
+        <div class="mail-list-head">
+          <label class="head-check" aria-label="Seleccionar todos">
+            <input type="checkbox" [checked]="isAllSelected()" (change)="toggleSelectAll($event)" />
+          </label>
+          <span class="head-col-main">Remitente · Asunto</span>
+          <span class="head-right">Fecha</span>
+        </div>
+
+        @if (loading()) {
+          <div class="mail-skeleton-list" aria-busy="true">
+            @for (r of skeletonRows; track r) {
+              <div class="mail-skeleton-row">
+                <span class="sk sk-check"></span>
+                <span class="sk sk-avatar"></span>
+                <span class="sk sk-name"></span>
+                <span class="sk sk-subject"></span>
+                <span class="sk sk-date"></span>
+              </div>
+            }
+          </div>
+        } @else if (filteredList().length === 0) {
+          <div class="notif-empty" role="status">
+            <div class="notif-empty-icon-wrap" aria-hidden="true">
+              <fa-icon [icon]="faInbox" class="notif-empty-icon"></fa-icon>
+            </div>
+            <p class="notif-empty-title">{{ emptyMessage() }}</p>
+            @if (hasFilterEffect()) {
+              <p class="notif-empty-hint">Prueba limpiando los filtros.</p>
+              <button type="button" class="notif-empty-action notif-empty-action--ghost" (click)="clearFilters()">
+                <fa-icon [icon]="faTimes"></fa-icon>Limpiar filtros
+              </button>
+            }
+            <button type="button" class="notif-empty-action" (click)="openCompose()">
+              <fa-icon [icon]="faPlus"></fa-icon>Nueva notificación
+            </button>
+          </div>
+        } @else {
+          @for (group of groupedByDate(); track group.key) {
+            <div class="mail-group-header" [attr.aria-label]="'Grupo de fecha: ' + group.label">
+              <span class="group-label">{{ group.label }}</span>
+              <span class="group-count">{{ group.items.length }}</span>
+            </div>
+
+            @for (n of group.items; track n.id) {
+              <article
+                class="mail-row"
+                [class.mail-row--unread]="isUnread(n)"
+                [class.mail-row--selected]="isListSelected(n.id) || selectedNotif()?.id === n.id"
+                [class.mail-row--exit]="isExiting(n.id)"
+                [class.mail-row--active]="selectedNotif()?.id === n.id"
+                (click)="viewNotif(n)"
+                role="row"
+                [attr.aria-label]="(isUnread(n) ? 'No leída: ' : '') + n.titulo">
+
+                <label class="mail-row-check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="isListSelected(n.id)" (change)="toggleSelect(n.id, $event)" />
+                </label>
+
+                <div class="mail-row-user">
+                  <span class="mail-row-avatar">{{ getInitial(n.remitenteNombre || '?') }}</span>
+                </div>
+
+                <div class="mail-row-body">
+                  <div class="mail-row-top">
+                    <span class="mail-row-name">{{ n.remitenteNombre || 'Sistema' }}</span>
+                    <span class="mail-row-tipo" [class]="'tipo-' + n.tipo.toLowerCase()">{{ tipoLabel(n.tipo) }}</span>
+                    @if (n.adjuntos && n.adjuntos.length > 0) {
+                      <fa-icon [icon]="faPaperclip" class="mail-clip"></fa-icon>
+                    }
+                  </div>
+                  <div class="mail-row-bottom">
+                    <strong class="mail-row-subject-text">{{ n.titulo }}</strong>
+                    <span class="mail-row-preview">{{ contentPreview(n, 80) }}</span>
+                  </div>
+                  <!-- Preview expandible al hover -->
+                  <div class="mail-row-hover-preview" aria-hidden="true">
+                    {{ contentPreviewLong(n) }}
+                  </div>
+                </div>
+
+                <div class="mail-row-meta">
+                  <span class="mail-row-date">{{ n.fechaEnvio | date:'d MMM' }}</span>
+                  <span class="mail-row-time">{{ n.fechaEnvio | date:'HH:mm' }}</span>
+                  <!-- Quick actions -->
+                  <div class="mail-quick-actions" (click)="$event.stopPropagation()">
+                    @if (menuActive() !== 'sent' && menuActive() !== 'trash') {
+                      @if (isUnread(n)) {
+                        <button type="button" class="qa-btn" (click)="quickMarkAsRead(n, $event)" title="Marcar leída">
+                          <fa-icon [icon]="faEnvelopeOpen"></fa-icon>
+                        </button>
+                      }
+                      <button type="button" class="qa-btn" (click)="runRowAction('archive', n, $event)" [title]="menuActive() === 'archived' ? 'Desarchivar' : 'Archivar'">
+                        <fa-icon [icon]="faArchive"></fa-icon>
+                      </button>
+                    }
+                    @if (menuActive() === 'trash') {
+                      <button type="button" class="qa-btn qa-btn--success" (click)="restoreFromTrash(n); $event.stopPropagation()" title="Restaurar">
+                        <fa-icon [icon]="faArrowLeft"></fa-icon>
+                      </button>
+                    }
+                    <button type="button" class="qa-btn qa-btn--danger" (click)="quickDelete(n, $event)" [title]="menuActive() === 'trash' ? 'Eliminar definitivamente' : 'Mover a papelera'">
+                      <fa-icon [icon]="faTrashCan"></fa-icon>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            }
+          }
+        }
+
+        <!-- PAGINACIÓN -->
+        @if (totalElements() > pageSize) {
+          <div class="notif-pagination" role="navigation" aria-label="Paginación">
+            <span class="notif-pagination-info">
+              {{ (currentPage() * pageSize) + 1 }}–{{ min((currentPage() + 1) * pageSize, totalElements()) }} de {{ totalElements() }}
+            </span>
+            <div class="notif-pagination-btns">
+              <button type="button" class="pag-btn" [disabled]="currentPage() === 0" (click)="goToPage(0)">«</button>
+              <button type="button" class="pag-btn" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">‹</button>
+              @for (p of pageNumbers(); track p) {
+                <button type="button" class="pag-btn pag-btn--num" [class.pag-btn--active]="p === currentPage()" (click)="goToPage(p)" [attr.aria-current]="p === currentPage() ? 'page' : null">
+                  {{ p + 1 }}
+                </button>
+              }
+              <button type="button" class="pag-btn" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(currentPage() + 1)">›</button>
+              <button type="button" class="pag-btn" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(totalPages() - 1)">»</button>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- PANEL DE DETALLE INLINE (split view) -->
+      @if (selectedNotif(); as n) {
+        <section class="mail-detail-pane" role="region" aria-label="Detalle de notificación">
+          <header class="detail-header">
+            <div class="detail-header-left">
+              <button type="button" class="detail-action-btn" (click)="closeDetail()" title="Cerrar detalle" aria-label="Cerrar detalle">
+                <fa-icon [icon]="faTimes"></fa-icon>
+              </button>
+            </div>
+            <div class="detail-header-right">
+              @if (menuActive() !== 'sent') {
+                @if (isUnread(n)) {
+                  <button type="button" class="detail-action-btn" (click)="quickMarkAsRead(n, $event)" title="Marcar como leída">
+                    <fa-icon [icon]="faEnvelopeOpen"></fa-icon>
+                  </button>
+                } @else {
+                  <button type="button" class="detail-action-btn" (click)="markAsUnread(n)" title="Marcar como no leída">
+                    <fa-icon [icon]="faEnvelope"></fa-icon>
+                  </button>
+                }
+                <button type="button" class="detail-action-btn" (click)="runRowAction('archive', n, $event)" [title]="menuActive() === 'archived' ? 'Desarchivar' : 'Archivar'">
+                  <fa-icon [icon]="faArchive"></fa-icon>
+                </button>
+              }
+              @if (menuActive() === 'trash') {
+                <button type="button" class="detail-action-btn detail-action-btn--success" (click)="restoreFromTrash(n)" title="Restaurar">
+                  <fa-icon [icon]="faArrowLeft"></fa-icon>
+                </button>
+              }
+              <button type="button" class="detail-action-btn detail-action-btn--danger" (click)="runRowAction('delete', n, $event)" [title]="menuActive() === 'trash' ? 'Eliminar definitivamente' : 'Mover a papelera'">
+                <fa-icon [icon]="faTrashCan"></fa-icon>
+              </button>
+            </div>
+          </header>
+
+          <div class="detail-body">
+            <span class="tipo-pill" [class]="'tipo-pill--' + n.tipo.toLowerCase()">{{ tipoLabel(n.tipo) }}</span>
+            <h2 class="detail-title">{{ n.titulo }}</h2>
+
+            <div class="detail-sender">
+              <span class="sender-avatar">{{ getInitial(n.remitenteNombre || '?') }}</span>
+              <div class="sender-info">
+                <span class="sender-name">{{ n.remitenteNombre || 'Sistema' }}</span>
+                <span class="sender-date">{{ n.fechaEnvio | date:'EEEE d MMMM yyyy · HH:mm' }}</span>
+              </div>
+            </div>
+
+            <div class="detail-content" [innerHTML]="n.contenido"></div>
+
+            @if (n.adjuntos && n.adjuntos.length > 0) {
+              <div class="detail-files">
+                <p class="files-label"><fa-icon [icon]="faPaperclip"></fa-icon> {{ n.adjuntos.length }} adjunto(s)</p>
+                <div class="files-grid">
+                  @for (adj of n.adjuntos; track adj.id) {
+                    <button type="button" class="file-chip" (click)="downloadFile(n.id, adj)" [title]="'Descargar ' + adj.nombreArchivo">
+                      <fa-icon [icon]="faPaperclip"></fa-icon>
+                      <span class="file-chip-name">{{ adj.nombreArchivo }}</span>
+                      @if (isRemitente(n)) {
+                        <span class="file-chip-del" (click)="$event.stopPropagation(); deleteAdjunto(n.id, adj)" title="Eliminar adjunto">
+                          <fa-icon [icon]="faTimes"></fa-icon>
+                        </span>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </main>
 </div>
+
+<!-- ─── MODAL DE CONFIRMACIÓN ────────────────────────────────────── -->
+@if (confirmModal().open) {
+  <div class="confirm-backdrop" (click)="onConfirmCancel()" aria-hidden="true"></div>
+  <div class="confirm-modal" role="alertdialog" aria-modal="true" [attr.aria-label]="confirmModal().title" (click)="$event.stopPropagation()">
+    <div class="confirm-icon-wrap" [class.confirm-icon-wrap--danger]="confirmModal().danger">
+      @if (confirmModal().danger) {
+        <fa-icon [icon]="faTriangleExclamation"></fa-icon>
+      } @else {
+        <fa-icon [icon]="faCircleQuestion"></fa-icon>
+      }
+    </div>
+    <div class="confirm-body">
+      <h4 class="confirm-title">{{ confirmModal().title }}</h4>
+      <p class="confirm-message">{{ confirmModal().message }}</p>
+    </div>
+    <footer class="confirm-actions">
+      <button type="button" class="confirm-btn confirm-btn--ghost" (click)="onConfirmCancel()">Cancelar</button>
+      <button type="button" class="confirm-btn" [class.confirm-btn--danger]="confirmModal().danger" [class.confirm-btn--primary]="!confirmModal().danger" (click)="onConfirmAccept()" cdkFocusInitial>
+        {{ confirmModal().confirmLabel }}
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- ─── COMPOSE ─────────────────────────────────────────────────── -->
+@if (composeOpen()) {
+  <div class="mail-compose-backdrop" (click)="closeComposeWithConfirm()" aria-hidden="true"></div>
+  <section class="mail-compose" role="dialog" aria-modal="true" aria-label="Nuevo mensaje" (click)="$event.stopPropagation()">
+    <header class="mail-compose-head">
+      <div class="compose-head-left">
+        <span class="compose-head-icon"><fa-icon [icon]="faBullhorn"></fa-icon></span>
+        <h3>Nuevo mensaje</h3>
+      </div>
+      <div class="compose-head-right">
+        <button type="button" class="compose-head-btn compose-head-btn--close" (click)="closeComposeWithConfirm()" aria-label="Cerrar">
+          <fa-icon [icon]="faTimes"></fa-icon>
+        </button>
+      </div>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="send()" class="mail-compose-form">
+      <div class="mail-compose-layout">
+        <div class="mail-compose-main">
+          <div class="compose-field-row">
+            <div class="compose-field compose-field--grow">
+              <label for="compose-subject">Asunto <span class="required">*</span></label>
+              <div class="compose-input-wrap">
+                <input id="compose-subject" type="text" formControlName="titulo" (input)="onComposeFormChange()" [attr.maxlength]="subjectMaxLength" placeholder="Escribe el asunto..." autocomplete="off" />
+                <span class="input-counter" [class.input-counter--warn]="subjectLength() > subjectMaxLength - 30">{{ subjectLength() }}/{{ subjectMaxLength }}</span>
+              </div>
+              @if (form.get('titulo')?.touched && form.get('titulo')?.hasError('required')) {
+                <span class="field-error">El asunto es obligatorio</span>
+              }
+            </div>
+            <div class="compose-field compose-field--type">
+              <label for="compose-tipo">Tipo</label>
+              <select id="compose-tipo" formControlName="tipo" (change)="onComposeFormChange()">
+                <option value="GENERAL">General</option>
+                <option value="URGENTE">Urgente</option>
+                <option value="INFORMATIVO">Informativo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="compose-field">
+            <label>Mensaje <span class="required">*</span></label>
+            <div class="mail-editor-wrap">
+              <div class="mail-editor-tools" role="toolbar">
+                <button type="button" class="editor-tool" (click)="execCmd('bold')" title="Negrita"><fa-icon [icon]="faBold"></fa-icon></button>
+                <button type="button" class="editor-tool" (click)="execCmd('italic')" title="Cursiva"><fa-icon [icon]="faItalic"></fa-icon></button>
+                <span class="editor-sep"></span>
+                <button type="button" class="editor-tool" (click)="execCmd('insertUnorderedList')" title="Lista"><fa-icon [icon]="faListUl"></fa-icon></button>
+                <button type="button" class="editor-tool" (click)="execCmd('insertOrderedList')" title="Lista numerada"><fa-icon [icon]="faListOl"></fa-icon></button>
+                <span class="editor-sep"></span>
+                <button type="button" class="editor-tool" (click)="execCmd('createLink')" title="Enlace"><fa-icon [icon]="faLink"></fa-icon></button>
+                <button type="button" class="editor-tool editor-tool--preview" (click)="composePreview.set(!composePreview())" [class.editor-tool--active]="composePreview()">Preview</button>
+              </div>
+              <div class="mail-editor-content-wrap" [class.mail-editor-content-wrap--split]="composePreview()">
+                <div class="mail-editor-content notif-editor-content" contenteditable="true" role="textbox" aria-multiline="true" (input)="onEditorInput($event)" (blur)="syncEditorToForm()"></div>
+                @if (composePreview()) {
+                  <div class="mail-editor-preview" [innerHTML]="form.value.contenido || ''"></div>
+                }
+              </div>
+            </div>
+            @if (form.get('contenido')?.touched && form.get('contenido')?.hasError('required')) {
+              <span class="field-error">El contenido es obligatorio</span>
+            }
+          </div>
+
+          <div class="mail-upload-box" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+            <label class="upload-label">
+              <fa-icon [icon]="faPaperclip"></fa-icon>
+              <span>Arrastra archivos aquí o <strong>selecciona desde el equipo</strong></span>
+              <input type="file" multiple (change)="onFilesSelected($event)" aria-hidden="true" tabindex="-1" />
+            </label>
+          </div>
+
+          @if (adjuntos.length > 0) {
+            <div class="mail-files-grid">
+              @for (f of adjuntos; track $index) {
+                <div class="mail-file-card">
+                  @if (f.type.startsWith('image/')) {
+                    <img [src]="filePreviewUrl(f)" [alt]="f.name" />
+                  } @else {
+                    <div class="mail-file-icon"><fa-icon [icon]="faPaperclip"></fa-icon></div>
+                  }
+                  <div class="mail-file-meta">
+                    <strong>{{ f.name }}</strong>
+                    <small>{{ formatFileSize(f.size) }}</small>
+                  </div>
+                  <button type="button" class="file-card-del" (click)="removeAdjunto($index)" aria-label="Quitar archivo">
+                    <fa-icon [icon]="faTrashCan"></fa-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <aside class="mail-compose-side">
+          <p class="compose-side-title">Destinatarios</p>
+          @if (isAdmin && !isSuperAdmin) {
+            <label class="mail-broadcast-toggle">
+              <input type="checkbox" [(ngModel)]="broadcastTodos" [ngModelOptions]="{ standalone: true }" (change)="onBroadcastTodosChange()" />
+              <span>Todos los usuarios</span>
+            </label>
+          }
+
+          @if (!broadcastTodos) {
+            <div class="mail-recips">
+              <div class="mail-recips-head">
+                <span>{{ selectedIds.size > 0 ? selectedIds.size + ' seleccionado(s)' : 'Seleccionar' }}</span>
+                <div>
+                  <button type="button" class="recips-pill" (click)="selectAll()">Todos</button>
+                  <button type="button" class="recips-pill" (click)="deselectAll()">Ninguno</button>
+                </div>
+              </div>
+              <div class="mail-recips-search">
+                <fa-icon [icon]="faSearch"></fa-icon>
+                <input type="search" [(ngModel)]="searchDestinatarios" [ngModelOptions]="{ standalone: true }" placeholder="Buscar..." />
+              </div>
+              <div class="mail-recips-list" role="listbox" aria-multiselectable="true">
+                @for (u of filteredDestinatarios(); track u.id) {
+                  <label class="recip-item" [class.recip-item--selected]="isSelected(u.id)" role="option" [attr.aria-selected]="isSelected(u.id)">
+                    <input type="checkbox" [checked]="isSelected(u.id)" (change)="toggleDestinatario(u.id)" />
+                    <span class="recip-avatar">{{ getInitial(u.nombre || u.email || '?') }}</span>
+                    <div class="recip-info">
+                      <span class="recip-name">{{ u.nombre || u.email }}</span>
+                      @if (u.rol) { <span class="recip-rol">{{ u.rol }}</span> }
+                    </div>
+                  </label>
+                }
+                @if (filteredDestinatarios().length === 0) {
+                  <p class="recips-empty">Sin resultados</p>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="broadcast-all-info">
+              <fa-icon [icon]="faBullhorn"></fa-icon>
+              <span>Se enviará a todos los usuarios</span>
+            </div>
+          }
+        </aside>
+      </div>
+
+      @if (error()) {
+        <div class="notif-alert notif-alert--error" role="alert">
+          <span>{{ error() }}</span>
+          <button type="button" (click)="error.set(null)">&times;</button>
+        </div>
+      }
+
+      <footer class="mail-compose-actions">
+        <div class="compose-actions-left">
+          @if (adjuntos.length > 0) {
+            <span class="adj-count"><fa-icon [icon]="faPaperclip"></fa-icon> {{ adjuntos.length }} archivo(s)</span>
+          }
+        </div>
+        <div class="compose-actions-right">
+          <button type="button" class="compose-btn compose-btn--ghost" (click)="closeComposeWithConfirm()">Cancelar</button>
+          @if (isSuperAdmin) {
+            <button type="button" class="compose-btn compose-btn--secondary" [disabled]="loading()" (click)="broadcastAdmins()">
+              <fa-icon [icon]="faBullhorn"></fa-icon>Admins
+            </button>
+          }
+          <button type="submit" class="compose-btn compose-btn--primary" [disabled]="loading()">
+            @if (loading()) { <span class="btn-spinner"></span> }
+            <fa-icon [icon]="faPaperPlane"></fa-icon>Enviar
+          </button>
+        </div>
+      </footer>
+    </form>
+  </section>
+}

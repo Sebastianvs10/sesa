@@ -21,10 +21,16 @@ public class LaboratorioSolicitudDto {
     private Long id;
     private Long pacienteId;
     private String pacienteNombre;
+    private String pacienteDocumento;
     private Long solicitanteId;
     private String solicitanteNombre;
     private String tipoPrueba;
     private String estado;
     private LocalDate fechaSolicitud;
+    private String resultado;
+    private String observaciones;
+    private Instant fechaResultado;
+    private Long bacteriologoId;
+    private String bacteriologoNombre;
     private Instant createdAt;
 }

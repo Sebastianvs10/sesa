@@ -1,0 +1,194 @@
+<section class="ebs-visita-nueva">
+  <header class="ebs-visita-nueva__header">
+    <h1 class="ebs-visita-nueva__title">Nueva visita domiciliaria</h1>
+    <p class="ebs-visita-nueva__subtitle">
+      Registro estructurado según APS: hogar, motivo, CIE10, plan de cuidado e intervenciones por dependencia.
+    </p>
+  </header>
+
+  <sesa-card title="Datos de la visita" subtitle="Territorio, hogar y datos clínicos" alignHeader="start">
+    <form class="ebs-visita-nueva__form" (ngSubmit)="submit()">
+      <label class="ebs-visita-nueva__label">
+        <span>Microterritorio <em class="ebs-visita-nueva__req">*</em></span>
+        <select
+          class="ebs-visita-nueva__input"
+          [class.ebs-visita-nueva__input--error]="errors['territorio']"
+          [ngModel]="selectedTerritoryId"
+          name="territory"
+          (ngModelChange)="selectedTerritoryId = $event; clearError('territorio'); onTerritoryChange()"
+        >
+          <option [ngValue]="null">Seleccionar</option>
+          @for (t of territories(); track t.id) {
+            <option [ngValue]="t.id">{{ t.name }}</option>
+          }
+        </select>
+        @if (errors['territorio']) {
+          <span class="ebs-visita-nueva__error">{{ errors['territorio'] }}</span>
+        }
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Hogar <em class="ebs-visita-nueva__req">*</em></span>
+        <select
+          class="ebs-visita-nueva__input"
+          [class.ebs-visita-nueva__input--error]="errors['hogar']"
+          [ngModel]="selectedHouseholdId"
+          name="household"
+          (ngModelChange)="selectedHouseholdId = $event; clearError('hogar')"
+        >
+          <option [ngValue]="null">Seleccionar</option>
+          @for (h of households(); track h.id) {
+            <option [ngValue]="h.id">{{ h.addressText || 'Hogar #' + h.id }}</option>
+          }
+        </select>
+        @if (errors['hogar']) {
+          <span class="ebs-visita-nueva__error">{{ errors['hogar'] }}</span>
+        }
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Brigada (opcional)</span>
+        <select class="ebs-visita-nueva__input" [(ngModel)]="brigadeId" name="brigadeId">
+          <option [ngValue]="null">Ninguna</option>
+          @for (b of brigades(); track b.id!) {
+            <option [ngValue]="b.id">{{ b.name }} ({{ b.dateStart }})</option>
+          }
+        </select>
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Vereda (opcional)</span>
+        <select class="ebs-visita-nueva__input" [(ngModel)]="veredaCodigo" name="veredaCodigo">
+          <option value="">Seleccionar</option>
+          @for (v of veredas(); track v.codigo) {
+            <option [value]="v.codigo">{{ v.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Fecha y hora <em class="ebs-visita-nueva__req">*</em></span>
+        <input
+          type="datetime-local"
+          class="ebs-visita-nueva__input"
+          [class.ebs-visita-nueva__input--error]="errors['fecha']"
+          [(ngModel)]="visitDate"
+          name="visitDate"
+          (ngModelChange)="clearError('fecha')"
+        />
+        @if (errors['fecha']) {
+          <span class="ebs-visita-nueva__error">{{ errors['fecha'] }}</span>
+        }
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Tipo de visita</span>
+        <select class="ebs-visita-nueva__input" [(ngModel)]="visitType" name="visitType">
+          <option value="DOMICILIARIA_APS">Domiciliaria APS</option>
+          <option value="SEGUIMIENTO">Seguimiento</option>
+          <option value="ESTRATIFICACION">Estratificación de riesgo</option>
+          <option value="PROMOCION">Promoción y prevención</option>
+        </select>
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Tipo de intervención (opcional)</span>
+        <input type="text" class="ebs-visita-nueva__input" [(ngModel)]="tipoIntervencion" name="tipoIntervencion" placeholder="Ej.: Control prenatal, tamizaje" />
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Diagnóstico CIE-10 (opcional)</span>
+        <input
+          type="text"
+          class="ebs-visita-nueva__input"
+          [class.ebs-visita-nueva__input--error]="errors['cie10']"
+          [(ngModel)]="diagnosticoCie10"
+          name="diagnosticoCie10"
+          placeholder="Ej.: A00, Z00.0, O80"
+          (blur)="onCie10Blur()"
+        />
+        @if (errors['cie10']) {
+          <span class="ebs-visita-nueva__error">{{ errors['cie10'] }}</span>
+        }
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Plan de cuidado (opcional)</span>
+        <textarea
+          class="ebs-visita-nueva__input ebs-visita-nueva__textarea"
+          [(ngModel)]="planCuidado"
+          name="planCuidado"
+          rows="2"
+          placeholder="Recomendaciones, seguimiento..."
+        ></textarea>
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Motivo de la visita</span>
+        <textarea
+          class="ebs-visita-nueva__input ebs-visita-nueva__textarea"
+          [(ngModel)]="motivo"
+          name="motivo"
+          rows="2"
+          placeholder="Ej.: Control de gestante, seguimiento crónico..."
+        ></textarea>
+      </label>
+      <label class="ebs-visita-nueva__label">
+        <span>Notas / hallazgos</span>
+        <textarea
+          class="ebs-visita-nueva__input ebs-visita-nueva__textarea"
+          [(ngModel)]="notes"
+          name="notes"
+          rows="3"
+          placeholder="Observaciones, derivaciones..."
+        ></textarea>
+      </label>
+
+      <div class="ebs-visita-nueva__intervenciones">
+        <h4 class="ebs-visita-nueva__intervenciones-title">Agregar intervención por dependencia</h4>
+        <div class="ebs-visita-nueva__intervenciones-add">
+          <select class="ebs-visita-nueva__input ebs-visita-nueva__input--inline" [(ngModel)]="nuevaIntervencionTipo" name="nuevaIntervencionTipo">
+            <option value="ENFERMERIA">Enfermería</option>
+            <option value="MEDICO">Médico</option>
+            <option value="PSICOLOGIA">Psicología</option>
+            <option value="ODONTOLOGIA">Odontología</option>
+            <option value="SALUD_PUBLICA">Salud Pública</option>
+          </select>
+          <textarea
+            class="ebs-visita-nueva__input ebs-visita-nueva__textarea ebs-visita-nueva__textarea--inline"
+            [(ngModel)]="nuevaIntervencionDetalle"
+            name="nuevaIntervencionDetalle"
+            rows="1"
+            placeholder="Detalle de la intervención..."
+          ></textarea>
+          <button type="button" class="ebs-visita-nueva__btn-add" (click)="addIntervencion()" [disabled]="!nuevaIntervencionDetalle.trim()">Agregar</button>
+        </div>
+        @if (intervenciones.length > 0) {
+          <ul class="ebs-visita-nueva__intervenciones-list">
+            @for (item of intervenciones; track $index) {
+              <li class="ebs-visita-nueva__intervencion-item">
+                <span class="ebs-visita-nueva__intervencion-badge">{{ item.tipo }}</span>
+                <span class="ebs-visita-nueva__intervencion-text">{{ item.detalle }}</span>
+                <button type="button" class="ebs-visita-nueva__intervencion-remove" (click)="removeIntervencion($index)" aria-label="Quitar">×</button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="ebs-visita-nueva__risk">
+        <span class="ebs-visita-nueva__risk-title">Señales de riesgo (estrategia APS)</span>
+        <label class="ebs-visita-nueva__check">
+          <input type="checkbox" [(ngModel)]="riskCardiovascular" name="riskCardiovascular" />
+          Riesgo cardiovascular
+        </label>
+        <label class="ebs-visita-nueva__check">
+          <input type="checkbox" [(ngModel)]="riskMaterno" name="riskMaterno" />
+          Riesgo materno / perinatal
+        </label>
+        <label class="ebs-visita-nueva__check">
+          <input type="checkbox" [(ngModel)]="riskCronico" name="riskCronico" />
+          Riesgo crónico (HTA, DM, etc.)
+        </label>
+      </div>
+
+      <div class="ebs-visita-nueva__actions">
+        <button type="submit" class="ebs-visita-nueva__submit" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Registrar visita' }}
+        </button>
+        <a routerLink="/ebs/territorios" class="ebs-visita-nueva__cancel">Cancelar</a>
+      </div>
+    </form>
+  </sesa-card>
+</section>

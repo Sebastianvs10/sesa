@@ -1,5 +1,9 @@
+/**
+ * Login — spinner en autenticación, toast errores/éxito.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -7,12 +11,15 @@ import { faEye, faEyeSlash, faSun, faMoon, faEnvelope, faIdCard } from '@fortawe
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaCurrentService } from '../../core/services/empresa-current.service';
+import { PermissionsService } from '../../core/services/permissions.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaLoginRolePickerComponent } from '../../shared/components/sesa-login-role-picker/sesa-login-role-picker.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-login-page',
-  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule, SesaFormFieldComponent],
+  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule, SesaFormFieldComponent, SesaLoginRolePickerComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -20,7 +27,13 @@ export class LoginPageComponent implements OnInit {
   loginForm: FormGroup;
   resetRequestForm: FormGroup;
   resetConfirmForm: FormGroup;
-  loading = false;
+  loading = signal(false);
+  /** Tras login multi-rol: modal de elección de perfil */
+  showRolePicker = signal(false);
+  rolePickerRoles = signal<string[]>([]);
+  rolePickerUserName = signal('');
+  rolePickerEmpresa = signal<string | undefined>(undefined);
+  rolePickerSuggested = signal<string | undefined>(undefined);
   errorMessage: string | null = null;
   resetMessage: string | null = null;
   showReset = false;
@@ -37,12 +50,14 @@ export class LoginPageComponent implements OnInit {
   faIdCard = faIdCard;
 
   themeService = inject(ThemeService);
+  private readonly toast = inject(SesaToastService);
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
-    private empresaCurrent: EmpresaCurrentService
+    private empresaCurrent: EmpresaCurrentService,
+    private permissionsService: PermissionsService
   ) {
     this.loginForm = this.fb.group({
       /** Acepta correo electrónico o número de identificación según loginMode */
@@ -72,15 +87,24 @@ export class LoginPageComponent implements OnInit {
       return;
     }
     const { email, password } = this.loginForm.getRawValue();
-    this.loading = true;
+    this.loading.set(true);
     this.authService.login({ email, password }).subscribe({
       next: () => {
-        this.loading = false;
-        this.empresaCurrent.load();
-        this.router.navigate(['/dashboard']);
+        this.loading.set(false);
+        const roles = this.authService.currentRoles();
+        if (roles.length > 1) {
+          const u = this.authService.currentUser();
+          this.rolePickerRoles.set([...roles]);
+          this.rolePickerUserName.set(u?.nombreCompleto ?? '');
+          this.rolePickerEmpresa.set(u?.empresaNombre);
+          this.rolePickerSuggested.set(u?.rolActivo ?? u?.role);
+          this.showRolePicker.set(true);
+          return;
+        }
+        this.finishLoginAndNavigate();
       },
       error: (err) => {
-        this.loading = false;
+        this.loading.set(false);
         if (err.status === 401) {
           this.errorMessage = 'Correo o contraseña incorrectos.';
         } else if (err.error?.message) {
@@ -88,8 +112,27 @@ export class LoginPageComponent implements OnInit {
         } else {
           this.errorMessage = 'Error de conexión. Comprueba que el backend esté en ejecución.';
         }
+        this.toast.error(this.errorMessage!, 'Error de acceso');
       },
     });
+  }
+
+  /** Después de elegir rol (o un solo rol): empresa + permisos + dashboard */
+  finishLoginAndNavigate(): void {
+    this.empresaCurrent.load();
+    this.permissionsService.load(this.authService.rolActivo());
+    this.router.navigate(['/dashboard']);
+  }
+
+  onRolePicked(rol: string): void {
+    this.authService.switchRole(rol);
+    this.showRolePicker.set(false);
+    this.finishLoginAndNavigate();
+  }
+
+  onRolePickerCancel(): void {
+    this.showRolePicker.set(false);
+    this.authService.logout();
   }
 
   togglePasswordVisibility(): void {
@@ -138,9 +181,11 @@ export class LoginPageComponent implements OnInit {
     this.authService.requestPasswordReset({ email }).subscribe({
       next: (res) => {
         this.resetMessage = `${res.message}${res.token ? ' Token: ' + res.token : ''}`;
+        this.toast.success('Solicitud enviada. Revisa tu correo.', 'Recuperación');
       },
       error: (err) => {
         this.errorMessage = err?.error?.error || 'No se pudo procesar la solicitud';
+        this.toast.error(this.errorMessage!, 'Error');
       },
     });
   }
@@ -155,9 +200,11 @@ export class LoginPageComponent implements OnInit {
     this.authService.resetPassword({ token, newPassword }).subscribe({
       next: (res) => {
         this.resetMessage = res.message;
+        this.toast.success('Contraseña restablecida correctamente. Inicia sesión.', 'Contraseña restablecida');
       },
       error: (err) => {
         this.errorMessage = err?.error?.error || 'No se pudo restablecer la contraseña';
+        this.toast.error(this.errorMessage!, 'Error');
       },
     });
   }

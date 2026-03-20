@@ -46,6 +46,9 @@ public class Notificacion {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "cita_id")
+    private Long citaId;
+
     @OneToMany(mappedBy = "notificacion", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<NotificacionAdjunto> adjuntos = new ArrayList<>();

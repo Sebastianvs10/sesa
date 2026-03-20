@@ -1,120 +1,627 @@
-<section class="sesa-page sesa-page-pacientes">
-  <header class="sesa-page-header sesa-page-header-premium">
-    <div class="sesa-page-header-left">
-      <div class="sesa-page-icon-wrap">
-        <fa-icon [icon]="faUsers" class="sesa-page-icon" aria-hidden="true"></fa-icon>
+<section class="plp-page" [class.plp-has-panel]="selectedPaciente()">
+
+  <!-- ═══ TOOLBAR ═══════════════════════════════════════════════════════════ -->
+  <header class="plp-toolbar">
+    <div class="plp-toolbar-brand">
+      <div class="plp-toolbar-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
       </div>
-      <div>
-        <h1 class="sesa-page-title">Pacientes</h1>
-        <p class="sesa-page-subtitle">Gestión de pacientes y acceso a historia clínica</p>
+      <div class="plp-toolbar-meta">
+        <h1 class="plp-toolbar-title">Pacientes</h1>
+        <p class="plp-toolbar-sub">Gestión y acceso a historia clínica</p>
       </div>
     </div>
-    @if (canCreate) {
-      <a class="sesa-btn sesa-btn-primary sesa-btn-icon" routerLink="/pacientes/nuevo">
-        <fa-icon [icon]="faPlus" aria-hidden="true"></fa-icon>
+
+    @if (canCreate()) {
+      <a class="plp-btn plp-btn--primary" routerLink="/pacientes/nuevo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
         Nuevo paciente
       </a>
     }
   </header>
 
-  <!-- Tarjetas de resumen -->
-  <div class="sesa-stats-row">
-    <div class="sesa-stat-card">
-      <span class="sesa-stat-value">{{ totalElements }}</span>
-      <span class="sesa-stat-label">Total pacientes</span>
-    </div>
-    <div class="sesa-stat-card">
-      <span class="sesa-stat-value">{{ pacientes.length }}</span>
-      <span class="sesa-stat-label">En esta página</span>
-    </div>
-  </div>
+  <!-- ═══ BODY ════════════════════════════════════════════════════════════ -->
+  <div class="plp-body">
 
-  <sesa-card>
-    <div class="sesa-search-row">
-      <input
-        type="text"
-        class="sesa-input-search"
-        placeholder="Buscar por nombre o documento..."
-        [(ngModel)]="searchQ"
-        (keyup.enter)="onSearch()"
-      />
-      <button type="button" class="sesa-btn sesa-btn-primary" (click)="onSearch()">Buscar</button>
-    </div>
+    <!-- ─── MAIN ──────────────────────────────────────────────────────────── -->
+    <main class="plp-main">
 
-    @if (loading) {
-      <div class="sesa-loading-wrap">
-        <p class="sesa-loading">Cargando…</p>
-      </div>
-    } @else if (error) {
-      <p class="sesa-error">{{ error }}</p>
-    } @else {
-      <div class="sesa-table-wrap">
-        <table class="sesa-table sesa-table-premium">
-          <thead>
-            <tr>
-              <th>Documento</th>
-              <th>Nombres</th>
-              <th>Apellidos</th>
-              <th>Teléfono</th>
-              <th>EPS</th>
-              <th class="sesa-col-actions">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of pacientes; track p.id) {
-              <tr>
-                <td><span class="sesa-cell-doc">{{ p.documento }}</span></td>
-                <td><strong class="sesa-cell-name">{{ p.nombres }}</strong></td>
-                <td>{{ p.apellidos || '—' }}</td>
-                <td>{{ p.telefono || '—' }}</td>
-                <td>{{ p.epsNombre || '—' }}</td>
-                <td class="sesa-col-actions">
-                  <div class="sesa-actions-cell">
-                    <a [routerLink]="['/historia-clinica']" [queryParams]="{ pacienteId: p.id }" class="sesa-btn sesa-btn-icon-only sesa-btn-outline" title="Historia clínica">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    </a>
-                    @if (canCreate) {
-                      <a [routerLink]="['/pacientes', p.id, 'editar']" class="sesa-btn sesa-btn-icon-only sesa-btn-secondary" title="Editar paciente">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </a>
-                    }
-                    @if (canDelete) {
-                      <button type="button" class="sesa-btn sesa-btn-icon-only sesa-btn-danger" (click)="delete(p.id, p.nombres)" title="Eliminar paciente">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
+      <!-- KPIs -->
+      <div class="plp-kpis">
+        <div class="plp-kpi plp-kpi--teal">
+          <div class="plp-kpi-bar"></div>
+          <div class="plp-kpi-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="plp-kpi-content">
+            @if (loading()) {
+              <div class="plp-skeleton" style="width:52px;height:1.75rem;border-radius:4px"></div>
+              <div class="plp-skeleton" style="width:88px;height:.6rem;border-radius:3px;margin-top:.3rem"></div>
+            } @else {
+              <span class="plp-kpi-value">{{ totalElements }}</span>
+              <span class="plp-kpi-label">Total pacientes</span>
             }
-            @empty {
-              <tr>
-                <td colspan="6">
-                  <div class="sesa-empty-state">
-                    <fa-icon [icon]="faClipboardList" class="sesa-empty-icon" aria-hidden="true"></fa-icon>
-                    <p>No hay pacientes.</p>
-                    @if (canCreate) {
-                      <a routerLink="/pacientes/nuevo" class="sesa-btn sesa-btn-primary">Crear primer paciente</a>
-                    }
-                  </div>
-                </td>
-              </tr>
+          </div>
+        </div>
+
+        <div class="plp-kpi plp-kpi--indigo">
+          <div class="plp-kpi-bar"></div>
+          <div class="plp-kpi-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+          </div>
+          <div class="plp-kpi-content">
+            @if (loading()) {
+              <div class="plp-skeleton" style="width:40px;height:1.75rem;border-radius:4px"></div>
+              <div class="plp-skeleton" style="width:70px;height:.6rem;border-radius:3px;margin-top:.3rem"></div>
+            } @else {
+              <span class="plp-kpi-value">{{ pacientes.length }}</span>
+              <span class="plp-kpi-label">En esta página</span>
             }
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
-      @if (totalElements > size) {
-        <div class="sesa-pagination">
-          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="prevPage()" [disabled]="page === 0">
-            ‹ Anterior
-          </button>
-          <span class="sesa-pagination-info">Página {{ page + 1 }} de {{ totalPages }} ({{ totalElements }} en total)</span>
-          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="nextPage()"
-            [disabled]="(page + 1) * size >= totalElements">
-            Siguiente ›
+
+      <!-- TABLE CARD -->
+      <div class="plp-card">
+
+        <!-- Barra de búsqueda / filtros -->
+        <div class="plp-card-bar">
+          <div class="plp-search-field">
+            <svg class="plp-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              class="plp-search-input"
+              type="text"
+              [(ngModel)]="searchQ"
+              placeholder="Buscar por nombre, apellido o documento…"
+              aria-label="Buscar paciente"
+              (keyup.enter)="onSearch()"
+            />
+            @if (searchQ) {
+              <button type="button" class="plp-search-clear" (click)="searchQ=''; onSearch()" aria-label="Limpiar búsqueda">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            }
+          </div>
+
+          <select
+            class="plp-filter-select"
+            [ngModel]="filterActivo"
+            (ngModelChange)="filterActivo = $event; onFilterActivoChange()"
+            [disabled]="loading()"
+            aria-label="Filtrar por estado"
+          >
+            <option [ngValue]="null">Todos</option>
+            <option [ngValue]="true">Activos</option>
+            <option [ngValue]="false">Inactivos</option>
+          </select>
+
+          <button type="button" class="plp-btn plp-btn--ghost plp-btn--sm"
+            (click)="onSearch()" [disabled]="loading()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Buscar
           </button>
         </div>
-      }
+
+        <!-- Error -->
+        @if (error() && !loading()) {
+          <div class="plp-error-bar" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ error() }}
+          </div>
+        }
+
+        <!-- Tabla -->
+        <div class="plp-table-wrap">
+          <table class="plp-table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Documento</th>
+                <th class="plp-col-eps">EPS</th>
+                <th class="plp-col-tel">Teléfono</th>
+                <th>Estado</th>
+                <th class="plp-col-actions" aria-label="Acciones"></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              @if (loading()) {
+                @for (sk of [1,2,3,4,5,6,7,8]; track sk) {
+                  <tr>
+                    <td>
+                      <div class="plp-cell-person">
+                        <div class="plp-skeleton plp-skeleton--circle" style="width:36px;height:36px;flex-shrink:0"></div>
+                        <div style="display:flex;flex-direction:column;gap:.28rem">
+                          <div class="plp-skeleton" style="width:118px;height:.75rem;border-radius:3px"></div>
+                          <div class="plp-skeleton" style="width:82px;height:.6rem;border-radius:3px"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><div class="plp-skeleton" style="width:84px;height:.75rem;border-radius:3px"></div></td>
+                    <td class="plp-col-eps"><div class="plp-skeleton" style="width:64px;height:1.35rem;border-radius:999px"></div></td>
+                    <td class="plp-col-tel"><div class="plp-skeleton" style="width:72px;height:.75rem;border-radius:3px"></div></td>
+                    <td><div class="plp-skeleton" style="width:54px;height:1.35rem;border-radius:999px"></div></td>
+                    <td class="plp-col-actions">
+                      <div class="plp-row-actions">
+                        <div class="plp-skeleton plp-skeleton--rounded" style="width:28px;height:28px"></div>
+                        <div class="plp-skeleton plp-skeleton--rounded" style="width:28px;height:28px"></div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              } @else {
+                @for (p of pacientes; track p.id) {
+                  <tr
+                    class="plp-row"
+                    [class.plp-row--selected]="selectedPaciente()?.id === p.id"
+                    (click)="openPanel(p)"
+                    role="button"
+                    tabindex="0"
+                    (keyup.enter)="openPanel(p)"
+                    [attr.aria-label]="'Ver detalle de ' + patientFullName(p)"
+                    [attr.aria-pressed]="selectedPaciente()?.id === p.id"
+                  >
+                    <td>
+                      <div class="plp-cell-person">
+                        <div class="plp-avatar" [style.background]="avatarGradient(p.nombres)" aria-hidden="true">
+                          {{ patientInitials(p) }}
+                        </div>
+                        <div class="plp-person-info">
+                          <strong class="plp-person-name">{{ p.nombres }}</strong>
+                          <span class="plp-person-apellidos">{{ p.apellidos || '—' }}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span class="plp-chip-doc">{{ p.documento }}</span>
+                    </td>
+
+                    <td class="plp-col-eps">
+                      @if (p.epsNombre) {
+                        <span class="plp-badge plp-badge--eps">{{ p.epsNombre }}</span>
+                      } @else {
+                        <span class="plp-val-muted">—</span>
+                      }
+                    </td>
+
+                    <td class="plp-col-tel plp-val-secondary">{{ p.telefono || '—' }}</td>
+
+                    <td>
+                      @if (p.activo !== false) {
+                        <span class="plp-badge plp-badge--active">Activo</span>
+                      } @else {
+                        <span class="plp-badge plp-badge--inactive">Inactivo</span>
+                      }
+                    </td>
+
+                    <td class="plp-col-actions" (click)="$event.stopPropagation()">
+                      <div class="plp-row-actions">
+                        <a
+                          [routerLink]="['/historia-clinica']"
+                          [queryParams]="{ pacienteId: p.id }"
+                          class="plp-icon-btn plp-icon-btn--hc"
+                          title="Historia clínica"
+                          aria-label="Ver historia clínica"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </a>
+                        @if (canCreate()) {
+                          <a
+                            [routerLink]="['/pacientes', p.id, 'editar']"
+                            class="plp-icon-btn plp-icon-btn--edit"
+                            title="Editar paciente"
+                            aria-label="Editar paciente"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </a>
+                        }
+                        @if (canDelete()) {
+                          <button
+                            type="button"
+                            class="plp-icon-btn plp-icon-btn--delete"
+                            (click)="delete(p.id, p.nombres)"
+                            [disabled]="deleting() === p.id"
+                            title="Eliminar paciente"
+                            aria-label="Eliminar paciente"
+                          >
+                            @if (deleting() === p.id) {
+                              <span class="plp-spinner" aria-hidden="true"></span>
+                            } @else {
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            }
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @empty {
+                  <tr>
+                    <td colspan="6">
+                      <div class="plp-empty">
+                        <div class="plp-empty-icon" aria-hidden="true">
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                          </svg>
+                        </div>
+                        <p class="plp-empty-title">Sin pacientes</p>
+                        <p class="plp-empty-msg">
+                          {{ searchQ ? 'No se encontraron resultados para "' + searchQ + '".' : 'No hay pacientes registrados aún.' }}
+                        </p>
+                        @if (canCreate() && !searchQ) {
+                          <a class="plp-btn plp-btn--primary plp-btn--sm" routerLink="/pacientes/nuevo">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Registrar primer paciente
+                          </a>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación -->
+        @if (!loading() && totalElements > size) {
+          <div class="plp-pagination">
+            <button type="button" class="plp-btn plp-btn--ghost plp-btn--sm"
+              (click)="prevPage()" [disabled]="page === 0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Anterior
+            </button>
+            <span class="plp-page-info">
+              Página {{ page + 1 }} de {{ totalPages }} · {{ totalElements }} pacientes
+            </span>
+            <button type="button" class="plp-btn plp-btn--ghost plp-btn--sm"
+              (click)="nextPage()" [disabled]="(page + 1) * size >= totalElements">
+              Siguiente
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        }
+
+      </div><!-- /.plp-card -->
+    </main><!-- /.plp-main -->
+
+    <!-- ─── SIDEPANEL ──────────────────────────────────────────────────────── -->
+    @if (selectedPaciente(); as pac) {
+      <aside class="plp-sidepanel" [attr.aria-label]="'Detalle de ' + patientFullName(pac)">
+
+        <!-- Cabecera del panel -->
+        <div class="plp-sp-head">
+          <div class="plp-sp-avatar-wrap">
+            <div class="plp-sp-avatar" [style.background]="avatarGradient(pac.nombres)" aria-hidden="true">
+              {{ patientInitials(pac) }}
+            </div>
+            <div class="plp-sp-identity">
+              <span class="plp-sp-name">{{ patientFullName(pac) }}</span>
+              <span class="plp-sp-doc-ref">{{ pac.tipoDocumento || 'CC' }} · {{ pac.documento }}</span>
+            </div>
+          </div>
+          <button type="button" class="plp-sp-close" (click)="closePanel()" aria-label="Cerrar panel">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Estado + régimen -->
+        <div class="plp-sp-status-row">
+          @if (pac.activo !== false) {
+            <span class="plp-badge plp-badge--active">Activo</span>
+          } @else {
+            <span class="plp-badge plp-badge--inactive">Inactivo</span>
+          }
+          @if (pac.regimenAfiliacion) {
+            <span class="plp-badge plp-badge--regime">{{ pac.regimenAfiliacion }}</span>
+          }
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="plp-sp-quick-actions">
+          <a
+            [routerLink]="['/historia-clinica']"
+            [queryParams]="{ pacienteId: pac.id }"
+            class="plp-sp-qa plp-sp-qa--hc"
+          >
+            <span class="plp-sp-qa-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </span>
+            <span class="plp-sp-qa-label">Historia Clínica</span>
+          </a>
+
+          @if (canCreate()) {
+            <a
+              [routerLink]="['/pacientes', pac.id, 'editar']"
+              class="plp-sp-qa plp-sp-qa--edit"
+            >
+              <span class="plp-sp-qa-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </span>
+              <span class="plp-sp-qa-label">Editar</span>
+            </a>
+          }
+
+          <a
+            [routerLink]="['/agenda']"
+            [queryParams]="{ pacienteNombre: patientFullName(pac) }"
+            class="plp-sp-qa plp-sp-qa--agenda"
+          >
+            <span class="plp-sp-qa-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <line x1="12" y1="15" x2="12" y2="17"/>
+                <line x1="11" y1="16" x2="13" y2="16"/>
+              </svg>
+            </span>
+            <span class="plp-sp-qa-label">Nueva Cita</span>
+          </a>
+        </div>
+
+        <div class="plp-sp-divider"></div>
+
+        <!-- Secciones de detalle -->
+        <div class="plp-sp-sections">
+
+          <!-- Contacto -->
+          <section class="plp-sp-section">
+            <h4 class="plp-sp-section-title">Contacto</h4>
+            @if (pac.telefono) {
+              <div class="plp-sp-row">
+                <span class="plp-sp-row-icon" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.25 6.25l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                </span>
+                <span class="plp-sp-row-val">{{ pac.telefono }}</span>
+              </div>
+            }
+            @if (pac.email) {
+              <div class="plp-sp-row">
+                <span class="plp-sp-row-icon" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </span>
+                <span class="plp-sp-row-val plp-sp-row-val--mono">{{ pac.email }}</span>
+              </div>
+            }
+            @if (!pac.telefono && !pac.email) {
+              <span class="plp-sp-empty-field">Sin datos de contacto</span>
+            }
+          </section>
+
+          <!-- Afiliación -->
+          @if (pac.epsNombre || pac.tipoUsuario) {
+            <section class="plp-sp-section">
+              <h4 class="plp-sp-section-title">Afiliación</h4>
+              @if (pac.epsNombre) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                  </span>
+                  <span class="plp-badge plp-badge--eps">{{ pac.epsNombre }}</span>
+                </div>
+              }
+              @if (pac.tipoUsuario) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 8v4l3 3"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.tipoUsuario }}</span>
+                </div>
+              }
+            </section>
+          }
+
+          <!-- Ubicación -->
+          @if (pac.municipioResidencia || pac.direccion) {
+            <section class="plp-sp-section">
+              <h4 class="plp-sp-section-title">Ubicación</h4>
+              @if (pac.municipioResidencia) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.municipioResidencia }}{{ pac.departamentoResidencia ? ', ' + pac.departamentoResidencia : '' }}</span>
+                </div>
+              }
+              @if (pac.direccion) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.direccion }}</span>
+                </div>
+              }
+            </section>
+          }
+
+          <!-- Datos personales -->
+          @if (pac.fechaNacimiento || pac.sexo || pac.grupoSanguineo) {
+            <section class="plp-sp-section">
+              <h4 class="plp-sp-section-title">Datos personales</h4>
+              @if (pac.fechaNacimiento) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.fechaNacimiento | date:'dd/MM/yyyy' }}</span>
+                </div>
+              }
+              @if (pac.sexo) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.sexo }}</span>
+                </div>
+              }
+              @if (pac.grupoSanguineo) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon plp-sp-row-icon--blood" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val plp-sp-row-val--blood">{{ pac.grupoSanguineo }}</span>
+                </div>
+              }
+            </section>
+          }
+
+          <!-- Contacto de emergencia -->
+          @if (pac.contactoEmergenciaNombre) {
+            <section class="plp-sp-section">
+              <h4 class="plp-sp-section-title">Emergencia</h4>
+              <div class="plp-sp-row">
+                <span class="plp-sp-row-icon" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </span>
+                <span class="plp-sp-row-val">{{ pac.contactoEmergenciaNombre }}</span>
+              </div>
+              @if (pac.contactoEmergenciaTelefono) {
+                <div class="plp-sp-row">
+                  <span class="plp-sp-row-icon" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.25 6.25l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                  </span>
+                  <span class="plp-sp-row-val">{{ pac.contactoEmergenciaTelefono }}</span>
+                </div>
+              }
+            </section>
+          }
+
+        </div><!-- /.plp-sp-sections -->
+
+        @if (pac.createdAt) {
+          <div class="plp-sp-footer">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Registrado el {{ pac.createdAt | date:'dd/MM/yyyy' }}
+          </div>
+        }
+
+      </aside><!-- /.plp-sidepanel -->
     }
-  </sesa-card>
+
+  </div><!-- /.plp-body -->
 </section>

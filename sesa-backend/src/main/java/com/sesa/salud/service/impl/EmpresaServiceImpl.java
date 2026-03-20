@@ -19,6 +19,7 @@ import com.sesa.salud.repository.master.EmpresaSubmoduloRepository;
 import com.sesa.salud.repository.master.ModuloRepository;
 import com.sesa.salud.repository.master.SubmoduloRepository;
 import com.sesa.salud.repository.master.TenantUsuarioLoginRepository;
+import com.sesa.salud.service.ArchivoService;
 import com.sesa.salud.service.EmpresaService;
 import com.sesa.salud.service.TenantSetupService;
 import com.sesa.salud.tenant.TenantContextHolder;
@@ -37,7 +38,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +54,7 @@ public class EmpresaServiceImpl implements EmpresaService {
     private final TenantSetupService tenantSetupService;
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
+    private final ArchivoService archivoService;
 
     @Override
     @Transactional
@@ -98,7 +99,6 @@ public class EmpresaServiceImpl implements EmpresaService {
                 .adminPrimerApellido(admin.getPrimerApellido() != null ? admin.getPrimerApellido().trim() : null)
                 .adminSegundoApellido(admin.getSegundoApellido() != null && !admin.getSegundoApellido().isBlank() ? admin.getSegundoApellido().trim() : null)
                 .adminCelular(admin.getTelefonoCelular() != null ? admin.getTelefonoCelular().trim() : null)
-                .adminProveedorServicio(admin.getProveedorServicio() != null && !admin.getProveedorServicio().isBlank() ? admin.getProveedorServicio().trim() : null)
                 .razonSocial(request.getRazonSocial())
                 .telefono(request.getTelefono())
                 .segundoTelefono(request.getSegundoTelefono())
@@ -188,7 +188,6 @@ public class EmpresaServiceImpl implements EmpresaService {
             e.setAdminPrimerApellido(admin.getPrimerApellido() != null ? admin.getPrimerApellido().trim() : null);
             e.setAdminSegundoApellido(admin.getSegundoApellido() != null && !admin.getSegundoApellido().isBlank() ? admin.getSegundoApellido().trim() : null);
             e.setAdminCelular(admin.getTelefonoCelular() != null ? admin.getTelefonoCelular().trim() : null);
-            e.setAdminProveedorServicio(admin.getProveedorServicio() != null && !admin.getProveedorServicio().isBlank() ? admin.getProveedorServicio().trim() : null);
         }
         e.setRazonSocial(request.getRazonSocial());
         e.setTelefono(request.getTelefono());
@@ -247,44 +246,34 @@ public class EmpresaServiceImpl implements EmpresaService {
         empresaRepository.deleteById(id);
     }
 
-    private static final List<String> ALLOWED_LOGO_EXTENSIONS = List.of("png", "jpg", "jpeg", "webp", "svg");
-
-    private static final java.util.Map<String, String> EXT_TO_MIME = java.util.Map.of(
-            "png", "image/png", "jpg", "image/jpeg", "jpeg", "image/jpeg",
-            "webp", "image/webp", "svg", "image/svg+xml");
+    @Override
+    @Transactional
+    public String saveLogo(String schemaName, MultipartFile file) {
+        TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
+        Empresa emp = empresaRepository.findBySchemaName(schemaName)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada para el tenant: " + schemaName));
+        String uuid = archivoService.guardar(file, "EMPRESA_LOGO",
+                emp.getId().toString(), TenantContextHolder.PUBLIC, true);
+        emp.setImagenUrl(uuid);
+        emp.setImagenData(null);
+        emp.setImagenContentType(null);
+        empresaRepository.save(emp);
+        return uuid;
+    }
 
     @Override
     @Transactional
-    public void saveLogo(String schemaName, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("El archivo del logo es obligatorio");
-        }
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("Nombre de archivo no válido");
-        }
-        String ext = null;
-        int lastDot = originalFilename.lastIndexOf('.');
-        if (lastDot >= 0 && lastDot < originalFilename.length() - 1) {
-            ext = originalFilename.substring(lastDot + 1).toLowerCase();
-        }
-        if (ext == null || !ALLOWED_LOGO_EXTENSIONS.contains(ext)) {
-            throw new IllegalArgumentException("Formato de imagen no permitido. Use: " + String.join(", ", ALLOWED_LOGO_EXTENSIONS));
-        }
+    public String saveLogoById(Long empresaId, MultipartFile file) {
         TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
-        Empresa emp = empresaRepository.findBySchemaName(schemaName)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada para el tenant actual"));
-        try {
-            byte[] data = file.getBytes();
-            String contentType = EXT_TO_MIME.getOrDefault(ext, "image/" + ext);
-            emp.setImagenData(data);
-            emp.setImagenContentType(contentType);
-            emp.setImagenUrl("db");
-            empresaRepository.save(emp);
-        } catch (java.io.IOException e) {
-            log.error("Error leyendo archivo del logo", e);
-            throw new RuntimeException("No se pudo guardar el logo: " + e.getMessage());
-        }
+        Empresa emp = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada con id: " + empresaId));
+        String uuid = archivoService.guardar(file, "EMPRESA_LOGO",
+                emp.getId().toString(), TenantContextHolder.PUBLIC, true);
+        emp.setImagenUrl(uuid);
+        emp.setImagenData(null);
+        emp.setImagenContentType(null);
+        empresaRepository.save(emp);
+        return uuid;
     }
 
     @Override
@@ -295,10 +284,27 @@ public class EmpresaServiceImpl implements EmpresaService {
         }
         TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
         return empresaRepository.findBySchemaName(schemaName)
-                .filter(e -> e.getImagenData() != null && e.getImagenData().length > 0)
-                .map(e -> new LogoResourceDto(
-                        new ByteArrayResource(e.getImagenData()),
-                        e.getImagenContentType() != null ? e.getImagenContentType() : "image/png"));
+                .flatMap(e -> {
+                    // Nuevo sistema: imagenUrl contiene un UUID
+                    if (e.getImagenUrl() != null && isUuid(e.getImagenUrl())) {
+                        return archivoService.obtener(e.getImagenUrl())
+                                .map(r -> new LogoResourceDto(
+                                        new ByteArrayResource(r.datos()),
+                                        r.contentType()));
+                    }
+                    // Sistema legacy: datos binarios en imagenData
+                    if (e.getImagenData() != null && e.getImagenData().length > 0) {
+                        String ct = e.getImagenContentType() != null ? e.getImagenContentType() : "image/png";
+                        return Optional.of(new LogoResourceDto(new ByteArrayResource(e.getImagenData()), ct));
+                    }
+                    return Optional.empty();
+                });
+    }
+
+    /** Verifica si un string tiene formato UUID v4 estándar. */
+    private static boolean isUuid(String s) {
+        return s != null && s.matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
     }
 
     private EmpresaDto toDto(Empresa e) {
@@ -312,7 +318,6 @@ public class EmpresaServiceImpl implements EmpresaService {
                 .adminPrimerApellido(e.getAdminPrimerApellido())
                 .adminSegundoApellido(e.getAdminSegundoApellido())
                 .adminCelular(e.getAdminCelular())
-                .adminProveedorServicio(e.getAdminProveedorServicio())
                 .razonSocial(e.getRazonSocial())
                 .telefono(e.getTelefono())
                 .segundoTelefono(e.getSegundoTelefono())

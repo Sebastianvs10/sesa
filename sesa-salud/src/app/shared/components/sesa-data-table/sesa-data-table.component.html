@@ -2,28 +2,73 @@
   <table class="sesa-table">
     <thead>
       <tr>
-        <th *ngFor="let col of columns" [style.width]="col.width || 'auto'">
-          {{ col.label }}
-        </th>
+        @for (col of columns; track col.key) {
+          <th [style.width]="col.width || 'auto'">{{ col.label }}</th>
+        }
+        @if (hasActions) {
+          <th class="sesa-table-th-actions">Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of data">
-        <td *ngFor="let col of columns">
-          <ng-container *ngIf="row[col.key] as value; else emptyCell">
-            {{ value }}
-          </ng-container>
-          <ng-template #emptyCell>
-            <span class="sesa-table-cell-empty">—</span>
-          </ng-template>
-        </td>
-      </tr>
-      <tr *ngIf="!data || data.length === 0">
-        <td class="sesa-table-empty" [attr.colspan]="columns.length || 1">
-          {{ emptyMessage }}
-        </td>
-      </tr>
+      @if (loading) {
+        @for (row of skeletonRowsArray; track row) {
+          <tr class="sesa-table-skeleton-row">
+            @for (col of columns; track col.key) {
+              <td>
+                <sesa-skeleton
+                  [width]="col.width ? col.width : '80%'"
+                  height="0.8rem"
+                />
+              </td>
+            }
+            @if (hasActions) {
+              <td class="sesa-table-td-actions">
+                <div class="sesa-table-actions-group">
+                  <sesa-skeleton width="28px" height="28px" variant="rounded" />
+                  <sesa-skeleton width="28px" height="28px" variant="rounded" />
+                </div>
+              </td>
+            }
+          </tr>
+        }
+      } @else {
+        @for (row of data; track $index) {
+          <tr>
+            @for (col of columns; track col.key) {
+              <td>
+                @if (getCellValue(row, col.key); as value) {
+                  {{ value }}
+                } @else {
+                  <span class="sesa-table-cell-empty">—</span>
+                }
+              </td>
+            }
+            @if (hasActions) {
+              <td class="sesa-table-td-actions">
+                <div class="sesa-table-actions-group">
+                  <ng-content select="[row-actions]"></ng-content>
+                </div>
+              </td>
+            }
+          </tr>
+        }
+        @if (!data || data.length === 0) {
+          <tr>
+            <td
+              class="sesa-table-empty"
+              [attr.colspan]="hasActions ? columns.length + 1 : columns.length || 1"
+            >
+              <div class="sesa-table-empty-inner">
+                @if (emptyIcon) {
+                  <span class="sesa-table-empty-icon">{{ emptyIcon }}</span>
+                }
+                {{ emptyMessage }}
+              </div>
+            </td>
+          </tr>
+        }
+      }
     </tbody>
   </table>
 </div>
-

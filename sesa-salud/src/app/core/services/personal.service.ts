@@ -9,30 +9,45 @@ export interface PersonalDto {
   id: number;
   nombres: string;
   apellidos?: string;
-  cargo: string;
-  servicio?: string;
-  turno?: string;
+  /** Tipo de documento (CC, CE, PA, PEP, TI, RC — Res. 3374/2000). */
+  tipoDocumento?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
   primerApellido?: string;
   segundoApellido?: string;
   celular?: string;
+  /** Correo profesional para documentos clínicos. */
   email?: string;
+  /** Rol primario (compatibilidad). */
   rol?: string;
-  institucionPrestadora?: string;
+  /** Todos los roles profesionales asignados (multi-rol). */
+  roles?: string[];
   fotoUrl?: string;
   firmaUrl?: string;
   activo: boolean;
   createdAt?: string;
+  // ── Normativos Res. 2003/2014, Ley 23/1981, Res. 1449/2016 ──
+  tarjetaProfesional?: string;
+  especialidadFormal?: string;
+  numeroRethus?: string;
+  // ── Demográficos RIPS Res. 3374/2000 ──
+  fechaNacimiento?: string;
+  sexo?: string;
+  // ── Lugar de práctica Res. 2003/2014 ──
+  municipio?: string;
+  departamento?: string;
+  // ── Vínculo laboral Circular 047/2007 ──
+  tipoVinculacion?: string;
+  fechaIngreso?: string;
+  fechaRetiro?: string;
 }
 
 export interface PersonalRequestDto {
   nombres: string;
   apellidos?: string;
-  cargo: string;
-  servicio?: string;
-  turno?: string;
+  /** Tipo de documento (CC, CE, PA, PEP, TI, RC). */
+  tipoDocumento?: string;
   identificacion?: string;
   primerNombre?: string;
   segundoNombre?: string;
@@ -41,9 +56,25 @@ export interface PersonalRequestDto {
   celular?: string;
   email?: string;
   password?: string;
+  /** Rol primario (compatibilidad con campo simple). */
   rol?: string;
-  institucionPrestadora?: string;
+  /** Multi-rol: lista de roles profesionales asignados. Tiene prioridad sobre `rol`. */
+  roles?: string[];
   activo: boolean;
+  // ── Normativos ──
+  tarjetaProfesional?: string;
+  especialidadFormal?: string;
+  numeroRethus?: string;
+  // ── Demográficos ──
+  fechaNacimiento?: string;
+  sexo?: string;
+  // ── Lugar de práctica ──
+  municipio?: string;
+  departamento?: string;
+  // ── Vínculo laboral ──
+  tipoVinculacion?: string;
+  fechaIngreso?: string;
+  fechaRetiro?: string;
 }
 
 /** Roles para profesionales de la salud. Super Administrador y Administrador deshabilitados en gestión de personal. */
@@ -51,6 +82,10 @@ export const ROLES_PERSONAL: { value: string; label: string; disabled?: boolean 
   { value: 'SUPERADMINISTRADOR', label: 'Super Administrador', disabled: true },
   { value: 'ADMIN', label: 'Administrador del Sistema', disabled: true },
   { value: 'MEDICO', label: 'Médico' },
+  { value: 'COORDINADOR_MEDICO', label: 'Coordinador Médico' },
+  { value: 'EBS', label: 'Profesional EBS' },
+  { value: 'COORDINADOR_TERRITORIAL', label: 'Coordinador Territorial' },
+  { value: 'SUPERVISOR_APS', label: 'Supervisor APS' },
   { value: 'ODONTOLOGO', label: 'Odontólogo/a' },
   { value: 'BACTERIOLOGO', label: 'Bacteriólogo' },
   { value: 'ENFERMERO', label: 'Enfermero/a' },
@@ -59,6 +94,7 @@ export const ROLES_PERSONAL: { value: string; label: string; disabled?: boolean 
   { value: 'PSICOLOGO', label: 'Psicólogo' },
   { value: 'REGENTE_FARMACIA', label: 'Regente de Farmacia' },
   { value: 'RECEPCIONISTA', label: 'Recepcionista' },
+  { value: 'FACTURACION', label: 'Facturación' },
 ];
 
 export interface PageResponse<T> {

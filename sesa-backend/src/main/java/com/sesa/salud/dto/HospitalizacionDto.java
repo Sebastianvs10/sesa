@@ -16,6 +16,7 @@ public class HospitalizacionDto {
     private Long id;
     private Long pacienteId;
     private String pacienteNombre;
+    private String pacienteDocumento;
     private String servicio;
     private String cama;
     private String estado;

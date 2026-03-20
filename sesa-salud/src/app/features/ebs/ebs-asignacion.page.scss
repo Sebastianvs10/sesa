@@ -1,0 +1,361 @@
+/* Asignación territorial EBS — premium */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-asignacion {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ebs-asignacion__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-asignacion__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.ebs-asignacion__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-asignacion__loading-wrap {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.ebs-asignacion__loading-shimmer {
+  width: 120px;
+  height: 8px;
+  margin: 0 auto 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sesa-border) 25%, var(--sesa-surface-hover) 50%, var(--sesa-border) 75%);
+  background-size: 200% 100%;
+  animation: ebs-asignacion-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes ebs-asignacion-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ebs-asignacion__loading-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-muted);
+}
+
+.ebs-asignacion__cta {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-secondary);
+}
+.ebs-asignacion__cta:hover {
+  background: rgba(31, 106, 225, 0.08);
+}
+
+.ebs-asignacion__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ebs-asignacion__card {
+  border-radius: var(--sesa-radius-lg);
+  box-shadow: var(--sesa-shadow-sm);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--sesa-border-light);
+  transition: box-shadow var(--sesa-transition);
+}
+.ebs-asignacion__card:hover {
+  box-shadow: var(--sesa-shadow-md);
+}
+
+.ebs-asignacion__card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ebs-asignacion__card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-asignacion__card-code {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--sesa-text-muted);
+  margin-top: 0.15rem;
+}
+
+.ebs-asignacion__card-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sesa-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(31, 106, 225, 0.1);
+}
+
+.ebs-asignacion__card-meta {
+  margin-top: 0.5rem;
+}
+
+.ebs-asignacion__risk {
+  font-size: 0.8rem;
+  color: var(--sesa-error);
+  font-weight: 500;
+}
+
+.ebs-asignacion__card-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.ebs-asignacion__btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--sesa-radius-md);
+  border: none;
+  cursor: pointer;
+  transition: filter var(--sesa-transition), opacity var(--sesa-transition);
+}
+.ebs-asignacion__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ebs-asignacion__btn--primary {
+  background: linear-gradient(135deg, var(--sesa-secondary), #1557b0);
+  color: #fff;
+}
+.ebs-asignacion__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.ebs-asignacion__btn--secondary {
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  border: 1px solid var(--sesa-border);
+}
+.ebs-asignacion__btn--secondary:hover {
+  background: var(--sesa-surface-hover);
+}
+
+.ebs-asignacion__btn--outline {
+  background: transparent;
+  color: var(--sesa-secondary);
+  border: 1px solid var(--sesa-secondary);
+}
+.ebs-asignacion__btn--outline:hover {
+  background: rgba(31, 106, 225, 0.08);
+}
+
+.ebs-asignacion__btn--small {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.ebs-asignacion__btn--danger {
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+}
+.ebs-asignacion__btn--danger:hover {
+  filter: brightness(0.96);
+}
+
+.ebs-asignacion__team-editor {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+}
+.ebs-asignacion__team-editor--small {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.ebs-asignacion__team-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-asignacion__team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ebs-asignacion__team-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+  cursor: pointer;
+}
+
+.ebs-asignacion__team-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sesa-text-muted);
+}
+
+.ebs-asignacion__team-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sesa-border-light);
+}
+
+.ebs-asignacion__brigades {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.ebs-asignacion__brigades-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-asignacion__new-brigade {
+  padding: 1rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px dashed var(--sesa-border);
+  margin-bottom: 0.75rem;
+}
+
+.ebs-asignacion__input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.ebs-asignacion__new-brigade-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.ebs-asignacion__new-brigade-dates input {
+  flex: 1;
+  max-width: 140px;
+}
+
+.ebs-asignacion__new-brigade-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-muted);
+}
+
+.ebs-asignacion__new-brigade-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ebs-asignacion__brigades-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ebs-asignacion__brigade-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.35rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface-hover);
+  border: 1px solid var(--sesa-border-light);
+  flex-wrap: wrap;
+}
+
+.ebs-asignacion__brigade-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.ebs-asignacion__brigade-info strong {
+  color: var(--sesa-text-primary);
+}
+
+.ebs-asignacion__brigade-dates {
+  font-size: 0.8rem;
+  color: var(--sesa-text-muted);
+}
+
+.ebs-asignacion__brigade-status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+}
+.ebs-asignacion__brigade-status[data-status="programada"] {
+  background: rgba(31, 106, 225, 0.12);
+  color: var(--sesa-secondary);
+}
+.ebs-asignacion__brigade-status[data-status="realizada"] {
+  background: var(--sesa-success-bg);
+  color: var(--sesa-success);
+}
+
+.ebs-asignacion__brigade-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.ebs-asignacion__brigades-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sesa-text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .ebs-asignacion__card {
+    padding: 1rem;
+  }
+  .ebs-asignacion__brigade-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

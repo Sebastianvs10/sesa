@@ -13,9 +13,16 @@ import java.util.Optional;
 
 public interface NotificacionDestinatarioRepository extends JpaRepository<NotificacionDestinatario, Long> {
 
-    Page<NotificacionDestinatario> findByUsuarioIdOrderByNotificacion_FechaEnvioDesc(Long usuarioId, Pageable pageable);
+    Page<NotificacionDestinatario> findByUsuarioIdAndArchivadoFalseAndEliminadoFalseOrderByNotificacion_FechaEnvioDesc(
+            Long usuarioId, Pageable pageable);
 
-    long countByUsuarioIdAndLeidoFalse(Long usuarioId);
+    Page<NotificacionDestinatario> findByUsuarioIdAndArchivadoTrueAndEliminadoFalseOrderByNotificacion_FechaEnvioDesc(
+            Long usuarioId, Pageable pageable);
+
+    Page<NotificacionDestinatario> findByUsuarioIdAndEliminadoTrueOrderByNotificacion_FechaEnvioDesc(
+            Long usuarioId, Pageable pageable);
+
+    long countByUsuarioIdAndLeidoFalseAndArchivadoFalseAndEliminadoFalse(Long usuarioId);
 
     Optional<NotificacionDestinatario> findByNotificacionIdAndUsuarioId(Long notificacionId, Long usuarioId);
 }

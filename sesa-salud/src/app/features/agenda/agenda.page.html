@@ -1,0 +1,512 @@
+<section class="ag-page">
+
+  <!-- ══════════ HEADER ══════════ -->
+  <header class="ag-header">
+    <div class="ag-header-left">
+      <div class="ag-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="ag-title">Agenda de Turnos</h1>
+        <p class="ag-subtitle">
+          @if (esCoordinador && !esJefeEnfermeria) { Programación mensual — Personal médico }
+          @else if (esJefeEnfermeria && !esCoordinador) { Programación mensual — Aux. de enfermería }
+          @else { Programación mensual — Todo el personal }
+          &nbsp;·&nbsp; IPS Nivel II
+        </p>
+      </div>
+    </div>
+
+    <div class="ag-header-right">
+      <!-- Navegación mes -->
+      <div class="ag-mes-nav">
+        <button class="ag-nav-btn" (click)="prevMes()" title="Mes anterior">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+        </button>
+        <span class="ag-mes-label">{{ mesLabel }}</span>
+        <button class="ag-nav-btn" (click)="nextMes()" title="Mes siguiente">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
+        </button>
+      </div>
+
+      <!-- Estado programación -->
+      <span class="ag-estado-badge" [class]="estadoBadge(estadoMes()).cls">
+        {{ estadoBadge(estadoMes()).label }}
+      </span>
+
+      <!-- Acciones -->
+      <div class="ag-header-actions">
+        @if (estadoMes() === 'BORRADOR' && esJefeEnfermeria) {
+          <button class="ag-btn ag-btn--secondary" (click)="enviarARevision()">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+            Enviar a revisión
+          </button>
+        }
+        @if (estadoMes() === 'EN_REVISION' && esCoordinador) {
+          <button class="ag-btn ag-btn--success" (click)="aprobarMes()">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+            Aprobar mes
+          </button>
+        }
+        @if (estadoMes() === 'APROBADO' && esCoordinador) {
+          <button class="ag-btn ag-btn--danger" (click)="cerrarMes()">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>
+            Cerrar mes
+          </button>
+        }
+        <!-- ── Export dropdown premium ── -->
+        <div class="ag-export-wrap">
+          <button
+            type="button"
+            class="ag-btn ag-btn--ghost ag-export-trigger"
+            [class.ag-export-trigger--open]="showExportMenu()"
+            [class.ag-export-trigger--busy]="exportandoExcel() || exportandoPDF()"
+            (click)="toggleExportMenu()"
+            [attr.aria-expanded]="showExportMenu()"
+            aria-haspopup="true"
+            title="Exportar agenda">
+            @if (exportandoExcel() || exportandoPDF()) {
+              <span class="ag-export-spin" aria-hidden="true"></span>
+              Generando…
+            } @else {
+              <svg class="ag-export-trigger-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h8a2 2 0 002-2v-1M12 8l-2 2m0 0l-2-2m2 2V3"/>
+              </svg>
+              Exportar
+              <svg class="ag-export-chevron" [class.ag-export-chevron--open]="showExportMenu()" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M4.5 6l3.5 3.5L11.5 6"/>
+              </svg>
+            }
+          </button>
+
+          @if (showExportMenu()) {
+            <!-- Backdrop para cerrar al click fuera -->
+            <div class="ag-export-backdrop" (click)="cerrarExportMenu()" aria-hidden="true"></div>
+
+            <!-- Menú dropdown -->
+            <div class="ag-export-menu" role="menu" aria-label="Opciones de exportación">
+
+              <div class="ag-export-menu-header">
+                <span class="ag-export-menu-title">Exportar agenda</span>
+                <span class="ag-export-menu-sub">{{ mesLabel }} · {{ turnosFiltrados().length }} turnos</span>
+              </div>
+
+              <!-- Opción Excel -->
+              <button
+                type="button"
+                class="ag-export-item"
+                role="menuitem"
+                [disabled]="exportandoExcel() || exportandoPDF()"
+                (click)="exportarExcel()">
+                <span class="ag-export-item-icon ag-export-item-icon--excel" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 17v-2m3 2v-4m3 4v-6M3 20h18M3 4h18M9 4v4M5 4h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z"/>
+                  </svg>
+                </span>
+                <div class="ag-export-item-body">
+                  <span class="ag-export-item-title">Exportar a Excel</span>
+                  <span class="ag-export-item-desc">3 hojas: Turnos · Resumen · KPIs</span>
+                </div>
+                <span class="ag-export-item-badge ag-export-item-badge--excel">XLSX</span>
+              </button>
+
+              <!-- Opción PDF -->
+              <button
+                type="button"
+                class="ag-export-item"
+                role="menuitem"
+                [disabled]="exportandoExcel() || exportandoPDF()"
+                (click)="exportarPDF()">
+                <span class="ag-export-item-icon ag-export-item-icon--pdf" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 13h1.5a1.5 1.5 0 000-3H9v6m4-6h2m-2 3h1"/>
+                  </svg>
+                </span>
+                <div class="ag-export-item-body">
+                  <span class="ag-export-item-title">Exportar a PDF</span>
+                  <span class="ag-export-item-desc">Header SESA, KPIs y tabla detallada</span>
+                </div>
+                <span class="ag-export-item-badge ag-export-item-badge--pdf">PDF</span>
+              </button>
+
+              <!-- Separador + info -->
+              <div class="ag-export-menu-footer">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" width="12" height="12">
+                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/>
+                </svg>
+                Incluye los filtros activos aplicados
+              </div>
+
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════ DASHBOARD RESUMEN ══════════ -->
+  @if (showDashboard()) {
+    <div class="ag-dashboard">
+      <div class="ag-dash-card">
+        <div class="ag-dash-icon" style="background:#eff6ff;color:#3b82f6">👥</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().totalProfesionales }}</div>
+          <div class="ag-dash-lbl">Profesionales</div>
+        </div>
+      </div>
+      <div class="ag-dash-card">
+        <div class="ag-dash-icon" style="background:#f0fdf4;color:#22c55e">📋</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().totalTurnos }}</div>
+          <div class="ag-dash-lbl">Turnos asignados</div>
+        </div>
+      </div>
+      <div class="ag-dash-card">
+        <div class="ag-dash-icon" style="background:#fefce8;color:#ca8a04">⏱️</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().totalHoras }}</div>
+          <div class="ag-dash-lbl">Horas totales</div>
+        </div>
+      </div>
+      <div class="ag-dash-card">
+        <div class="ag-dash-icon" style="background:#eef2ff;color:#6366f1">🌙</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().horasNocturnas }}</div>
+          <div class="ag-dash-lbl">Horas nocturnas</div>
+        </div>
+      </div>
+      <div class="ag-dash-card">
+        <div class="ag-dash-icon" style="background:#fff7ed;color:#f97316">🎌</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().horasFestivos }}</div>
+          <div class="ag-dash-lbl">Horas festivos</div>
+        </div>
+      </div>
+      <div class="ag-dash-card" [class.ag-dash-card--alerta]="dashStats().conflictos > 0">
+        <div class="ag-dash-icon" style="background:#fef2f2;color:#ef4444">🔴</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().conflictos }}</div>
+          <div class="ag-dash-lbl">Conflictos</div>
+        </div>
+      </div>
+      <div class="ag-dash-card" [class.ag-dash-card--warn]="dashStats().advertencias > 0">
+        <div class="ag-dash-icon" style="background:#fefce8;color:#eab308">🟡</div>
+        <div>
+          <div class="ag-dash-val">{{ dashStats().advertencias }}</div>
+          <div class="ag-dash-lbl">Advertencias</div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════ FILTROS (Especialidad · Especialista · Tipo turno) ══════════ -->
+  <div class="ag-filtros">
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Especialidad</span>
+      <select class="ag-select" [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)" aria-label="Filtrar por especialidad">
+        <option value="TODOS">🏥 Todas</option>
+        @for (s of servicios; track s) {
+          <option [value]="s">{{ servicioConfig[s].icon }} {{ servicioConfig[s].label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Tipo turno</span>
+      <select class="ag-select" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)" aria-label="Filtrar por tipo de turno">
+        <option value="TODOS">🕐 Todos</option>
+        @for (t of tiposTurno; track t) {
+          <option [value]="t">{{ turnoConfig[t].label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ag-filtro-group">
+      <span class="ag-filtro-label">Especialista</span>
+      <select class="ag-select" [ngModel]="filtroProfesional()" (ngModelChange)="filtroProfesional.set(+$event)" aria-label="Filtrar por especialista">
+        <option [value]="0">👤 Todos</option>
+        @for (p of profVisibles(); track p.id) {
+          <option [value]="p.id">{{ nombreCorto(p) }}</option>
+        }
+      </select>
+    </label>
+    <button class="ag-btn ag-btn--ghost ag-btn--sm" (click)="toggleDashboard()">
+      {{ showDashboard() ? '▲ Ocultar resumen' : '▼ Ver resumen' }}
+    </button>
+  </div>
+
+  <!-- ══════════ BODY: SIDEBAR + CALENDARIO ══════════ -->
+  <div class="ag-body">
+
+    <!-- ── SIDEBAR PROFESIONALES ── -->
+    <aside class="ag-sidebar">
+      <h3 class="ag-sidebar-title">
+        @if (esCoordinador && !esJefeEnfermeria) { 🩺 Personal médico }
+        @else if (esJefeEnfermeria && !esCoordinador) { 🩹 Aux. de enfermería }
+        @else { 👥 Todo el personal }
+      </h3>
+
+      @for (r of resumenes(); track r.profesional.id) {
+        <div class="ag-prof-card"
+          [class.ag-prof-card--selected]="filtroProfesional() === r.profesional.id"
+          (click)="filtroProfesional.set(filtroProfesional() === r.profesional.id ? 0 : r.profesional.id)">
+          <div class="ag-prof-avatar" [style.background]="r.profesional.color + '22'" [style.border-color]="r.profesional.color + '44'">
+            <span [style.color]="r.profesional.color">{{ r.profesional.nombre[0] }}{{ r.profesional.apellido[0] }}</span>
+          </div>
+          <div class="ag-prof-info">
+            <span class="ag-prof-nombre">{{ nombreCorto(r.profesional) }}</span>
+            <span class="ag-prof-tipo">
+              @if (r.profesional.tipo === 'MEDICO') { 🩺 Médico }
+              @else if (r.profesional.tipo === 'ENFERMERO') { 💉 Enfermero/a }
+              @else if (r.profesional.tipo === 'AUXILIAR_ENFERMERIA') { 🩹 Aux. de enfermería }
+              @else if (r.profesional.tipo === 'ODONTOLOGO') { 🦷 Odontólogo }
+              @else if (r.profesional.tipo === 'RECEPCIONISTA') { 📋 Recepcionista }
+              @else { 👤 Otro }
+            </span>
+            <div class="ag-horas-bar-wrap">
+              <div class="ag-horas-bar">
+                <div class="ag-horas-fill"
+                  [style.width.%]="porcentajeHoras(r.horasTotales)"
+                  [style.background]="barColor(r.horasTotales)">
+                </div>
+              </div>
+              <span class="ag-horas-text">{{ r.horasTotales }} h</span>
+            </div>
+            <div class="ag-prof-badges">
+              @if (r.horasNocturnas > 0) {
+                <span class="ag-badge ag-badge--noche">🌙 {{ r.horasNocturnas }}h noc.</span>
+              }
+              @if (r.horasFestivos > 0) {
+                <span class="ag-badge ag-badge--festivo">🎌 {{ r.horasFestivos }}h fest.</span>
+              }
+            </div>
+          </div>
+          <div class="ag-prof-alerta" [class]="alertaClase(r.alerta)" [title]="r.alerta">
+            {{ alertaIcon(r.alerta) }}
+          </div>
+        </div>
+      }
+    </aside>
+
+    <!-- ── CALENDARIO MENSUAL ── -->
+    <main class="ag-calendar" [class.ag-calendar--cerrado]="estadoMes() === 'CERRADO'">
+
+      @if (loading()) {
+        <div class="ag-cal-loading">
+          <span class="ag-spinner"></span> Cargando programación…
+        </div>
+      }
+
+      <!-- Cabecera días de la semana -->
+      <div class="ag-cal-header">
+        @for (d of diasSemana; track d) {
+          <div class="ag-col-header" [class.ag-col-header--finde]="d === 'Sáb' || d === 'Dom'">{{ d }}</div>
+        }
+      </div>
+
+      <!-- Grilla de semanas -->
+      @for (semana of semanasGrid(); track $index) {
+        <div class="ag-semana">
+          @for (dia of semana; track trackByDia($index, dia)) {
+            <div class="ag-dia"
+              [class.ag-dia--hoy]="dia.esHoy"
+              [class.ag-dia--otro-mes]="!dia.esMesActual"
+              [class.ag-dia--festivo]="dia.esFestivo && dia.esMesActual"
+              [class.ag-dia--finde]="dia.fecha.getDay() === 0 || dia.fecha.getDay() === 6"
+              [class.ag-dia--drag-over]="draggingId() !== null"
+              (click)="abrirModalNuevo(dia)"
+              (dragover)="onDragOver($event)"
+              (drop)="onDrop(dia, $event)">
+
+              <!-- Número del día -->
+              <div class="ag-dia-header">
+                <span class="ag-dia-num" [class.ag-dia-num--hoy]="dia.esHoy">{{ dia.fecha.getDate() }}</span>
+                @if (dia.esFestivo && dia.esMesActual) {
+                  <span class="ag-festivo-badge" [title]="dia.festivoNombre">🎌</span>
+                }
+                @if (dia.esMesActual && puedeEditar) {
+                  <button class="ag-add-btn" (click)="abrirModalNuevo(dia); $event.stopPropagation()" title="Agregar turno">+</button>
+                }
+              </div>
+
+              <!-- Nombre del festivo -->
+              @if (dia.esFestivo && dia.esMesActual && dia.festivoNombre) {
+                <span class="ag-festivo-nombre">{{ dia.festivoNombre }}</span>
+              }
+
+              <!-- Tarjetas de turno -->
+              <div class="ag-turnos-lista">
+                @for (turno of dia.turnos; track trackByTurno($index, turno)) {
+                  <div class="ag-turno-card"
+                    [class.ag-turno-card--conflicto]="turno.alerta === 'CONFLICTO'"
+                    [class.ag-turno-card--advertencia]="turno.alerta === 'ADVERTENCIA'"
+                    [class.ag-turno-card--dragging]="draggingId() === turno.id"
+                    [style.border-left-color]="servicioConfig[turno.servicio].color"
+                    [style.background]="turnoConfig[turno.tipo].colorBg"
+                    [attr.draggable]="puedeEditar"
+                    (dragstart)="onDragStart(turno, $event)"
+                    (dragend)="onDragEnd()"
+                    (click)="abrirModalEditar(turno, $event)">
+
+                    <div class="ag-tc-top">
+                      <span class="ag-tc-tipo" [style.color]="turnoConfig[turno.tipo].color">
+                        {{ turnoConfig[turno.tipo].label }}
+                      </span>
+                      @if (turno.alerta !== 'OK') {
+                        <span class="ag-tc-alerta" [title]="turno.alertaMensaje">
+                          @if (turno.alerta === 'CONFLICTO') { 🔴 } @else { 🟡 }
+                        </span>
+                      }
+                    </div>
+                    <div class="ag-tc-nombre">{{ nombreCorto(getProfesional(turno.profesionalId)!) }}</div>
+                    <div class="ag-tc-meta">
+                      <span class="ag-tc-servicio" [style.color]="servicioConfig[turno.servicio].color">
+                        {{ servicioConfig[turno.servicio].icon }} {{ servicioConfig[turno.servicio].label }}
+                      </span>
+                      <span class="ag-tc-horas">{{ turnoConfig[turno.tipo].horas }}h</span>
+                    </div>
+                    @if (puedeEditar) {
+                      <button class="ag-tc-del" (click)="eliminarTurno(turno, $event)" title="Eliminar turno">×</button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Leyenda -->
+      <div class="ag-leyenda">
+        <div class="ag-leyenda-grupo">
+          <span class="ag-leyenda-title">Servicios:</span>
+          @for (s of servicios; track s) {
+            <span class="ag-leyenda-item">
+              <span class="ag-leyenda-dot" [style.background]="servicioConfig[s].color"></span>
+              {{ servicioConfig[s].icon }} {{ servicioConfig[s].label }}
+            </span>
+          }
+        </div>
+        <div class="ag-leyenda-grupo">
+          <span class="ag-leyenda-title">Alertas:</span>
+          <span class="ag-leyenda-item">🔴 Conflicto</span>
+          <span class="ag-leyenda-item">🟡 Advertencia</span>
+          <span class="ag-leyenda-item">🟢 OK</span>
+          <span class="ag-leyenda-item">🎌 Festivo colombiano</span>
+        </div>
+        @if (puedeEditar) {
+          <span class="ag-leyenda-hint">💡 Arrastra las tarjetas para mover turnos</span>
+        }
+        @if (estadoMes() === 'CERRADO') {
+          <span class="ag-leyenda-hint ag-leyenda-hint--lock">🔒 Programación cerrada — sin ediciones</span>
+        }
+      </div>
+    </main>
+  </div>
+
+  <!-- ══════════ MODAL TURNO ══════════ -->
+  @if (showModal()) {
+    <div class="ag-modal-backdrop" (click)="cerrarModal()">
+      <div class="ag-modal" (click)="$event.stopPropagation()">
+        <div class="ag-modal-header">
+          <div class="ag-modal-icon">
+            @if (modalEsNuevo()) { 📋 } @else { ✏️ }
+          </div>
+          <div>
+            <h3 class="ag-modal-title">
+              @if (modalEsNuevo()) { Asignar turno } @else { Editar turno }
+            </h3>
+            <p class="ag-modal-subtitle">
+              {{ modalFecha() | date:'EEEE d \'de\' MMMM yyyy':'':'es' }}
+            </p>
+          </div>
+          <button class="ag-modal-close" (click)="cerrarModal()">×</button>
+        </div>
+
+        <div class="ag-modal-body">
+          <!-- Profesional -->
+          <div class="ag-field">
+            <label class="ag-label">Profesional *</label>
+            <select class="ag-input" [ngModel]="formTurno.profesionalId" (ngModelChange)="setFormField('profesionalId', +$event)">
+              @for (p of profVisibles(); track p.id) {
+                <option [value]="p.id">
+                  {{ p.nombre }} {{ p.apellido }} — {{ labelRol(p.tipo) }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Tipo de turno -->
+          <div class="ag-field">
+            <label class="ag-label">Tipo de turno *</label>
+            <div class="ag-turno-grid">
+              @for (t of tiposTurno; track t) {
+                <label class="ag-turno-opt" [class.ag-turno-opt--active]="formTurno.tipo === t"
+                  [style.--tc]="turnoConfig[t].color">
+                  <input type="radio" [value]="t" [ngModel]="formTurno.tipo" (ngModelChange)="setFormField('tipo', $event)" name="tipo" />
+                  <span class="ag-turno-opt-label">{{ turnoConfig[t].label }}</span>
+                  <span class="ag-turno-opt-h">{{ turnoConfig[t].horas }} h</span>
+                  <span class="ag-turno-opt-time">
+                    {{ turnoConfig[t].horaInicio }}:00 – {{ turnoConfig[t].horaFin === 7 && turnoConfig[t].horas > 12 ? '07:00 (+1)' : turnoConfig[t].horaFin + ':00' }}
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Servicio -->
+          <div class="ag-field">
+            <label class="ag-label">Servicio *</label>
+            <div class="ag-servicio-grid">
+              @for (s of servicios; track s) {
+                <label class="ag-srv-opt" [class.ag-srv-opt--active]="formTurno.servicio === s"
+                  [style.--sc]="servicioConfig[s].color">
+                  <input type="radio" [value]="s" [ngModel]="formTurno.servicio" (ngModelChange)="setFormField('servicio', $event)" name="servicio" />
+                  <span class="ag-srv-icon">{{ servicioConfig[s].icon }}</span>
+                  <span class="ag-srv-label">{{ servicioConfig[s].label }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Notas -->
+          <div class="ag-field">
+            <label class="ag-label">Notas (opcional)</label>
+            <textarea class="ag-input ag-textarea" rows="2" placeholder="Observaciones del turno..."
+              [ngModel]="formTurno.notas" (ngModelChange)="setFormField('notas', $event)">
+            </textarea>
+          </div>
+
+          <!-- Validación en tiempo real -->
+          @if (formTurno.tipo && formTurno.profesionalId) {
+            @let prof = getProfesional(formTurno.profesionalId!);
+            @if (prof) {
+              <div class="ag-validacion-hint">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+                <span>{{ nombreCorto(prof) }} — {{ turnoConfig[formTurno.tipo!].horas }} h {{ turnoConfig[formTurno.tipo!].esNocturno ? '· Nocturno (recargo 35%)' : '' }}</span>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="ag-modal-footer">
+          <button class="ag-btn ag-btn--secondary" (click)="cerrarModal()" [disabled]="guardandoModal()">
+            Cancelar
+          </button>
+          <button class="ag-btn ag-btn--primary" (click)="guardarTurno()" [disabled]="guardandoModal()">
+            @if (guardandoModal()) { <span class="ag-spinner ag-spinner--sm"></span> Guardando… }
+            @else {
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              {{ modalEsNuevo() ? 'Asignar turno' : 'Guardar cambios' }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</section>

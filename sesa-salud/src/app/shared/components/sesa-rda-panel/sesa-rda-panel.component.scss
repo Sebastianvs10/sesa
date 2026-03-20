@@ -1,0 +1,203 @@
+/* Panel de Interoperabilidad RDA — Resolución 1888 de 2025 */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.rda-panel {
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  background: var(--sesa-surface);
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+
+.rda-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--sesa-bg);
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.rda-panel__icon {
+  color: #0a66c2;
+  display: flex;
+  align-items: center;
+}
+
+.rda-panel__title {
+  font-weight: 600;
+  font-size: 0.83rem;
+  color: var(--sesa-text-primary);
+}
+
+.rda-panel__norm {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--sesa-text-secondary);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+}
+
+.rda-panel__body {
+  padding: 0.7rem 0.9rem;
+}
+
+.rda-panel__loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sesa-text-secondary);
+}
+
+.rda-panel__empty {
+  p { margin: 0 0 0.25rem; color: var(--sesa-text-secondary); }
+}
+
+.rda-panel__hint {
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+  font-style: italic;
+}
+
+.rda-panel__status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.rda-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.75rem;
+
+  &[data-estado="PENDIENTE"]  { background: #fff3cd; color: #856404; }
+  &[data-estado="ENVIADO"]    { background: #cff4fc; color: #055160; }
+  &[data-estado="CONFIRMADO"] { background: #d1e7dd; color: #0f5132; }
+  &[data-estado="ERROR"]      { background: #f8d7da; color: #842029; }
+
+  [data-theme='dark'] & {
+    &[data-estado="PENDIENTE"]  { background: #3d3000; color: #ffc107; }
+    &[data-estado="ENVIADO"]    { background: #003542; color: #0dcaf0; }
+    &[data-estado="CONFIRMADO"] { background: #051b11; color: #20c997; }
+    &[data-estado="ERROR"]      { background: #2c0b0e; color: #f1aeb5; }
+  }
+}
+
+.rda-panel__id {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+  font-family: monospace;
+}
+
+.rda-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  color: var(--sesa-text-secondary);
+  font-size: 0.78rem;
+  margin-bottom: 0.3rem;
+}
+
+.rda-panel__reintentos {
+  color: #f0ad4e;
+}
+
+.rda-panel__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: #f8d7da;
+  color: #842029;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
+
+  [data-theme='dark'] & {
+    background: #2c0b0e;
+    color: #f1aeb5;
+  }
+
+  svg { flex-shrink: 0; margin-top: 1px; }
+}
+
+.rda-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--sesa-border);
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.rda-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, filter 0.15s;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:not(:disabled):hover { filter: brightness(0.92); }
+
+  &--primary {
+    background: #0a66c2;
+    color: #fff;
+  }
+  &--warning {
+    background: #f0ad4e;
+    color: #333;
+  }
+  &--ghost {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-primary);
+    border: 1px solid var(--sesa-border);
+  }
+}
+
+.rda-confirmed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #0f5132;
+  font-weight: 600;
+  font-size: 0.78rem;
+
+  [data-theme='dark'] & { color: #20c997; }
+}
+
+.rda-panel__footer {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.72rem;
+  color: var(--sesa-text-secondary);
+  text-align: right;
+  font-style: italic;
+}
+
+// Spinner
+.rda-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0,0,0,.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: rdaSpin .6s linear infinite;
+
+  &--sm { width: 12px; height: 12px; }
+}
+
+@keyframes rdaSpin {
+  to { transform: rotate(360deg); }
+}

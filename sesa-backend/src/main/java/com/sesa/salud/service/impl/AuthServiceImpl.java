@@ -83,25 +83,53 @@ public class AuthServiceImpl implements AuthService {
                 throw new BadCredentialsException("Credenciales inválidas");
             }
 
-            // Priorizar SUPERADMINISTRADOR si el usuario tiene ambos roles (admin@sesa.local)
-            String role = usuario.getRoles().stream()
-                    .filter(r -> "SUPERADMINISTRADOR".equals(r))
-                    .findFirst()
-                    .orElse(usuario.getRoles().isEmpty() ? "USER" : usuario.getRoles().iterator().next());
-            String token = jwtTokenProvider.generateToken(usuario.getEmail(), usuario.getId(), role, schema);
+            // Pasar todos los roles al JWT; el token almacena el array completo
+            java.util.Set<String> userRoles = usuario.getRoles().isEmpty()
+                    ? java.util.Set.of("USER") : usuario.getRoles();
+            // Rol primario: SUPERADMINISTRADOR > ADMIN > primero
+            String primaryRole = userRoles.contains("SUPERADMINISTRADOR") ? "SUPERADMINISTRADOR"
+                    : userRoles.contains("ADMIN") ? "ADMIN"
+                    : userRoles.iterator().next();
+            String token = jwtTokenProvider.generateToken(
+                    usuario.getEmail(), usuario.getId(), userRoles, schema);
+
+            Long personalId = personalRepository.findByUsuario_Id(usuario.getId())
+                    .map(p -> p.getId())
+                    .orElse(null);
 
             LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                     .accessToken(token)
                     .tokenType("Bearer")
                     .expiresInMs(jwtExpirationMs)
                     .userId(usuario.getId())
+                    .personalId(personalId)
                     .email(usuario.getEmail())
                     .nombreCompleto(usuario.getNombreCompleto())
-                    .role(role)
+                    .role(primaryRole)
+                    .roles(new java.util.ArrayList<>(userRoles))
+                    .rolActivo(primaryRole)
                     .schema(schema);
 
-            empresaRepository.findBySchemaName(schema)
-                    .ifPresent(emp -> responseBuilder.empresaNombre(emp.getRazonSocial()));
+            // Incluir nombre y logo de la empresa para que el frontend no necesite un GET extra
+            TenantContextHolder.setTenantSchema(TenantContextHolder.PUBLIC);
+            if (TenantContextHolder.PUBLIC.equals(schema)) {
+                // SUPERADMINISTRADOR: no tiene empresa propia.
+                // Buscar en BD la primera empresa activa con logo UUID para mostrarlo en el sidebar.
+                empresaRepository.findAll().stream()
+                        .filter(e -> e.getImagenUrl() != null && isUuid(e.getImagenUrl()))
+                        .findFirst()
+                        .ifPresent(emp -> {
+                            responseBuilder.empresaNombre(emp.getRazonSocial());
+                            responseBuilder.empresaLogoUuid(emp.getImagenUrl());
+                        });
+            } else {
+                empresaRepository.findBySchemaName(schema).ifPresent(emp -> {
+                    responseBuilder.empresaNombre(emp.getRazonSocial());
+                    if (emp.getImagenUrl() != null && isUuid(emp.getImagenUrl())) {
+                        responseBuilder.empresaLogoUuid(emp.getImagenUrl());
+                    }
+                });
+            }
 
             logAcceso(email, "LOGIN_OK", "Inicio de sesión exitoso");
             return responseBuilder.build();
@@ -205,6 +233,11 @@ public class AuthServiceImpl implements AuthService {
         if (found != null) return found;
         logAcceso(input, "LOGIN_FAIL", "Identificación sin usuario asociado");
         throw new BadCredentialsException("Credenciales inválidas");
+    }
+
+    private static boolean isUuid(String s) {
+        return s != null && s.matches(
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
     }
 
     private void logAcceso(String email, String evento, String detalle) {

@@ -1,27 +1,761 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <div>
-      <h1 class="sesa-page-title">Urgencias</h1>
-      <p class="sesa-page-subtitle">
-        Visualice y priorice los pacientes en servicio de urgencias según triage.
-      </p>
+<!-- Urgencias — Workbench Clínico Multi-Rol -->
+<div class="urg-page">
+
+  <!-- ── HEADER ── -->
+  <header class="urg-header">
+    <div class="urg-header__left">
+      <div class="urg-header__icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <h1>Urgencias</h1>
+        <p>Workbench Clínico · {{ rol() }}</p>
+      </div>
+    </div>
+    <div class="urg-header__stats">
+      <div class="urg-stat">
+        <span class="urg-stat__num">{{ statsTotal() }}</span>
+        <span class="urg-stat__label">Total</span>
+      </div>
+      <div class="urg-stat urg-stat--espera">
+        <span class="urg-stat__num">{{ statsEspera() }}</span>
+        <span class="urg-stat__label">En Espera</span>
+      </div>
+      <div class="urg-stat urg-stat--atencion">
+        <span class="urg-stat__num">{{ statsAtencion() }}</span>
+        <span class="urg-stat__label">En Atención</span>
+      </div>
+      <div class="urg-stat urg-stat--critico">
+        <span class="urg-stat__num">{{ statsCriticos() }}</span>
+        <span class="urg-stat__label">Críticos</span>
+      </div>
+    </div>
+    <div class="urg-header__actions">
+      <label class="urg-sonido-toggle" title="Sonido para alertas de críticos y fuera de tiempo">
+        <input type="checkbox" [checked]="sonidoAlertas()" (change)="setSonidoAlertas(!sonidoAlertas())" />
+        <span>Sonido alertas</span>
+      </label>
+      <button class="urg-btn urg-btn--refresh"
+              [class.active]="autoRefresh()"
+              (click)="setAutoRefresh(!autoRefresh())"
+              title="Auto-refresh 30s">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        Auto
+      </button>
+      <button class="urg-btn urg-btn--refresh" (click)="cargarUrgencias()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Refrescar
+      </button>
+      <button class="urg-btn urg-btn--primary" (click)="abrirIngreso()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo Ingreso
+      </button>
     </div>
   </header>
 
-  <sesa-card
-    title="Pacientes en urgencias"
-    subtitle="Listado rápido según último triage registrado"
-  >
-    @if (error) {
-      <p class="sesa-error">{{ error }}</p>
-    } @else if (cargando) {
-      <p class="sesa-loading">Cargando urgencias...</p>
-    } @else {
-      <sesa-data-table
-        [columns]="urgenciasColumns"
-        [data]="urgenciasData"
-      ></sesa-data-table>
-    }
-  </sesa-card>
-</section>
+  <!-- Dashboard tiempo real (sugerencia 2.2) -->
+  @if (dashboard(); as d) {
+    <div class="urg-dashboard">
+      <div class="urg-dashboard__row">
+        <span class="urg-dashboard__label">Tiempo promedio espera:</span>
+        <strong>{{ d.tiempoPromedioEsperaMinutos | number:'1.1-1' }} min</strong>
+      </div>
+      @if (d.fueraDeTiempo && d.fueraDeTiempo.length) {
+        <div class="urg-dashboard__alert">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <strong>{{ d.fueraDeTiempo.length }} paciente(s) fuera de tiempo</strong> (Res. 5596/2015)
+        </div>
+      }
+    </div>
+  }
 
+  <!-- ── BARRA FILTROS ── -->
+  <div class="urg-toolbar">
+    <div class="urg-triage-tabs">
+      @for (nivel of nivelesTriageOpciones; track nivel) {
+        <button class="urg-triage-tab"
+                [class]="'urg-triage-tab--' + nivel.toLowerCase()"
+                [class.active]="filtroTriage() === nivel"
+                (click)="setFiltroTriage(nivel)">
+          @if (nivel !== 'TODOS') {
+            <span class="urg-triage-dot"></span>
+          }
+          {{ nivel === 'TODOS' ? 'Todos' : 'T-' + nivel }}
+        </button>
+      }
+    </div>
+    <div class="urg-estado-chips">
+      @for (est of estadosFiltroOpciones; track est) {
+        <button class="urg-chip"
+                [class.active]="filtroEstado() === est"
+                (click)="setFiltroEstado(est)">
+          {{ est === 'TODOS' ? 'Todos estados' : estadoLabel(est) }}
+        </button>
+      }
+    </div>
+    <div class="urg-search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Buscar paciente o documento..."
+             [value]="busqueda()"
+             (input)="setBusqueda($any($event.target).value)" />
+    </div>
+  </div>
+
+  <!-- ── SPLIT PANEL ── -->
+  <div class="urg-workbench">
+
+    <!-- LISTA IZQUIERDA -->
+    <aside class="urg-list">
+      @if (cargando()) {
+        <div class="urg-loading">
+          <div class="urg-spinner"></div>
+          <span>Cargando urgencias...</span>
+        </div>
+      } @else if (urgenciasFiltradas().length === 0) {
+        <div class="urg-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <p>Sin urgencias en este filtro</p>
+        </div>
+      } @else {
+        @for (u of urgenciasFiltradas(); track u.id) {
+          <div class="urg-card"
+               [class.selected]="seleccionada()?.id === u.id"
+               (click)="seleccionar(u)">
+            <div class="urg-card__avatar" [class]="triageClass(u.nivelTriage)">
+              {{ iniciales(u.pacienteNombre) }}
+            </div>
+            <div class="urg-card__body">
+              <div class="urg-card__top">
+                <span class="urg-card__nombre">{{ u.pacienteNombre }}</span>
+                <span class="urg-badge" [class]="triageClass(u.nivelTriage)">T-{{ u.nivelTriage }}</span>
+                @if (hasAlertaSV(u)) {
+                  <span class="urg-badge urg-badge--alerta-sv" title="Signos vitales fuera de rango">Alerta SV</span>
+                }
+              </div>
+              <div class="urg-card__sub">
+                <span class="urg-card__doc">{{ u.pacienteDocumento ?? 'Sin doc.' }}</span>
+                <span class="urg-badge urg-badge--estado" [class]="estadoClass(u.estado)">{{ estadoLabel(u.estado) }}</span>
+              </div>
+              <div class="urg-card__footer">
+                <span class="urg-tiempo" [class]="tiempoEsperaClass(u)" [title]="'Límite normativo: ' + tiempoLimiteLabel(u.nivelTriage)">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {{ tiempoEspera(u.fechaHoraIngreso) }}
+                </span>
+                @if (u.estado === 'EN_ESPERA') {
+                  <span class="urg-tiempo-limite" [class]="tiempoEsperaClass(u)">
+                    {{ tiempoRestante(u) }}
+                  </span>
+                }
+                <span class="urg-card__ingreso">{{ formatFechaHora(u.fechaHoraIngreso) }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </aside>
+
+    <!-- PANEL DERECHO -->
+    <main class="urg-panel">
+      @if (!seleccionada()) {
+        <div class="urg-panel__empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <h3>Selecciona un paciente</h3>
+          <p>Haz clic en un registro de la lista para ver los detalles y acciones clínicas.</p>
+        </div>
+      } @else {
+        <div class="urg-panel__content">
+
+          <!-- Info paciente -->
+          <section class="urg-section urg-section--info">
+            <div class="urg-patient-card">
+              <div class="urg-patient-avatar" [class]="triageClass(seleccionada()!.nivelTriage)">
+                {{ iniciales(seleccionada()!.pacienteNombre) }}
+              </div>
+              <div class="urg-patient-info">
+                <h2>{{ seleccionada()!.pacienteNombre }}</h2>
+                <p>Doc: {{ seleccionada()!.pacienteDocumento ?? 'Sin documento' }}</p>
+                <p>Ingreso: {{ formatFechaHora(seleccionada()!.fechaHoraIngreso) }}</p>
+                @if (seleccionada()!.observaciones) {
+                  <p class="obs">{{ seleccionada()!.observaciones }}</p>
+                }
+              </div>
+              <div class="urg-patient-badges">
+                <span class="urg-badge urg-badge--lg" [class]="triageClass(seleccionada()!.nivelTriage)">
+                  Triage {{ seleccionada()!.nivelTriage }} — {{ triageLabel(seleccionada()!.nivelTriage) }}
+                </span>
+                @if (puedeCambiarEstado()) {
+                  <button type="button" class="urg-btn urg-btn--ghost urg-btn--sm" (click)="abrirModalRetriage()">
+                    Re-clasificar triage
+                  </button>
+                }
+                <span class="urg-badge urg-badge--lg urg-badge--estado" [class]="estadoClass(seleccionada()!.estado)">
+                  {{ estadoLabel(seleccionada()!.estado) }}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Resumen de alta (sugerencia 2.7) -->
+          @if (seleccionada()!.estado === 'ALTA') {
+            <section class="urg-section">
+              <h3 class="urg-section__title">Resumen de alta e instrucciones</h3>
+              @if (seleccionada()!.altaDiagnostico || seleccionada()!.altaTratamiento || seleccionada()!.altaRecomendaciones || seleccionada()!.altaProximaCita) {
+                <div class="urg-form-group">
+                  @if (seleccionada()!.altaDiagnostico) {
+                    <p><strong>Diagnóstico:</strong> {{ seleccionada()!.altaDiagnostico }}</p>
+                  }
+                  @if (seleccionada()!.altaTratamiento) {
+                    <p><strong>Tratamiento:</strong> {{ seleccionada()!.altaTratamiento }}</p>
+                  }
+                  @if (seleccionada()!.altaRecomendaciones) {
+                    <p><strong>Recomendaciones:</strong> {{ seleccionada()!.altaRecomendaciones }}</p>
+                  }
+                  @if (seleccionada()!.altaProximaCita) {
+                    <p><strong>Próxima cita:</strong> {{ seleccionada()!.altaProximaCita }}</p>
+                  }
+                </div>
+              }
+              <button type="button" class="urg-btn urg-btn--primary" (click)="descargarPdfAlta()" [disabled]="guardando()">
+                @if (guardando()) { <span class="urg-spinner-sm"></span> }
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Descargar PDF para el paciente
+              </button>
+            </section>
+          }
+
+          <!-- Cambio de estado -->
+          @if (puedeCambiarEstado()) {
+            <section class="urg-section">
+              <h3 class="urg-section__title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                Cambiar Estado
+              </h3>
+              <div class="urg-estado-btns">
+                @for (est of estadosBotones; track est) {
+                  <button class="urg-estado-btn"
+                          [class.active]="seleccionada()!.estado === est"
+                          [class]="'urg-estado-btn ' + estadoClass(est) + (seleccionada()!.estado === est ? ' active' : '')"
+                          [disabled]="guardando()"
+                          (click)="cambiarEstado(est)">
+                    {{ estadoLabel(est) }}
+                  </button>
+                }
+              </div>
+            </section>
+          }
+
+          <!-- S11: RDA Urgencias (Res. 1888/2025) -->
+          @if (esMedico() || rol() === 'ADMIN' || rol() === 'SUPERADMINISTRADOR') {
+            <section class="urg-section">
+              <h3 class="urg-section__title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                RDA — Resumen Digital de Atención
+                <span class="urg-norm-badge">Res. 1888/2025</span>
+              </h3>
+              <p class="urg-section__sub">Genera y envía el RDA de Urgencias al Ministerio de Salud (IHCE).</p>
+              <button type="button" class="urg-btn urg-btn--primary"
+                      [disabled]="rdaEnviando()"
+                      (click)="generarYEnviarRdaUrgencia()">
+                @if (rdaEnviando()) { <span class="urg-spinner-sm"></span> }
+                Generar y enviar RDA (Urgencias)
+              </button>
+            </section>
+          }
+
+          <!-- Signos vitales seriados (Res. 5596/2015) -->
+          <section class="urg-section">
+            <h3 class="urg-section__title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Signos vitales seriados
+              <span class="urg-norm-badge">Res. 5596/2015</span>
+            </h3>
+            <p class="urg-section__sub">Registro al ingreso (arriba) y tomas durante la espera o atención.</p>
+            @if (signosVitalesSeriados().length > 0) {
+              <div class="urg-sv-table-wrap">
+                <table class="urg-sv-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha / Hora</th>
+                      <th>PA</th>
+                      <th>FC</th>
+                      <th>FR</th>
+                      <th>Temp</th>
+                      <th>SpO₂</th>
+                      <th>Peso</th>
+                      <th>EVA</th>
+                      <th>Glasgow</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (sv of signosVitalesSeriados(); track sv.id) {
+                      <tr>
+                        <td>{{ formatFechaHora(sv.fechaHora) }}</td>
+                        <td>{{ sv.presionArterial ?? '—' }}</td>
+                        <td>{{ sv.frecuenciaCardiaca ?? '—' }}</td>
+                        <td>{{ sv.frecuenciaRespiratoria ?? '—' }}</td>
+                        <td>{{ sv.temperatura ?? '—' }}</td>
+                        <td>{{ sv.saturacionO2 ?? '—' }}</td>
+                        <td>{{ sv.peso ?? '—' }}</td>
+                        <td>{{ sv.dolorEva ?? '—' }}</td>
+                        <td>{{ sv.glasgowOcular != null || sv.glasgowVerbal != null || sv.glasgowMotor != null ? (sv.glasgowOcular ?? '-') + '/' + (sv.glasgowVerbal ?? '-') + '/' + (sv.glasgowMotor ?? '-') : '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+            <div class="urg-sv-form">
+              <div class="urg-sv-form-row">
+                <div class="urg-form-group urg-sv-field"><label>PA</label><input type="text" placeholder="120/80" [value]="formSignosVitales().presionArterial" (input)="setFormSignosVitales('presionArterial', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>FC</label><input type="text" placeholder="lpm" [value]="formSignosVitales().frecuenciaCardiaca" (input)="setFormSignosVitales('frecuenciaCardiaca', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>FR</label><input type="text" placeholder="rpm" [value]="formSignosVitales().frecuenciaRespiratoria" (input)="setFormSignosVitales('frecuenciaRespiratoria', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>Temp</label><input type="text" placeholder="°C" [value]="formSignosVitales().temperatura" (input)="setFormSignosVitales('temperatura', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>SpO₂</label><input type="text" placeholder="%" [value]="formSignosVitales().saturacionO2" (input)="setFormSignosVitales('saturacionO2', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>Peso</label><input type="text" placeholder="kg" [value]="formSignosVitales().peso" (input)="setFormSignosVitales('peso', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field"><label>EVA</label><input type="text" placeholder="0-10" [value]="formSignosVitales().dolorEva" (input)="setFormSignosVitales('dolorEva', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Ocular</label><input type="number" min="1" max="4" placeholder="1-4" [value]="formSignosVitales().glasgowOcular" (input)="setFormSignosVitales('glasgowOcular', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Verbal</label><input type="number" min="1" max="5" placeholder="1-5" [value]="formSignosVitales().glasgowVerbal" (input)="setFormSignosVitales('glasgowVerbal', $any($event.target).value)" /></div>
+                <div class="urg-form-group urg-sv-field urg-sv-field--gl"><label>G. Motor</label><input type="number" min="1" max="6" placeholder="1-6" [value]="formSignosVitales().glasgowMotor" (input)="setFormSignosVitales('glasgowMotor', $any($event.target).value)" /></div>
+              </div>
+              <button type="button" class="urg-btn urg-btn--primary urg-btn--sm" [disabled]="guardando()" (click)="guardarSignosVitales()">
+                @if (guardando()) { <span class="urg-spinner-sm"></span> }
+                Registrar nuevo registro de SV
+              </button>
+            </div>
+          </section>
+
+          <!-- Tabs médico / enfermería -->
+          <div class="urg-tabs">
+            @if (esMedico()) {
+              <button class="urg-tab" [class.active]="tabPanel() === 'medico'" (click)="setTabPanel('medico')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Médico
+              </button>
+            }
+            @if (esEnfermeria()) {
+              <button class="urg-tab" [class.active]="tabPanel() === 'enfermeria'" (click)="setTabPanel('enfermeria')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                Enfermería
+              </button>
+            }
+          </div>
+
+          <!-- Panel médico -->
+          @if (tabPanel() === 'medico' && esMedico()) {
+            <div class="urg-tab-content">
+              @if (!seleccionada()!.atencionId) {
+                <div class="urg-no-atencion urg-no-atencion--action">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <p>Para registrar evoluciones SOAP de este paciente, abra su Historia Clínica. Si aún no tiene una, podrá crearla allí y luego registrar la nota desde este módulo o desde HC.</p>
+                  <button type="button" class="urg-btn urg-btn--primary" (click)="irAHistoriaClinica()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Abrir Historia Clínica
+                  </button>
+                </div>
+              } @else {
+                <section class="urg-section">
+                  <h3 class="urg-section__title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Nueva Evolución SOAP
+                    <span class="urg-norm-badge">Res. 1995/1999</span>
+                  </h3>
+                  <!-- S — Subjetivo -->
+                  <div class="urg-form-group">
+                    <label class="urg-soap-label urg-soap-label--S">
+                      <span class="urg-soap-letra">S</span> Subjetivo — Motivo / Síntomas
+                      <span class="urg-required">*</span>
+                    </label>
+                    <textarea rows="2" placeholder="Síntomas referidos por el paciente, evolución del cuadro..."
+                              [value]="formEvolucion().subjetivo"
+                              (input)="setEvolucionSubjetivo($any($event.target).value)"></textarea>
+                  </div>
+                  <!-- O — Objetivo -->
+                  <div class="urg-form-group">
+                    <label class="urg-soap-label urg-soap-label--O">
+                      <span class="urg-soap-letra">O</span> Objetivo — Hallazgos clínicos / Examen físico
+                    </label>
+                    <textarea rows="2" placeholder="Signos vitales actuales, hallazgos al examen físico..."
+                              [value]="formEvolucion().objetivo"
+                              (input)="setEvolucionObjetivo($any($event.target).value)"></textarea>
+                  </div>
+                  <!-- A — Análisis -->
+                  <div class="urg-form-group">
+                    <label class="urg-soap-label urg-soap-label--A">
+                      <span class="urg-soap-letra">A</span> Análisis — Diagnóstico
+                    </label>
+                    <div style="display:flex;gap:0.5rem;align-items:flex-start">
+                      <textarea rows="2" style="flex:1" placeholder="Impresión diagnóstica, evolución del diagnóstico..."
+                                [value]="formEvolucion().analisis"
+                                (input)="setEvolucionAnalisis($any($event.target).value)"></textarea>
+                      <div style="width:120px">
+                        <input type="text" placeholder="CIE-10" style="width:100%;text-transform:uppercase"
+                               [value]="formEvolucion().codigoCie10"
+                               (input)="setEvolucionCie10($any($event.target).value)" />
+                      </div>
+                    </div>
+                  </div>
+                  <!-- P — Plan -->
+                  <div class="urg-form-group">
+                    <label class="urg-soap-label urg-soap-label--P">
+                      <span class="urg-soap-letra">P</span> Plan — Conducta / Tratamiento
+                    </label>
+                    <textarea rows="2" placeholder="Conducta a seguir, medicamentos, órdenes, plan de manejo..."
+                              [value]="formEvolucion().plan"
+                              (input)="setEvolucionPlan($any($event.target).value)"></textarea>
+                  </div>
+                  <button class="urg-btn urg-btn--primary"
+                          [disabled]="guardando() || !formEvolucion().subjetivo.trim()"
+                          (click)="guardarEvolucion()">
+                    @if (guardando()) { <span class="urg-spinner-sm"></span> }
+                    Registrar Evolución SOAP
+                  </button>
+                </section>
+                @if (evoluciones().length > 0) {
+                  <section class="urg-section">
+                    <h3 class="urg-section__title">Historial de Evoluciones</h3>
+                    <div class="urg-timeline">
+                      @for (ev of evoluciones(); track ev.id) {
+                        <div class="urg-timeline-item">
+                          <div class="urg-timeline-dot urg-timeline-dot--medico"></div>
+                          <div class="urg-timeline-body">
+                            <div class="urg-timeline-header">
+                              <span class="urg-timeline-profesional">{{ ev.profesionalNombre ?? 'Profesional' }}</span>
+                              <span class="urg-timeline-fecha">{{ formatFechaHora(ev.fecha) }}</span>
+                            </div>
+                            <p class="urg-timeline-nota">{{ ev.notaEvolucion }}</p>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </section>
+                }
+              }
+            </div>
+          }
+
+          <!-- Panel enfermería -->
+          @if (tabPanel() === 'enfermeria' && esEnfermeria()) {
+            <div class="urg-tab-content">
+              @if (!seleccionada()!.atencionId) {
+                <div class="urg-no-atencion urg-no-atencion--action">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <p>Para registrar notas de enfermería, este paciente debe tener Historia Clínica activa. Abra la HC del paciente para crearla si aplica; luego podrá registrar notas aquí.</p>
+                  <button type="button" class="urg-btn urg-btn--primary" (click)="irAHistoriaClinica()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Abrir Historia Clínica
+                  </button>
+                </div>
+              } @else {
+                @if (puedeCrearNota()) {
+                  <section class="urg-section">
+                    <h3 class="urg-section__title">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                      Nueva Nota de Enfermería
+                    </h3>
+                    <div class="urg-form-group">
+                      <label>Nota de enfermería</label>
+                      <textarea rows="3" placeholder="Signos vitales, observaciones, cuidados administrados..."
+                                [value]="formNota().nota"
+                                (input)="setNotaEnfermeria($any($event.target).value)"></textarea>
+                    </div>
+                    <button class="urg-btn urg-btn--enfermeria"
+                            [disabled]="guardando() || !formNota().nota.trim()"
+                            (click)="guardarNota()">
+                      @if (guardando()) { <span class="urg-spinner-sm"></span> }
+                      Registrar Nota
+                    </button>
+                  </section>
+                }
+                @if (notas().length > 0) {
+                  <section class="urg-section">
+                    <h3 class="urg-section__title">Notas de Enfermería</h3>
+                    <div class="urg-timeline">
+                      @for (nota of notas(); track nota.id) {
+                        <div class="urg-timeline-item">
+                          <div class="urg-timeline-dot urg-timeline-dot--enfermeria"></div>
+                          <div class="urg-timeline-body">
+                            <div class="urg-timeline-header">
+                              <span class="urg-timeline-profesional">{{ nota.profesionalNombre ?? 'Enfermería' }}</span>
+                              <span class="urg-timeline-fecha">{{ formatFechaHora(nota.fechaNota) }}</span>
+                            </div>
+                            <p class="urg-timeline-nota">{{ nota.nota }}</p>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </section>
+                }
+              }
+            </div>
+          }
+
+        </div>
+      }
+    </main>
+  </div>
+
+</div>
+
+<!-- ── SLIDE-OVER: NUEVO INGRESO ── -->
+@if (mostrarIngreso()) {
+  <div class="urg-overlay" (click)="mostrarIngreso.set(false)"></div>
+  <aside class="urg-slideover">
+    <div class="urg-slideover__header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Nuevo Ingreso a Urgencias
+      </h2>
+      <button class="urg-close-btn" (click)="mostrarIngreso.set(false)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="urg-slideover__body">
+      <!-- Búsqueda paciente -->
+      <div class="urg-form-group">
+        <label>Buscar Paciente *</label>
+        <div class="urg-search-wrap">
+          <input type="text" placeholder="Nombre o documento..."
+                 [value]="pacienteQuery()"
+                 (input)="setPacienteQuery($any($event.target).value); buscarPaciente()" />
+          @if (buscandoPaciente()) {
+            <span class="urg-spinner-sm"></span>
+          }
+        </div>
+        @if (pacientesBusqueda().length > 0) {
+          <ul class="urg-paciente-list">
+            @for (p of pacientesBusqueda(); track p.id) {
+              <li (click)="seleccionarPaciente(p)">
+                <div class="urg-paciente-item">
+                  <div class="urg-mini-avatar">{{ iniciales(p.nombres + ' ' + (p.apellidos ?? '')) }}</div>
+                  <div>
+                    <strong>{{ p.nombres }} {{ p.apellidos }}</strong>
+                    <span>{{ p.documento }}</span>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+        @if (pacienteSeleccionado()) {
+          <div class="urg-paciente-selected">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ pacienteSeleccionado()!.nombres }} {{ pacienteSeleccionado()!.apellidos }} — {{ pacienteSeleccionado()!.documento }}
+          </div>
+        }
+      </div>
+
+      <!-- Tipo de llegada — Res. 5596/2015 -->
+      <div class="urg-form-group">
+        <label>Tipo de llegada <span class="urg-norm-hint">Res. 5596/2015</span></label>
+        <select [value]="formIngreso().tipoLlegada" (change)="setTipoLlegada($any($event.target).value)">
+          <option value="">Seleccione...</option>
+          <option value="AMBULATORIO">Ambulatorio (por sus propios medios)</option>
+          <option value="AMBULANCIA_BASICA">Ambulancia básica</option>
+          <option value="AMBULANCIA_MEDICALIZADA">Ambulancia medicalizada</option>
+          <option value="TRANSFERENCIA">Transferencia de otra institución</option>
+          <option value="POLICIAL">Remisión policial</option>
+          <option value="JUDICIAL">Remisión judicial</option>
+        </select>
+      </div>
+
+      <!-- Nivel de Triage — Res. 5596/2015 -->
+      <div class="urg-form-group">
+        <label>Nivel de Triage * <span class="urg-norm-hint">Res. 5596/2015</span></label>
+        <div class="urg-triage-selector">
+          @for (nivel of nivelesTriageIngreso; track nivel) {
+            <button type="button"
+                    class="urg-triage-card"
+                    [class]="'urg-triage-card ' + triageClass(nivel)"
+                    [class.selected]="formIngreso().nivelTriage === nivel"
+                    (click)="setNivelTriage(nivel)">
+              <span class="urg-triage-card__num">{{ nivel }}</span>
+              <span class="urg-triage-card__label">{{ triageLabel(nivel) }}</span>
+              <span class="urg-triage-card__tiempo">{{ tiempoLimiteLabel(nivel) }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Motivo de consulta — OBLIGATORIO -->
+      <div class="urg-form-group">
+        <label>Motivo de consulta <span class="urg-required">*</span></label>
+        <textarea rows="2" placeholder="Descripción del motivo de consulta (obligatorio)..."
+                  [value]="formIngreso().motivoConsulta"
+                  (input)="setMotivoConsulta($any($event.target).value)"></textarea>
+      </div>
+
+      <!-- Signos vitales al ingreso -->
+      <div class="urg-form-group">
+        <label>Signos vitales al ingreso <span class="urg-norm-hint">Res. 5596/2015</span></label>
+        <div class="urg-sv-grid">
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">TA (mmHg)</span>
+            <input type="text" placeholder="120/80" [value]="formIngreso().svPresionArterial"
+                   (input)="setSvField('svPresionArterial', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">FC (lpm)</span>
+            <input type="number" placeholder="80" [value]="formIngreso().svFrecuenciaCardiaca"
+                   (input)="setSvField('svFrecuenciaCardiaca', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">FR (rpm)</span>
+            <input type="number" placeholder="18" [value]="formIngreso().svFrecuenciaRespiratoria"
+                   (input)="setSvField('svFrecuenciaRespiratoria', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">Temp (°C)</span>
+            <input type="number" placeholder="37.0" step="0.1" [value]="formIngreso().svTemperatura"
+                   (input)="setSvField('svTemperatura', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">SpO₂ (%)</span>
+            <input type="number" placeholder="98" min="0" max="100" [value]="formIngreso().svSaturacionO2"
+                   (input)="setSvField('svSaturacionO2', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item">
+            <span class="urg-sv-lbl">Peso (kg)</span>
+            <input type="number" placeholder="70" [value]="formIngreso().svPeso"
+                   (input)="setSvField('svPeso', $any($event.target).value)" />
+          </div>
+          <div class="urg-sv-item urg-sv-item--dolor">
+            <span class="urg-sv-lbl">Dolor EVA (0-10)</span>
+            <input type="number" placeholder="0" min="0" max="10" [value]="formIngreso().svDolorEva"
+                   (input)="setSvField('svDolorEva', $any($event.target).value)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Escala de Glasgow (si aplica T1/T2) -->
+      @if (formIngreso().nivelTriage === 'I' || formIngreso().nivelTriage === 'II') {
+        <div class="urg-form-group">
+          <label>Escala de Glasgow</label>
+          <div class="urg-glasgow-grid">
+            <div class="urg-sv-item">
+              <span class="urg-sv-lbl">Ocular (E) 1-4</span>
+              <input type="number" min="1" max="4" [value]="formIngreso().glasgowOcular"
+                     (input)="setSvField('glasgowOcular', $any($event.target).value)" />
+            </div>
+            <div class="urg-sv-item">
+              <span class="urg-sv-lbl">Verbal (V) 1-5</span>
+              <input type="number" min="1" max="5" [value]="formIngreso().glasgowVerbal"
+                     (input)="setSvField('glasgowVerbal', $any($event.target).value)" />
+            </div>
+            <div class="urg-sv-item">
+              <span class="urg-sv-lbl">Motor (M) 1-6</span>
+              <input type="number" min="1" max="6" [value]="formIngreso().glasgowMotor"
+                     (input)="setSvField('glasgowMotor', $any($event.target).value)" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Observaciones adicionales -->
+      <div class="urg-form-group">
+        <label>Observaciones adicionales</label>
+        <textarea rows="2" placeholder="Observaciones complementarias..."
+                  [value]="formIngreso().observaciones"
+                  (input)="setObservacionesIngreso($any($event.target).value)"></textarea>
+      </div>
+    </div>
+
+    <div class="urg-slideover__footer">
+      <button class="urg-btn urg-btn--ghost" (click)="mostrarIngreso.set(false)">Cancelar</button>
+      <button class="urg-btn urg-btn--primary"
+              [disabled]="guardando() || !pacienteSeleccionado()"
+              (click)="crearIngreso()">
+        @if (guardando()) { <span class="urg-spinner-sm"></span> }
+        Registrar Ingreso
+      </button>
+    </div>
+  </aside>
+}
+
+<!-- Modal Re-triage -->
+@if (mostrarModalRetriage()) {
+  <div class="urg-overlay" (click)="mostrarModalRetriage.set(false)"></div>
+  <div class="urg-modal" role="dialog">
+    <h3>Re-clasificar triage</h3>
+    <div class="urg-form-group">
+      <label>Nivel de triage</label>
+      <select [value]="nivelTriageRetriage()" (change)="setNivelTriageRetriage($any($event.target).value)">
+        @for (n of nivelesTriageIngreso; track n) {
+          <option [value]="n">T-{{ n }} — {{ triageLabel(n) }} ({{ tiempoLimiteLabel(n) }})</option>
+        }
+      </select>
+    </div>
+    <div class="urg-modal__actions">
+      <button class="urg-btn urg-btn--ghost" (click)="mostrarModalRetriage.set(false)">Cancelar</button>
+      <button class="urg-btn urg-btn--primary" [disabled]="guardando()" (click)="guardarRetriage()">
+        @if (guardando()) { <span class="urg-spinner-sm"></span> }
+        Guardar
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Modal Checklist seguridad (al pasar a En Atención) -->
+@if (mostrarChecklistAtencion()) {
+  <div class="urg-overlay" (click)="cancelarChecklistAtencion()"></div>
+  <div class="urg-modal" role="dialog">
+    <h3>Verificación de seguridad</h3>
+    <p class="urg-modal__hint">Antes de asignar a En Atención, confirme:</p>
+    <label class="urg-checkbox">
+      <input type="checkbox" [checked]="checklistIdentificacion()" (change)="setChecklistIdentificacion(!checklistIdentificacion())" />
+      <span>Identidad del paciente verificada</span>
+    </label>
+    <label class="urg-checkbox">
+      <input type="checkbox" [checked]="checklistAlergias()" (change)="setChecklistAlergias(!checklistAlergias())" />
+      <span>Alergias y reacciones adversas revisadas</span>
+    </label>
+    <div class="urg-modal__actions">
+      <button class="urg-btn urg-btn--ghost" (click)="cancelarChecklistAtencion()">Cancelar</button>
+      <button class="urg-btn urg-btn--primary" (click)="confirmarChecklistAtencion()">Confirmar y pasar a En Atención</button>
+    </div>
+  </div>
+}
+
+<!-- Modal Alta (S6): checklist + Cerrar alta + Generar PDF -->
+@if (mostrarModalAlta()) {
+  <div class="urg-overlay" (click)="cancelarModalAlta()"></div>
+  <div class="urg-modal urg-modal--wide" role="dialog">
+    <h3>Dar alta al paciente</h3>
+    <p class="urg-modal__hint">Complete el checklist (opcional). Al cerrar alta se guardarán los datos y podrá descargar el PDF para el paciente.</p>
+    <div class="urg-form-group">
+      <label>Diagnóstico</label>
+      <textarea rows="2" placeholder="Diagnóstico de alta..."
+                [value]="formAltaDiagnostico()"
+                (input)="setFormAltaDiagnostico($any($event.target).value)"></textarea>
+    </div>
+    <div class="urg-form-group">
+      <label>Tratamiento</label>
+      <textarea rows="2" placeholder="Tratamiento indicado..."
+                [value]="formAltaTratamiento()"
+                (input)="setFormAltaTratamiento($any($event.target).value)"></textarea>
+    </div>
+    <div class="urg-form-group">
+      <label>Recomendaciones</label>
+      <textarea rows="2" placeholder="Recomendaciones para el paciente..."
+                [value]="formAltaRecomendaciones()"
+                (input)="setFormAltaRecomendaciones($any($event.target).value)"></textarea>
+    </div>
+    <div class="urg-form-group">
+      <label>Próxima cita</label>
+      <input type="text" placeholder="Ej: Control en 7 días, valoración por especialista..."
+             [value]="formAltaProximaCita()"
+             (input)="setFormAltaProximaCita($any($event.target).value)" />
+    </div>
+    <div class="urg-modal__actions">
+      <button class="urg-btn urg-btn--ghost" (click)="cancelarModalAlta()">Cancelar</button>
+      <button class="urg-btn urg-btn--secondary" (click)="guardarYDescargarPdfAlta()" [disabled]="guardando()" title="Guarda los datos y descarga el PDF con el resumen para el paciente">
+        @if (guardando()) { <span class="urg-spinner-sm"></span> }
+        Generar PDF para paciente
+      </button>
+      <button class="urg-btn urg-btn--primary" (click)="cerrarAlta()" [disabled]="guardando()">
+        @if (guardando()) { <span class="urg-spinner-sm"></span> }
+        Cerrar alta
+      </button>
+    </div>
+  </div>
+}

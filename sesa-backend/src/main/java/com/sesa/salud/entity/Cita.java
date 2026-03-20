@@ -44,8 +44,37 @@ public class Cita {
     @Column(columnDefinition = "TEXT")
     private String notas;
 
+    @Column(name = "motivo_cancelacion", columnDefinition = "TEXT")
+    private String motivoCancelacion;
+
+    // Campos normativos Res. 2953/2014 (oportunidad en asignación de citas)
+    @Column(name = "tipo_cita", length = 20)
+    private String tipoCita;
+
+    @Column(name = "numero_autorizacion_eps", length = 60)
+    private String numeroAutorizacionEps;
+
+    @Column(name = "duracion_estimada_min")
+    private Integer duracionEstimadaMin;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "recordatorio_24h_enviado_at")
+    private Instant recordatorio24hEnviadoAt;
+
+    @Column(name = "recordatorio_1h_enviado_at")
+    private Instant recordatorio1hEnviadoAt;
+
+    /** S3: Token único para confirmar/cancelar cita por enlace (sin login). */
+    @Column(name = "token_confirmacion", length = 64, unique = true)
+    private String tokenConfirmacion;
+
+    @Column(name = "confirmado_at")
+    private Instant confirmadoAt;
+
+    @Column(name = "cancelado_desde_enlace_at")
+    private Instant canceladoDesdeEnlaceAt;
 
     @PrePersist
     protected void onCreate() {

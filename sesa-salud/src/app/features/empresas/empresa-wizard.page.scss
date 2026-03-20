@@ -1,445 +1,842 @@
-/* ========================================
-   Empresa Wizard - Diseño Premium
-   Autor: Ing. J Sebastian Vargas S
-   ======================================== */
+/* Empresa Wizard - Interfaz premium (nueva/editar empresa) */
+/* Paleta SESA: solo variables del tema (--sesa-*) */
+/* Autor: Ing. J Sebastian Vargas S */
 
-// Variables y mixins
-$color-primary: var(--sesa-secondary);
-$color-accent: var(--sesa-accent);
-$color-error: var(--sesa-error);
-$color-text-primary: var(--sesa-text-primary);
-$color-text-secondary: var(--sesa-text-secondary);
-$color-border: var(--sesa-border);
-$color-bg: var(--sesa-bg);
-$color-surface: var(--sesa-surface);
+$primary: var(--sesa-secondary);
+$accent: var(--sesa-accent);
+$err: var(--sesa-error);
+$text: var(--sesa-text-primary);
+$text2: var(--sesa-text-secondary);
+$border: var(--sesa-border);
+$bg: var(--sesa-bg);
+$surface: var(--sesa-surface);
+$on-primary: #fff;
+$radius-sm: var(--sesa-radius-sm, 6px);
+$radius-md: var(--sesa-radius-md, 10px);
+$radius-lg: var(--sesa-radius-lg, 14px);
+$shadow-sm: var(--sesa-shadow-sm);
+$shadow-md: var(--sesa-shadow-md);
+$shadow-lg: var(--sesa-shadow-lg);
+$transition: var(--sesa-transition);
 
-$radius-sm: 6px;
-$radius-md: 12px;
-$radius-lg: 16px;
-
-$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-$shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
-
-/* ========== Contenedor de página centrado ========== */
-
-.sesa-empresa-wizard-page {
-  max-width: 1200px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 1rem;
+/* Contenedor principal: rompe el padding del layout para que header y contenido lleguen a los bordes */
+.ewizard {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100vh;
+  width: calc(100% + 3.5rem);
+  max-width: none;
+  margin-top: 0;
+  margin-left: -1.75rem;
+  margin-right: -1.75rem;
+  overflow-x: visible;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  align-items: stretch;
 }
 
-/* ========== Header y Navegación ========== */
+/* Contenedor del contenido: más espacio en pantalla (max 1280px); menos espacio bajo el encabezado */
+.ewizard-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 2rem;
+  box-sizing: border-box;
+}
 
-.sesa-page-header {
+/* Menos espacio entre encabezado y bloque de pasos/formulario */
+.ewizard .sesa-page-header {
+  margin-bottom: 0.5rem;
+}
+
+/* ═══ Stepper y pasos del wizard — Premium SaaS Pro ═══ */
+.ewizard-stepper {
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.ewizard-step-card {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--sesa-secondary), var(--sesa-accent), transparent);
+    opacity: 0.5;
+  }
+}
+
+.ewizard-step-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.ewizard-step-block {
+  margin-bottom: 0.5rem;
+}
+
+.ewizard-step-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ewizard-step-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sesa-secondary);
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(31, 106, 225, 0.08);
+
+  [data-theme='dark'] & {
+    background: rgba(31, 106, 225, 0.14);
+  }
+}
+
+.ewizard-step-title {
+  margin: 0;
+  font-size: 1.3125rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.ewizard-progress {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba($color-border, 0.5);
+  gap: 0;
+  margin-bottom: 0;
+  width: 100%;
+}
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
+.ewizard-progress-track {
+  flex: 1;
+  height: 10px;
+  background: var(--sesa-border);
+  border-radius: 999px;
+  overflow: hidden;
+  opacity: 0.6;
+}
+
+.ewizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(31, 106, 225, 0.25);
+}
+
+.ewizard-progress-label {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  white-space: nowrap;
+  margin-left: 0.85rem;
+}
+
+/* Tabs de pasos: estilo premium con estados claros */
+.ewizard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ewizard-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    transform 0.15s ease, box-shadow 0.2s ease;
+
+  [data-theme='dark'] & {
+    background: rgba(255, 255, 255, 0.04);
   }
 
-  /* Variante premium */
-  &--premium {
-    padding: 1.5rem 1.75rem;
-    margin-bottom: 2rem;
-    background: linear-gradient(135deg, rgba($color-primary, 0.04) 0%, rgba($color-accent, 0.02) 100%);
-    border-radius: $radius-lg;
-    border: 1px solid rgba($color-primary, 0.12);
-    border-bottom: 2px solid rgba($color-primary, 0.2);
+  &:not(:disabled):hover {
+    background: rgba(31, 106, 225, 0.08);
+    color: var(--sesa-text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(31, 106, 225, 0.12);
+
+    [data-theme='dark'] & {
+      background: rgba(31, 106, 225, 0.12);
+    }
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.65;
+  }
+
+  &--current {
+    background: rgba(31, 106, 225, 0.1);
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    box-shadow: 0 0 0 1px rgba(31, 106, 225, 0.2);
+
+    [data-theme='dark'] & {
+      background: rgba(31, 106, 225, 0.15);
+      box-shadow: 0 0 0 1px rgba(31, 106, 225, 0.3);
+    }
+
+    .ewizard-tab-num {
+      background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(31, 106, 225, 0.35);
+    }
+  }
+
+  &--done {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.2);
+    color: var(--sesa-text-primary);
+
+    [data-theme='dark'] & {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.25);
+    }
+
+    .ewizard-tab-num {
+      background: var(--sesa-success);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
   }
 }
 
-/* Espaciador para centrar el título (mismo ancho que el botón Volver) */
-.sesa-page-header-spacer {
-  width: 120px;
+.ewizard-tab-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--sesa-border);
+  color: var(--sesa-text-muted);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
+}
 
-  @media (max-width: 768px) {
+.ewizard-tab-text {
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+
+  @media (max-width: 640px) {
     display: none;
   }
 }
 
-.sesa-btn-back {
-  flex-shrink: 0;
+/* Tarjeta de contenido principal */
+.ewizard-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  animation: ewizardFadeIn 0.35s ease;
+  overflow: hidden;
 
   @media (max-width: 768px) {
-    order: -1;
+    padding: 0;
   }
 }
 
-.sesa-page-header-content {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  flex: 1;
-  justify-content: center;
-  min-width: 0;
+/* Área del paso actual: altura dinámica, scroll solo si hace falta */
+.ewizard-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($primary, 0.3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.25);
+    border-radius: 3px;
+  }
 }
 
-.sesa-page-header-icon {
+@keyframes ewizardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mensaje de error */
+.ewizard-error {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: $radius-sm;
+  background: rgba($err, 0.08);
+  border: 1px solid rgba($err, 0.25);
+  color: $err;
+  font-size: 0.85rem;
+
+  strong {
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.95;
+  }
+
+  fa-icon {
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+  }
+}
+
+/* Sección Módulos (desde BD): ocupa altura disponible */
+.ewizard-modules {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.ewizard-modules-head {
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+}
+
+.ewizard-modules-title-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ewizard-modules-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  svg { width: 1.5rem; height: 1.5rem; }
-  font-size: 1.75rem;
-  background: linear-gradient(135deg, $color-primary, $color-accent);
-  border-radius: $radius-md;
-  box-shadow: 0 4px 16px rgba($color-primary, 0.35);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: linear-gradient(135deg, rgba($primary, 0.12), rgba($accent, 0.08));
+  border-radius: $radius-sm;
+  color: $primary;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.ewizard-modules-title {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text;
+}
+
+.ewizard-modules-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $text2;
+  line-height: 1.4;
+}
+
+.ewizard-modules-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ewizard-modules-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  border: 1px solid rgba($primary, 0.35);
+  background: rgba($primary, 0.08);
+  color: $primary;
+  cursor: pointer;
+  transition: background $transition, border-color $transition;
 
   &:hover {
-    transform: scale(1.05) rotate(-2deg);
-    box-shadow: 0 6px 24px rgba($color-primary, 0.4);
+    background: rgba($primary, 0.14);
+    border-color: $primary;
+  }
+
+  &--secondary {
+    border-color: rgba($border, 0.8);
+    background: rgba($text, 0.04);
+    color: $text2;
+
+    &:hover {
+      background: rgba($text, 0.08);
+      color: $text;
+    }
   }
 }
 
-.sesa-btn-arrow {
-  transition: transform 0.2s ease;
+.ewizard-modules-loading,
+.ewizard-modules-err {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  border-radius: $radius-md;
+  color: $text2;
 }
 
-.sesa-btn--premium:hover .sesa-btn-arrow {
-  transform: translateX(-3px);
+.ewizard-modules-loading {
+  flex-direction: column;
+  justify-content: center;
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
 }
 
-.sesa-page-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: $color-text-primary;
-  letter-spacing: -0.5px;
+.ewizard-modules-err {
+  background: rgba($err, 0.06);
+  border: 1px solid rgba($err, 0.2);
+  color: $err;
+
+  strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
 }
 
-.sesa-page-subtitle {
+.ewizard-spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba($primary, 0.2);
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: ewizardSpin 0.7s linear infinite;
+}
+
+@keyframes ewizardSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ewizard-modules-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($primary, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.3);
+    border-radius: 3px;
+  }
+}
+
+.ewizard-modules-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  font-size: 0.95rem;
-  color: $color-text-secondary;
-  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-/* ========== Botones Mejorados ========== */
+.ewizard-module-item {
+  border: 1px solid $border;
+  border-radius: $radius-md;
+  background: $surface;
+  overflow: hidden;
+  transition: border-color $transition, box-shadow $transition;
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+  }
+
+  &--selected {
+    border-color: rgba($primary, 0.5);
+    background: linear-gradient(135deg, rgba($primary, 0.04), rgba($accent, 0.02));
+    box-shadow: 0 1px 8px rgba($primary, 0.08);
+  }
+
+  &--open {
+    box-shadow: 0 2px 12px rgba($primary, 0.06);
+  }
+}
+
+.ewizard-module-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 40px;
+
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: rgba($primary, 0.03);
+    }
+  }
+}
+
+.ewizard-module-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.ewizard-module-check input {
+  position: absolute;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.ewizard-module-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid $border;
+  border-radius: 5px;
+  background: $surface;
+  transition: all 0.2s ease;
+
+  .ewizard-module-check input:focus-visible + & {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+
+  &--partial {
+    background: $primary;
+    border-color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::after {
+      content: '';
+      width: 10px;
+      height: 2px;
+      background: $on-primary;
+      border-radius: 1px;
+    }
+  }
+
+  &--full {
+    background: $primary;
+    border-color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::after {
+      content: '✓';
+      color: $on-primary;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+}
+
+.ewizard-module-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .ewizard-module-item--selected & {
+    color: $primary;
+  }
+}
+
+.ewizard-module-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $text2;
+  background: rgba($text, 0.08);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ewizard-module-chevron {
+  color: $primary;
+  font-size: 0.9rem;
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+.ewizard-module-subs {
+  border-top: 1px solid rgba($border, 0.6);
+  background: rgba($primary, 0.02);
+  padding: 0.75rem 1rem 0.75rem 3rem;
+}
+
+.ewizard-subs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.25rem;
+}
+
+.ewizard-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: $text2;
+  transition: background $transition, color $transition;
+
+  &:hover {
+    background: rgba($primary, 0.06);
+    color: $text;
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: $primary;
+    flex-shrink: 0;
+  }
+
+  &:has(input:checked) {
+    color: $primary;
+    font-weight: 600;
+  }
+}
+
+/* ═══ Footer de acciones del wizard — Premium Pro ═══ */
+.sesa-wizard-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-top: 2rem;
+  background: var(--sesa-surface);
+  border-top: 1px solid var(--sesa-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04), 0 -1px 3px rgba(0, 0, 0, 0.02);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--sesa-secondary), var(--sesa-accent), transparent);
+    opacity: 0.4;
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    gap: 0.75rem;
+
+    .sesa-wizard-actions-right {
+      flex-direction: column;
+    }
+
+    .sesa-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+.sesa-btn-cancel {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sesa-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  transition: color var(--sesa-transition), background-color var(--sesa-transition),
+    border-color var(--sesa-transition), transform 0.15s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--sesa-text-primary);
+    background-color: rgba(0, 0, 0, 0.04);
+    border-color: var(--sesa-border);
+
+    [data-theme='dark'] & {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
+  }
+}
+
+.sesa-wizard-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 
 .sesa-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: $radius-md;
-  font-size: 0.95rem;
+  gap: 0.5rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.3px;
-  box-shadow: $shadow-sm;
-  position: relative;
-  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-
-  &:hover::before:not(:disabled) {
-    width: 300px;
-    height: 300px;
-  }
 }
 
 .sesa-btn-primary {
-  background: linear-gradient(135deg, $color-primary, $color-accent);
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
   color: #fff;
-  box-shadow: $shadow-md;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.35), 0 2px 6px rgba(0, 0, 0, 0.06);
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: $shadow-lg;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgba(31, 106, 225, 0.4), 0 3px 10px rgba(0, 0, 0, 0.08);
   }
 
   &:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(31, 106, 225, 0.3);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
   }
 }
 
 .sesa-btn-secondary {
-  background: rgba($color-text-primary, 0.05);
-  color: $color-text-primary;
-  border: 1.5px solid $color-border;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  border: 1.5px solid var(--sesa-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
   &:hover:not(:disabled) {
-    background: rgba($color-text-primary, 0.1);
-    border-color: $color-text-primary;
-    transform: translateX(-2px);
+    background: var(--sesa-bg);
+    border-color: var(--sesa-secondary);
+    color: var(--sesa-secondary);
+    box-shadow: 0 2px 8px rgba(31, 106, 225, 0.12);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
   }
 }
 
 .sesa-btn-icon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-/* ========== Progress Bar ========== */
-
-.sesa-progress-wrapper {
-  margin-bottom: 2rem;
-}
-
-.sesa-progress-bar {
-  width: 100%;
-  height: 6px;
-  background: rgba($color-border, 0.3);
-  border-radius: $radius-lg;
-  overflow: hidden;
-  box-shadow: inset $shadow-sm;
-}
-
-.sesa-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, $color-primary, $color-accent);
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 12px rgba($color-primary, 0.4);
-}
-
-.sesa-progress-text {
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
-  color: $color-text-secondary;
-  font-weight: 600;
-  text-align: right;
-}
-
-/* ========== Pestañas (Tabs) ========== */
-
-.sesa-wizard-container {
-  max-width: 1200px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.sesa-wizard-tabs {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -12px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, $color-border, transparent);
-  }
-}
-
-.sesa-wizard-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: $radius-md;
-  border: 1.5px solid transparent;
-  background: rgba($color-text-primary, 0.03);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: $color-text-secondary;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-
-  &:not(:disabled):hover {
-    background: rgba($color-text-primary, 0.08);
-    border-color: $color-border;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  &--active {
-    background: linear-gradient(135deg, rgba($color-primary, 0.1), rgba($color-accent, 0.1));
-    border-color: $color-primary;
-    color: $color-primary;
-    box-shadow: 0 4px 12px rgba($color-primary, 0.15);
-
-    .sesa-wizard-tab-icon {
-      background: linear-gradient(135deg, $color-primary, $color-accent);
-      color: white;
-    }
-  }
-
-  &--completed {
-    .sesa-wizard-tab-icon {
-      background: var(--sesa-success, #10b981);
-      color: white;
-    }
-  }
-}
-
-.sesa-wizard-tab-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba($color-text-primary, 0.1);
-  color: $color-text-secondary;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
-}
-
-.sesa-wizard-tab-label {
-  white-space: nowrap;
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-}
-
-/* ========== Tarjeta Principal ========== */
-
-.sesa-wizard-card {
-  margin-top: 0;
-  background: $color-surface;
-  border: 1px solid rgba($color-border, 0.5);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-md;
-  padding: 2rem;
-  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-  }
-
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-}
-
-/* Animación de cambio de paso */
-.sesa-wizard-form--premium,
-.sesa-modules-section {
-  animation: stepFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes stepFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* ========== Mensajes de Error Mejorados ========== */
-
-.sesa-login-error {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  border-radius: $radius-md;
-  background: linear-gradient(135deg, rgba($color-error, 0.05), rgba($color-error, 0.1));
-  border: 1px solid rgba($color-error, 0.2);
-  animation: shake 0.3s cubic-bezier(0.36, 0, 0.66, -0.56);
-
-  @keyframes shake {
-
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-
-    25% {
-      transform: translateX(-8px);
-    }
-
-    75% {
-      transform: translateX(8px);
-    }
-  }
-}
-
-.sesa-error-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.sesa-error-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.sesa-error-title {
-  margin: 0;
-  font-weight: 700;
-  color: $color-error;
-  font-size: 0.95rem;
-}
-
-.sesa-error-message {
-  margin: 0;
-  font-size: 0.9rem;
-  color: $color-error;
-  opacity: 0.9;
-}
-
-/* ========== Formularios ========== */
-
-.sesa-wizard-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-
-  &--premium {
-    gap: 1.35rem;
-  }
+  gap: 0.4rem;
 }
 
 /* Selects premium con estilo consistente */
@@ -453,56 +850,92 @@ $shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
   cursor: pointer;
 }
 
-/* ========== Secciones de Formulario ========== */
+/* ========== Secciones de Formulario con separador horizontal entre secciones ========== */
 
 .sesa-form-section {
-  padding: 1.15rem 1.25rem;
+  padding: 0.5rem 0.75rem;
   border-radius: $radius-md;
-  background: rgba($color-text-primary, 0.02);
-  border: 1px solid rgba($color-border, 0.3);
-  transition: all 0.3s ease;
+  background: rgba($text, 0.02);
+  border: 1px solid rgba($border, 0.4);
+  transition: border-color $transition, background $transition;
+
+  /* Línea separadora horizontal entre secciones (segunda y siguientes) */
+  & + .sesa-form-section {
+    border-top: 1px solid rgba($border, 0.55);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
 
   &:hover {
-    border-color: rgba($color-primary, 0.3);
-    background: rgba($color-primary, 0.02);
+    border-color: rgba($primary, 0.3);
+    background: rgba($primary, 0.02);
   }
 
   &--nested {
-    background: rgba($color-primary, 0.03);
-    border-color: rgba($color-primary, 0.2);
-    margin-top: 1rem;
+    background: rgba($primary, 0.03);
+    border-color: rgba($primary, 0.2);
+    margin-top: 0.35rem;
+    padding: 0.5rem 0.65rem;
   }
 }
 
 .sesa-form-section-header {
-  margin-bottom: 1rem;
-  padding-bottom: 0.65rem;
-  border-bottom: 2px solid rgba($color-border, 0.4);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba($border, 0.35);
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.6rem;
 
-  /* Con icono premium */
   .sesa-form-section-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    font-size: 1.25rem;
-    background: linear-gradient(135deg, rgba($color-primary, 0.1), rgba($color-accent, 0.08));
+    width: 32px;
+    height: 32px;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, rgba($primary, 0.1), rgba($accent, 0.08));
     border-radius: $radius-sm;
-    border: 1px solid rgba($color-primary, 0.15);
+    border: 1px solid rgba($primary, 0.15);
     flex-shrink: 0;
-    svg { width: 1em; height: 1em; }
+
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+
+  &--card {
+    margin-bottom: 0;
+    padding: 1rem 1.75rem;
+    border-bottom: 1px solid rgba($border, 0.6);
+    background: linear-gradient(180deg, rgba($border, 0.12) 0%, rgba($border, 0.04) 100%);
+    align-items: center;
+    gap: 0.6rem;
+
+    .sesa-form-section-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 1.25rem;
+      background: transparent;
+      border: none;
+      color: $primary;
+    }
+
+    .sesa-form-section-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
   }
 }
 
 .sesa-form-section--premium {
-  background: linear-gradient(135deg, rgba($color-text-primary, 0.015) 0%, rgba($color-primary, 0.03) 100%);
-  border: 1px solid rgba($color-border, 0.35);
-  padding: 1.2rem 1.35rem;
-  border-radius: $radius-lg;
+  background: linear-gradient(135deg, rgba($text, 0.012) 0%, rgba($primary, 0.025) 100%);
+  border: 1px solid rgba($border, 0.38);
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-md;
   position: relative;
   overflow: hidden;
 
@@ -512,33 +945,33 @@ $shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, rgba($color-primary, 0.25), transparent);
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba($primary, 0.22), transparent);
     opacity: 0.6;
   }
 
   &:hover {
-    border-color: rgba($color-primary, 0.25);
-    box-shadow: 0 4px 20px rgba($color-primary, 0.06);
+    border-color: rgba($primary, 0.22);
+    box-shadow: 0 2px 12px rgba($primary, 0.05);
   }
 }
 
 .sesa-form-section-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.15rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: $color-text-primary;
+  color: $text;
   letter-spacing: -0.3px;
 
   &--small {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 }
 
 .sesa-form-section-description {
   margin: 0;
-  font-size: 0.9rem;
-  color: $color-text-secondary;
+  font-size: 0.78rem;
+  color: $text2;
   font-weight: 400;
 }
 
@@ -546,476 +979,311 @@ $shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
 
 .sesa-form-grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 
   &--two-cols {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+
+  &--three-cols {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 
   &--four-cols {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+  }
+
+  /* Campo que ocupa todas las columnas del grid */
+  &__full {
+    grid-column: 1 / -1;
   }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr !important;
+    gap: 1rem;
+
+    &--three-cols,
+    &--four-cols {
+      grid-template-columns: 1fr !important;
+    }
+
+    &__full {
+      grid-column: 1;
+    }
   }
 }
 
-/* ========== Módulos y Submódulos - Premium Compacto ========== */
-
-.sesa-modules-section {
+/* Paso 0: secciones en columna, cada una en su propia card */
+.ewizard-step-vertical {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+  min-height: 0;
+}
+
+/* Campos del wizard: altura y radio tipo referencia; forzar que el control y el input se vean siempre */
+.ewizard ::ng-deep .sesa-field-control {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.ewizard ::ng-deep .sesa-field-control input,
+.ewizard ::ng-deep .sesa-field-control select,
+.ewizard ::ng-deep .sesa-field-control textarea {
+  min-height: 48px;
+  min-width: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Card contenedora de cada sección - premium; sin recorte del contenido (min-height, padding inferior) */
+.ewizard-section-card {
+  background: $surface;
+  border: 1px solid rgba($border, 0.85);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 12px rgba($text, 0.04), 0 1px 3px rgba($text, 0.02);
+  padding: 0;
+  overflow: hidden;
+  min-height: min-content;
+  transition: box-shadow $transition, border-color $transition;
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: 0 4px 20px rgba($primary, 0.06), 0 2px 8px rgba($text, 0.04);
+  }
+
+  .sesa-form-section {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .sesa-form-section-header + * {
+    padding: 1.5rem 1.75rem 2rem;
+  }
+
+  .sesa-form-grid {
+    gap: 1.5rem;
+  }
+
+  .sesa-form-section-header .sesa-form-section-icon {
+    background: transparent;
+    color: $primary;
+  }
+
+  /* Evitar que la sección recorte los controles */
+  .sesa-form-section--premium {
+    overflow: visible;
+  }
+}
+
+/* Cuerpo de la card (mismo padding que .sesa-form-section-header + *) */
+.ewizard-step-desc {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: $text2;
+  line-height: 1.5;
+}
+
+.sesa-form-section--card {
+  background: $surface;
+  border: 1px solid rgba($border, 0.5);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  padding: 1rem 1.25rem;
+
+  .sesa-form-section-header .sesa-form-section-icon {
+    background: linear-gradient(135deg, rgba($primary, 0.12), rgba($accent, 0.1));
+    color: $primary;
+  }
+}
+
+/* Paso 0 (dos columnas): cards al lado, misma altura */
+.ewizard-step-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: start;
   min-height: 0;
 
-  .sesa-form-section-header {
-    margin-bottom: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  &--premium {
-    .sesa-modules-section-header {
-      margin-bottom: 1rem;
-    }
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.sesa-modules-header-content {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  min-width: 0;
-}
+/* Columnas a la misma altura; cards dentro de cada columna.
+   align-items: start para que la altura la marque el contenido y no se recorten los campos. */
+.ewizard-step-cols--equal {
+  align-items: start;
+  gap: 1.5rem;
 
-.sesa-modules-toggle-btns {
-  display: flex;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
+  .ewizard-step-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 0;
+    padding: 0;
+    border-right: none;
+  }
 
-.sesa-modules-toggle-btn {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border: 1px solid rgba($color-primary, 0.3);
-  background: rgba($color-primary, 0.06);
-  color: $color-primary;
-  border-radius: $radius-sm;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  .ewizard-step-col .ewizard-section-card {
+    flex: 0 1 auto;
+    min-height: min-content;
+    display: flex;
+    flex-direction: column;
+  }
 
-  &:hover {
-    background: rgba($color-primary, 0.12);
-    border-color: $color-primary;
+  .ewizard-step-col .ewizard-section-card .sesa-form-section {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: min-content;
+  }
+
+  .ewizard-step-col .ewizard-section-card .sesa-form-section-header + *,
+  .ewizard-step-col .ewizard-section-card .sesa-form-grid {
+    flex: 1 1 auto;
+    min-height: min-content;
   }
 }
 
-/* Estados de carga y error */
-.sesa-modulos-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 3rem 2rem;
-  color: var(--sesa-text-secondary);
-
-  .sesa-loading-spinner {
-    width: 32px;
-    height: 32px;
-    border-width: 3px;
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.95rem;
-  }
-}
-
-.sesa-modulos-error {
-  display: flex;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-radius: $radius-md;
-  background: linear-gradient(135deg, rgba($color-error, 0.06), rgba($color-error, 0.1));
-  border: 1px solid rgba($color-error, 0.25);
-
-  .sesa-error-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .sesa-modulos-error-title {
-    margin: 0 0 0.35rem;
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: $color-error;
-  }
-
-  .sesa-modulos-error-message {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--sesa-text-secondary);
-  }
-}
-
-/* Contenedor con scroll interno: evita que toda la página haga scroll */
-.sesa-modulos-scroll-wrapper {
-  max-height: 56vh;
-  overflow-y: auto;
-
-  @media (max-height: 700px) {
-    max-height: 48vh;
-  }
-  overflow-x: hidden;
-  padding-right: 0.5rem;
-  margin: 0 -0.25rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba($color-primary, 0.4) transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba($color-primary, 0.3);
-    border-radius: 3px;
-
-    &:hover {
-      background: rgba($color-primary, 0.5);
-    }
-  }
-}
-
-/* Lista tipo acordeón: check + desplegable contraído por defecto */
-.sesa-modulos-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.ewizard-step-col {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
+  min-height: 0;
+  padding: 0 0.75rem;
 
-.sesa-modulo-row {
-  border-radius: $radius-md;
-  border: 1px solid $color-border;
-  background: var(--sesa-surface);
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    border-color: rgba($color-primary, 0.3);
+  &:first-child {
+    padding-left: 0;
   }
 
-  &--selected {
-    border-color: $color-primary;
-    background: linear-gradient(135deg, rgba($color-primary, 0.04), rgba($color-accent, 0.02));
-    box-shadow: 0 1px 8px rgba($color-primary, 0.1);
-  }
+  &:not(:last-child) {
+    border-right: 1px solid rgba($border, 0.55);
+    padding-right: 0.75rem;
 
-  &--expanded {
-    border-color: rgba($color-primary, 0.4);
-    box-shadow: 0 2px 12px rgba($color-primary, 0.08);
-  }
-}
-
-.sesa-modulo-row-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 1rem;
-  transition: background 0.2s ease;
-  min-height: 44px;
-
-  &--clickable {
-    cursor: pointer;
-
-    &:hover {
-      background: rgba($color-primary, 0.04);
-    }
-  }
-}
-
-.sesa-modulo-row--expanded .sesa-modulo-row-header--clickable {
-  background: rgba($color-primary, 0.05);
-}
-
-/* Checkbox personalizado premium */
-.sesa-modulo-check-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.sesa-modulo-check {
-  position: absolute;
-  opacity: 0;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  margin: 0;
-}
-
-.sesa-modulo-check-custom {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 2px solid $color-border;
-  border-radius: 5px;
-  background: var(--sesa-surface);
-  transition: all 0.2s ease;
-
-  /* Parcial: relleno sin check (solo algunos submódulos) */
-  &--partial {
-    background: $color-primary;
-    border-color: $color-primary;
-
-    &::after {
-      content: '';
-      display: block;
-      width: 10px;
-      height: 2px;
-      background: white;
-      border-radius: 1px;
+    @media (max-width: 900px) {
+      border-right: none;
+      border-bottom: 1px solid rgba($border, 0.55);
+      padding-right: 0;
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
     }
   }
 
-  /* Completo: relleno con check (todos los submódulos) */
-  &--full {
-    background: $color-primary;
-    border-color: $color-primary;
-
-    &::after {
-      content: '✓';
-      display: block;
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1;
-    }
-  }
-
-  .sesa-modulo-check:focus-visible + & {
-    outline: 2px solid $color-primary;
-    outline-offset: 2px;
-  }
-
-  .sesa-modulo-check-wrap:hover & {
-    border-color: $color-primary;
+  &:last-child {
+    padding-right: 0;
   }
 }
 
-.sesa-modulo-name {
-  flex: 1;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--sesa-text-primary);
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Paso 3: dos cards en columnas (Usuario Admin | Credenciales) */
+.ewizard-step3-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  min-height: 0;
 
-  .sesa-modulo-row--selected & {
-    color: $color-primary;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.sesa-modulo-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--sesa-text-secondary);
-  background: rgba($color-text-primary, 0.08);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-variant-numeric: tabular-nums;
-}
 
-.sesa-modulo-chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: $color-primary;
-  font-size: 0.9rem;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-
-  &--open {
-    transform: rotate(180deg);
-  }
-}
-
-/* Contenido desplegable */
-.sesa-modulo-dropdown {
-  border-top: 1px solid rgba($color-border, 0.5);
-  background: rgba($color-primary, 0.02);
-  animation: modDropdownIn 0.25s ease;
-}
-
-@keyframes modDropdownIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.sesa-submodulos-list {
-  list-style: none;
-  padding: 0.5rem 1rem 0.75rem 3rem;
-  margin: 0;
-  column-count: 2;
-  column-gap: 2rem;
-
-  @media (min-width: 900px) {
-    column-count: 3;
-  }
-
-  @media (max-width: 600px) {
-    column-count: 1;
-    padding-left: 1rem;
-  }
-}
-
-@keyframes subsFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.sesa-submodulo-item {
-  break-inside: avoid;
-  margin-bottom: 0.25rem;
-}
-
-.sesa-submodulo-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: $radius-sm;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--sesa-text-secondary);
-  transition: background 0.15s ease, color 0.15s ease;
-
-  &:hover {
-    background: rgba($color-primary, 0.06);
-    color: var(--sesa-text-primary);
-  }
-
-  input {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: $color-primary;
-    flex-shrink: 0;
-  }
-
-  &:has(input:checked) {
-    color: $color-primary;
-    font-weight: 600;
-  }
-}
-
-.sesa-submodulo-name {
-  flex: 1;
-  line-height: 1.35;
-}
-
-/* ========== Tarjetas de Límite de Usuarios ========== */
-
+/* Tarjetas de límite de usuarios */
 .sesa-user-limit-card {
   position: relative;
-  padding: 1.25rem;
+  padding: 0.75rem;
   border-radius: $radius-md;
-  background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-accent, 0.05));
-  border: 2px solid rgba($color-primary, 0.15);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba($primary, 0.05), rgba($accent, 0.05));
+  border: 2px solid rgba($primary, 0.15);
+  transition: border-color $transition, transform $transition, box-shadow $transition;
 
   &:hover {
-    border-color: rgba($color-primary, 0.3);
+    border-color: rgba($primary, 0.3);
     transform: translateY(-2px);
     box-shadow: $shadow-md;
   }
 }
 
-.sesa-user-limit-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.8;
-  svg { width: 1em; height: 1em; }
+.sesa-form-grid--limit-cards {
+  max-width: 100%;
 }
 
-/* ========== Acciones ========== */
+.sesa-user-limit-card {
+  background: linear-gradient(180deg, rgba($primary, 0.04) 0%, rgba($border, 0.06) 100%);
+  border: 1px solid rgba($border, 0.6);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  transition: border-color $transition, box-shadow $transition;
 
-.sesa-wizard-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding-top: 2rem;
-  border-top: 2px solid rgba($color-border, 0.3);
-  margin-top: 2rem;
-
-  @media (max-width: 640px) {
-    flex-direction: column;
-    justify-content: stretch;
-
-    .sesa-btn {
-      width: 100%;
-    }
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: 0 2px 12px rgba($primary, 0.06);
   }
 }
 
-/* ========== Loading Spinner ========== */
+.sesa-user-limit-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+  opacity: 0.85;
+  color: $primary;
+
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+}
+
+/* Formularios: compactos para caber en viewport */
+.sesa-wizard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
+
+  &--premium {
+    gap: 0.6rem;
+  }
+
+  &.ewizard-form-fit {
+    overflow-y: auto;
+    min-height: 0;
+  }
+}
 
 .sesa-loading-spinner {
   display: inline-block;
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border-top-color: $on-primary;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
+  animation: ewizardSpin 0.8s linear infinite;
 }
 
-/* ========== Responsive ========== */
-
 @media (max-width: 768px) {
-  .sesa-wizard-card {
+  .ewizard-card {
     padding: 1.5rem;
   }
 
   .sesa-form-grid {
     grid-template-columns: 1fr !important;
   }
+}
 
+@media (max-width: 960px) {
+  .ewizard {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
 }

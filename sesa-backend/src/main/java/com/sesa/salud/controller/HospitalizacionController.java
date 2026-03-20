@@ -27,9 +27,9 @@ public class HospitalizacionController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','MEDICO','ENFERMERIA','SUPERADMINISTRADOR')")
     public List<HospitalizacionDto> listByEstado(@RequestParam(value = "estado", required = false) String estado,
-                                                 @PageableDefault(size = 20) Pageable pageable) {
+                                                 @PageableDefault(size = 200) Pageable pageable) {
         if (estado != null && !estado.isBlank()) return hospitalizacionService.findByEstado(estado, pageable);
-        return hospitalizacionService.findByEstado("INGRESADO", pageable);
+        return hospitalizacionService.findAll(pageable);
     }
 
     @GetMapping("/paciente/{pacienteId}")

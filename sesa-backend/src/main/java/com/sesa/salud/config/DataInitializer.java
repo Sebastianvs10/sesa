@@ -45,22 +45,32 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initRoles() {
-        if (roleRepository.count() > 0) return;
         var roles = new Role[]{
-            role(RoleConstants.SUPERADMINISTRADOR, "Super Usuario"),
-            role(RoleConstants.ADMIN, "Administrador del Sistema"),
-            role(RoleConstants.MEDICO, "Médico"),
-            role(RoleConstants.ODONTOLOGO, "Odontólogo/a"),
-            role(RoleConstants.BACTERIOLOGO, "Bacteriólogo"),
-            role(RoleConstants.ENFERMERO, "Enfermero/a"),
-            role(RoleConstants.JEFE_ENFERMERIA, "Jefe de Enfermería"),
+            role(RoleConstants.SUPERADMINISTRADOR,  "Super Usuario"),
+            role(RoleConstants.ADMIN,               "Administrador del Sistema"),
+            role(RoleConstants.MEDICO,              "Médico"),
+            role(RoleConstants.ODONTOLOGO,          "Odontólogo/a"),
+            role(RoleConstants.BACTERIOLOGO,        "Bacteriólogo"),
+            role(RoleConstants.ENFERMERO,           "Enfermero/a"),
+            role(RoleConstants.JEFE_ENFERMERIA,     "Jefe de Enfermería"),
             role(RoleConstants.AUXILIAR_ENFERMERIA, "Auxiliar de Enfermería"),
-            role(RoleConstants.PSICOLOGO, "Psicólogo"),
-            role(RoleConstants.REGENTE_FARMACIA, "Regente de Farmacia"),
-            role(RoleConstants.RECEPCIONISTA, "Recepcionista")
+            role(RoleConstants.PSICOLOGO,           "Psicólogo"),
+            role(RoleConstants.REGENTE_FARMACIA,    "Regente de Farmacia"),
+            role(RoleConstants.RECEPCIONISTA,       "Recepcionista"),
+            role(RoleConstants.FACTURACION,         "Facturación"),
+            role(RoleConstants.COORDINADOR_MEDICO,  "Coordinador Médico"),
+            role(RoleConstants.EBS,                  "Profesional EBS"),
+            role(RoleConstants.COORDINADOR_TERRITORIAL, "Coordinador Territorial"),
+            role(RoleConstants.SUPERVISOR_APS,      "Supervisor APS"),
         };
-        for (Role r : roles) roleRepository.save(r);
-        log.info("Roles del sistema inicializados: {}", roles.length);
+        int created = 0;
+        for (Role r : roles) {
+            if (!roleRepository.existsByCodigo(r.getCodigo())) {
+                roleRepository.save(r);
+                created++;
+            }
+        }
+        if (created > 0) log.info("Roles del sistema inicializados/actualizados: {} nuevos", created);
     }
 
     private static Role role(String codigo, String nombre) {

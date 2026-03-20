@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 import java.util.Optional;
 
 public interface PersonalRepository extends JpaRepository<Personal, Long> {
@@ -25,6 +27,10 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     Page<Personal> findByActivoTrue(Pageable pageable);
 
-    Page<Personal> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCaseOrCargoContainingIgnoreCase(
-            String nombres, String apellidos, String cargo, Pageable pageable);
+    Page<Personal> findByNombresContainingIgnoreCaseOrApellidosContainingIgnoreCase(
+            String nombres, String apellidos, Pageable pageable);
+
+    /** Obtiene el personal activo con alguno de los roles indicados (para filtro de profesionales). */
+    @Query("SELECT p FROM Personal p WHERE p.activo = true AND p.rol IN :roles ORDER BY p.nombres")
+    List<Personal> findByRolIn(@Param("roles") java.util.List<String> roles);
 }

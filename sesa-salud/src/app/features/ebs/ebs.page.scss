@@ -1,0 +1,325 @@
+/* Módulo Equipos Básicos de Salud (EBS) — Front móvil */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.ebs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ebs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ebs-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(31, 106, 225, 0.25);
+}
+
+.ebs-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.ebs-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .ebs-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ebs-sidebar {
+  min-width: 0;
+}
+
+.ebs-main {
+  min-width: 0;
+}
+
+/* ── Filtros ───────────────────────────────────────────── */
+
+.ebs-filters,
+.ebs-household-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ebs-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-select {
+  min-width: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  transition:
+    border-color var(--sesa-transition-smooth),
+    box-shadow var(--sesa-transition-smooth),
+    background-color var(--sesa-transition-smooth);
+
+  &:focus-visible {
+    border-color: var(--sesa-secondary);
+    box-shadow: 0 0 0 1px rgba(31, 106, 225, 0.45);
+  }
+}
+
+/* ── Lista de microterritorios ────────────────────────── */
+
+.ebs-territories-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ebs-territory-skeleton-row {
+  padding: 0.55rem 0.4rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+}
+
+.ebs-territory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ebs-territory-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem 0.55rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--sesa-transition-smooth),
+    border-color var(--sesa-transition-smooth),
+    transform var(--sesa-transition-smooth);
+}
+
+.ebs-territory-item:hover {
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-border);
+  transform: translateY(-1px);
+}
+
+.ebs-territory-item--active {
+  border-color: var(--sesa-secondary);
+  box-shadow: var(--sesa-shadow-sm);
+}
+
+.ebs-territory-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.ebs-territory-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-territory-code {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-territory-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+/* ── Hogares ──────────────────────────────────────────── */
+
+.ebs-household-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.ebs-household-skeleton-row {
+  padding: 0.55rem 0.35rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+}
+
+.ebs-household-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ebs-household-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+  transition:
+    background var(--sesa-transition-smooth),
+    border-color var(--sesa-transition-smooth),
+    box-shadow var(--sesa-transition-smooth);
+}
+
+.ebs-household-item:hover {
+  background: var(--sesa-surface);
+  border-color: var(--sesa-border);
+  box-shadow: var(--sesa-shadow-sm);
+}
+
+.ebs-household-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ebs-household-address {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-household-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-household-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  align-items: center;
+}
+
+.ebs-atajos-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sesa-text-secondary);
+  margin-right: 0.2rem;
+  width: 100%;
+  flex-basis: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+/* ── Chips ───────────────────────────────────────────── */
+
+.ebs-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ebs-chip-muted {
+  background: var(--sesa-border-light);
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-chip-success {
+  background: var(--sesa-success-bg);
+  color: var(--sesa-success);
+}
+
+.ebs-chip-warning {
+  background: var(--sesa-warning-bg);
+  color: var(--sesa-warning);
+}
+
+.ebs-chip-danger {
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+}
+
+.ebs-chip-primary {
+  background: rgba(31, 106, 225, 0.12);
+  color: var(--sesa-secondary);
+}
+
+.ebs-chip-link {
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(31, 106, 225, 0.22);
+  }
+}
+
+.ebs-chip-action {
+  border: none;
+  background: rgba(31, 106, 225, 0.12);
+  color: var(--sesa-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(31, 106, 225, 0.22);
+  }
+}
+

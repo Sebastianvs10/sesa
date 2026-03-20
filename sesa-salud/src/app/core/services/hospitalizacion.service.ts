@@ -7,6 +7,7 @@ export interface HospitalizacionDto {
   id: number;
   pacienteId: number;
   pacienteNombre: string;
+  pacienteDocumento?: string;
   servicio?: string;
   cama?: string;
   estado?: string;
@@ -32,8 +33,13 @@ export class HospitalizacionService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/hospitalizaciones`;
 
-  listByEstado(estado?: string): Observable<HospitalizacionDto[]> {
-    let params = new HttpParams().set('page', '0').set('size', '50');
+  listAll(size = 200): Observable<HospitalizacionDto[]> {
+    const params = new HttpParams().set('page', '0').set('size', String(size));
+    return this.http.get<HospitalizacionDto[]>(this.apiUrl, { params });
+  }
+
+  listByEstado(estado?: string, size = 200): Observable<HospitalizacionDto[]> {
+    let params = new HttpParams().set('page', '0').set('size', String(size));
     if (estado?.trim()) params = params.set('estado', estado.trim());
     return this.http.get<HospitalizacionDto[]>(this.apiUrl, { params });
   }

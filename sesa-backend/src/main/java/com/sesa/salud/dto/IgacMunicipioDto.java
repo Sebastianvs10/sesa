@@ -1,0 +1,22 @@
+/**
+ * DTO catálogo IGAC – Municipio.
+ * Autor: Ing. J Sebastian Vargas S
+ */
+
+package com.sesa.salud.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class IgacMunicipioDto {
+    private Long id;
+    private String codigoDane;
+    private String departamentoCodigo;
+    private String nombre;
+}

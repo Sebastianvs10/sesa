@@ -1,4 +1,469 @@
-/* Formulario de paciente - Premium Edition */
+/* Formulario de paciente — Wizard por pasos, estilo SaaS premium */
 /* Autor: Ing. J Sebastian Vargas S */
 
-/* (note: .sesa-form-grid, .sesa-form-actions, .sesa-error-banner are now in global styles.scss) */
+$pf-ease: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+$pf-radius: var(--sesa-radius-lg);
+$pf-radius-sm: var(--sesa-radius-md);
+$pf-shadow: var(--sesa-shadow-md);
+$pf-shadow-sm: var(--sesa-shadow-sm);
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PÁGINA
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-page {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pf-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pf-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: $pf-radius-sm;
+  color: var(--sesa-text-secondary);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  text-decoration: none;
+  transition: color $pf-ease, background $pf-ease, border-color $pf-ease;
+
+  &:hover {
+    color: var(--sesa-primary);
+    background: var(--sesa-bg);
+    border-color: var(--sesa-primary);
+  }
+}
+
+.pf-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pf-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+@media (min-width: 960px) {
+  .pf-title {
+    font-size: 1.65rem;
+  }
+}
+
+.pf-subtitle {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STEPPER
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-stepper {
+  position: relative;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: $pf-radius;
+  padding: 1.1rem 1.5rem;
+  box-shadow: $pf-shadow-sm;
+  overflow: hidden;
+  width: 100%;
+}
+
+.pf-stepper-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sesa-accent) 14%, transparent), color-mix(in srgb, var(--sesa-accent) 8%, transparent));
+  border-radius: $pf-radius 0 0 $pf-radius;
+  transition: width $pf-ease;
+  width: 0;
+  max-width: 100%;
+}
+
+.pf-stepper-steps {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.pf-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.35rem;
+  border: none;
+  background: transparent;
+  cursor: default;
+  font-family: inherit;
+  transition: opacity $pf-ease;
+  min-width: 0;
+
+  &.pf-step--clickable {
+    cursor: pointer;
+
+    &:hover .pf-step-num {
+      background: color-mix(in srgb, var(--sesa-accent) 18%, transparent);
+      color: var(--sesa-accent);
+    }
+  }
+
+  &.pf-step--active .pf-step-num {
+    background: var(--sesa-accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(43, 176, 166, 0.35);
+  }
+
+  &.pf-step--done .pf-step-num {
+    background: var(--sesa-success);
+    color: #fff;
+  }
+}
+
+.pf-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sesa-text-secondary);
+  background: var(--sesa-bg);
+  border: 1.5px solid var(--sesa-border);
+  transition: background $pf-ease, color $pf-ease, border-color $pf-ease, box-shadow $pf-ease;
+}
+
+.pf-step-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pf-step--active .pf-step-label {
+  color: var(--sesa-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FORM CARD + STEP CONTENT
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pf-error-banner {
+  margin: 0 1.5rem 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--sesa-error-bg);
+  border-left: 4px solid var(--sesa-error);
+  border-radius: $pf-radius-sm;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sesa-error);
+}
+
+.pf-step-content {
+  padding: 0 0 1.5rem;
+  width: 100%;
+}
+
+.pf-step-head {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+@media (min-width: 960px) {
+  .pf-step-title {
+    font-size: 1.2rem;
+  }
+  .pf-step-desc {
+    font-size: 0.9rem;
+  }
+}
+
+.pf-step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $pf-radius-sm;
+  display: block;
+
+  &.pf-step-icon--id {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--sesa-secondary) 18%, transparent), color-mix(in srgb, var(--sesa-secondary) 10%, transparent));
+  }
+  &.pf-step-icon--eps {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--sesa-accent) 18%, transparent), color-mix(in srgb, var(--sesa-accent) 10%, transparent));
+  }
+  &.pf-step-icon--map {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--sesa-success) 18%, transparent), color-mix(in srgb, var(--sesa-success) 10%, transparent));
+  }
+  &.pf-step-icon--phone {
+    background: linear-gradient(135deg, color-mix(in srgb, #8b5cf6 18%, transparent), color-mix(in srgb, #8b5cf6 10%, transparent));
+  }
+  &.pf-step-icon--people {
+    background: linear-gradient(135deg, color-mix(in srgb, #f59e0b 18%, transparent), color-mix(in srgb, #f59e0b 10%, transparent));
+  }
+}
+
+.pf-step-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.pf-step-desc {
+  font-size: 0.875rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.1rem 1.75rem;
+}
+
+/* Pantallas anchas: 3 columnas para aprovechar todo el ancho */
+@media (min-width: 960px) {
+  .pf-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.15rem 2rem;
+  }
+}
+
+.pf-grid .pf-activo-field {
+  grid-column: 1 / -1;
+}
+
+.pf-consulta-loading {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  margin-top: 0.35rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CAMPO ACTIVO
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-activo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  padding-top: 0.25rem;
+}
+
+.pf-activo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--sesa-text-primary);
+  user-select: none;
+}
+
+.pf-activo-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+  accent-color: var(--sesa-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pf-activo-text {
+  flex: 1;
+}
+
+.pf-activo-hint {
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+  font-weight: 400;
+  margin-left: 1.8rem;
+  line-height: 1.35;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACCIONES (FOOTER)
+═══════════════════════════════════════════════════════════════════════ */
+
+.pf-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 -1.35rem -1.25rem;
+  padding: 1.25rem 1.75rem;
+  border-top: 1px solid var(--sesa-border-light);
+  background: var(--sesa-bg);
+  border-radius: 0 0 $pf-radius $pf-radius;
+  flex-wrap: wrap;
+}
+
+.pf-actions-left,
+.pf-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: $pf-radius-sm;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: all $pf-ease;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.pf-btn--ghost {
+    background: transparent;
+    color: var(--sesa-text-secondary);
+    border: 1.5px solid var(--sesa-border);
+
+    &:hover:not(:disabled) {
+      background: var(--sesa-surface);
+      color: var(--sesa-text-primary);
+      border-color: var(--sesa-text-muted);
+    }
+  }
+
+  &.pf-btn--primary {
+    background: linear-gradient(135deg, var(--sesa-accent), #0d9488);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(43, 176, 166, 0.3);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(43, 176, 166, 0.4);
+    }
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+}
+
+.pf-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pf-spin 0.65s linear infinite;
+}
+
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .pf-page {
+    padding: 1rem 1.25rem 1.5rem;
+  }
+
+  .pf-stepper-steps {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .pf-step {
+    flex: 0 0 auto;
+    min-width: 56px;
+  }
+
+  .pf-step-label {
+    font-size: 0.65rem;
+  }
+
+  .pf-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .pf-step-content {
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .pf-actions {
+    padding: 1rem 1.25rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pf-actions-left,
+  .pf-actions-right {
+    justify-content: center;
+  }
+}

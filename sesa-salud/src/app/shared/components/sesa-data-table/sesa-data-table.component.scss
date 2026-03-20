@@ -1,10 +1,11 @@
-/* Tabla de datos premium — rounded corners, smooth hover, polished header */
+/* Tabla de datos premium — skeleton, empty state, acciones, hover premium */
 /* Autor: Ing. J Sebastian Vargas S */
 
 .sesa-table-wrapper {
   width: 100%;
   overflow: auto;
   border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
 }
 
 .sesa-table {
@@ -14,33 +15,44 @@
   background-color: var(--sesa-surface);
 }
 
+/* Header */
 .sesa-table thead {
   background: linear-gradient(135deg, rgba(10, 46, 79, 0.97), rgba(31, 106, 225, 0.88));
   color: #fff;
 }
 
-.sesa-table th,
-.sesa-table td {
-  padding: 0.7rem 0.85rem;
-  text-align: left;
-  border-bottom: 1px solid var(--sesa-border-light);
-  white-space: nowrap;
+[data-theme='dark'] .sesa-table thead {
+  background: linear-gradient(135deg, rgba(10, 46, 79, 0.99), rgba(31, 106, 225, 0.75));
 }
 
 .sesa-table th {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
   font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  user-select: none;
 }
 
-.sesa-table th:first-child {
-  border-radius: var(--sesa-radius-md) 0 0 0;
+.sesa-table th:first-child { border-radius: var(--sesa-radius-md) 0 0 0; }
+.sesa-table th:last-child  { border-radius: 0 var(--sesa-radius-md) 0 0; }
+
+.sesa-table-th-actions {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
 }
 
-.sesa-table th:last-child {
-  border-radius: 0 var(--sesa-radius-md) 0 0;
+/* Body */
+.sesa-table td {
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sesa-border-light);
+  color: var(--sesa-text-primary);
+  white-space: nowrap;
 }
 
 .sesa-table tbody tr {
@@ -55,20 +67,56 @@
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-.sesa-table tbody tr:hover {
-  background-color: rgba(31, 106, 225, 0.04);
+.sesa-table tbody tr:not(.sesa-table-skeleton-row):hover {
+  background-color: rgba(31, 106, 225, 0.05);
+}
+
+[data-theme='dark'] .sesa-table tbody tr:not(.sesa-table-skeleton-row):hover {
+  background-color: rgba(31, 106, 225, 0.08);
 }
 
 .sesa-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Skeleton rows */
+.sesa-table-skeleton-row td {
+  vertical-align: middle;
+}
+
+/* Actions column */
+.sesa-table-td-actions {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.sesa-table-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+/* Empty state */
 .sesa-table-empty {
+  padding: 2.5rem 1rem;
   text-align: center;
-  padding: 1.5rem 0.85rem;
+}
+
+.sesa-table-empty-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--sesa-text-muted);
-  font-style: italic;
   font-size: 0.875rem;
+  font-style: italic;
+}
+
+.sesa-table-empty-icon {
+  font-size: 1.75rem;
+  opacity: 0.5;
 }
 
 .sesa-table-cell-empty {

@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title th:text="${data.empresaNombre} + ' - Historia Clinica'">Historia Clinica</title>
+<style>/*<![CDATA[*/
+
+/* ================================================================
+   HISTORIA CLINICA PREMIUM — CSS 2.1 para OpenHTMLToPDF
+   Diseño: IPS SESA Salud · Ing. J Sebastian Vargas S
+   ================================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9.5pt;
+  color: #1e293b;
+  background: #f1f5f9;
+  line-height: 1.5;
+}
+
+@page {
+  size: A4;
+  margin: 0 0 20mm 0;
+  @bottom-center {
+    content: "Historia Clinica Confidencial · " attr(data-empresa);
+    font-size: 7.5pt;
+    color: #94a3b8;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  @bottom-right {
+    content: "Pag. " counter(page) " / " counter(pages);
+    font-size: 7.5pt;
+    color: #94a3b8;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   HEADER PREMIUM — Barra oscura superior
+   ──────────────────────────────────────────────────────────────── */
+.hdr {
+  background: #0c2340;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+.hdr-table {
+  width: 100%;
+  border-collapse: collapse;
+  padding: 0;
+}
+.hdr-cell-logo {
+  width: 88px;
+  padding: 16px 0 16px 20px;
+  vertical-align: middle;
+}
+.hdr-logo-img { width: 72px; height: auto; }
+.hdr-logo-box {
+  width: 68px;
+  height: 68px;
+  background: #1a56db;
+  border-radius: 12px;
+  text-align: center;
+  color: #ffffff;
+  font-size: 28pt;
+  font-weight: 800;
+  padding-top: 8px;
+  letter-spacing: -1px;
+}
+.hdr-cell-company {
+  padding: 16px 14px;
+  vertical-align: middle;
+}
+.hdr-company-name {
+  font-size: 15pt;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  margin-bottom: 3px;
+}
+.hdr-company-sub {
+  font-size: 8pt;
+  color: #93c5fd;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.hdr-cell-badge {
+  width: 145px;
+  padding: 16px 20px 16px 0;
+  vertical-align: middle;
+  text-align: right;
+}
+.hdr-doc-label {
+  display: inline-block;
+  background: #1a56db;
+  color: #ffffff;
+  font-size: 9.5pt;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.hdr-doc-meta {
+  font-size: 8pt;
+  color: #93c5fd;
+  margin-top: 3px;
+  line-height: 1.55;
+}
+.hdr-estado {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #065f46;
+  color: #6ee7b7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Barra coloreada decorativa debajo del header */
+.hdr-accent-bar {
+  height: 4px;
+  background: #1a56db;
+  width: 100%;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   CONTENIDO — wrapper con margen
+   ──────────────────────────────────────────────────────────────── */
+.content {
+  padding: 18px 20px 10px 20px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TARJETA PACIENTE
+   ──────────────────────────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.card-header {
+  background: #1e3a5f;
+  padding: 7px 14px;
+}
+.card-header-text {
+  font-size: 8pt;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.card-body { padding: 14px; }
+
+/* Avatar del paciente */
+.avatar-table { width: 100%; border-collapse: collapse; }
+.avatar-cell {
+  width: 60px;
+  vertical-align: top;
+  padding-right: 14px;
+}
+.avatar-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  background: #1a56db;
+  text-align: center;
+  color: #ffffff;
+  font-size: 18pt;
+  font-weight: 800;
+  padding-top: 8px;
+}
+.patient-name-cell { vertical-align: top; }
+.patient-name {
+  font-size: 14pt;
+  font-weight: 800;
+  color: #0c2340;
+  margin-bottom: 10px;
+  letter-spacing: -0.3px;
+}
+
+/* Grid de campos del paciente */
+.fields-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #f8fafc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fields-table td {
+  width: 33%;
+  padding: 7px 10px;
+  vertical-align: top;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.fields-table td:last-child { border-right: none; }
+.fields-table tr:last-child td { border-bottom: none; }
+.f-label {
+  display: block;
+  font-size: 7pt;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 2px;
+}
+.f-value {
+  display: block;
+  font-size: 9pt;
+  font-weight: 600;
+  color: #1e293b;
+}
+.f-value--muted { color: #94a3b8; font-style: italic; }
+.eps-chip {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 7.5pt;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SECTION HEADER genérico
+   ──────────────────────────────────────────────────────────────── */
+.sec-hdr {
+  padding: 7px 14px;
+  border-radius: 6px 6px 0 0;
+}
+.sec-hdr--navy   { background: #1e3a5f; }
+.sec-hdr--teal   { background: #0e7490; }
+.sec-hdr--blue   { background: #1a56db; }
+.sec-hdr--green  { background: #065f46; }
+.sec-hdr--purple { background: #5b21b6; }
+.sec-hdr-text {
+  font-size: 8pt;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   ANTECEDENTES
+   ──────────────────────────────────────────────────────────────── */
+.ant-table { width: 100%; border-collapse: collapse; }
+.ant-table td {
+  width: 50%;
+  padding: 5px 6px;
+  vertical-align: top;
+}
+.ant-item {
+  background: #ffffff;
+  border-left: 3px solid #0e7490;
+  border-radius: 0 6px 6px 0;
+  padding: 7px 10px;
+  border-top: 1px solid #f0f9ff;
+  border-bottom: 1px solid #f0f9ff;
+  border-right: 1px solid #f0f9ff;
+}
+.ant-label {
+  font-size: 7pt;
+  font-weight: 800;
+  color: #0e7490;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+  display: block;
+}
+.ant-value { font-size: 9pt; color: #334155; }
+.ant-empty { font-size: 9pt; color: #94a3b8; font-style: italic; }
+
+/* Hábitos */
+.habit-chip {
+  display: inline-block;
+  font-size: 8pt;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-right: 6px;
+}
+.habit--no  { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.habit--si  { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ────────────────────────────────────────────────────────────────
+   CONSULTA / ATENCION CARD
+   ──────────────────────────────────────────────────────────────── */
+.consult-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  page-break-inside: avoid;
+}
+.consult-hdr {
+  background: #0c2340;
+  padding: 10px 16px;
+}
+.consult-hdr-table { width: 100%; border-collapse: collapse; }
+.consult-hdr-title-cell { vertical-align: middle; }
+.consult-num {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+  display: block;
+}
+.consult-title {
+  font-size: 11pt;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+.consult-hdr-meta-cell {
+  text-align: right;
+  vertical-align: middle;
+  width: 160px;
+}
+.consult-fecha {
+  font-size: 9pt;
+  font-weight: 600;
+  color: #bfdbfe;
+  display: block;
+  margin-bottom: 3px;
+}
+.consult-prof-chip {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  color: #bfdbfe;
+  font-size: 7.5pt;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.consult-body { padding: 14px 16px; }
+
+/* ────────────────────────────────────────────────────────────────
+   SUBSECCIONES
+   ──────────────────────────────────────────────────────────────── */
+.sub { margin-bottom: 10px; }
+.sub-label {
+  font-size: 7.5pt;
+  font-weight: 800;
+  color: #1a56db;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 3px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid #dbeafe;
+  display: block;
+}
+.sub-label--teal   { color: #0e7490; border-bottom-color: #cffafe; }
+.sub-label--green  { color: #059669; border-bottom-color: #d1fae5; }
+.sub-label--purple { color: #7c3aed; border-bottom-color: #ede9fe; }
+.sub-text { font-size: 9.5pt; color: #334155; white-space: pre-wrap; line-height: 1.5; }
+.sub-empty { font-size: 9pt; color: #94a3b8; font-style: italic; }
+
+/* Dos columnas para consulta */
+.two-col-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.two-col-left  { width: 50%; vertical-align: top; padding-right: 12px; }
+.two-col-right { width: 50%; vertical-align: top; padding-left: 4px; }
+
+/* ────────────────────────────────────────────────────────────────
+   SIGNOS VITALES — strip horizontal
+   ──────────────────────────────────────────────────────────────── */
+.vitals-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+}
+.vital-cell {
+  text-align: center;
+  padding: 9px 6px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+.vital-cell:last-child { border-right: none; }
+.vital-lbl {
+  display: block;
+  font-size: 6.5pt;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.vital-val {
+  display: block;
+  font-size: 13pt;
+  font-weight: 800;
+  color: #0c2340;
+  letter-spacing: -0.5px;
+}
+.vital-unit {
+  display: block;
+  font-size: 6.5pt;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   DIAGNÓSTICOS
+   ──────────────────────────────────────────────────────────────── */
+.diag-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 3px;
+  margin-bottom: 6px;
+}
+.diag-row { background: #eff6ff; }
+.diag-code-cell {
+  width: 70px;
+  padding: 7px 10px;
+  font-size: 9pt;
+  font-weight: 800;
+  color: #1d4ed8;
+  font-family: Courier, monospace;
+  border-left: 4px solid #1a56db;
+  border-radius: 4px 0 0 4px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.diag-desc-cell {
+  padding: 7px 10px;
+  font-size: 9pt;
+  color: #1e293b;
+  vertical-align: middle;
+}
+.diag-tipo-cell {
+  width: 90px;
+  padding: 7px 10px;
+  text-align: right;
+  vertical-align: middle;
+}
+.badge-principal {
+  display: inline-block;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 6.5pt;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-secundario {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 6.5pt;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TABLAS DE MEDICAMENTOS / LABORATORIOS
+   ──────────────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.data-table thead tr { background: #1e3a5f; }
+.data-table th {
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.data-table td {
+  padding: 6px 10px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:nth-child(even) td { background: #f8fafc; }
+.td-name { font-weight: 700; color: #0c2340; }
+
+/* Tabla laboratorios con header teal */
+.data-table--teal thead tr { background: #0e7490; }
+
+/* ────────────────────────────────────────────────────────────────
+   INCAPACIDAD
+   ──────────────────────────────────────────────────────────────── */
+.incapacidad-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: #92400e;
+  font-size: 9pt;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   FIRMA PROFESIONAL
+   ──────────────────────────────────────────────────────────────── */
+.firma-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #cbd5e1;
+  text-align: right;
+}
+.firma-box {
+  display: inline-block;
+  text-align: center;
+  min-width: 190px;
+}
+.firma-img { max-height: 55px; max-width: 190px; }
+.firma-line-placeholder {
+  height: 44px;
+  width: 170px;
+  border-bottom: 1.5px solid #94a3b8;
+  margin: 0 auto;
+}
+.firma-border {
+  border-top: 2px solid #0c2340;
+  margin-top: 6px;
+  padding-top: 5px;
+}
+.firma-name { font-size: 9.5pt; font-weight: 800; color: #0c2340; }
+.firma-role { font-size: 8pt; color: #64748b; margin-top: 1px; }
+.firma-reg  { font-size: 7.5pt; color: #94a3b8; }
+
+/* ────────────────────────────────────────────────────────────────
+   SEPARADOR / UTILIDADES
+   ──────────────────────────────────────────────────────────────── */
+.separator { height: 1px; background: #e2e8f0; margin: 8px 0; }
+.page-break { page-break-before: always; }
+.no-break   { page-break-inside: avoid; }
+.empty-msg  {
+  text-align: center;
+  padding: 28px;
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 9.5pt;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px dashed #e2e8f0;
+}
+
+/*]]>*/</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     HEADER PREMIUM
+     ════════════════════════════════════════════════════════════ -->
+<div class="hdr">
+  <table class="hdr-table">
+    <tr>
+      <!-- Logo -->
+      <td class="hdr-cell-logo">
+        <img th:if="${data.logoBase64 != null}"
+             class="hdr-logo-img"
+             th:src="'data:' + ${data.logoContentType} + ';base64,' + ${data.logoBase64}"
+             alt="Logo"/>
+        <div th:unless="${data.logoBase64 != null}" class="hdr-logo-box"
+             th:text="${data.empresaNombre != null ? #strings.substring(data.empresaNombre, 0, 1) : 'S'}">S</div>
+      </td>
+      <!-- Empresa -->
+      <td class="hdr-cell-company">
+        <div class="hdr-company-name" th:text="${data.empresaNombre}">IPS SESA Salud</div>
+        <div class="hdr-company-sub"
+             th:if="${data.empresaTipoDocumento != null and data.empresaIdentificacion != null}"
+             th:text="${data.empresaTipoDocumento} + ': ' + ${data.empresaIdentificacion}"></div>
+        <div class="hdr-company-sub" th:if="${data.empresaDireccion != null}"
+             th:text="${data.empresaDireccion}"></div>
+        <div class="hdr-company-sub">
+          <span th:if="${data.empresaMunicipio != null}" th:text="${data.empresaMunicipio}"></span>
+          <span th:if="${data.empresaTelefono != null}" th:text="' · Tel: ' + ${data.empresaTelefono}"></span>
+        </div>
+        <div class="hdr-company-sub" th:if="${data.empresaRegimen != null}"
+             th:text="'Regimen: ' + ${data.empresaRegimen}"></div>
+      </td>
+      <!-- Badge documento -->
+      <td class="hdr-cell-badge">
+        <div class="hdr-doc-label">Historia Clinica</div>
+        <div class="hdr-doc-meta" th:text="'No. HC: ' + ${data.historiaId}">No. HC: 1</div>
+        <div class="hdr-doc-meta" th:text="'Apertura: ' + ${data.fechaApertura}">01/01/2024</div>
+        <div class="hdr-doc-meta" th:text="'Generado: ' + ${data.fechaGeneracion}"></div>
+        <div th:if="${data.estadoHistoria != null}">
+          <span class="hdr-estado" th:text="${data.estadoHistoria}">ACTIVA</span>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+<div class="hdr-accent-bar"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+     ════════════════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- ──────────────── DATOS DEL PACIENTE ──────────────── -->
+  <div class="card no-break">
+    <div class="card-header">
+      <span class="card-header-text">Datos del Paciente</span>
+    </div>
+    <div class="card-body">
+      <table class="avatar-table">
+        <tr>
+          <td class="avatar-cell">
+            <div class="avatar-circle"
+                 th:text="${data.pacienteNombre != null ? #strings.substring(data.pacienteNombre, 0, 1) : 'P'}">P</div>
+          </td>
+          <td class="patient-name-cell">
+            <div class="patient-name" th:text="${data.pacienteNombre}">Nombre del Paciente</div>
+            <table class="fields-table">
+              <tr>
+                <td>
+                  <span class="f-label">Documento</span>
+                  <span class="f-value"
+                        th:text="${(data.pacienteTipoDocumento != null ? data.pacienteTipoDocumento : 'CC')} + ' ' + ${data.pacienteDocumento}">CC 123456</span>
+                </td>
+                <td>
+                  <span class="f-label">Fecha de Nacimiento</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteFechaNacimiento != null ? data.pacienteFechaNacimiento : 'N/D'}">01/01/1990</span>
+                </td>
+                <td>
+                  <span class="f-label">Edad</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEdad != null ? data.pacienteEdad : 'N/D'}">34 anos</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Sexo</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteSexo != null ? data.pacienteSexo : 'N/D'}">Masculino</span>
+                </td>
+                <td>
+                  <span class="f-label">Telefono</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteTelefono != null ? data.pacienteTelefono : 'N/D'}">300 000 0000</span>
+                </td>
+                <td>
+                  <span class="f-label">EPS / Aseguradora</span>
+                  <span th:if="${data.epsNombre != null}" class="eps-chip" th:text="${data.epsNombre}">EPS Sura</span>
+                  <span th:unless="${data.epsNombre != null}" class="f-value f-value--muted">N/D</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3">
+                  <span class="f-label">Direccion</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteDireccion != null ? data.pacienteDireccion : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Email</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEmail != null ? data.pacienteEmail : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Regimen</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteRegimenAfiliacion != null ? data.pacienteRegimenAfiliacion : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Tipo usuario</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteTipoUsuario != null ? data.pacienteTipoUsuario : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Municipio</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteMunicipioResidencia != null ? data.pacienteMunicipioResidencia : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Departamento</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteDepartamentoResidencia != null ? data.pacienteDepartamentoResidencia : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Zona residencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteZonaResidencia != null ? data.pacienteZonaResidencia : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Estado civil</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEstadoCivil != null ? data.pacienteEstadoCivil : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Escolaridad</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteEscolaridad != null ? data.pacienteEscolaridad : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Ocupacion</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteOcupacion != null ? data.pacienteOcupacion : 'N/D'}">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="f-label">Pertenencia etnica</span>
+                  <span class="f-value"
+                        th:text="${data.pacientePertenenciaEtnica != null ? data.pacientePertenenciaEtnica : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Contacto emergencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteContactoEmergenciaNombre != null ? data.pacienteContactoEmergenciaNombre : 'N/D'}">—</span>
+                </td>
+                <td>
+                  <span class="f-label">Tel. emergencia</span>
+                  <span class="f-value"
+                        th:text="${data.pacienteContactoEmergenciaTelefono != null ? data.pacienteContactoEmergenciaTelefono : 'N/D'}">—</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ──────────────── ANTECEDENTES CLINICOS ──────────────── -->
+  <div class="card no-break">
+    <div class="sec-hdr sec-hdr--teal">
+      <span class="sec-hdr-text">Antecedentes Clinicos</span>
+    </div>
+    <div class="card-body" style="padding-top:10px; padding-bottom:10px;">
+
+      <table class="ant-table">
+        <tr>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Grupo Sanguineo</span>
+              <span th:if="${data.grupoSanguineo != null}"
+                    class="ant-value" th:text="${data.grupoSanguineo}">O+</span>
+              <span th:unless="${data.grupoSanguineo != null}"
+                    class="ant-empty">No registrado</span>
+            </div>
+          </td>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Alergias</span>
+              <span th:if="${data.alergiasGenerales != null}"
+                    class="ant-value" th:text="${data.alergiasGenerales}"></span>
+              <span th:unless="${data.alergiasGenerales != null}"
+                    class="ant-empty">No reportadas</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Personales</span>
+              <span th:if="${data.antecedentesPersonales != null}"
+                    class="ant-value" th:text="${data.antecedentesPersonales}"></span>
+              <span th:unless="${data.antecedentesPersonales != null}"
+                    class="ant-empty">Ninguno reportado</span>
+            </div>
+          </td>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Quirurgicos</span>
+              <span th:if="${data.antecedentesQuirurgicos != null}"
+                    class="ant-value" th:text="${data.antecedentesQuirurgicos}"></span>
+              <span th:unless="${data.antecedentesQuirurgicos != null}"
+                    class="ant-empty">Ninguno reportado</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Farmacologicos</span>
+              <span th:if="${data.antecedentesFarmacologicos != null}"
+                    class="ant-value" th:text="${data.antecedentesFarmacologicos}"></span>
+              <span th:unless="${data.antecedentesFarmacologicos != null}"
+                    class="ant-empty">Ninguno reportado</span>
+            </div>
+          </td>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Familiares</span>
+              <span th:if="${data.antecedentesFamiliares != null}"
+                    class="ant-value" th:text="${data.antecedentesFamiliares}"></span>
+              <span th:unless="${data.antecedentesFamiliares != null}"
+                    class="ant-empty">Ninguno reportado</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Ginecobstetricos</span>
+              <span th:if="${data.antecedentesGinecoobstetricos != null}"
+                    class="ant-value" th:text="${data.antecedentesGinecoobstetricos}"></span>
+              <span th:unless="${data.antecedentesGinecoobstetricos != null}"
+                    class="ant-empty">No registrado</span>
+            </div>
+          </td>
+          <td>
+            <div class="ant-item">
+              <span class="ant-label">Antecedentes Traumaticos</span>
+              <span th:if="${data.antecedentesTraumaticos != null}"
+                    class="ant-value" th:text="${data.antecedentesTraumaticos}"></span>
+              <span th:unless="${data.antecedentesTraumaticos != null}"
+                    class="ant-empty">No registrado</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Hábitos -->
+      <div style="margin-top:10px; background:#f8fafc; border-radius:6px; padding:8px 12px; border:1px solid #e2e8f0;">
+        <span class="ant-label" style="display:block; margin-bottom:6px;">Habitos</span>
+        <span th:class="${data.habitosTabaco == true} ? 'habit-chip habit--si' : 'habit-chip habit--no'"
+              th:text="${data.habitosTabaco == true} ? 'Tabaco: Si' : 'Tabaco: No'">Tabaco: No</span>
+        <span th:class="${data.habitosAlcohol == true} ? 'habit-chip habit--si' : 'habit-chip habit--no'"
+              th:text="${data.habitosAlcohol == true} ? 'Alcohol: Si' : 'Alcohol: No'">Alcohol: No</span>
+        <span th:class="${data.habitosSustancias == true} ? 'habit-chip habit--si' : 'habit-chip habit--no'"
+              th:text="${data.habitosSustancias == true} ? 'Sustancias: Si' : 'Sustancias: No'">Sustancias: No</span>
+        <div th:if="${data.habitosDetalles != null}"
+             style="margin-top:4px; font-size:8.5pt; color:#334155;"
+             th:text="${data.habitosDetalles}"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ──────────────── ÚLTIMA ATENCIÓN SOAP ──────────────── -->
+  <div th:if="${ultimaConsultaSoap != null}" class="card no-break" style="margin-bottom:18px;">
+    <div class="sec-hdr sec-hdr--teal" style="padding:10px 16px;">
+      <span class="sec-hdr-text">Última atención SOAP (nota de consulta)</span>
+    </div>
+    <div class="card-body" style="padding:14px 16px;">
+      <table class="consult-hdr-table" style="margin-bottom:12px;">
+        <tr>
+          <td>
+            <span class="consult-num">Fecha de consulta</span>
+            <span class="consult-title" th:text="${ultimaConsultaSoap.fechaConsulta}">—</span>
+          </td>
+        </tr>
+      </table>
+
+      <div class="sub">
+        <span class="sub-label">Motivo de consulta</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.motivoConsulta != null}" th:text="${ultimaConsultaSoap.motivoConsulta}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.motivoConsulta != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Enfermedad actual</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.enfermedadActual != null}" th:text="${ultimaConsultaSoap.enfermedadActual}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.enfermedadActual != null}">—</span>
+      </div>
+
+      <span class="sub-label sub-label--teal" style="display:block; margin-bottom:6px;">Signos vitales</span>
+      <table class="vitals-table">
+        <tr>
+          <td class="vital-cell"><span class="vital-lbl">T.A.</span><span class="vital-val" th:text="${ultimaConsultaSoap.presionArterial != null ? ultimaConsultaSoap.presionArterial : '—'}">—</span><span class="vital-unit">mmHg</span></td>
+          <td class="vital-cell"><span class="vital-lbl">FC</span><span class="vital-val" th:text="${ultimaConsultaSoap.frecuenciaCardiaca != null ? ultimaConsultaSoap.frecuenciaCardiaca : '—'}">—</span><span class="vital-unit">lpm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">FR</span><span class="vital-val" th:text="${ultimaConsultaSoap.frecuenciaRespiratoria != null ? ultimaConsultaSoap.frecuenciaRespiratoria : '—'}">—</span><span class="vital-unit">rpm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Temp.</span><span class="vital-val" th:text="${ultimaConsultaSoap.temperatura != null ? ultimaConsultaSoap.temperatura : '—'}">—</span><span class="vital-unit">°C</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Peso</span><span class="vital-val" th:text="${ultimaConsultaSoap.peso != null ? ultimaConsultaSoap.peso : '—'}">—</span><span class="vital-unit">kg</span></td>
+          <td class="vital-cell"><span class="vital-lbl">Talla</span><span class="vital-val" th:text="${ultimaConsultaSoap.talla != null ? ultimaConsultaSoap.talla : '—'}">—</span><span class="vital-unit">cm</span></td>
+          <td class="vital-cell"><span class="vital-lbl">IMC</span><span class="vital-val" th:text="${ultimaConsultaSoap.imc != null ? ultimaConsultaSoap.imc : '—'}">—</span><span class="vital-unit">kg/m²</span></td>
+          <td class="vital-cell"><span class="vital-lbl">SpO2</span><span class="vital-val" th:text="${ultimaConsultaSoap.saturacionO2 != null ? ultimaConsultaSoap.saturacionO2 : '—'}">—</span><span class="vital-unit">%</span></td>
+        </tr>
+      </table>
+
+      <div class="sub">
+        <span class="sub-label">Hallazgos al examen</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.hallazgosExamen != null}" th:text="${ultimaConsultaSoap.hallazgosExamen}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.hallazgosExamen != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Diagnóstico / CIE-10</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.diagnostico != null}" th:text="${ultimaConsultaSoap.diagnostico}"></span>
+        <span th:if="${ultimaConsultaSoap.codigoCie10 != null}" class="sub-text" th:text="'Código: ' + ${ultimaConsultaSoap.codigoCie10}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.diagnostico != null or ultimaConsultaSoap.codigoCie10 != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Plan de tratamiento</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.planTratamiento != null}" th:text="${ultimaConsultaSoap.planTratamiento}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.planTratamiento != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Tratamiento farmacológico</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.tratamientoFarmacologico != null}" th:text="${ultimaConsultaSoap.tratamientoFarmacologico}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.tratamientoFarmacologico != null}">—</span>
+      </div>
+      <div class="sub">
+        <span class="sub-label">Recomendaciones</span>
+        <span class="sub-text" th:if="${ultimaConsultaSoap.recomendaciones != null}" th:text="${ultimaConsultaSoap.recomendaciones}"></span>
+        <span class="sub-empty" th:unless="${ultimaConsultaSoap.recomendaciones != null}">—</span>
+      </div>
+
+      <!-- Órdenes de la consulta -->
+      <div class="sub">
+        <span class="sub-label sub-label--purple">Órdenes de la atención</span>
+        <table th:if="${ultimaConsultaSoap.ordenes != null and !ultimaConsultaSoap.ordenes.isEmpty()}" class="data-table data-table--teal">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th style="width:90px;">Estado</th>
+              <th style="width:90px;">Fecha resultado</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="ord : ${ultimaConsultaSoap.ordenes}">
+              <td class="td-name" th:text="${ord.tipo}">—</td>
+              <td th:text="${ord.detalle != null ? ord.detalle : '—'}">—</td>
+              <td th:text="${ord.estado != null ? ord.estado : 'PENDIENTE'}">—</td>
+              <td th:text="${ord.fechaResultado != null ? ord.fechaResultado : '—'}">—</td>
+              <td th:text="${ord.resultado != null ? ord.resultado : '—'}">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <span th:unless="${ultimaConsultaSoap.ordenes != null and !ultimaConsultaSoap.ordenes.isEmpty()}" class="sub-empty">No hay órdenes registradas para esta consulta.</span>
+      </div>
+
+      <!-- Profesional tratante con firma -->
+      <div class="firma-section">
+        <span class="sub-label" style="display:block; margin-bottom:8px;">Profesional que atendió</span>
+        <div class="firma-box">
+          <img th:if="${ultimaConsultaSoap.firmaBase64 != null}"
+               class="firma-img"
+               th:src="'data:' + ${ultimaConsultaSoap.firmaContentType} + ';base64,' + ${ultimaConsultaSoap.firmaBase64}"
+               alt="Firma"/>
+          <div th:unless="${ultimaConsultaSoap.firmaBase64 != null}" class="firma-line-placeholder"></div>
+          <div class="firma-border">
+            <div class="firma-name" th:text="${ultimaConsultaSoap.profesionalNombre != null ? ultimaConsultaSoap.profesionalNombre : '—'}">—</div>
+            <div class="firma-role" th:if="${ultimaConsultaSoap.profesionalRol != null}" th:text="${ultimaConsultaSoap.profesionalRol}"></div>
+            <div class="firma-role" th:if="${ultimaConsultaSoap.profesionalEspecialidad != null}" th:text="${ultimaConsultaSoap.profesionalEspecialidad}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalIdentificacion != null}" th:text="'ID: ' + ${ultimaConsultaSoap.profesionalIdentificacion}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalTarjetaProfesional != null}" th:text="'Tarjeta Prof.: ' + ${ultimaConsultaSoap.profesionalTarjetaProfesional}"></div>
+            <div class="firma-reg" th:if="${ultimaConsultaSoap.profesionalNumeroRethus != null}" th:text="'RETHUS: ' + ${ultimaConsultaSoap.profesionalNumeroRethus}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── REGISTRO DE ATENCIONES ──────────────── -->
+  <div th:if="${data.atenciones != null and !data.atenciones.isEmpty()}">
+
+    <div class="sec-hdr sec-hdr--blue" style="border-radius:6px; margin-bottom:12px; padding:8px 14px;">
+      <span class="sec-hdr-text">
+        Registro de Atenciones —
+        <span th:text="${data.atenciones.size()} + ' consulta' + (${data.atenciones.size()} != 1 ? 's' : '')"></span>
+      </span>
+    </div>
+
+    <div th:each="atencion, iterStat : ${data.atenciones}" class="consult-card">
+
+      <!-- Cabecera de la consulta -->
+      <div class="consult-hdr">
+        <table class="consult-hdr-table">
+          <tr>
+            <td class="consult-hdr-title-cell">
+              <span class="consult-num"
+                    th:text="'Consulta No. ' + ${iterStat.count}">Consulta No. 1</span>
+              <span class="consult-title"
+                    th:text="${atencion.motivoConsulta != null ? #strings.abbreviate(atencion.motivoConsulta, 65) : 'Atencion Medica'}">Atencion Medica</span>
+            </td>
+            <td class="consult-hdr-meta-cell">
+              <span class="consult-fecha" th:text="${atencion.fechaAtencion}"></span>
+              <span th:if="${atencion.profesionalNombre != null}"
+                    class="consult-prof-chip"
+                    th:text="${atencion.profesionalNombre}"></span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="consult-body">
+
+        <!-- Motivo, Enfermedad actual y Version (siempre visibles) -->
+        <table class="two-col-table">
+          <tr>
+            <td class="two-col-left">
+              <div class="sub">
+                <span class="sub-label">Motivo de Consulta</span>
+                <span class="sub-text" th:if="${atencion.motivoConsulta != null}" th:text="${atencion.motivoConsulta}"></span>
+                <span class="sub-empty" th:unless="${atencion.motivoConsulta != null}">No consignado</span>
+              </div>
+            </td>
+            <td class="two-col-right">
+              <div class="sub">
+                <span class="sub-label">Enfermedad Actual</span>
+                <span class="sub-text" th:if="${atencion.enfermedadActual != null}" th:text="${atencion.enfermedadActual}"></span>
+                <span class="sub-empty" th:unless="${atencion.enfermedadActual != null}">No consignado</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="sub">
+          <span class="sub-label">Version de la Enfermedad</span>
+          <span class="sub-text" th:if="${atencion.versionEnfermedad != null}" th:text="${atencion.versionEnfermedad}"></span>
+          <span class="sub-empty" th:unless="${atencion.versionEnfermedad != null}">No consignado</span>
+        </div>
+
+        <!-- Sintomas, Factores, Revision sistemas (siempre visibles) -->
+        <div class="sub">
+          <span class="sub-label">Sintomas Asociados</span>
+          <span class="sub-text" th:if="${atencion.sintomasAsociados != null}" th:text="${atencion.sintomasAsociados}"></span>
+          <span class="sub-empty" th:unless="${atencion.sintomasAsociados != null}">—</span>
+        </div>
+        <table class="two-col-table">
+          <tr>
+            <td class="two-col-left">
+              <div class="sub">
+                <span class="sub-label">Factores que Mejoran</span>
+                <span class="sub-text" th:if="${atencion.factoresMejoran != null}" th:text="${atencion.factoresMejoran}"></span>
+                <span class="sub-empty" th:unless="${atencion.factoresMejoran != null}">—</span>
+              </div>
+            </td>
+            <td class="two-col-right">
+              <div class="sub">
+                <span class="sub-label">Factores que Empeoran</span>
+                <span class="sub-text" th:if="${atencion.factoresEmpeoran != null}" th:text="${atencion.factoresEmpeoran}"></span>
+                <span class="sub-empty" th:unless="${atencion.factoresEmpeoran != null}">—</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="sub">
+          <span class="sub-label">Revision por Sistemas</span>
+          <span class="sub-text" th:if="${atencion.revisionSistemas != null}" th:text="${atencion.revisionSistemas}"></span>
+          <span class="sub-empty" th:unless="${atencion.revisionSistemas != null}">—</span>
+        </div>
+
+        <!-- Signos Vitales (siempre visible, todas las celdas) -->
+        <span class="sub-label sub-label--teal" style="display:block; margin-bottom:6px;">Signos Vitales</span>
+        <table class="vitals-table">
+          <tr>
+            <td class="vital-cell">
+              <span class="vital-lbl">T.A.</span>
+              <span class="vital-val" th:text="${atencion.presionArterial != null ? atencion.presionArterial : '—'}">—</span>
+              <span class="vital-unit">mmHg</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Frec. Card.</span>
+              <span class="vital-val" th:text="${atencion.frecuenciaCardiaca != null ? atencion.frecuenciaCardiaca : '—'}">—</span>
+              <span class="vital-unit">lpm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Frec. Resp.</span>
+              <span class="vital-val" th:text="${atencion.frecuenciaRespiratoria != null ? atencion.frecuenciaRespiratoria : '—'}">—</span>
+              <span class="vital-unit">rpm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Temperatura</span>
+              <span class="vital-val" th:text="${atencion.temperatura != null ? atencion.temperatura : '—'}">—</span>
+              <span class="vital-unit">&#176;C</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Peso</span>
+              <span class="vital-val" th:text="${atencion.peso != null ? atencion.peso : '—'}">—</span>
+              <span class="vital-unit">kg</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">Talla</span>
+              <span class="vital-val" th:text="${atencion.talla != null ? atencion.talla : '—'}">—</span>
+              <span class="vital-unit">cm</span>
+            </td>
+            <td class="vital-cell">
+              <span class="vital-lbl">IMC</span>
+              <span class="vital-val" th:text="${atencion.imc != null ? atencion.imc : '—'}">—</span>
+              <span class="vital-unit">kg/m&#178;</span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Evaluacion general y Hallazgos (siempre visibles) -->
+        <div class="sub">
+          <span class="sub-label">Evaluacion General</span>
+          <span class="sub-text" th:if="${atencion.evaluacionGeneral != null}" th:text="${atencion.evaluacionGeneral}"></span>
+          <span class="sub-empty" th:unless="${atencion.evaluacionGeneral != null}">—</span>
+        </div>
+        <div class="sub">
+          <span class="sub-label">Examen Fisico / Hallazgos</span>
+          <span class="sub-text" th:if="${atencion.hallazgos != null}" th:text="${atencion.hallazgos}"></span>
+          <span class="sub-empty" th:unless="${atencion.hallazgos != null}">No consignado</span>
+        </div>
+
+        <!-- Diagnósticos CIE-10 (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Diagnostico(s) CIE-10</span>
+          <table th:if="${atencion.diagnosticos != null and !atencion.diagnosticos.isEmpty()}" class="diag-table">
+            <tr class="diag-row" th:each="diag : ${atencion.diagnosticos}">
+              <td class="diag-code-cell" th:text="${diag.codigoCie10}">J00</td>
+              <td class="diag-desc-cell" th:text="${diag.descripcion}">Rinofaringitis aguda</td>
+              <td class="diag-tipo-cell">
+                <span th:if="${diag.tipo == 'PRINCIPAL'}"
+                      class="badge-principal" th:text="${diag.tipo}">PRINCIPAL</span>
+                <span th:unless="${diag.tipo == 'PRINCIPAL'}"
+                      class="badge-secundario" th:text="${diag.tipo}">SECUNDARIO</span>
+              </td>
+            </tr>
+          </table>
+          <span th:if="${atencion.diagnosticoTexto != null and (atencion.diagnosticos == null or atencion.diagnosticos.isEmpty())}" class="sub-text" th:text="${atencion.diagnosticoTexto}"></span>
+          <span th:if="${(atencion.diagnosticos == null or atencion.diagnosticos.isEmpty()) and atencion.diagnosticoTexto == null}" class="sub-empty">No consignado</span>
+        </div>
+
+        <!-- Plan de tratamiento (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Plan de Tratamiento</span>
+          <span class="sub-text" th:if="${atencion.planTratamiento != null}" th:text="${atencion.planTratamiento}"></span>
+          <span class="sub-empty" th:unless="${atencion.planTratamiento != null}">—</span>
+        </div>
+
+        <!-- Formula medica / Tratamiento farmacologico (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label sub-label--green">Formula Medica / Medicamentos</span>
+          <table th:if="${atencion.formulasMedicas != null and !atencion.formulasMedicas.isEmpty()}" class="data-table">
+            <thead>
+              <tr>
+                <th>Medicamento</th>
+                <th style="width:80px;">Dosis</th>
+                <th style="width:110px;">Frecuencia</th>
+                <th style="width:80px;">Duracion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="med : ${atencion.formulasMedicas}">
+                <td class="td-name" th:text="${med.medicamento}"></td>
+                <td th:text="${med.dosis != null ? med.dosis : '-'}"></td>
+                <td th:text="${med.frecuencia != null ? med.frecuencia : '-'}"></td>
+                <td th:text="${med.duracion != null ? med.duracion : '-'}"></td>
+              </tr>
+            </tbody>
+          </table>
+          <span th:if="${atencion.tratamientoFarmacologico != null and (atencion.formulasMedicas == null or atencion.formulasMedicas.isEmpty())}" class="sub-text" th:text="${atencion.tratamientoFarmacologico}"></span>
+          <span th:if="${(atencion.formulasMedicas == null or atencion.formulasMedicas.isEmpty()) and atencion.tratamientoFarmacologico == null}" class="sub-empty">—</span>
+        </div>
+
+        <!-- Laboratorios / Examenes (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label sub-label--purple">Laboratorios / Examenes</span>
+          <table th:if="${atencion.laboratorios != null and !atencion.laboratorios.isEmpty()}" class="data-table data-table--teal">
+            <thead>
+              <tr>
+                <th>Tipo de Examen</th>
+                <th>Resultado</th>
+                <th style="width:100px;">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="lab : ${atencion.laboratorios}">
+                <td class="td-name" th:text="${lab.tipoExamen}"></td>
+                <td th:text="${lab.resultado != null ? lab.resultado : 'Pendiente'}"></td>
+                <td th:text="${lab.fechaResultado != null ? lab.fechaResultado : '-'}"></td>
+              </tr>
+            </tbody>
+          </table>
+          <span th:if="${atencion.examenesSolicitados != null and (atencion.laboratorios == null or atencion.laboratorios.isEmpty())}" class="sub-text" th:text="${atencion.examenesSolicitados}"></span>
+          <span th:if="${(atencion.laboratorios == null or atencion.laboratorios.isEmpty()) and atencion.examenesSolicitados == null}" class="sub-empty">—</span>
+        </div>
+
+        <!-- Ordenes medicas (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Ordenes Medicas</span>
+          <span class="sub-text" th:if="${atencion.ordenesMedicas != null}" th:text="${atencion.ordenesMedicas}"></span>
+          <span class="sub-empty" th:unless="${atencion.ordenesMedicas != null}">—</span>
+        </div>
+
+        <!-- Recomendaciones (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Recomendaciones</span>
+          <span class="sub-text" th:if="${atencion.recomendaciones != null}" th:text="${atencion.recomendaciones}"></span>
+          <span class="sub-empty" th:unless="${atencion.recomendaciones != null}">—</span>
+        </div>
+
+        <!-- Incapacidad (siempre visible) -->
+        <div class="sub">
+          <span class="sub-label">Incapacidad Medica</span>
+          <div th:if="${atencion.incapacidad != null}" class="incapacidad-box">
+            <span th:text="${atencion.incapacidad}"></span>
+          </div>
+          <span th:unless="${atencion.incapacidad != null}" class="sub-empty">No consignada</span>
+        </div>
+
+        <!-- Bloque profesional con firma (siempre visible por atencion) -->
+        <div class="firma-section">
+          <span class="sub-label" style="display:block; margin-bottom:8px;">Profesional tratante</span>
+          <div class="firma-box">
+            <img th:if="${atencion.firmaBase64 != null}"
+                 class="firma-img"
+                 th:src="'data:' + ${atencion.firmaContentType} + ';base64,' + ${atencion.firmaBase64}"
+                 alt="Firma"/>
+            <div th:unless="${atencion.firmaBase64 != null}"
+                 class="firma-line-placeholder"></div>
+            <div class="firma-border">
+              <div class="firma-name" th:text="${atencion.profesionalNombre != null ? atencion.profesionalNombre : 'Profesional'}">—</div>
+              <div class="firma-role" th:if="${atencion.profesionalRol != null}" th:text="${atencion.profesionalRol}"></div>
+              <div class="firma-role" th:if="${atencion.profesionalEspecialidad != null}" th:text="${atencion.profesionalEspecialidad}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalIdentificacion != null}" th:text="'ID: ' + ${atencion.profesionalIdentificacion}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalTarjetaProfesional != null}" th:text="'Tarjeta Prof.: ' + ${atencion.profesionalTarjetaProfesional}"></div>
+              <div class="firma-reg" th:if="${atencion.profesionalNumeroRethus != null}" th:text="'RETHUS: ' + ${atencion.profesionalNumeroRethus}"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /consult-body -->
+    </div><!-- /consult-card -->
+
+  </div><!-- /atenciones -->
+
+  <!-- Sin atenciones -->
+  <div th:if="${data.atenciones == null or data.atenciones.isEmpty()}" class="empty-msg">
+    No hay atenciones registradas para esta historia clinica.
+  </div>
+
+</div><!-- /content -->
+
+</body>
+</html>

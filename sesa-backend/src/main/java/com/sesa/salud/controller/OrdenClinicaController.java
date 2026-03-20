@@ -1,10 +1,13 @@
 /**
  * Autor: Ing. J Sebastian Vargas S
  */
+
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.OrdenClinicaBatchRequestDto;
 import com.sesa.salud.dto.OrdenClinicaDto;
 import com.sesa.salud.dto.OrdenClinicaRequestDto;
+import com.sesa.salud.dto.ResultadoOrdenDto;
 import com.sesa.salud.service.OrdenClinicaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,28 +28,56 @@ public class OrdenClinicaController {
     private final OrdenClinicaService ordenClinicaService;
 
     @GetMapping("/paciente/{pacienteId}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
     public List<OrdenClinicaDto> listByPaciente(@PathVariable("pacienteId") Long pacienteId,
-                                                 @PageableDefault(size = 20) Pageable pageable) {
+                                                 @PageableDefault(size = 50) Pageable pageable) {
         return ordenClinicaService.findByPacienteId(pacienteId, pageable);
     }
 
+    @GetMapping("/laboratorio")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','BACTERIOLOGO','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
+    public List<OrdenClinicaDto> listOrdenesLaboratorio(@PageableDefault(size = 100) Pageable pageable) {
+        return ordenClinicaService.findByTipo("LABORATORIO", pageable);
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
     public ResponseEntity<OrdenClinicaDto> get(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ordenClinicaService.findById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
     public ResponseEntity<OrdenClinicaDto> create(@Valid @RequestBody OrdenClinicaRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ordenClinicaService.create(dto));
     }
 
+    @PostMapping("/batch")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
+    public ResponseEntity<OrdenClinicaDto> createBatch(@Valid @RequestBody OrdenClinicaBatchRequestDto batch) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ordenClinicaService.createBatch(batch));
+    }
+
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','COORDINADOR_MEDICO')")
     public ResponseEntity<OrdenClinicaDto> update(@PathVariable("id") Long id, @Valid @RequestBody OrdenClinicaRequestDto dto) {
         return ResponseEntity.ok(ordenClinicaService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}/resultado")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<OrdenClinicaDto> registrarResultado(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ResultadoOrdenDto dto) {
+        return ResponseEntity.ok(ordenClinicaService.registrarResultado(id, dto));
+    }
+
+    /** S2: Marca el resultado crítico de la orden como leído por el usuario actual. */
+    @PutMapping("/{id}/marcar-resultado-leido")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO','COORDINADOR_MEDICO','ENFERMERO','JEFE_ENFERMERIA')")
+    public ResponseEntity<Void> marcarResultadoLeido(@PathVariable("id") Long id) {
+        ordenClinicaService.marcarResultadoLeido(id);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

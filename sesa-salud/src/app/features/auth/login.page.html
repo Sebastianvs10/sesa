@@ -1,14 +1,73 @@
 <div class="sesa-login">
+
+  <!-- ── Panel izquierdo: hero + branding ── -->
   <div class="sesa-login-bg">
     <div class="sesa-login-bg-image" role="img" aria-label="Fondo SESA"></div>
     <div class="sesa-login-bg-overlay"></div>
+
+    <!-- Brand top -->
+    <div class="sesa-login-bg-brand">
+      <img src="/logo.png" alt="SESA" class="sesa-login-bg-logo" />
+    </div>
+
+    <!-- Hero content center -->
     <div class="sesa-login-bg-content">
-      <h2 class="sesa-login-bg-title">Sistema Electrónico de Salud</h2>
-      <p class="sesa-login-bg-subtitle">Plataforma de administración clínica para organizaciones de salud. Gestión de pacientes, citas, historias clínicas y más.</p>
-      <div class="sesa-login-bg-line"></div>
+      <div class="sesa-login-bg-badge">
+        <span class="sesa-login-bg-badge-dot"></span>
+        Sistema certificado · Colombia
+      </div>
+      <h2 class="sesa-login-bg-title">La plataforma clínica que transforma la atención en salud</h2>
+      <p class="sesa-login-bg-subtitle">Gestión integral de pacientes, facturación electrónica DIAN, historias clínicas y más. Diseñado para IPS y EPS colombianas.</p>
+      <ul class="sesa-login-bg-features">
+        <li class="sesa-login-bg-feature">
+          <span class="sesa-login-bg-feature-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </span>
+          Historia clínica electrónica y RIPS
+        </li>
+        <li class="sesa-login-bg-feature">
+          <span class="sesa-login-bg-feature-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </span>
+          Facturación electrónica habilitada DIAN
+        </li>
+        <li class="sesa-login-bg-feature">
+          <span class="sesa-login-bg-feature-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          Multi-sede y multi-rol en tiempo real
+        </li>
+        <li class="sesa-login-bg-feature">
+          <span class="sesa-login-bg-feature-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          Seguridad y cumplimiento normativo
+        </li>
+      </ul>
+    </div>
+
+    <!-- Stats bottom -->
+    <div class="sesa-login-bg-stats">
+      <div class="sesa-login-bg-stat">
+        <span class="sesa-login-bg-stat-value">99.9%</span>
+        <span class="sesa-login-bg-stat-label">Disponibilidad</span>
+      </div>
+      <div class="sesa-login-bg-stat-divider"></div>
+      <div class="sesa-login-bg-stat">
+        <span class="sesa-login-bg-stat-value">DIAN</span>
+        <span class="sesa-login-bg-stat-label">Habilitado</span>
+      </div>
+      <div class="sesa-login-bg-stat-divider"></div>
+      <div class="sesa-login-bg-stat">
+        <span class="sesa-login-bg-stat-value">ISO</span>
+        <span class="sesa-login-bg-stat-label">27001</span>
+      </div>
     </div>
   </div>
+
+  <!-- ── Panel derecho: formulario ── -->
   <div class="sesa-login-panel">
+
     <!-- Partículas decorativas (solo visibles en dark) -->
     @if (themeService.isDark()) {
       <div class="sesa-login-particles" aria-hidden="true">
@@ -29,19 +88,24 @@
       [attr.aria-label]="themeService.isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'">
       <fa-icon [icon]="themeService.isDark() ? faSun : faMoon"></fa-icon>
     </button>
-    <div class="sesa-login-panel-inner sesa-login-panel-inner--centered">
-      <div class="sesa-login-logo-full sesa-login-logo-full--centered">
-        <img src="/icon2.png" alt="SESA" class="sesa-login-logo-img" />
-        <div class="sesa-login-logo-text">
-          <span class="sesa-login-logo-title">SESA</span>
-          <span class="sesa-login-logo-subtitle">Sistema Electrónico de Salud</span>
-        </div>
+
+    <div class="sesa-login-panel-inner">
+
+      <!-- Logo compacto centrado -->
+      <div class="sesa-login-logo-full">
+        <img src="/logo.png" alt="SESA" class="sesa-login-logo-img" width="448" height="120" />
       </div>
 
-      <p class="sesa-login-label sesa-login-label--centered">Acceso al portal</p>
-      <h1 class="sesa-login-main-title sesa-login-main-title--centered">Iniciar sesión</h1>
+      <!-- Divisor luminoso -->
+      <div class="sesa-login-card-divider"></div>
 
-      <form class="sesa-login-form sesa-login-form--centered" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Encabezado alineado a la izquierda -->
+      <p class="sesa-login-label">Acceso al portal</p>
+      <h1 class="sesa-login-main-title">Iniciar sesión</h1>
+      <p class="sesa-login-main-subtitle">Accede de forma segura a tus módulos.</p>
+
+      <form class="sesa-login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
         <!-- Selector de modo: correo o identificación -->
         <div class="sesa-login-mode-toggle">
           <button
@@ -124,15 +188,21 @@
           <button
             type="submit"
             class="sesa-btn sesa-btn-primary sesa-btn-block"
-            [disabled]="loading">
-            {{ loading ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+            [disabled]="loading()">
+            @if (loading()) {
+              <span class="sesa-btn-spinner" aria-hidden="true"></span>
+              Iniciando sesión…
+            } @else {
+              Iniciar sesión
+            }
           </button>
         </div>
 
-        <div class="sesa-login-footer-links sesa-login-footer-links--centered">
+        <div class="sesa-login-footer-links">
           <span>¿No tienes una cuenta?</span>
           <a href="javascript:void(0)" class="sesa-link-inline">Solicitar acceso</a>
         </div>
+
       </form>
 
       @if (showReset) {
@@ -144,7 +214,6 @@
             </sesa-form-field>
             <button type="submit" class="sesa-btn sesa-btn-secondary">Solicitar token</button>
           </form>
-
           <form [formGroup]="resetConfirmForm" (ngSubmit)="confirmarReset()">
             <sesa-form-field label="Token" [required]="true">
               <input type="text" formControlName="token" />
@@ -167,12 +236,23 @@
             </sesa-form-field>
             <button type="submit" class="sesa-btn sesa-btn-primary">Restablecer contraseña</button>
           </form>
-
           @if (resetMessage) {
             <div class="sesa-login-success">{{ resetMessage }}</div>
           }
         </div>
       }
+
     </div>
   </div>
+
+  @if (showRolePicker()) {
+    <sesa-login-role-picker
+      [roles]="rolePickerRoles()"
+      [userDisplayName]="rolePickerUserName()"
+      [empresaNombre]="rolePickerEmpresa()"
+      [suggestedRole]="rolePickerSuggested()"
+      (confirmed)="onRolePicked($event)"
+      (cancelled)="onRolePickerCancel()"
+    />
+  }
 </div>

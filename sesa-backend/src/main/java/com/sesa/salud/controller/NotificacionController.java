@@ -4,6 +4,9 @@
 
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.DestinatarioDisponibleDto;
+import com.sesa.salud.dto.MarcarLeidasRequest;
+import com.sesa.salud.dto.NotificacionBroadcastResult;
 import com.sesa.salud.dto.NotificacionCreateRequest;
 import com.sesa.salud.dto.NotificacionDto;
 import com.sesa.salud.entity.NotificacionAdjunto;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/notificaciones")
@@ -40,7 +44,7 @@ public class NotificacionController {
     private final UsuarioRepository usuarioRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<NotificacionDto> create(
             @Valid @RequestBody NotificacionCreateRequest request,
             Authentication authentication) {
@@ -53,7 +57,7 @@ public class NotificacionController {
     }
 
     @PostMapping("/{id}/adjuntos")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> uploadAdjunto(
             @PathVariable("id") Long id,
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -66,13 +70,13 @@ public class NotificacionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<NotificacionDto> getById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(notificacionService.getById(id));
     }
 
     @GetMapping("/enviadas")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public Page<NotificacionDto> listEnviadas(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
@@ -84,7 +88,7 @@ public class NotificacionController {
     }
 
     @GetMapping("/recibidas")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public Page<NotificacionDto> listRecibidas(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
@@ -95,15 +99,39 @@ public class NotificacionController {
                 PageRequest.of(page, size));
     }
 
+    @GetMapping("/recibidas/archivadas")
+    @PreAuthorize("isAuthenticated()")
+    public Page<NotificacionDto> listArchivadas(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        return notificacionService.listArchivadas(
+                principal.userId(),
+                PageRequest.of(page, size));
+    }
+
+    @GetMapping("/recibidas/papelera")
+    @PreAuthorize("isAuthenticated()")
+    public Page<NotificacionDto> listPapelera(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        return notificacionService.listPapelera(
+                principal.userId(),
+                PageRequest.of(page, size));
+    }
+
     @GetMapping("/recibidas/count")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Long> countNoLeidas(Authentication authentication) {
         JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
         return ResponseEntity.ok(notificacionService.countNoLeidas(principal.userId()));
     }
 
     @PutMapping("/{id}/leer")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> marcarLeida(
             @PathVariable("id") Long id,
             Authentication authentication) {
@@ -112,8 +140,136 @@ public class NotificacionController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Marca como leídas varias notificaciones para el usuario actual (solo donde es destinatario).
+     */
+    @PostMapping("/marcar-leidas")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarLeidas(
+            @Valid @RequestBody MarcarLeidasRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        if (request.getNotificacionIds() != null && !request.getNotificacionIds().isEmpty()) {
+            notificacionService.marcarLeidas(request.getNotificacionIds(), principal.userId());
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/no-leer")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarNoLeida(
+            @PathVariable("id") Long id,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.marcarNoLeida(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/archivar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> archivar(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.archivar(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/desarchivar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> desarchivar(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.desarchivar(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/papelera")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> moverAPapelera(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.moverAPapelera(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/restaurar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> restaurarDePapelera(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.restaurarDePapelera(id, principal.userId());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> eliminarDefinitivo(@PathVariable("id") Long id, Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.eliminarDefinitivo(id, principal.userId());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Marca como no leídas varias notificaciones para el usuario actual (solo donde es destinatario).
+     */
+    @PostMapping("/marcar-no-leidas")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarNoLeidas(
+            @Valid @RequestBody MarcarLeidasRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        if (request.getNotificacionIds() != null && !request.getNotificacionIds().isEmpty()) {
+            notificacionService.marcarNoLeidas(request.getNotificacionIds(), principal.userId());
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Elimina un adjunto de una notificación. Solo el remitente de la notificación puede hacerlo.
+     */
+    @DeleteMapping("/{notificacionId}/adjuntos/{adjuntoId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteAdjunto(
+            @PathVariable("notificacionId") Long notificacionId,
+            @PathVariable("adjuntoId") Long adjuntoId,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        notificacionService.deleteAdjunto(notificacionId, adjuntoId, principal.userId());
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Destinatarios disponibles ──────────────────────────────────────────────
+
+    /**
+     * Devuelve los usuarios activos del schema actual que pueden recibir notificaciones.
+     * Cualquier usuario autenticado puede consultarlo para seleccionar destinatarios.
+     */
+    @GetMapping("/destinatarios-disponibles")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<DestinatarioDisponibleDto>> getDestinatariosDisponibles() {
+        return ResponseEntity.ok(notificacionService.getDestinatariosDisponibles());
+    }
+
+    // ── Broadcast SUPERADMINISTRADOR ──────────────────────────────────────────
+
+    /**
+     * Envía una notificación al usuario ADMIN de cada empresa/schema activo.
+     * Solo accesible para SUPERADMINISTRADOR.
+     */
+    @PostMapping("/broadcast-admins")
+    @PreAuthorize("hasRole('SUPERADMINISTRADOR')")
+    public ResponseEntity<NotificacionBroadcastResult> broadcastToAdmins(
+            @Valid @RequestBody NotificacionCreateRequest request,
+            Authentication authentication) {
+        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        String nombre = usuarioRepository.findById(principal.userId())
+                .map(Usuario::getNombreCompleto)
+                .orElse(principal.username());
+        NotificacionBroadcastResult result =
+                notificacionService.broadcastToAdmins(request, principal.userId(), nombre);
+        return ResponseEntity.ok(result);
+    }
+
+    // ── Adjunto: descarga ─────────────────────────────────────────────────────
+
     @GetMapping("/{notificacionId}/adjuntos/{adjuntoId}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> downloadAdjunto(
             @PathVariable("notificacionId") Long notificacionId,
             @PathVariable("adjuntoId") Long adjuntoId) {

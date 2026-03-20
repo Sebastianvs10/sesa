@@ -1,0 +1,101 @@
+<div class="ebs-brigadas">
+  <header class="ebs-brigadas__header">
+    <h1 class="ebs-brigadas__title">Brigadas</h1>
+    <p class="ebs-brigadas__sub">Eventos programados por territorio con equipo asignado.</p>
+    <div class="ebs-brigadas__toolbar">
+      <select
+        class="ebs-brigadas__filter"
+        [value]="filterTerritoryId() ?? ''"
+        (change)="onFilterChange($any($event.target).value ? +$any($event.target).value : null)"
+      >
+        <option value="">Todos los territorios</option>
+        @for (t of territories(); track t.id) {
+          <option [value]="t.id">{{ t.name }}</option>
+        }
+      </select>
+      <select class="ebs-brigadas__filter" [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
+        @for (opt of STATUS_OPTIONS; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+      <a routerLink="/ebs/territorios" class="ebs-brigadas__link">Ver territorios</a>
+      <button type="button" class="ebs-brigadas__btn-primary" (click)="openNewBrigade()">+ Nueva brigada</button>
+    </div>
+  </header>
+
+  @if (showNewForm()) {
+    <sesa-card class="ebs-brigadas__form-card">
+      <h3 class="ebs-brigadas__form-title">Crear brigada</h3>
+      <div class="ebs-brigadas__form">
+        <label class="ebs-brigadas__form-label">
+          <span>Nombre</span>
+          <input type="text" class="ebs-brigadas__input" [(ngModel)]="newBrigadeName" placeholder="Ej.: Brigada vereda Norte" />
+        </label>
+        <label class="ebs-brigadas__form-label">
+          <span>Territorio</span>
+          <select class="ebs-brigadas__input" [(ngModel)]="newBrigadeTerritoryId">
+            @for (t of territories(); track t.id) {
+              <option [ngValue]="t.id">{{ t.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="ebs-brigadas__form-label">
+          <span>Fecha inicio — fin</span>
+          <div class="ebs-brigadas__form-dates">
+            <input type="date" class="ebs-brigadas__input" [(ngModel)]="newBrigadeDateStart" />
+            <input type="date" class="ebs-brigadas__input" [(ngModel)]="newBrigadeDateEnd" />
+          </div>
+        </label>
+        <div class="ebs-brigadas__form-team">
+          <span class="ebs-brigadas__form-team-label">Equipo (opcional)</span>
+          <div class="ebs-brigadas__form-team-list">
+            @for (p of personalList(); track p.id) {
+              <label class="ebs-brigadas__form-team-item">
+                <input type="checkbox" [checked]="newBrigadeTeamIds.includes(p.id)" (change)="toggleNewBrigadeTeam(p.id)" />
+                <span>{{ fullName(p) }}</span>
+              </label>
+            }
+          </div>
+        </div>
+        <div class="ebs-brigadas__form-actions">
+          <button type="button" class="ebs-brigadas__btn ebs-brigadas__btn--sec" (click)="closeNewBrigade()">Cancelar</button>
+          <button type="button" class="ebs-brigadas__btn ebs-brigadas__btn--pri" (click)="createBrigade()" [disabled]="savingBrigade() || !newBrigadeName.trim()">
+            {{ savingBrigade() ? 'Creando…' : 'Crear brigada' }}
+          </button>
+        </div>
+      </div>
+    </sesa-card>
+  }
+
+  @if (loading()) {
+    <sesa-card>
+      <sesa-skeleton preset="form" />
+    </sesa-card>
+  } @else if (filteredBrigades().length === 0) {
+    <sesa-card>
+      <div class="ebs-brigadas__empty">
+        <p>No hay brigadas registradas.</p>
+        <p class="ebs-brigadas__empty-hint">Crea brigadas desde Asignación territorial o desde el detalle del territorio.</p>
+      </div>
+    </sesa-card>
+  } @else {
+    <div class="ebs-brigadas__grid">
+      @for (b of filteredBrigades(); track b.id!) {
+        <sesa-card class="ebs-brigadas__card">
+          <div class="ebs-brigadas__card-header">
+            <h3 class="ebs-brigadas__card-title">{{ b.name }}</h3>
+            <span class="ebs-brigadas__badge" [attr.data-status]="statusBadge(b.status || '')">{{ b.status }}</span>
+          </div>
+          <p class="ebs-brigadas__card-territory">{{ b.territoryName }}</p>
+          <p class="ebs-brigadas__card-dates">{{ b.dateStart }} — {{ b.dateEnd }}</p>
+          @if (b.teamMemberNames?.length) {
+            <p class="ebs-brigadas__card-team">Equipo: {{ (b.teamMemberNames ?? []).join(', ') }}</p>
+          }
+          <div class="ebs-brigadas__card-actions">
+            <button type="button" class="ebs-brigadas__btn ebs-brigadas__btn--danger" (click)="deleteBrigade(b.id!, b.name)">Eliminar</button>
+          </div>
+        </sesa-card>
+      }
+    </div>
+  }
+</div>

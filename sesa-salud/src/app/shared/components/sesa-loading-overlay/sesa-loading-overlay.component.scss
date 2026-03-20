@@ -1,0 +1,123 @@
+/* Loading Overlay Premium Styles */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.sesa-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    animation: fadeIn 0.3s forwards ease-out;
+}
+
+[data-theme='dark'] .sesa-overlay {
+    background: rgba(3, 7, 18, 0.6);
+}
+
+.sesa-loader-card {
+    background: var(--sesa-surface);
+    padding: 2.5rem;
+    border-radius: var(--sesa-radius-xl);
+    box-shadow: var(--sesa-shadow-xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 280px;
+    width: 90%;
+    border: 1px solid var(--sesa-border);
+    transform: scale(0.9);
+    animation: cardScale 0.35s forwards cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sesa-loader-message {
+    margin: 0;
+    font-weight: 600;
+    color: var(--sesa-text-primary);
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+/* Premium Triple Ring Spinner */
+.sesa-premium-spinner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    perspective: 800px;
+}
+
+.inner {
+    position: absolute;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.inner.one {
+    left: 0%;
+    top: 0%;
+    animation: rotate-one 1s linear infinite;
+    border-bottom: 3px solid var(--sesa-secondary);
+}
+
+.inner.two {
+    right: 0%;
+    top: 0%;
+    animation: rotate-two 1s linear infinite;
+    border-right: 3px solid var(--sesa-accent);
+}
+
+.inner.three {
+    right: 0%;
+    bottom: 0%;
+    animation: rotate-three 1s linear infinite;
+    border-top: 3px solid var(--sesa-secondary);
+}
+
+@keyframes rotate-one {
+    0% {
+        transform: rotateX(35deg) rotateY(-45deg) rotateZ(0deg);
+    }
+
+    100% {
+        transform: rotateX(35deg) rotateY(-45deg) rotateZ(360deg);
+    }
+}
+
+@keyframes rotate-two {
+    0% {
+        transform: rotateX(50deg) rotateY(10deg) rotateZ(0deg);
+    }
+
+    100% {
+        transform: rotateX(50deg) rotateY(10deg) rotateZ(360deg);
+    }
+}
+
+@keyframes rotate-three {
+    0% {
+        transform: rotateX(35deg) rotateY(55deg) rotateZ(0deg);
+    }
+
+    100% {
+        transform: rotateX(35deg) rotateY(55deg) rotateZ(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes cardScale {
+    to {
+        transform: scale(1);
+    }
+}

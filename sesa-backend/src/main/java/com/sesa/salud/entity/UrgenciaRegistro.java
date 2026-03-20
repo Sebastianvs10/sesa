@@ -37,11 +37,72 @@ public class UrgenciaRegistro {
     @Column(name = "fecha_hora_ingreso", nullable = false)
     private LocalDateTime fechaHoraIngreso;
 
+    /** Registrada al pasar a EN_ATENCION; usada para reporte de cumplimiento de tiempos (Res. 5596/2015). */
+    @Column(name = "fecha_hora_inicio_atencion")
+    private LocalDateTime fechaHoraInicioAtencion;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "atencion_id")
+    private Atencion atencion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    // Campos normativos Res. 5596/2015 (Triage hospitalario)
+    @Column(name = "tipo_llegada", length = 30)
+    private String tipoLlegada;
+
+    @Column(name = "motivo_consulta", columnDefinition = "TEXT")
+    private String motivoConsulta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profesional_triage_id")
+    private Personal profesionalTriage;
+
+    // Signos vitales al ingreso (triage)
+    @Column(name = "sv_presion_arterial", length = 20)
+    private String svPresionArterial;
+
+    @Column(name = "sv_frecuencia_cardiaca", length = 10)
+    private String svFrecuenciaCardiaca;
+
+    @Column(name = "sv_frecuencia_respiratoria", length = 10)
+    private String svFrecuenciaRespiratoria;
+
+    @Column(name = "sv_temperatura", length = 10)
+    private String svTemperatura;
+
+    @Column(name = "sv_saturacion_o2", length = 10)
+    private String svSaturacionO2;
+
+    @Column(name = "sv_peso", length = 10)
+    private String svPeso;
+
+    @Column(name = "sv_dolor_eva", length = 5)
+    private String svDolorEva;
+
+    // Escala de Glasgow
+    @Column(name = "glasgow_ocular")
+    private Integer glasgowOcular;
+
+    @Column(name = "glasgow_verbal")
+    private Integer glasgowVerbal;
+
+    @Column(name = "glasgow_motor")
+    private Integer glasgowMotor;
+
+    /** S6: Datos de alta para PDF al paciente. */
+    @Column(name = "alta_diagnostico", columnDefinition = "TEXT")
+    private String altaDiagnostico;
+    @Column(name = "alta_tratamiento", columnDefinition = "TEXT")
+    private String altaTratamiento;
+    @Column(name = "alta_recomendaciones", columnDefinition = "TEXT")
+    private String altaRecomendaciones;
+    @Column(name = "alta_proxima_cita", columnDefinition = "TEXT")
+    private String altaProximaCita;
 
     @PrePersist
     protected void onCreate() {

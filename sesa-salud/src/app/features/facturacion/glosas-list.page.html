@@ -1,0 +1,101 @@
+<section class="glo-page">
+  <header class="glo-header">
+    <div class="glo-header-text">
+      <a routerLink="/facturacion" class="glo-back">← Facturación</a>
+      <h1 class="glo-title">Glosas</h1>
+      <p class="glo-subtitle">Rechazos de factura · Recuperación de cartera</p>
+    </div>
+  </header>
+
+  @if (filtroFacturaId) {
+    <sesa-card>
+      <p class="glo-filter-hint">Mostrando glosas de la factura #{{ filtroFacturaId }}. <a routerLink="/facturacion/glosas">Ver todas</a></p>
+    </sesa-card>
+  }
+  <sesa-card>
+    <div class="glo-filters">
+      <div class="glo-field">
+        <label class="glo-label">Estado</label>
+        <select class="glo-input" [(ngModel)]="filtroEstado">
+          <option value="">Todos</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="ENVIADO">Enviado</option>
+          <option value="ACEPTADO">Aceptado</option>
+          <option value="RECHAZADO">Rechazado</option>
+        </select>
+      </div>
+      <div class="glo-field">
+        <label class="glo-label">Desde</label>
+        <input type="date" class="glo-input" [(ngModel)]="filtroDesde" />
+      </div>
+      <div class="glo-field">
+        <label class="glo-label">Hasta</label>
+        <input type="date" class="glo-input" [(ngModel)]="filtroHasta" />
+      </div>
+      <button class="sesa-btn sesa-btn-primary" type="button" (click)="cargar()">Buscar</button>
+      <button class="sesa-btn sesa-btn-secondary" type="button" (click)="cargarReporte()" [disabled]="loadingReporte()">
+        {{ loadingReporte() ? 'Cargando…' : 'Recuperación de cartera' }}
+      </button>
+    </div>
+  </sesa-card>
+
+  @if (reporte(); as r) {
+    <sesa-card>
+      <h2 class="glo-section-title">Recuperación de cartera</h2>
+      <div class="glo-reporte-grid">
+        <div class="glo-reporte-item">
+          <span class="glo-reporte-label">Total glosas</span>
+          <strong>{{ r.totalGlosas }}</strong>
+        </div>
+        <div class="glo-reporte-item">
+          <span class="glo-reporte-label">Pendientes</span>
+          <strong>{{ r.pendientes }}</strong>
+        </div>
+        <div class="glo-reporte-item">
+          <span class="glo-reporte-label">Enviadas</span>
+          <strong>{{ r.enviadas }}</strong>
+        </div>
+        <div class="glo-reporte-item">
+          <span class="glo-reporte-label">Aceptadas</span>
+          <strong>{{ r.aceptadas }}</strong>
+        </div>
+        <div class="glo-reporte-item">
+          <span class="glo-reporte-label">Total recuperado</span>
+          <strong>{{ r.totalRecuperado | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+        </div>
+      </div>
+    </sesa-card>
+  }
+
+  <sesa-card>
+    <h2 class="glo-section-title">Listado de glosas</h2>
+    @if (loading()) {
+      <p class="glo-loading">Cargando…</p>
+    } @else if (glosas().length === 0) {
+      <p class="glo-empty">No hay glosas con los filtros indicados.</p>
+    } @else {
+      <div class="glo-table-wrap">
+        <table class="glo-table">
+          <thead>
+            <tr>
+              <th>Factura</th>
+              <th>Motivo rechazo</th>
+              <th>Estado</th>
+              <th>Fecha registro</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of glosas(); track g.id) {
+              <tr>
+                <td>{{ g.numeroFactura || '#' + g.facturaId }}</td>
+                <td class="glo-cell-motivo">{{ g.motivoRechazo }}</td>
+                <td><span class="glo-badge" [class]="'glo-badge--' + (g.estado || '').toLowerCase()">{{ estadoLabel(g.estado) }}</span></td>
+                <td>{{ g.fechaRegistro | date:'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </sesa-card>
+</section>

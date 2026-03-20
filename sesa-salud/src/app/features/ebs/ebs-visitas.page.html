@@ -1,0 +1,84 @@
+<section class="ebs-visitas">
+  <header class="ebs-visitas__header">
+    <h1 class="ebs-visitas__title">Historial de visitas</h1>
+    <p class="ebs-visitas__subtitle">Visitas domiciliarias registradas por el equipo EBS. Filtra por territorio y período.</p>
+  </header>
+
+  <sesa-card title="Filtros" subtitle="Territorio y período" alignHeader="start">
+    <div class="ebs-visitas__filters">
+      <label class="ebs-visitas__label">
+        <span>Microterritorio</span>
+        <select
+          class="ebs-visitas__select"
+          [ngModel]="selectedTerritoryId"
+          (ngModelChange)="selectedTerritoryId = $event; onFilterChange()"
+        >
+          <option [ngValue]="null">Todos</option>
+          @for (t of territories(); track t.id) {
+            <option [ngValue]="t.id">{{ t.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="ebs-visitas__label">
+        <span>Últimos días</span>
+        <select class="ebs-visitas__select" [ngModel]="diasFiltro" (ngModelChange)="diasFiltro = $event; onFilterChange()">
+          <option [ngValue]="30">30 días</option>
+          <option [ngValue]="60">60 días</option>
+          <option [ngValue]="90">90 días</option>
+          <option [ngValue]="180">180 días</option>
+        </select>
+      </label>
+      <label class="ebs-visitas__label">
+        <span>Tipo de visita</span>
+        <select class="ebs-visitas__select" [ngModel]="filterVisitType()" (ngModelChange)="filterVisitType.set($event)">
+          @for (opt of VISIT_TYPE_OPTIONS; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="ebs-visitas__btn" (click)="loadVisits()">Actualizar</button>
+    </div>
+  </sesa-card>
+
+  <sesa-card title="Visitas" [subtitle]="visitsFiltered().length + ' de ' + visits().length + ' registros'" alignHeader="start">
+    @if (loading()) {
+      <div class="ebs-visitas__skeleton">
+        @for (sk of [1,2,3,4,5]; track sk) {
+          <sesa-skeleton width="100%" height="2.5rem" />
+        }
+      </div>
+    } @else if (error()) {
+      <p class="ebs-visitas__error">{{ error() }}</p>
+    } @else if (visitsFiltered().length === 0) {
+      <sesa-empty-state
+        icon="box"
+        title="Sin visitas"
+        [message]="visits().length === 0 ? 'No hay visitas en el período seleccionado. Prueba ampliando el rango de días o eligiendo otro territorio.' : 'Ninguna visita coincide con el tipo seleccionado.'"
+        [compact]="true"
+      />
+    } @else {
+      <ul class="ebs-visitas__list">
+        @for (v of visitsFiltered(); track v.id) {
+          <li class="ebs-visitas__item">
+            <div class="ebs-visitas__item-main">
+              <strong class="ebs-visitas__item-address">{{ v.householdAddress || 'Hogar #' + v.householdId }}</strong>
+              <span class="ebs-visitas__item-date">{{ v.visitDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+              @if (v.visitType) {
+                <span class="ebs-visitas__item-type">{{ visitTypeLabel(v.visitType) }}</span>
+              }
+              @if (v.territoryName) {
+                <span class="ebs-visitas__item-territory">{{ v.territoryName }}</span>
+              }
+              @if (v.professionalName) {
+                <span class="ebs-visitas__item-prof">{{ v.professionalName }}</span>
+              }
+            </div>
+            @if (v.motivo || v.notes) {
+              <p class="ebs-visitas__item-notes">{{ v.motivo || v.notes }}</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </sesa-card>
+</section>

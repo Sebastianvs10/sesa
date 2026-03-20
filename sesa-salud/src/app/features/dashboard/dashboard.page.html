@@ -13,32 +13,47 @@
     </div>
 
     @if (isAdmin) {
-      <a routerLink="/reportes" class="sesa-btn-reportes">
+      <a routerLink="/reportes" class="sesa-btn sesa-btn-secondary sesa-btn-sm sesa-btn-icon">
         <fa-icon [icon]="faChartBar"></fa-icon>
         <span>Reportes</span>
       </a>
     }
   </header>
 
+  <!-- Skeleton stat cards durante carga -->
   @if (loading) {
-    <div class="sesa-dashboard-loading">
-      <span class="sesa-spinner"></span>
-      <p>Cargando información…</p>
+    <div class="sesa-dashboard-stats">
+      @for (sk of skeletonStatCount; track sk) {
+        <div class="sesa-stat-card-skeleton">
+          <div class="sesa-sk-stat-icon-skeleton"></div>
+          <div class="sesa-sk-stat-body">
+            <sesa-skeleton width="40%" height="1.6rem" />
+            <sesa-skeleton width="60%" height="0.75rem" style="margin-top:0.4rem" />
+            <sesa-skeleton width="45%" height="1.2rem" style="margin-top:0.5rem;border-radius:20px" />
+          </div>
+        </div>
+      }
     </div>
   } @else if (data?.error) {
     <div class="sesa-dashboard-error">
-      <p>{{ data?.error }}</p>
+      <sesa-empty-state
+        icon="box"
+        title="Error al cargar"
+        [message]="data?.error ?? 'Error desconocido'"
+        actionLabel="Reintentar"
+        (action)="load()"
+      />
     </div>
   } @else {
     <!-- Tarjetas de resumen dinámicas por rol -->
     <div class="sesa-dashboard-stats">
       @for (card of statCards; track card.titulo) {
         <a [routerLink]="card.link ?? '#'" class="sesa-stat-card sesa-stat-card-link">
-          <div class="sesa-stat-card-icon" [style.background]="card.gradient">
+          <div class="sesa-stat-card-icon" [style.background]="card.gradient" aria-hidden="true">
             <fa-icon [icon]="card.icon"></fa-icon>
           </div>
           <div class="sesa-stat-card-content">
-            <span class="sesa-stat-value">{{ card.valor }}</span>
+            <span class="sesa-stat-value">{{ getDisplayValue(card) }}</span>
             <span class="sesa-stat-label">{{ card.titulo }}</span>
             @if (card.chip) {
               <span class="sesa-chip" [ngClass]="card.chipClase ?? 'sesa-chip-secondary'">{{ card.chip }}</span>
@@ -50,7 +65,6 @@
 
     <!-- Layout principal: Calendario + Citas -->
     <div class="sesa-dashboard-main">
-      <!-- Columna izquierda: Calendario -->
       @if (permissions.canAccess('CITAS')) {
         <aside class="sesa-dashboard-sidebar">
           <sesa-card title="Calendario" subtitle="Selecciona un día para ver citas" alignHeader="start">
@@ -63,21 +77,33 @@
         </aside>
       }
 
-      <!-- Columna derecha: Citas del día -->
       <main class="sesa-dashboard-content">
         @if (permissions.canAccess('CITAS')) {
-          <sesa-card [title]="selectedDate ? 'Citas del día seleccionado' : 'Citas de hoy'" [subtitle]="fechaSeleccionadaFormateada" alignHeader="start">
+          <sesa-card
+            [title]="selectedDate ? 'Citas del día seleccionado' : 'Citas de hoy'"
+            [subtitle]="fechaSeleccionadaFormateada"
+            alignHeader="start"
+          >
             @if (loadingCitasParaFecha) {
-              <div class="sesa-dashboard-loading sesa-dashboard-loading-inline">
-                <span class="sesa-spinner"></span>
-                <p>Cargando citas…</p>
+              <div class="sesa-citas-skeleton-list">
+                @for (sk of [1,2,3,4,5]; track sk) {
+                  <div class="sesa-cita-skeleton-item">
+                    <sesa-skeleton width="48px" height="0.8rem" />
+                    <sesa-skeleton width="45%" height="0.8rem" />
+                    <sesa-skeleton width="30%" height="0.8rem" />
+                    <sesa-skeleton width="70px" height="1.4rem" variant="rounded" />
+                  </div>
+                }
               </div>
             } @else if (proximasCitas.length === 0) {
-              <div class="sesa-empty-state sesa-empty-state-citas">
-                <span class="sesa-empty-icon" aria-hidden="true">📅</span>
-                <p>No hay citas para {{ fechaSeleccionadaFormateada }}.</p>
-                <a routerLink="/citas" class="sesa-btn sesa-btn-primary sesa-btn-sm">Ir a Citas</a>
-              </div>
+              <sesa-empty-state
+                icon="calendar"
+                title="Sin citas"
+                [message]="'No hay citas para ' + fechaSeleccionadaFormateada"
+                actionLabel="Ir a Citas"
+                (action)="null"
+                [compact]="true"
+              />
             } @else {
               <div class="sesa-citas-list">
                 @for (c of proximasCitas; track c.id) {
@@ -99,9 +125,38 @@
           </sesa-card>
         } @else if (permissions.canAccess('PACIENTES')) {
           <sesa-card title="Resumen del día" subtitle="Actividades" alignHeader="start">
-            <div class="sesa-empty-state">
-              <p>Accede a <a routerLink="/pacientes">Pacientes</a> para gestionar la información.</p>
+            <sesa-empty-state
+              icon="users"
+              title="Módulo de Pacientes"
+              message="Accede a Pacientes para gestionar la información clínica."
+              actionLabel="Ir a Pacientes"
+              [compact]="true"
+            />
+          </sesa-card>
+        }
+
+        @if (permissions.canAccess('EBS')) {
+          <sesa-card
+            title="Resumen EBS — APS territorial"
+            subtitle="Cobertura y seguimiento (Equipos Básicos de Salud)"
+            alignHeader="start"
+            class="sesa-dashboard-ebs-card"
+          >
+            <div class="sesa-dashboard-ebs-hooks">
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCoberturaTerritorial() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Cobertura territorial</span>
+              </div>
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsPoblacionVisitada() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Población visitada</span>
+              </div>
+              <div class="sesa-dashboard-ebs-metric">
+                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCronicosControlados() }}</span>
+                <span class="sesa-dashboard-ebs-metric-label">Crónicos controlados</span>
+              </div>
             </div>
+            <a routerLink="/ebs" class="sesa-dashboard-more">Ver módulo EBS →</a>
           </sesa-card>
         }
       </main>

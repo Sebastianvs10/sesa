@@ -1,0 +1,25 @@
+<!-- Cancelar cita por enlace (S3) - Autor: Ing. J Sebastian Vargas S -->
+<div class="cita-public-page">
+  <div class="cita-public-card">
+    @if (error && !token) {
+      <h1 class="cita-public-title cita-public-title--error">Enlace inválido</h1>
+      <p class="cita-public-error">{{ error }}</p>
+    } @else if (success) {
+      <h1 class="cita-public-title cita-public-title--success">Cita cancelada</h1>
+      <p class="cita-public-mensaje">{{ mensaje }}</p>
+    } @else {
+      <h1 class="cita-public-title">Cancelar cita</h1>
+      <p class="cita-public-mensaje">¿Desea cancelar esta cita? Puede indicar un motivo (opcional).</p>
+      <div class="cita-public-form">
+        <label class="cita-public-label" for="motivo">Motivo (opcional)</label>
+        <textarea id="motivo" class="cita-public-textarea" [(ngModel)]="motivo" rows="3" placeholder="Ej: Cambio de planes, reagendar..."></textarea>
+        @if (error) {
+          <p class="cita-public-error">{{ error }}</p>
+        }
+        <button type="button" class="cita-public-btn" [disabled]="loading" (click)="enviar()">
+          {{ loading ? 'Procesando...' : 'Confirmar cancelación' }}
+        </button>
+      </div>
+    }
+  </div>
+</div>

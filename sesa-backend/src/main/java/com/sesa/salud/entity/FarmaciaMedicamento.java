@@ -30,6 +30,10 @@ public class FarmaciaMedicamento {
     @Column(length = 80)
     private String lote;
 
+    /** Código de barras / EAN / SKU escaneable (opcional). */
+    @Column(name = "codigo_barras", length = 64)
+    private String codigoBarras;
+
     @Column(name = "fecha_vencimiento")
     private LocalDate fechaVencimiento;
 

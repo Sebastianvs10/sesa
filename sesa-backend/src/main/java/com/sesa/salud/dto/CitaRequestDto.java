@@ -26,4 +26,8 @@ public class CitaRequestDto {
     private LocalDateTime fechaHora;
     private String estado = "AGENDADA";
     private String notas;
+    // Campos normativos Res. 2953/2014
+    private String tipoCita;
+    private String numeroAutorizacionEps;
+    private Integer duracionEstimadaMin;
 }

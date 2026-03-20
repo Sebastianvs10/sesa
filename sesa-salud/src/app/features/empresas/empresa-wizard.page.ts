@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faPenToSquare,
   faBuilding,
+  faArrowLeft,
+  faChevronRight,
   faClipboardList,
   faPhone,
   faBuildingColumns,
@@ -20,17 +22,9 @@ import {
   faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 import { EmpresaService, EmpresaCreateRequest, AdminUserRequest, ModuloDto } from '../../core/services/empresa.service';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { IgacService, IgacDepartamento, IgacMunicipio } from '../../core/services/igac.service';
 import { SesaFormFieldComponent } from '../../shared/components/sesa-form-field/sesa-form-field.component';
-
-/** Departamentos de Colombia (DANE) */
-const DEPARTAMENTOS_COLOMBIA = [
-  'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá',
-  'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca',
-  'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño',
-  'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia',
-  'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada'
-];
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 
 @Component({
   standalone: true,
@@ -40,8 +34,8 @@ const DEPARTAMENTOS_COLOMBIA = [
     ReactiveFormsModule,
     RouterLink,
     FontAwesomeModule,
-    SesaCardComponent,
     SesaFormFieldComponent,
+    SesaPageHeaderComponent,
   ],
   templateUrl: './empresa-wizard.page.html',
   styleUrl: './empresa-wizard.page.scss',
@@ -51,9 +45,12 @@ export class EmpresaWizardPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly empresaService = inject(EmpresaService);
+  private readonly igacService = inject(IgacService);
 
   faPenToSquare = faPenToSquare;
   faBuilding = faBuilding;
+  faArrowLeft = faArrowLeft;
+  faChevronRight = faChevronRight;
   faClipboardList = faClipboardList;
   faPhone = faPhone;
   faBuildingColumns = faBuildingColumns;
@@ -77,7 +74,11 @@ export class EmpresaWizardPageComponent implements OnInit {
   modulos: ModuloDto[] = [];
   loadingModulos = true;
   modulosError: string | null = null;
-  departamentos = DEPARTAMENTOS_COLOMBIA;
+
+  /** Departamentos y municipios desde IGAC (BD) */
+  departamentos = signal<IgacDepartamento[]>([]);
+  municipios = signal<IgacMunicipio[]>([]);
+  loadingMunicipios = false;
 
   /** Códigos seleccionados */
   moduloCodigos: string[] = [];
@@ -107,7 +108,7 @@ export class EmpresaWizardPageComponent implements OnInit {
       tipoDocumento: [''],
       regimen: [''],
       numeroDivipola: [''],
-      pais: [''],
+      pais: ['Colombia'],
       departamento: [''],
       municipio: [''],
       usuarioMovilLimit: [0, [Validators.min(0)]],
@@ -120,7 +121,6 @@ export class EmpresaWizardPageComponent implements OnInit {
       primerApellido: ['', [Validators.required]],
       segundoApellido: [''],
       telefonoCelular: ['', [Validators.required]],
-      proveedorServicio: [''],
       correo: ['', [Validators.required, Validators.email]],
       contraseña: ['', [Validators.required, Validators.minLength(6)]],
       repetirContraseña: ['', [Validators.required]],
@@ -128,7 +128,7 @@ export class EmpresaWizardPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Cargar catálogo de módulos y submódulos desde la BD (API)
+    this.loadDepartamentos();
     this.loadingModulos = true;
     this.modulosError = null;
     this.empresaService.getModulos().subscribe({
@@ -148,6 +148,49 @@ export class EmpresaWizardPageComponent implements OnInit {
     });
   }
 
+  private loadDepartamentos(): void {
+    this.igacService.listDepartamentos().subscribe({
+      next: (list) => {
+        this.departamentos.set(list ?? []);
+        if (this.formGeneral.get('departamento')?.value) {
+          this.loadMunicipiosForCurrentDepartamento();
+        }
+      },
+      error: () => this.departamentos.set([]),
+    });
+  }
+
+  onDepartamentoChange(): void {
+    const nombreDepto = this.formGeneral.get('departamento')?.value;
+    this.formGeneral.patchValue({ municipio: '' });
+    this.municipios.set([]);
+    if (!nombreDepto) return;
+    const depto = this.departamentos().find((d) => d.nombre === nombreDepto);
+    if (!depto?.codigoDane) return;
+    this.loadingMunicipios = true;
+    this.igacService.listMunicipios(depto.codigoDane).subscribe({
+      next: (list) => {
+        this.municipios.set(list ?? []);
+        this.loadingMunicipios = false;
+      },
+      error: () => {
+        this.municipios.set([]);
+        this.loadingMunicipios = false;
+      },
+    });
+  }
+
+  private loadMunicipiosForCurrentDepartamento(): void {
+    const nombreDepto = this.formGeneral.get('departamento')?.value;
+    if (!nombreDepto) return;
+    const depto = this.departamentos().find((d) => d.nombre === nombreDepto);
+    if (!depto?.codigoDane) return;
+    this.igacService.listMunicipios(depto.codigoDane).subscribe({
+      next: (list) => this.municipios.set(list ?? []),
+      error: () => this.municipios.set([]),
+    });
+  }
+
   private loadEmpresaIfEdit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam && idParam !== 'nueva') {
@@ -163,7 +206,6 @@ export class EmpresaWizardPageComponent implements OnInit {
             primerApellido: e.adminPrimerApellido ?? '',
             segundoApellido: e.adminSegundoApellido ?? '',
             telefonoCelular: e.adminCelular ?? '',
-            proveedorServicio: e.adminProveedorServicio ?? '',
           });
           if (this.isEdit) {
             this.formAdmin.get('contraseña')?.clearValidators();
@@ -189,7 +231,7 @@ export class EmpresaWizardPageComponent implements OnInit {
             tipoDocumento: e.tipoDocumento,
             regimen: e.regimen,
             numeroDivipola: e.numeroDivipola,
-            pais: e.pais,
+            pais: e.pais ?? 'Colombia',
             departamento: e.departamento,
             municipio: e.municipio,
             usuarioMovilLimit: e.usuarioMovilLimit ?? 0,
@@ -197,7 +239,7 @@ export class EmpresaWizardPageComponent implements OnInit {
           });
           this.moduloCodigos = e.moduloCodigos ?? [];
           this.submoduloCodigos = e.submoduloCodigos ?? [];
-          // Por defecto todos los módulos están contraídos
+          this.loadMunicipiosForCurrentDepartamento();
         },
         error: () => this.router.navigate(['/empresas']),
       });
@@ -268,6 +310,20 @@ export class EmpresaWizardPageComponent implements OnInit {
     this.expandedModulos.clear();
   }
 
+  /** Seleccionar todos los módulos y sus submódulos (desde BD). */
+  seleccionarTodosModulos(): void {
+    this.moduloCodigos = this.modulos.map(m => m.codigo);
+    this.submoduloCodigos = this.modulos.flatMap(m => m.submodulos.map(s => s.codigo));
+    this.expandAllModulos();
+  }
+
+  /** Deseleccionar todos los módulos y submódulos. */
+  deseleccionarTodosModulos(): void {
+    this.moduloCodigos = [];
+    this.submoduloCodigos = [];
+    this.collapseAllModulos();
+  }
+
   /* ========== Helpers de selección ========== */
   /** true si el módulo tiene al menos un submódulo seleccionado */
   isModuloSelected(codigo: string): boolean {
@@ -298,6 +354,11 @@ export class EmpresaWizardPageComponent implements OnInit {
   /* ========== Wizard navigation ========== */
   goStep(s: number): void {
     if (s >= 0 && s < this.steps.length) this.step = s;
+  }
+
+  /** Porcentaje de progreso (0-100) para la barra y el texto */
+  progressPercent(): number {
+    return Math.round(((this.step + 1) / this.steps.length) * 100);
   }
 
   next(): void {
@@ -331,7 +392,6 @@ export class EmpresaWizardPageComponent implements OnInit {
         primerApellido: admin.primerApellido || '—',
         segundoApellido: admin.segundoApellido || '',
         telefonoCelular: admin.telefonoCelular || '—',
-        proveedorServicio: admin.proveedorServicio || '',
         correo: admin.correo || '',
         contraseña: 'no-change',
       };
@@ -347,7 +407,6 @@ export class EmpresaWizardPageComponent implements OnInit {
         primerApellido: admin.primerApellido,
         segundoApellido: admin.segundoApellido || undefined,
         telefonoCelular: admin.telefonoCelular,
-        proveedorServicio: admin.proveedorServicio || undefined,
         correo: admin.correo,
         contraseña: admin.contraseña,
       };

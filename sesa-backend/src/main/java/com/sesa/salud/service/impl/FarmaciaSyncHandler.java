@@ -93,9 +93,13 @@ public class FarmaciaSyncHandler implements SyncEntityHandler {
         String fechaVencimientoStr = (String) body.get("fechaVencimiento");
         LocalDate fechaVencimiento = fechaVencimientoStr != null ? LocalDate.parse(fechaVencimientoStr) : null;
         
+        String codigoBarras = body.get("codigoBarras") instanceof String s ? s.trim() : null;
+        if (codigoBarras != null && codigoBarras.isEmpty()) codigoBarras = null;
+
         FarmaciaMedicamento m = FarmaciaMedicamento.builder()
                 .nombre(nombre)
                 .lote((String) body.get("lote"))
+                .codigoBarras(codigoBarras)
                 .fechaVencimiento(fechaVencimiento)
                 .cantidad(cantidad)
                 .precio(precio)

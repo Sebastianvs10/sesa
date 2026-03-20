@@ -1,0 +1,104 @@
+/* Vista asistente — solo notas de videoconsulta */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.vc-asistente {
+  min-height: 100vh;
+  background: var(--sesa-bg);
+  display: flex;
+  flex-direction: column;
+  color: var(--sesa-text-primary);
+}
+
+.vc-asistente__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.vc-asistente__logo {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--sesa-primary);
+}
+
+.vc-asistente__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.vc-asistente__wait {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+
+  .vc-asistente__wait-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    opacity: 0.8;
+  }
+}
+
+.vc-asistente__main {
+  flex: 1;
+  padding: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.vc-asistente__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.vc-asistente__textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--sesa-input-placeholder);
+  }
+}
+
+.vc-asistente__actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vc-asistente__btn {
+  padding: 10px 20px;
+  background: var(--sesa-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vc-asistente__saved {
+  font-size: 13px;
+  color: var(--sesa-success);
+}

@@ -1,335 +1,702 @@
-<section class="sesa-page sesa-page-crear-hc">
-  <header class="sesa-page-header">
-    <div>
-      <h1 class="sesa-page-title">Nueva Historia Clínica</h1>
-      <p class="sesa-page-subtitle">Completa la historia clínica del paciente</p>
+<section class="chc-page">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="chc-header">
+    <div class="chc-header-left">
+      <div class="chc-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="chc-title">Nueva Historia Clínica</h1>
+        <p class="chc-subtitle">Registro médico completo del primer contacto clínico</p>
+      </div>
     </div>
+
+    @if (paciente()) {
+      <div class="chc-patient-mini">
+        <div class="chc-patient-mini-avatar">
+          {{ (paciente()!.nombres[0] + (paciente()!.apellidos?.[0] ?? '')).toUpperCase() }}
+        </div>
+        <div>
+          <span class="chc-patient-mini-name">{{ paciente()!.nombres }} {{ paciente()!.apellidos ?? '' }}</span>
+          <span class="chc-patient-mini-doc">{{ paciente()!.tipoDocumento ?? 'CC' }} {{ paciente()!.documento }}</span>
+        </div>
+      </div>
+    }
   </header>
 
-  @if (cargandoPaciente) {
-    <p class="sesa-loading">Cargando datos del paciente...</p>
-  } @else if (errorPaciente) {
-    <p class="sesa-error">{{ errorPaciente }}</p>
-  } @else if (!paciente) {
-    <p class="sesa-error">Paciente no encontrado</p>
-  } @else {
-    @if (exito) {
-      <sesa-card class="sesa-success-card">
-        <p class="sesa-success">✓ Historia clínica creada exitosamente. Redirigiendo...</p>
-      </sesa-card>
-    }
-
-    <!-- Pestañas -->
-    <div class="sesa-tabs-wrap">
-      <div class="sesa-tabs" role="tablist">
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'paciente'"
-          (click)="setTab('paciente')"
-          role="tab"
-        >
-          Paciente
-        </button>
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'motivo'"
-          (click)="setTab('motivo')"
-          role="tab"
-        >
-          Motivo y enfermedad
-        </button>
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'antecedentes'"
-          (click)="setTab('antecedentes')"
-          role="tab"
-        >
-          Antecedentes
-        </button>
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'revision'"
-          (click)="setTab('revision')"
-          role="tab"
-        >
-          Revisión por sistemas
-        </button>
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'examen'"
-          (click)="setTab('examen')"
-          role="tab"
-        >
-          Examen físico
-        </button>
-        <button
-          type="button"
-          class="sesa-tab"
-          [class.sesa-tab-active]="activeTab === 'plan'"
-          (click)="setTab('plan')"
-          role="tab"
-        >
-          Diagnóstico y plan
-        </button>
+  @if (cargandoPaciente()) {
+    <div class="chc-loading">
+      <div class="chc-loading-inner">
+        <sesa-skeleton variant="circle" width="56px" height="56px" />
+        <div style="flex:1">
+          <sesa-skeleton variant="text" width="200px" height="18px" />
+          <sesa-skeleton variant="text" width="140px" height="14px" />
+        </div>
       </div>
+    </div>
+  } @else if (paciente()) {
 
-      <!-- Contenido por pestaña -->
-      @if (activeTab === 'paciente') {
-        <sesa-card title="Datos del Paciente">
-          <div class="sesa-form-grid">
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="Nombre Completo">
-                <input type="text" [value]="paciente.nombres + ' ' + (paciente.apellidos || '')" readonly />
-              </sesa-form-field>
-              <sesa-form-field label="Tipo de Documento">
-                <input type="text" [value]="paciente.tipoDocumento || 'CC'" readonly />
-              </sesa-form-field>
+    <!-- ═══════════════════ STEPPER ═══════════════════ -->
+    <div class="chc-stepper">
+      <div class="chc-progress-bar">
+        <div class="chc-progress-fill" [style.width.%]="stepProgress()"></div>
+      </div>
+      <div class="chc-steps">
+        @for (s of steps; track s.id) {
+          <button type="button"
+            class="chc-step"
+            [class.chc-step--active]="currentStep() === s.id"
+            [class.chc-step--done]="isStepDone(s.id)"
+            (click)="goStep(s.id)">
+            <div class="chc-step-circle">
+              @if (isStepDone(s.id)) {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              } @else {
+                <span>{{ s.id }}</span>
+              }
             </div>
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="Número de Documento">
-                <input type="text" [value]="paciente.documento" readonly />
-              </sesa-form-field>
-              <sesa-form-field label="Edad">
-                <input type="text" [value]="paciente.fechaNacimiento ? calculateAge(paciente.fechaNacimiento) + ' años' : '—'" readonly />
-              </sesa-form-field>
+            <div class="chc-step-labels">
+              <span class="chc-step-label">{{ s.label }}</span>
+              <span class="chc-step-desc">{{ s.desc }}</span>
             </div>
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="Sexo">
-                <input type="text" [value]="paciente.sexo || '—'" readonly />
-              </sesa-form-field>
-              <sesa-form-field label="Fecha de Nacimiento">
-                <input type="text" [value]="paciente.fechaNacimiento || '—'" readonly />
-              </sesa-form-field>
-            </div>
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="Dirección">
-                <input type="text" [value]="paciente.direccion || '—'" readonly />
-              </sesa-form-field>
-              <sesa-form-field label="Teléfono">
-                <input type="text" [value]="paciente.telefono || '—'" readonly />
-              </sesa-form-field>
-            </div>
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="EPS / ARL">
-                <input type="text" [value]="paciente.epsNombre || 'Particular'" readonly />
-              </sesa-form-field>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CONTENIDO DE PASOS ═══════════════════ -->
+    <div class="chc-content">
+
+      <!-- ─── PASO 1: PACIENTE ─── -->
+      @if (currentStep() === 1) {
+        <div class="chc-step-content" data-step="1">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">👤</span>
+            <div>
+              <h2 class="chc-step-title">Datos del paciente</h2>
+              <p class="chc-step-caption">Información de identificación registrada en el sistema</p>
             </div>
           </div>
-        </sesa-card>
-      }
 
-      @if (activeTab === 'motivo') {
-        <sesa-card title="Motivo y Enfermedad Actual">
-          <sesa-form-field label="Razón de la consulta *">
-            <textarea
-              rows="3"
-              placeholder="Describa brevemente el motivo por el que el paciente acude al servicio"
-              [(ngModel)]="motivoConsulta"
-              [disabled]="guardando"
-            ></textarea>
-          </sesa-form-field>
-          <div class="sesa-form-grid">
-            <sesa-form-field label="Descripción de la enfermedad actual *">
-              <textarea
-                rows="4"
-                placeholder="Descripción detallada del problema"
-                [(ngModel)]="enfermedad"
-                [disabled]="guardando"
-              ></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Inicio de síntomas">
-              <textarea rows="2" placeholder="¿Cuándo comenzó?" [(ngModel)]="versionEnfermedad" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Síntomas asociados">
-              <textarea rows="2" placeholder="Otros síntomas relacionados" [(ngModel)]="sintomasAsociados" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <div class="sesa-form-col-2">
-              <sesa-form-field label="Factores que mejoran">
-                <textarea rows="2" placeholder="Ej: descanso, medicamentos" [(ngModel)]="factoresMejoran" [disabled]="guardando"></textarea>
-              </sesa-form-field>
-              <sesa-form-field label="Factores que empeoran">
-                <textarea rows="2" placeholder="Ej: actividad física" [(ngModel)]="factoresEmpeoran" [disabled]="guardando"></textarea>
-              </sesa-form-field>
+          <!-- Tarjeta visual del paciente -->
+          <div class="chc-patient-card">
+            <div class="chc-pc-avatar">
+              {{ (paciente()!.nombres[0] + (paciente()!.apellidos?.[0] ?? '')).toUpperCase() }}
+            </div>
+            <div class="chc-pc-info">
+              <h3 class="chc-pc-name">{{ paciente()!.nombres }} {{ paciente()!.apellidos ?? '' }}</h3>
+              <div class="chc-pc-meta">
+                <span class="chc-pc-chip chc-pc-chip--doc">
+                  🪪 {{ paciente()!.tipoDocumento ?? 'CC' }} {{ paciente()!.documento }}
+                </span>
+                @if (paciente()!.fechaNacimiento) {
+                  <span class="chc-pc-chip">🎂 {{ calculateAge(paciente()!.fechaNacimiento!) }} años</span>
+                }
+                @if (paciente()!.sexo) {
+                  <span class="chc-pc-chip">⚧ {{ paciente()!.sexo }}</span>
+                }
+                @if (paciente()!.grupoSanguineo) {
+                  <span class="chc-pc-chip chc-pc-chip--blood">🩸 {{ paciente()!.grupoSanguineo }}</span>
+                }
+                @if (paciente()!.epsNombre) {
+                  <span class="chc-pc-chip chc-pc-chip--eps">🏥 {{ paciente()!.epsNombre }}</span>
+                }
+              </div>
             </div>
           </div>
-        </sesa-card>
+
+          <!-- Grid de datos readonly -->
+          <div class="chc-readonly-grid">
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Nombre completo</span>
+              <span class="chc-ro-value">{{ paciente()!.nombres }} {{ paciente()!.apellidos ?? '' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Documento</span>
+              <span class="chc-ro-value">{{ paciente()!.tipoDocumento ?? 'CC' }} {{ paciente()!.documento }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Fecha de nacimiento</span>
+              <span class="chc-ro-value">{{ paciente()!.fechaNacimiento ?? '—' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Edad</span>
+              <span class="chc-ro-value">{{ paciente()!.fechaNacimiento ? calculateAge(paciente()!.fechaNacimiento!) + ' años' : '—' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Sexo biológico</span>
+              <span class="chc-ro-value">{{ paciente()!.sexo ?? '—' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Grupo sanguíneo</span>
+              <span class="chc-ro-value chc-blood">{{ paciente()!.grupoSanguineo ?? 'No registrado' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Teléfono</span>
+              <span class="chc-ro-value">{{ paciente()!.telefono ?? '—' }}</span>
+            </div>
+            <div class="chc-ro-item">
+              <span class="chc-ro-label">Correo electrónico</span>
+              <span class="chc-ro-value">{{ paciente()!.email ?? '—' }}</span>
+            </div>
+            <div class="chc-ro-item chc-ro-item--full">
+              <span class="chc-ro-label">Dirección</span>
+              <span class="chc-ro-value">{{ paciente()!.direccion ?? '—' }}</span>
+            </div>
+            <div class="chc-ro-item chc-ro-item--full">
+              <span class="chc-ro-label">EPS / Aseguradora</span>
+              <span class="chc-ro-value">{{ paciente()!.epsNombre ?? 'Particular' }}</span>
+            </div>
+          </div>
+        </div>
       }
 
-      @if (activeTab === 'antecedentes') {
-        <sesa-card title="Antecedentes">
-          <div class="sesa-form-grid">
-            <sesa-form-field label="Antecedentes patológicos personales">
-              <textarea rows="2" placeholder="Enfermedades previas" [(ngModel)]="antecedentesPatologicos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes quirúrgicos">
-              <textarea rows="2" placeholder="Cirugías previas" [(ngModel)]="antecedentesQuirurgicos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes farmacológicos">
-              <textarea rows="2" placeholder="Medicamentos actuales o previos" [(ngModel)]="antecedentesFarmacologicos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes alérgicos">
-              <textarea rows="2" placeholder="Alergias" [(ngModel)]="antecedentesAlergicos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes traumáticos">
-              <textarea rows="2" placeholder="Traumatismos previos" [(ngModel)]="antecedentesTraumaticos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes ginecoobstétricos (si aplica)">
-              <textarea rows="2" placeholder="Embarazos, partos" [(ngModel)]="antecedentesGinecoobstetricos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Antecedentes familiares">
-              <textarea rows="2" placeholder="Enfermedades hereditarias" [(ngModel)]="antecedentesFamiliares" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <div class="sesa-form-grid sesa-checkboxes-row">
-              <label class="sesa-checkbox">
-                <input type="checkbox" [(ngModel)]="habitosTabaco" [disabled]="guardando" />
-                <span>Hábito de tabaco</span>
+      <!-- ─── PASO 2: MOTIVO Y ENFERMEDAD ─── -->
+      @if (currentStep() === 2) {
+        <div class="chc-step-content" data-step="2">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">📋</span>
+            <div>
+              <h2 class="chc-step-title">Motivo y Enfermedad Actual</h2>
+              <p class="chc-step-caption">Describe el motivo principal de consulta y la cronología de la enfermedad</p>
+            </div>
+          </div>
+
+          <!-- Motivo principal — prominente -->
+          <div class="chc-motivo-principal">
+            <label class="chc-label chc-label--required">Motivo principal de consulta
+              <span class="chc-req-badge">Requerido</span>
+            </label>
+            <textarea class="chc-textarea chc-textarea--large" rows="3"
+              placeholder="Describa en palabras del paciente o del médico el motivo principal de la consulta..."
+              [(ngModel)]="motivoConsulta" [disabled]="guardando()"
+              maxlength="500">
+            </textarea>
+            <div class="chc-char-count">{{ motivoConsulta.length }}/500</div>
+          </div>
+
+          <div class="chc-divider">
+            <span>Enfermedad actual — Cronología</span>
+          </div>
+
+          <div class="chc-form-grid chc-form-grid--2">
+            <div class="chc-field chc-field--full">
+              <label class="chc-label chc-label--required">Descripción de la enfermedad actual
+                <span class="chc-req-badge">Requerido</span>
               </label>
-              <label class="sesa-checkbox">
-                <input type="checkbox" [(ngModel)]="habitosAlcohol" [disabled]="guardando" />
-                <span>Consumo de alcohol</span>
+              <textarea class="chc-textarea" rows="4"
+                placeholder="Describa detalladamente la evolución, características, irradiación, intensidad (OPQRST)..."
+                [(ngModel)]="enfermedad" [disabled]="guardando()">
+              </textarea>
+            </div>
+
+            <div class="chc-field">
+              <label class="chc-label">Inicio y cronología de los síntomas</label>
+              <textarea class="chc-textarea" rows="3"
+                placeholder="¿Cuándo inició? ¿Forma de inicio (brusca/gradual)? ¿Evolución?"
+                [(ngModel)]="versionEnfermedad" [disabled]="guardando()">
+              </textarea>
+            </div>
+
+            <div class="chc-field">
+              <label class="chc-label">Síntomas asociados</label>
+              <textarea class="chc-textarea" rows="3"
+                placeholder="Otros síntomas que acompañan el cuadro principal..."
+                [(ngModel)]="sintomasAsociados" [disabled]="guardando()">
+              </textarea>
+            </div>
+
+            <div class="chc-field">
+              <label class="chc-label">
+                <span class="chc-label-icon chc-label-icon--green">↑</span>
+                Factores que mejoran el síntoma
               </label>
-              <label class="sesa-checkbox">
-                <input type="checkbox" [(ngModel)]="habitosSustancias" [disabled]="guardando" />
-                <span>Consumo de sustancias</span>
+              <textarea class="chc-textarea" rows="2"
+                placeholder="Ej: reposo, analgésicos, calor local..."
+                [(ngModel)]="factoresMejoran" [disabled]="guardando()">
+              </textarea>
+            </div>
+
+            <div class="chc-field">
+              <label class="chc-label">
+                <span class="chc-label-icon chc-label-icon--red">↓</span>
+                Factores que empeoran el síntoma
+              </label>
+              <textarea class="chc-textarea" rows="2"
+                placeholder="Ej: actividad física, frío, movimiento..."
+                [(ngModel)]="factoresEmpeoran" [disabled]="guardando()">
+              </textarea>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── PASO 3: ANTECEDENTES ─── -->
+      @if (currentStep() === 3) {
+        <div class="chc-step-content" data-step="3">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">🗂️</span>
+            <div>
+              <h2 class="chc-step-title">Antecedentes Clínicos</h2>
+              <p class="chc-step-caption">Historia patológica, quirúrgica y farmacológica previa</p>
+            </div>
+          </div>
+
+          <!-- Sección antecedentes personales -->
+          <div class="chc-ante-section">
+            <h3 class="chc-ante-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+              Antecedentes personales
+            </h3>
+            <div class="chc-form-grid chc-form-grid--2">
+              <div class="chc-field">
+                <label class="chc-label">Antecedentes patológicos personales</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="HTA, DM2, hipotiroidismo, enfermedades crónicas..."
+                  [(ngModel)]="antecedentesPatologicos" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Antecedentes quirúrgicos</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Apendicectomía (2015), colecistectomía (2020)..."
+                  [(ngModel)]="antecedentesQuirurgicos" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Antecedentes farmacológicos</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Medicamentos de uso actual o crónico, dosis..."
+                  [(ngModel)]="antecedentesFarmacologicos" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">⚠️ Antecedentes alérgicos</label>
+                <textarea class="chc-textarea chc-textarea--warning" rows="2"
+                  placeholder="Penicilina, AINES, alimentos, látex... (NIEGA ALERGIAS si no hay)"
+                  [(ngModel)]="antecedentesAlergicos" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Antecedentes traumáticos</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Fracturas, TCE, quemaduras, accidentes..."
+                  [(ngModel)]="antecedentesTraumaticos" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Antecedentes ginecoobstétricos</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="G_ P_ C_ A_ / FUM: / Menarquia: / MAC: / FUR:"
+                  [(ngModel)]="antecedentesGinecoobstetricos" [disabled]="guardando()">
+                </textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Antecedentes familiares -->
+          <div class="chc-ante-section">
+            <h3 class="chc-ante-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+              Antecedentes familiares
+            </h3>
+            <div class="chc-field">
+              <label class="chc-label">Enfermedades hereditarias o de riesgo familiar</label>
+              <textarea class="chc-textarea" rows="2"
+                placeholder="Padre: HTA, DM2 / Madre: cáncer de mama / Abuelo: cardiopatía..."
+                [(ngModel)]="antecedentesFamiliares" [disabled]="guardando()">
+              </textarea>
+            </div>
+          </div>
+
+          <!-- Hábitos y factores de riesgo -->
+          <div class="chc-ante-section">
+            <h3 class="chc-ante-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"/></svg>
+              Hábitos y factores de riesgo
+            </h3>
+            <div class="chc-habitos-grid">
+              <label class="chc-habito-card" [class.chc-habito-card--active]="habitosTabaco">
+                <input type="checkbox" [(ngModel)]="habitosTabaco" [disabled]="guardando()" />
+                <div class="chc-habito-icon">🚬</div>
+                <span class="chc-habito-label">Tabaquismo</span>
+              </label>
+              <label class="chc-habito-card" [class.chc-habito-card--active]="habitosAlcohol">
+                <input type="checkbox" [(ngModel)]="habitosAlcohol" [disabled]="guardando()" />
+                <div class="chc-habito-icon">🍺</div>
+                <span class="chc-habito-label">Alcoholismo</span>
+              </label>
+              <label class="chc-habito-card" [class.chc-habito-card--active]="habitosSustancias">
+                <input type="checkbox" [(ngModel)]="habitosSustancias" [disabled]="guardando()" />
+                <div class="chc-habito-icon">⚗️</div>
+                <span class="chc-habito-label">Sustancias psicoactivas</span>
               </label>
             </div>
-            <sesa-form-field label="Detalles de hábitos">
-              <textarea rows="2" placeholder="Frecuencia y cantidad si aplica" [(ngModel)]="habitosDetalles" [disabled]="guardando"></textarea>
-            </sesa-form-field>
+            @if (habitosTabaco || habitosAlcohol || habitosSustancias) {
+              <div class="chc-field" style="margin-top:.75rem">
+                <label class="chc-label">Descripción — frecuencia, cantidad, tiempo de uso</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Tabaco: 10 cigarrillos/día × 15 años. Alcohol: fin de semana, 2-3 cervezas..."
+                  [(ngModel)]="habitosDetalles" [disabled]="guardando()">
+                </textarea>
+              </div>
+            }
           </div>
-        </sesa-card>
+        </div>
       }
 
-      @if (activeTab === 'revision') {
-        <sesa-card title="Revisión por Sistemas">
-          <div class="sesa-form-grid">
-            <sesa-form-field label="Sistema Respiratorio">
-              <textarea rows="2" placeholder="Tos, disnea, etc." [(ngModel)]="sistemaRespiratoria" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Cardiovascular">
-              <textarea rows="2" placeholder="Palpitaciones, dolor torácico" [(ngModel)]="sistemaCardiovascular" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Digestivo">
-              <textarea rows="2" placeholder="Náuseas, vómito, diarrea" [(ngModel)]="sistemaDigestivo" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Urinario">
-              <textarea rows="2" placeholder="Disuria, poliuria" [(ngModel)]="sistemaUrinario" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Nervioso">
-              <textarea rows="2" placeholder="Cefalea, vértigo" [(ngModel)]="sistemaNervioso" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Endocrino">
-              <textarea rows="2" placeholder="Cambios de peso" [(ngModel)]="sistemaEndocrino" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Musculoesquelético">
-              <textarea rows="2" placeholder="Dolor articular" [(ngModel)]="sistemaMusculos" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Sistema Psiquiátrico">
-              <textarea rows="2" placeholder="Depresión, ansiedad" [(ngModel)]="sistemaPsiquiatrico" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-          </div>
-        </sesa-card>
-      }
-
-      @if (activeTab === 'examen') {
-        <sesa-card title="Examen Físico">
-          <div class="sesa-form-grid">
-            <h3>Signos Vitales</h3>
-            <div class="sesa-form-col-4">
-              <sesa-form-field label="Presión Arterial (mmHg)">
-                <input type="text" placeholder="Ej: 120/80" [(ngModel)]="presionArterial" [disabled]="guardando" />
-              </sesa-form-field>
-              <sesa-form-field label="Frecuencia Cardíaca (bpm)">
-                <input type="number" placeholder="Ej: 80" [(ngModel)]="frecuenciaCardiaca" [disabled]="guardando" />
-              </sesa-form-field>
-              <sesa-form-field label="Frecuencia Respiratoria (rpm)">
-                <input type="number" placeholder="Ej: 16" [(ngModel)]="frecuenciaRespiratoria" [disabled]="guardando" />
-              </sesa-form-field>
-              <sesa-form-field label="Temperatura (°C)">
-                <input type="number" step="0.1" placeholder="Ej: 37.0" [(ngModel)]="temperatura" [disabled]="guardando" />
-              </sesa-form-field>
+      <!-- ─── PASO 4: REVISIÓN POR SISTEMAS ─── -->
+      @if (currentStep() === 4) {
+        <div class="chc-step-content" data-step="4">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">🔍</span>
+            <div>
+              <h2 class="chc-step-title">Revisión por Sistemas</h2>
+              <p class="chc-step-caption">Interrogatorio dirigido por sistema para identificar síntomas no referidos</p>
             </div>
-            <h3>Antropometría</h3>
-            <div class="sesa-form-col-4">
-              <sesa-form-field label="Peso (kg)">
-                <input type="number" step="0.1" placeholder="Ej: 70" [(ngModel)]="peso" (change)="calcularIMC()" [disabled]="guardando" />
-              </sesa-form-field>
-              <sesa-form-field label="Talla (cm)">
-                <input type="number" placeholder="Ej: 175" [(ngModel)]="talla" (change)="calcularIMC()" [disabled]="guardando" />
-              </sesa-form-field>
-              <sesa-form-field label="IMC">
-                <input type="text" [value]="imc || '—'" readonly />
-              </sesa-form-field>
-              <sesa-form-field label="Grupo Sanguíneo">
-                <input type="text" [value]="paciente.grupoSanguineo || '—'" readonly />
-              </sesa-form-field>
-            </div>
-            <sesa-form-field label="Evaluación General">
-              <textarea rows="2" placeholder="Aspecto general del paciente" [(ngModel)]="evaluacionGeneral" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Hallazgos Relevantes">
-              <textarea rows="3" placeholder="Hallazgos del examen físico" [(ngModel)]="hallazosMuerte" [disabled]="guardando"></textarea>
-            </sesa-form-field>
           </div>
-        </sesa-card>
+
+          <div class="chc-sistemas-grid">
+            @for (sistema of [
+              { key:'sistemaRespiratoria',   icon:'🫁', label:'Respiratorio',        hint:'Tos, disnea, sibilancias, hemoptisis, rinorrea...' },
+              { key:'sistemaCardiovascular', icon:'❤️', label:'Cardiovascular',      hint:'Palpitaciones, dolor torácico, ortopnea, edemas...' },
+              { key:'sistemaDigestivo',      icon:'🫀', label:'Gastrointestinal',     hint:'Náuseas, vómito, diarrea, estreñimiento, rectorragia...' },
+              { key:'sistemaUrinario',       icon:'💧', label:'Genitourinario',       hint:'Disuria, poliuria, hematuria, incontinencia...' },
+              { key:'sistemaNervioso',       icon:'🧠', label:'Neurológico',          hint:'Cefalea, vértigo, convulsiones, paresias, parestesias...' },
+              { key:'sistemaEndocrino',      icon:'⚡', label:'Endocrino/Metabólico', hint:'Cambios de peso, polidipsia, intolerancia al calor/frío...' },
+              { key:'sistemaMusculos',       icon:'🦴', label:'Musculoesquelético',   hint:'Artralgias, mialgias, rigidez, limitación funcional...' },
+              { key:'sistemaPsiquiatrico',   icon:'💆', label:'Psiquiátrico',         hint:'Depresión, ansiedad, insomnio, cambios de humor...' },
+              { key:'sistemaDermatologico',  icon:'🌿', label:'Dermatológico',        hint:'Lesiones en piel, prurito, cambios en mucosas...' },
+              { key:'sistemaHematologico',   icon:'🧬', label:'Hematológico',         hint:'Palidez, equimosis espontáneas, adenopatías...' }
+            ]; track sistema.key) {
+              <div class="chc-sistema-card">
+                <div class="chc-sistema-header">
+                  <span class="chc-sistema-icon">{{ sistema.icon }}</span>
+                  <span class="chc-sistema-label">{{ sistema.label }}</span>
+                </div>
+                <textarea class="chc-textarea chc-textarea--sistema"
+                  rows="2"
+                  [placeholder]="sistema.hint"
+                  [disabled]="guardando()"
+                  [ngModel]="getSistema(sistema.key)"
+                  (ngModelChange)="setSistema(sistema.key, $event)">
+                </textarea>
+              </div>
+            }
+          </div>
+
+          <div class="chc-systems-tip">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+            Deje en blanco los sistemas que el paciente niega tener síntomas. Solo documente los positivos y los negativos relevantes.
+          </div>
+        </div>
       }
 
-      @if (activeTab === 'plan') {
-        <sesa-card title="Impresión Diagnóstica">
-          <div class="sesa-form-grid">
-            <sesa-form-field label="Diagnóstico presuntivo o definitivo">
-              <textarea rows="3" placeholder="Diagnóstico principal" [(ngModel)]="diagnostico" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Código CIE-10 (opcional)">
-              <input type="text" placeholder="Ej: E10.9" [(ngModel)]="codigoCIE10" [disabled]="guardando" />
-            </sesa-form-field>
+      <!-- ─── PASO 5: EXAMEN FÍSICO ─── -->
+      @if (currentStep() === 5) {
+        <div class="chc-step-content" data-step="5">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">🩺</span>
+            <div>
+              <h2 class="chc-step-title">Examen Físico</h2>
+              <p class="chc-step-caption">Signos vitales, antropometría y hallazgos por sistema</p>
+            </div>
           </div>
-        </sesa-card>
-        <sesa-card title="Plan de Manejo">
-          <div class="sesa-form-grid">
-            <sesa-form-field label="Tratamiento farmacológico">
-              <textarea rows="2" placeholder="Medicamentos, dosis" [(ngModel)]="tratamientoFarmacologico" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Órdenes médicas">
-              <textarea rows="2" placeholder="Instrucciones médicas" [(ngModel)]="ordenesMedicas" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Exámenes solicitados">
-              <textarea rows="2" placeholder="Laboratorio, imágenes" [(ngModel)]="examenesSolicitados" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Incapacidad (si aplica)">
-              <textarea rows="2" placeholder="Días de incapacidad" [(ngModel)]="incapacidad" [disabled]="guardando"></textarea>
-            </sesa-form-field>
-            <sesa-form-field label="Recomendaciones">
-              <textarea rows="2" placeholder="Recomendaciones al paciente" [(ngModel)]="recomendaciones" [disabled]="guardando"></textarea>
-            </sesa-form-field>
+
+          <!-- Signos Vitales — tarjetas visuales -->
+          <div class="chc-sv-section">
+            <h3 class="chc-section-subtitle">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+              Signos Vitales
+            </h3>
+            <div class="chc-sv-grid">
+              <div class="chc-sv-card">
+                <div class="chc-sv-card-icon">🩸</div>
+                <label class="chc-sv-label">T / A (mmHg)</label>
+                <input type="text" class="chc-sv-input" [(ngModel)]="presionArterial"
+                  placeholder="120/80" [disabled]="guardando()" />
+              </div>
+              <div class="chc-sv-card">
+                <div class="chc-sv-card-icon">❤️</div>
+                <label class="chc-sv-label">FC (lpm)</label>
+                <input type="number" class="chc-sv-input" [(ngModel)]="frecuenciaCardiaca"
+                  placeholder="72" [disabled]="guardando()" />
+              </div>
+              <div class="chc-sv-card">
+                <div class="chc-sv-card-icon">🫁</div>
+                <label class="chc-sv-label">FR (rpm)</label>
+                <input type="number" class="chc-sv-input" [(ngModel)]="frecuenciaRespiratoria"
+                  placeholder="18" [disabled]="guardando()" />
+              </div>
+              <div class="chc-sv-card">
+                <div class="chc-sv-card-icon">🌡️</div>
+                <label class="chc-sv-label">Temp (°C)</label>
+                <input type="number" class="chc-sv-input" [(ngModel)]="temperatura"
+                  placeholder="36.5" step="0.1" [disabled]="guardando()" />
+              </div>
+              <div class="chc-sv-card">
+                <div class="chc-sv-card-icon">💨</div>
+                <label class="chc-sv-label">SpO₂ (%)</label>
+                <input type="number" class="chc-sv-input" [(ngModel)]="saturacionO2"
+                  placeholder="98" min="0" max="100" [disabled]="guardando()" />
+              </div>
+            </div>
           </div>
-        </sesa-card>
+
+          <!-- Antropometría -->
+          <div class="chc-sv-section">
+            <h3 class="chc-section-subtitle">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+              Antropometría
+            </h3>
+            <div class="chc-antro-grid">
+              <div class="chc-antro-item">
+                <label class="chc-label">⚖️ Peso (kg)</label>
+                <input type="number" class="chc-input" [(ngModel)]="peso"
+                  (ngModelChange)="calcularIMC()" placeholder="70" step="0.1" [disabled]="guardando()" />
+              </div>
+              <div class="chc-antro-item">
+                <label class="chc-label">📏 Talla (cm)</label>
+                <input type="number" class="chc-input" [(ngModel)]="talla"
+                  (ngModelChange)="calcularIMC()" placeholder="170" [disabled]="guardando()" />
+              </div>
+              <div class="chc-antro-item">
+                <label class="chc-label">📐 Perímetro cintura (cm)</label>
+                <input type="number" class="chc-input" [(ngModel)]="perimetroCintura"
+                  placeholder="88" [disabled]="guardando()" />
+              </div>
+              <div class="chc-antro-item">
+                <label class="chc-label">🔢 IMC (auto-calculado)</label>
+                <div class="chc-imc-wrap">
+                  <input type="text" class="chc-input chc-input--readonly" [value]="imc || '—'" readonly />
+                  @if (imc) {
+                    <span class="chc-imc-badge" [style.background]="imcCategoria.color + '22'" [style.color]="imcCategoria.color">
+                      {{ imcCategoria.label }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Evaluación general -->
+          <div class="chc-field" style="margin-bottom:.875rem">
+            <label class="chc-label">
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;color:var(--sesa-secondary)" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+              Evaluación general del paciente
+            </label>
+            <textarea class="chc-textarea" rows="2"
+              placeholder="Aspecto general, estado de conciencia, orientación, hidratación, mucosas..."
+              [(ngModel)]="evaluacionGeneral" [disabled]="guardando()">
+            </textarea>
+          </div>
+
+          <!-- Hallazgos por sistema -->
+          <div class="chc-sv-section">
+            <h3 class="chc-section-subtitle">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg>
+              Hallazgos del examen físico por sistema
+            </h3>
+            <div class="chc-form-grid chc-form-grid--2">
+              <div class="chc-field">
+                <label class="chc-label">❤️ Cardiovascular</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Ruidos cardíacos, soplos, pulsos periféricos..."
+                  [(ngModel)]="hallazgosCardiovascular" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">🫁 Pulmones / Tórax</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Murmullo vesicular, sibilancias, crepitantes..."
+                  [(ngModel)]="hallazgosPulmones" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">🫀 Abdomen</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Ruidos intestinales, masas palpables, hepatomegalia, dolor a la palpación..."
+                  [(ngModel)]="hallazgosAbdomen" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">🧠 Neurológico</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Fuerza muscular, reflejos osteotendinosos, sensibilidad..."
+                  [(ngModel)]="hallazgosNeurologico" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field chc-field--full">
+                <label class="chc-label">🌿 Piel y tegumentos</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Coloración, lesiones, cicatrices, turgor, humedad..."
+                  [(ngModel)]="hallazgosPiel" [disabled]="guardando()">
+                </textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── PASO 6: DIAGNÓSTICO Y PLAN ─── -->
+      @if (currentStep() === 6) {
+        <div class="chc-step-content" data-step="6">
+          <div class="chc-step-head">
+            <span class="chc-step-head-icon">📊</span>
+            <div>
+              <h2 class="chc-step-title">Diagnóstico y Plan de Manejo</h2>
+              <p class="chc-step-caption">Impresión diagnóstica, conducta terapéutica y seguimiento</p>
+            </div>
+          </div>
+
+          <!-- Diagnóstico -->
+          <div class="chc-diag-section">
+            <h3 class="chc-section-subtitle">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"/></svg>
+              Impresión diagnóstica
+            </h3>
+            <div class="chc-form-grid chc-form-grid--2">
+              <div class="chc-field">
+                <label class="chc-label">Diagnóstico principal</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Diagnóstico presuntivo o definitivo principal..."
+                  [(ngModel)]="diagnostico" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Diagnósticos secundarios / diferenciales</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Otros diagnósticos o diagnósticos diferenciales..."
+                  [(ngModel)]="diagnosticoSecundario" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">Código CIE-10 principal</label>
+                <div class="chc-cie-wrap">
+                  <input type="text" class="chc-input" [(ngModel)]="codigoCIE10"
+                    placeholder="Ej: J06.9, I10, E11..." [disabled]="guardando()"
+                    style="text-transform:uppercase" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan de manejo -->
+          <div class="chc-diag-section">
+            <h3 class="chc-section-subtitle">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg>
+              Plan de manejo
+            </h3>
+            <div class="chc-form-grid chc-form-grid--2">
+              <div class="chc-field">
+                <label class="chc-label">💊 Tratamiento farmacológico</label>
+                <textarea class="chc-textarea" rows="3"
+                  placeholder="Medicamento, dosis, vía, frecuencia, duración&#10;Ej: Ibuprofeno 400 mg VO c/8h × 5 días"
+                  [(ngModel)]="tratamientoFarmacologico" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">🏃 Plan no farmacológico / órdenes médicas</label>
+                <textarea class="chc-textarea" rows="3"
+                  placeholder="Dieta, ejercicio, fisioterapia, órdenes especiales..."
+                  [(ngModel)]="ordenesMedicas" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">🧪 Exámenes paraclínicos solicitados</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Hemograma, química sanguínea, Rx tórax, ECG..."
+                  [(ngModel)]="examenesSolicitados" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">📅 Próxima cita / control</label>
+                <input type="text" class="chc-input" [(ngModel)]="proximaCita"
+                  placeholder="En 8 días, en 1 mes, control en urgencias si empeora..." [disabled]="guardando()" />
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">📄 Incapacidad médica (si aplica)</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Número de días, fecha inicio, actividad laboral restringida..."
+                  [(ngModel)]="incapacidad" [disabled]="guardando()">
+                </textarea>
+              </div>
+              <div class="chc-field">
+                <label class="chc-label">💬 Recomendaciones al paciente</label>
+                <textarea class="chc-textarea" rows="2"
+                  placeholder="Señales de alarma, cuidados en casa, indicaciones de dieta..."
+                  [(ngModel)]="recomendaciones" [disabled]="guardando()">
+                </textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerta de éxito -->
+          @if (exito()) {
+            <div class="chc-success-banner">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+              ¡Historia clínica creada exitosamente! Redirigiendo al expediente del paciente...
+            </div>
+          }
+
+          <!-- Error -->
+          @if (errorGuardado()) {
+            <div class="chc-error-banner">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/></svg>
+              {{ errorGuardado() }}
+            </div>
+          }
+        </div>
       }
     </div>
 
-    <!-- Acciones fijas al final -->
-    <sesa-card class="sesa-actions-card">
-      @if (errorGuardado) {
-        <p class="sesa-error">{{ errorGuardado }}</p>
-      }
-      <div class="sesa-form-actions">
-        <button
-          type="button"
-          class="sesa-btn sesa-btn-primary"
-          (click)="guardarHistoria()"
-          [disabled]="guardando || !paciente"
-        >
-          {{ guardando ? 'Guardando...' : '✓ Crear Historia Clínica' }}
-        </button>
-        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancelar()" [disabled]="guardando">
+    <!-- ═══════════════════ BARRA INFERIOR FIJA ═══════════════════ -->
+    <div class="chc-footer">
+      <div class="chc-footer-progress">
+        <span class="chc-footer-step">Paso {{ currentStep() }} de {{ steps.length }}</span>
+        <div class="chc-footer-dots">
+          @for (s of steps; track s.id) {
+            <div class="chc-footer-dot"
+              [class.chc-footer-dot--done]="currentStep() > s.id"
+              [class.chc-footer-dot--active]="currentStep() === s.id">
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="chc-footer-actions">
+        <button type="button" class="chc-btn chc-btn--ghost" (click)="cancelar()" [disabled]="guardando()">
           Cancelar
         </button>
+
+        @if (currentStep() > 1) {
+          <button type="button" class="chc-btn chc-btn--secondary" (click)="prev()" [disabled]="guardando()">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+            Anterior
+          </button>
+        }
+
+        @if (currentStep() < 6) {
+          <button type="button" class="chc-btn chc-btn--primary" (click)="next()" [disabled]="guardando()">
+            Siguiente
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
+          </button>
+        } @else {
+          <button type="button" class="chc-btn chc-btn--primary chc-btn--save"
+            (click)="guardarHistoria()" [disabled]="guardando() || !paciente() || exito()">
+            @if (guardando()) {
+              <span class="chc-btn-spinner"></span> Guardando...
+            } @else {
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Crear Historia Clínica
+            }
+          </button>
+        }
       </div>
-    </sesa-card>
+    </div>
+
   }
 </section>

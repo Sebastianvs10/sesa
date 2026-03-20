@@ -1,0 +1,84 @@
+<div class="ebs-alertas">
+  <header class="ebs-alertas__header">
+    <h1 class="ebs-alertas__title">Alertas</h1>
+    <p class="ebs-alertas__sub">Alertas epidemiológicas y geográficas (carga manual).</p>
+    <div class="ebs-alertas__toolbar">
+      <select class="ebs-alertas__filter" [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVA">Activas</option>
+        <option value="RESUELTA">Resueltas</option>
+      </select>
+      <select class="ebs-alertas__filter" [value]="filterType()" (change)="filterType.set($any($event.target).value)">
+        @for (opt of ALERT_TYPE_OPTIONS; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+      <button type="button" class="ebs-alertas__btn ebs-alertas__btn--primary" (click)="openForm()">Nueva alerta</button>
+    </div>
+  </header>
+
+  @if (showForm()) {
+    <sesa-card class="ebs-alertas__form-card">
+      <h3 class="ebs-alertas__form-title">Registrar alerta</h3>
+      <div class="ebs-alertas__form">
+        <div class="ebs-alertas__row">
+          <label>Tipo</label>
+          <select [(ngModel)]="form.type" name="type">
+            <option value="EPIDEMIOLOGICA">Epidemiológica</option>
+            <option value="GEOGRAFICA">Geográfica</option>
+            <option value="VIGILANCIA">Vigilancia</option>
+          </select>
+        </div>
+        <div class="ebs-alertas__row">
+          <label>Título <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="form.title" name="title" placeholder="Título de la alerta" />
+        </div>
+        <div class="ebs-alertas__row">
+          <label>Descripción</label>
+          <textarea [(ngModel)]="form.description" name="description" rows="3" placeholder="Detalle opcional"></textarea>
+        </div>
+        <div class="ebs-alertas__row">
+          <label>Fecha</label>
+          <input type="date" [(ngModel)]="form.alertDate" name="alertDate" />
+        </div>
+        <div class="ebs-alertas__form-actions">
+          <button type="button" class="ebs-alertas__btn" (click)="closeForm()">Cancelar</button>
+          <button type="button" class="ebs-alertas__btn ebs-alertas__btn--primary" (click)="submitAlert()" [disabled]="!form.title.trim() || saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </sesa-card>
+  }
+
+  @if (loading()) {
+    <sesa-card>
+      <sesa-skeleton preset="form" />
+    </sesa-card>
+  } @else if (filteredAlerts().length === 0) {
+    <sesa-card>
+      <div class="ebs-alertas__empty">
+        {{ alerts().length === 0 ? 'Aún no hay alertas registradas. Usa "Nueva alerta" para crear una.' : 'Ninguna alerta coincide con los filtros. Prueba con otros criterios.' }}
+      </div>
+    </sesa-card>
+  } @else {
+    <div class="ebs-alertas__list">
+      @for (a of filteredAlerts(); track a.id!) {
+        <sesa-card class="ebs-alertas__card">
+          <div class="ebs-alertas__card-head">
+            <span class="ebs-alertas__badge" [attr.data-status]="(a.status || '').toLowerCase()">{{ a.status }}</span>
+            <span class="ebs-alertas__type">{{ a.type }}</span>
+          </div>
+          <h3 class="ebs-alertas__card-title">{{ a.title }}</h3>
+          @if (a.description) {
+            <p class="ebs-alertas__card-desc">{{ a.description }}</p>
+          }
+          <p class="ebs-alertas__card-date">{{ a.alertDate }}</p>
+          @if (a.status === 'ACTIVA') {
+            <button type="button" class="ebs-alertas__btn ebs-alertas__btn--small" (click)="markResolved(a.id!)">Marcar resuelta</button>
+          }
+        </sesa-card>
+      }
+    </div>
+  }
+</div>

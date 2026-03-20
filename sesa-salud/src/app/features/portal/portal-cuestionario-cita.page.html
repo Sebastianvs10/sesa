@@ -1,0 +1,59 @@
+<div class="pcuestionario">
+  <header class="pcuestionario__header">
+    <a routerLink="/portal/inicio" class="pcuestionario__back">← Volver al inicio</a>
+    <h1 class="pcuestionario__title">Cuestionario pre-consulta</h1>
+    <p class="pcuestionario__subtitle">Sus respuestas serán vistas por su médico antes de la cita.</p>
+  </header>
+
+  @if (enviado()) {
+    <div class="pcuestionario__gracias">
+      <p class="pcuestionario__gracias-msg">Gracias. Sus respuestas han sido enviadas y serán vistas por su médico en la consulta.</p>
+      <button type="button" class="sesa-btn sesa-btn-primary" (click)="volver()">Volver al inicio</button>
+    </div>
+  } @else {
+    <form class="pcuestionario__form" (ngSubmit)="enviar()">
+      @if (error()) {
+        <div class="pcuestionario__error">{{ error() }}</div>
+      }
+      <div class="pcuestionario__field">
+        <label class="pcuestionario__label">Motivo de consulta (en sus palabras)</label>
+        <textarea class="pcuestionario__input" rows="3" [(ngModel)]="motivoPalabras" name="motivoPalabras"
+          placeholder="¿Por qué viene a la consulta hoy?"></textarea>
+      </div>
+      <div class="pcuestionario__field">
+        <label class="pcuestionario__label">Dolor (escala 0-10)</label>
+        <select class="pcuestionario__input" [(ngModel)]="dolorEva" name="dolorEva">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (n of rangoEva; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+      <div class="pcuestionario__field">
+        <label class="pcuestionario__label">Ansiedad (escala 0-10)</label>
+        <select class="pcuestionario__input" [(ngModel)]="ansiedadEva" name="ansiedadEva">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (n of rangoEva; track n) {
+            <option [ngValue]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+      <div class="pcuestionario__field">
+        <label class="pcuestionario__label">Medicamentos que toma actualmente</label>
+        <textarea class="pcuestionario__input" rows="2" [(ngModel)]="medicamentosActuales" name="medicamentosActuales"
+          placeholder="Liste los medicamentos que está tomando"></textarea>
+      </div>
+      <div class="pcuestionario__field">
+        <label class="pcuestionario__label">Alergias conocidas</label>
+        <textarea class="pcuestionario__input" rows="2" [(ngModel)]="alergiasReferidas" name="alergiasReferidas"
+          placeholder="Medicamentos, alimentos u otras alergias"></textarea>
+      </div>
+      <div class="pcuestionario__actions">
+        <button type="submit" class="sesa-btn sesa-btn-primary" [disabled]="enviando()">
+          {{ enviando() ? 'Enviando…' : 'Enviar cuestionario' }}
+        </button>
+        <button type="button" class="sesa-btn sesa-btn-outline" (click)="volver()">Cancelar</button>
+      </div>
+    </form>
+  }
+</div>

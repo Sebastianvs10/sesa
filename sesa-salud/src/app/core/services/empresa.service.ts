@@ -25,7 +25,6 @@ export interface EmpresaDto {
   adminPrimerApellido?: string;
   adminSegundoApellido?: string;
   adminCelular?: string;
-  adminProveedorServicio?: string;
   usuarioMovilLimit?: number;
   usuarioWebLimit?: number;
   activo?: boolean;
@@ -41,7 +40,6 @@ export interface AdminUserRequest {
   primerApellido: string;
   segundoApellido?: string;
   telefonoCelular: string;
-  proveedorServicio?: string;
   correo: string;
   contraseña: string;
 }
@@ -124,11 +122,18 @@ export class EmpresaService {
     return this.http.get(`${this.apiUrl}/logo`, { responseType: 'blob' });
   }
 
-  /** Subir logo de la empresa del tenant actual. Solo ADMIN. */
-  uploadLogo(file: File): Observable<void> {
+  /** Subir logo de la empresa del tenant actual. Retorna el UUID y URL del logo guardado. */
+  uploadLogo(file: File): Observable<{ uuid: string; url: string }> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.request<void>('POST', `${this.apiUrl}/logo`, { body: form });
+    return this.http.post<{ uuid: string; url: string }>(`${this.apiUrl}/logo`, form);
+  }
+
+  /** Subir logo de una empresa específica por ID. Retorna el UUID y URL del logo guardado. */
+  uploadLogoById(empresaId: number, file: File): Observable<{ uuid: string; url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ uuid: string; url: string }>(`${this.apiUrl}/${empresaId}/logo`, form);
   }
 
   /** Obtener catálogo de módulos con submódulos. */

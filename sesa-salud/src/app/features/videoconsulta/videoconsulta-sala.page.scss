@@ -1,0 +1,375 @@
+/* Sala de Videoconsulta — WebRTC */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.vc-sala {
+  min-height: 100vh;
+  background: var(--sesa-bg);
+  display: flex;
+  flex-direction: column;
+  color: var(--sesa-text-primary);
+}
+
+.vc-sala__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--sesa-surface);
+  border-bottom: 1px solid var(--sesa-border);
+  flex-shrink: 0;
+}
+
+.vc-sala__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vc-sala__logo {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--sesa-primary);
+  letter-spacing: -0.5px;
+}
+
+.vc-sala__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.vc-sala__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--sesa-text-muted);
+
+  .vc-sala__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sesa-warning);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  &--ok .vc-sala__dot {
+    background: var(--sesa-success);
+    animation: none;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.vc-sala__btn-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--sesa-error);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+
+  &:hover { opacity: 0.9; }
+  &:active { transform: scale(0.98); }
+}
+
+.vc-sala__main {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 320px;
+}
+
+.vc-sala__remote {
+  position: absolute;
+  inset: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+}
+
+.vc-sala__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+
+  &--remote {
+    background: #0d1117;
+  }
+
+  &--local {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.vc-sala__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--sesa-text-muted);
+  background: var(--sesa-surface);
+
+  svg { opacity: 0.5; }
+  p { margin: 0; font-size: 14px; }
+}
+
+.vc-sala__local {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  height: 135px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid var(--sesa-surface);
+  box-shadow: var(--sesa-shadow-lg);
+  z-index: 2;
+  background: #000;
+}
+
+.vc-sala__local-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+
+.vc-sala__action {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover { background: rgba(255,255,255,0.35); }
+  &--off { background: var(--sesa-error); opacity: 0.9; }
+}
+
+.vc-sala__share {
+  padding: 16px 20px;
+  background: var(--sesa-surface);
+  border-top: 1px solid var(--sesa-border);
+}
+
+.vc-sala__share-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--sesa-text-secondary);
+}
+
+.vc-sala__share-row {
+  display: flex;
+  gap: 8px;
+}
+
+.vc-sala__share-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 13px;
+}
+
+.vc-sala__btn-copy {
+  padding: 10px 16px;
+  background: var(--sesa-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vc-sala__error {
+  padding: 12px 20px;
+  background: var(--sesa-error-bg);
+  color: var(--sesa-error);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Pantalla previa: ¿Desea unirse? (solo participante por enlace) */
+.vc-sala--prejoin {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.vc-sala__prejoin-card {
+  max-width: 400px;
+  width: 100%;
+  padding: 32px 24px;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: var(--sesa-shadow-lg);
+}
+
+.vc-sala__prejoin-icon {
+  color: var(--sesa-primary);
+  margin-bottom: 16px;
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+.vc-sala__prejoin-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.vc-sala__prejoin-text {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--sesa-text-secondary);
+}
+
+.vc-sala__prejoin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.vc-sala__prejoin-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s, transform 0.1s;
+
+  &:hover { opacity: 0.9; }
+  &:active { transform: scale(0.98); }
+
+  &--primary {
+    background: var(--sesa-primary);
+    color: white;
+  }
+
+  &--secondary {
+    background: var(--sesa-surface);
+    color: var(--sesa-text-primary);
+    border: 1px solid var(--sesa-border);
+  }
+}
+
+.vc-sala__btn-asistente {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-primary);
+  border: 1px solid var(--sesa-border);
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.vc-sala__consent-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.vc-sala__consent-card {
+  background: var(--sesa-surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.vc-sala__consent-text {
+  margin: 0 0 20px;
+  font-size: 15px;
+  color: var(--sesa-text-primary);
+}
+
+.vc-sala__consent-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.vc-sala__resumen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.vc-sala__resumen-card {
+  background: var(--sesa-surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.vc-sala__resumen-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: var(--sesa-text-primary);
+}
+
+.vc-sala__resumen-texto {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sesa-text-secondary);
+  margin-bottom: 20px;
+  max-height: 50vh;
+  overflow-y: auto;
+}

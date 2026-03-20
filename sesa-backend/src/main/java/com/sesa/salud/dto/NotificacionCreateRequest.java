@@ -5,7 +5,6 @@
 package com.sesa.salud.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +24,17 @@ public class NotificacionCreateRequest {
 
     private String tipo = "GENERAL";
 
-    @NotEmpty(message = "Debe haber al menos un destinatario")
+    /**
+     * IDs de usuarios destinatarios. Requerido salvo que {@code broadcastTodos} sea {@code true}.
+     */
     private List<Long> destinatarioIds;
+
+    /**
+     * Cuando {@code true} (solo ADMIN/SUPERADMINISTRADOR), la notificación se envía
+     * a todos los usuarios activos del schema actual ignorando {@code destinatarioIds}.
+     */
+    private boolean broadcastTodos = false;
+
+    /** Opcional: ID de cita asociada (recordatorios automáticos). */
+    private Long citaId;
 }

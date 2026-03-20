@@ -1,0 +1,88 @@
+<section class="ebs-dashboard-supervisor">
+  <header class="ebs-dashboard-supervisor__header">
+    <h1 class="ebs-dashboard-supervisor__title">Dashboard APS — Supervisor</h1>
+    <p class="ebs-dashboard-supervisor__subtitle">
+      Indicadores gerenciales de Equipos Básicos de Salud: cobertura territorial, población visitada y riesgo.
+    </p>
+  </header>
+
+  <div class="ebs-dashboard-supervisor__period">
+    <span>Período:</span>
+    <button type="button" class="ebs-dashboard-supervisor__btn" [class.ebs-dashboard-supervisor__btn--active]="diasPeriodo === 30" (click)="changePeriodo(30)">30 días</button>
+    <button type="button" class="ebs-dashboard-supervisor__btn" [class.ebs-dashboard-supervisor__btn--active]="diasPeriodo === 60" (click)="changePeriodo(60)">60 días</button>
+    <button type="button" class="ebs-dashboard-supervisor__btn" [class.ebs-dashboard-supervisor__btn--active]="diasPeriodo === 90" (click)="changePeriodo(90)">90 días</button>
+  </div>
+
+  @if (loading()) {
+    <div class="ebs-dashboard-supervisor__skeleton">
+      <sesa-skeleton width="100%" height="6rem" />
+      <sesa-skeleton width="80%" height="4rem" />
+    </div>
+  } @else if (error()) {
+    <p class="ebs-dashboard-supervisor__error">{{ error() }}</p>
+  } @else if (dashboard()) {
+    <sesa-card title="Indicadores generales" subtitle="Resumen del módulo EBS" alignHeader="start">
+      <div class="ebs-dashboard-supervisor__kpis">
+        <div class="ebs-dashboard-supervisor__kpi">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.totalTerritorios }}</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Microterritorios</span>
+        </div>
+        <div class="ebs-dashboard-supervisor__kpi">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.totalHogares }}</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Total hogares</span>
+        </div>
+        <div class="ebs-dashboard-supervisor__kpi ebs-dashboard-supervisor__kpi--highlight">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.porcentajeCobertura | number: '1.1-1' }}%</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Cobertura visitada</span>
+        </div>
+        <div class="ebs-dashboard-supervisor__kpi">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.hogaresVisitados }}</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Hogares visitados</span>
+        </div>
+        <div class="ebs-dashboard-supervisor__kpi">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.visitasEnPeriodo }}</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Visitas en período</span>
+        </div>
+        <div class="ebs-dashboard-supervisor__kpi ebs-dashboard-supervisor__kpi--alert">
+          <span class="ebs-dashboard-supervisor__kpi-value">{{ dashboard()!.hogaresAltoRiesgo }}</span>
+          <span class="ebs-dashboard-supervisor__kpi-label">Hogares alto riesgo</span>
+        </div>
+      </div>
+    </sesa-card>
+
+    @if ((dashboard()!.porTerritorio?.length ?? 0) > 0) {
+      <sesa-card title="Por microterritorio" subtitle="Cobertura y visitas por territorio" alignHeader="start">
+        <div class="ebs-dashboard-supervisor__table-wrap">
+          <table class="ebs-dashboard-supervisor__table">
+            <thead>
+              <tr>
+                <th>Territorio</th>
+                <th>Hogares</th>
+                <th>Visitados</th>
+                <th>Cobertura %</th>
+                <th>Alto riesgo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of dashboard()!.porTerritorio ?? []; track row.territoryId) {
+                <tr>
+                  <td><strong>{{ row.territoryName }}</strong></td>
+                  <td>{{ row.totalHogares }}</td>
+                  <td>{{ row.hogaresVisitados }}</td>
+                  <td>{{ row.porcentajeCobertura | number: '1.1-1' }}%</td>
+                  <td>
+                    @if (row.hogaresAltoRiesgo > 0) {
+                      <span class="ebs-dashboard-supervisor__cell-alert">{{ row.hogaresAltoRiesgo }}</span>
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </sesa-card>
+    }
+  }
+</section>

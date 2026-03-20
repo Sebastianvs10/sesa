@@ -10,6 +10,16 @@
       <h1 class="sesa-reportes-title">Reportes</h1>
       <p class="sesa-reportes-subtitle">Indicadores clínicos y operativos de la empresa</p>
     </div>
+    <button
+      type="button"
+      class="sesa-btn sesa-btn-outline sesa-reportes-export"
+      (click)="exportarCsv()"
+      [disabled]="loading || (!hasAnyData && indicadoresCalidad.length === 0)"
+      title="Exportar a CSV"
+    >
+      <fa-icon [icon]="faFileCsv"></fa-icon>
+      Exportar CSV
+    </button>
   </header>
 
   @if (loading) {
@@ -73,7 +83,200 @@
       }
     </div>
 
-    @if (!hasAnyData) {
+    <!-- S4: Cumplimiento normativo -->
+    <sesa-card title="Cumplimiento normativo" subtitle="Indicadores por período (S4)" alignHeader="start" class="sesa-report-card sesa-report-card-full">
+      <div class="sesa-cumplimiento-filtros">
+        <label>
+          <span>Desde</span>
+          <input type="date" [(ngModel)]="cumplimientoDesde" />
+        </label>
+        <label>
+          <span>Hasta</span>
+          <input type="date" [(ngModel)]="cumplimientoHasta" />
+        </label>
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="loadCumplimientoNormativo()" [disabled]="loadingCumplimiento">
+          {{ loadingCumplimiento ? 'Cargando…' : 'Cargar' }}
+        </button>
+      </div>
+      @if (loadingCumplimiento) {
+        <div class="sesa-calidad-loading"><span class="sesa-spinner"></span> Cargando cumplimiento normativo…</div>
+      } @else if (cumplimientoNormativo) {
+        <div class="sesa-cumplimiento-grid">
+          <div class="sesa-cumplimiento-card">
+            <span class="sesa-cumplimiento-value">{{ cumplimientoNormativo.porcentajeRdaEnviado | number:'1.1-1' }}%</span>
+            <span class="sesa-cumplimiento-label">RDA enviado</span>
+            <span class="sesa-cumplimiento-detail">{{ cumplimientoNormativo.atencionesConRdaEnviado }} / {{ cumplimientoNormativo.totalAtenciones }} atenciones</span>
+          </div>
+          <div class="sesa-cumplimiento-card">
+            <span class="sesa-cumplimiento-value">{{ cumplimientoNormativo.porcentajeUrgenciasEnTiempo | number:'1.1-1' }}%</span>
+            <span class="sesa-cumplimiento-label">Urgencias en tiempo (triage)</span>
+            <span class="sesa-cumplimiento-detail">{{ cumplimientoNormativo.urgenciasDentroTiempo }} / {{ cumplimientoNormativo.totalUrgenciasAtendidas }}</span>
+          </div>
+          <div class="sesa-cumplimiento-card">
+            <span class="sesa-cumplimiento-value">{{ cumplimientoNormativo.porcentajeHcConCie10YEvolucion24h | number:'1.1-1' }}%</span>
+            <span class="sesa-cumplimiento-label">HC con CIE-10 y evolución &lt; 24 h</span>
+            <span class="sesa-cumplimiento-detail">{{ cumplimientoNormativo.atencionesConCie10YEvolucion24h }} atenciones</span>
+          </div>
+          <div class="sesa-cumplimiento-card">
+            <span class="sesa-cumplimiento-value">{{ cumplimientoNormativo.totalResultadosCriticosNoLeidos }}</span>
+            <span class="sesa-cumplimiento-label">Resultados críticos no leídos</span>
+          </div>
+        </div>
+        @if (cumplimientoNormativo.indicadores0256 && cumplimientoNormativo.indicadores0256.length) {
+          <div class="sesa-calidad-table-wrap">
+            <table class="sesa-calidad-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Indicador</th>
+                  <th>Categoría</th>
+                  <th>Valor</th>
+                  <th>Meta</th>
+                  <th>Unidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ind of cumplimientoNormativo.indicadores0256; track ind.codigo) {
+                  <tr>
+                    <td class="sesa-calidad-code">{{ ind.codigo }}</td>
+                    <td class="sesa-calidad-name">{{ ind.nombre }}</td>
+                    <td>{{ ind.categoria }}</td>
+                    <td><strong>{{ ind.valor }}</strong></td>
+                    <td>{{ ind.meta }}</td>
+                    <td>{{ ind.unidad }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      } @else {
+        <p class="sesa-calidad-empty">Use los filtros y pulse «Cargar» para ver el cumplimiento normativo del período.</p>
+      }
+    </sesa-card>
+
+    <!-- S16: Auditoría de calidad HC -->
+    <sesa-card title="Auditoría de calidad HC" subtitle="Indicadores por profesional y servicio (S16)" alignHeader="start" class="sesa-report-card sesa-report-card-full">
+      <div class="sesa-cumplimiento-filtros">
+        <label>
+          <span>Desde</span>
+          <input type="date" [(ngModel)]="auditoriaDesde" />
+        </label>
+        <label>
+          <span>Hasta</span>
+          <input type="date" [(ngModel)]="auditoriaHasta" />
+        </label>
+        <button type="button" class="sesa-btn sesa-btn-primary" (click)="loadAuditoriaHc()" [disabled]="loadingAuditoriaHc">
+          {{ loadingAuditoriaHc ? 'Cargando…' : 'Cargar' }}
+        </button>
+      </div>
+      @if (loadingAuditoriaHc) {
+        <div class="sesa-calidad-loading"><span class="sesa-spinner"></span> Cargando auditoría HC…</div>
+      } @else if (auditoriaPorProfesional.length || auditoriaPorServicio.length) {
+        <div class="sesa-auditoria-hc-grid">
+          @if (auditoriaPorProfesional.length) {
+            <div class="sesa-auditoria-hc-table-wrap">
+              <h4 class="sesa-auditoria-hc-subtitle">Por profesional</h4>
+              <table class="sesa-calidad-table">
+                <thead>
+                  <tr>
+                    <th>Profesional</th>
+                    <th>Total</th>
+                    <th>Completas</th>
+                    <th>%</th>
+                    <th>Puntuación media</th>
+                    <th>Umbral</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of auditoriaPorProfesional; track r.profesionalId) {
+                    <tr [class.sesa-auditoria-bajo]="r.bajoUmbral">
+                      <td class="sesa-calidad-name">{{ r.profesionalNombre }}</td>
+                      <td>{{ r.totalAtenciones }}</td>
+                      <td>{{ r.atencionesCompletas }}</td>
+                      <td>{{ r.porcentajeCompletas | number:'1.1-1' }}%</td>
+                      <td>{{ r.puntuacionMedia | number:'1.0-0' }}</td>
+                      <td>@if (r.bajoUmbral) { <span class="sesa-badge-alerta">Bajo umbral</span> } @else { — }</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          @if (auditoriaPorServicio.length) {
+            <div class="sesa-auditoria-hc-table-wrap">
+              <h4 class="sesa-auditoria-hc-subtitle">Por servicio</h4>
+              <table class="sesa-calidad-table">
+                <thead>
+                  <tr>
+                    <th>Servicio</th>
+                    <th>Total</th>
+                    <th>Completas</th>
+                    <th>%</th>
+                    <th>Puntuación media</th>
+                    <th>Umbral</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of auditoriaPorServicio; track r.servicioId) {
+                    <tr [class.sesa-auditoria-bajo]="r.bajoUmbral">
+                      <td class="sesa-calidad-name">{{ r.servicioNombre }}</td>
+                      <td>{{ r.totalAtenciones }}</td>
+                      <td>{{ r.atencionesCompletas }}</td>
+                      <td>{{ r.porcentajeCompletas | number:'1.1-1' }}%</td>
+                      <td>{{ r.puntuacionMedia | number:'1.0-0' }}</td>
+                      <td>@if (r.bajoUmbral) { <span class="sesa-badge-alerta">Bajo umbral</span> } @else { — }</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="sesa-calidad-empty">Use los filtros y pulse «Cargar» para ver la auditoría de calidad de historia clínica.</p>
+      }
+    </sesa-card>
+
+    <!-- Tablero de calidad Res. 0256/2016 -->
+    <sesa-card title="Tablero de calidad" subtitle="Res. 0256/2016 — Sistema de Información para la Calidad en Salud" alignHeader="start" class="sesa-report-card sesa-report-card-full">
+      @if (loadingCalidad) {
+        <div class="sesa-calidad-loading"><span class="sesa-spinner"></span> Cargando indicadores…</div>
+      } @else if (indicadoresCalidad.length) {
+        <div class="sesa-calidad-table-wrap">
+          <table class="sesa-calidad-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Indicador</th>
+                <th>Categoría</th>
+                <th>Valor</th>
+                <th>Meta</th>
+                <th>Unidad</th>
+                <th>Interpretación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ind of indicadoresCalidad; track ind.codigo) {
+                <tr>
+                  <td class="sesa-calidad-code">{{ ind.codigo }}</td>
+                  <td class="sesa-calidad-name">{{ ind.nombre }}</td>
+                  <td>{{ ind.categoria }}</td>
+                  <td><strong>{{ ind.valor }}</strong></td>
+                  <td>{{ ind.meta }}</td>
+                  <td>{{ ind.unidad }}</td>
+                  <td class="sesa-calidad-interp">{{ ind.interpretacion }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="sesa-calidad-empty">No hay indicadores de calidad disponibles.</p>
+      }
+    </sesa-card>
+
+    @if (!hasAnyData && !indicadoresCalidad.length) {
       <div class="sesa-reportes-empty">
         <p>No hay datos disponibles para generar reportes aún.</p>
       </div>

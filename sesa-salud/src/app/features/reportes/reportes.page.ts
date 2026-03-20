@@ -7,14 +7,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { of, forkJoin } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faChartBar, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { faChartBar, faArrowLeft, faFileCsv } from '@fortawesome/free-solid-svg-icons';
 import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
 import { DashboardChartBarComponent } from '../../shared/components/dashboard-chart-bar/dashboard-chart-bar.component';
 import { DashboardChartDoughnutComponent } from '../../shared/components/dashboard-chart-doughnut/dashboard-chart-doughnut.component';
-import { ReporteService, DashboardStatsDto } from '../../core/services/reporte.service';
+import { ReporteService, DashboardStatsDto, IndicadorCalidadDto, CumplimientoNormativoDto, AuditoriaHcProfesionalDto, AuditoriaHcServicioDto } from '../../core/services/reporte.service';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
 
 const MESES_LABELS: Record<number, string> = {
   1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
@@ -31,6 +33,7 @@ const ESTADO_LABELS: Record<string, string> = {
   selector: 'sesa-reportes-page',
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     FontAwesomeModule,
     SesaCardComponent,
@@ -42,9 +45,25 @@ const ESTADO_LABELS: Record<string, string> = {
 })
 export class ReportesPageComponent implements OnInit {
   private readonly reporteService = inject(ReporteService);
+  private readonly toast = inject(SesaToastService);
 
   loading = true;
   error = false;
+  loadingCalidad = true;
+  indicadoresCalidad: IndicadorCalidadDto[] = [];
+
+  /** S4: Cumplimiento normativo */
+  cumplimientoNormativo: CumplimientoNormativoDto | null = null;
+  loadingCumplimiento = false;
+  cumplimientoDesde = '';
+  cumplimientoHasta = '';
+
+  /** S16: Auditoría de calidad HC */
+  auditoriaPorProfesional: AuditoriaHcProfesionalDto[] = [];
+  auditoriaPorServicio: AuditoriaHcServicioDto[] = [];
+  loadingAuditoriaHc = false;
+  auditoriaDesde = '';
+  auditoriaHasta = '';
 
   chartCitasPorDia: { labels: string[]; values: number[] } = { labels: [], values: [] };
   chartConsultasPorMes: { labels: string[]; values: number[] } = { labels: [], values: [] };
@@ -53,9 +72,131 @@ export class ReportesPageComponent implements OnInit {
 
   faChartBar = faChartBar;
   faArrowLeft = faArrowLeft;
+  faFileCsv = faFileCsv;
+
+  /** Exporta reportes a CSV (Res. 5521/2013 — auditoría y gestión). */
+  exportarCsv(): void {
+    const rows: string[] = [];
+    const esc = (v: string | number): string => {
+      const s = String(v ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    rows.push('Reportes SESA - Exportación');
+    rows.push(`Fecha exportación,${new Date().toISOString()}`);
+    rows.push('');
+
+    if (this.chartCitasPorDia.labels.length) {
+      rows.push('Citas por día');
+      rows.push('Fecha,Total');
+      this.chartCitasPorDia.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartCitasPorDia.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartConsultasPorMes.labels.length) {
+      rows.push('Consultas por mes');
+      rows.push('Mes,Total');
+      this.chartConsultasPorMes.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartConsultasPorMes.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartFacturacionPorMes.labels.length) {
+      rows.push('Facturación por mes (COP)');
+      rows.push('Mes,Valor total');
+      this.chartFacturacionPorMes.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartFacturacionPorMes.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.chartCitasPorEstado.labels.length) {
+      rows.push('Citas por estado');
+      rows.push('Estado,Total');
+      this.chartCitasPorEstado.labels.forEach((l, i) =>
+        rows.push(`${esc(l)},${this.chartCitasPorEstado.values[i] ?? 0}`)
+      );
+      rows.push('');
+    }
+    if (this.indicadoresCalidad.length) {
+      rows.push('Indicadores de calidad (Res. 0256/2016)');
+      rows.push('Código,Nombre,Categoría,Valor,Meta,Unidad,Interpretación');
+      this.indicadoresCalidad.forEach((ind) => {
+        rows.push(
+          [ind.codigo, ind.nombre, ind.categoria, ind.valor, ind.meta, ind.unidad, ind.interpretacion]
+            .map(esc)
+            .join(',')
+        );
+      });
+    }
+    const csv = '\uFEFF' + rows.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `reportes-sesa-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.toast.success('Exportación descargada.', 'CSV');
+  }
 
   ngOnInit(): void {
     this.loadStats();
+    this.loadCalidad();
+    const hoy = new Date();
+    const hace30 = new Date(hoy);
+    hace30.setDate(hace30.getDate() - 30);
+    this.cumplimientoHasta = hoy.toISOString().slice(0, 10);
+    this.cumplimientoDesde = hace30.toISOString().slice(0, 10);
+    this.auditoriaHasta = hoy.toISOString().slice(0, 10);
+    this.auditoriaDesde = hace30.toISOString().slice(0, 10);
+  }
+
+  loadCumplimientoNormativo(): void {
+    this.loadingCumplimiento = true;
+    this.cumplimientoNormativo = null;
+    this.reporteService
+      .getCumplimientoNormativo({
+        desde: this.cumplimientoDesde || undefined,
+        hasta: this.cumplimientoHasta || undefined,
+      })
+      .pipe(
+        catchError(() => {
+          this.toast.error('No se pudo cargar el cumplimiento normativo.', 'Error');
+          return of<CumplimientoNormativoDto | null>(null);
+        })
+      )
+      .subscribe((r) => {
+        this.cumplimientoNormativo = r ?? null;
+        this.loadingCumplimiento = false;
+      });
+  }
+
+  loadCalidad(): void {
+    this.reporteService.indicadoresCalidad()
+      .pipe(catchError(() => of<IndicadorCalidadDto[]>([])))
+      .subscribe((list) => {
+        this.indicadoresCalidad = list;
+        this.loadingCalidad = false;
+      });
+  }
+
+  /** S16: Cargar auditoría de calidad HC por profesional y servicio. */
+  loadAuditoriaHc(): void {
+    this.loadingAuditoriaHc = true;
+    this.auditoriaPorProfesional = [];
+    this.auditoriaPorServicio = [];
+    const params = { desde: this.auditoriaDesde || undefined, hasta: this.auditoriaHasta || undefined };
+    forkJoin({
+      porProfesional: this.reporteService.getAuditoriaHcPorProfesional(params).pipe(
+        catchError(() => of<AuditoriaHcProfesionalDto[]>([]))
+      ),
+      porServicio: this.reporteService.getAuditoriaHcPorServicio(params).pipe(
+        catchError(() => of<AuditoriaHcServicioDto[]>([]))
+      ),
+    }).subscribe(({ porProfesional, porServicio }: { porProfesional: AuditoriaHcProfesionalDto[]; porServicio: AuditoriaHcServicioDto[] }) => {
+      this.auditoriaPorProfesional = porProfesional;
+      this.auditoriaPorServicio = porServicio;
+      this.loadingAuditoriaHc = false;
+    });
   }
 
   loadStats(): void {
@@ -63,7 +204,11 @@ export class ReportesPageComponent implements OnInit {
     this.error = false;
     this.reporteService
       .dashboardStats()
-      .pipe(catchError(() => { this.error = true; return of<DashboardStatsDto>({}); }))
+      .pipe(catchError(() => {
+        this.error = true;
+        this.toast.error('No se pudieron cargar los reportes. Intenta de nuevo.', 'Error de reportes');
+        return of<DashboardStatsDto>({});
+      }))
       .subscribe((r) => {
         const citasPorDia = r.citasPorDia ?? [];
         const consultasPorMes = r.consultasPorMes ?? [];

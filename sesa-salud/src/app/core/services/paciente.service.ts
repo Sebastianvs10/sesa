@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface PacienteDto {
@@ -19,6 +20,18 @@ export interface PacienteDto {
   epsNombre?: string;
   activo: boolean;
   createdAt?: string;
+  // Campos normativos Res. 3374/2000 (RIPS)
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  zonaResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  contactoEmergenciaNombre?: string;
+  contactoEmergenciaTelefono?: string;
+  estadoCivil?: string;
+  escolaridad?: string;
+  ocupacion?: string;
+  pertenenciaEtnica?: string;
 }
 
 export interface PacienteRequestDto {
@@ -34,6 +47,35 @@ export interface PacienteRequestDto {
   direccion?: string;
   epsId?: number;
   activo: boolean;
+  // Campos normativos Res. 3374/2000 (RIPS)
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  zonaResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  contactoEmergenciaNombre?: string;
+  contactoEmergenciaTelefono?: string;
+  estadoCivil?: string;
+  escolaridad?: string;
+  ocupacion?: string;
+  pertenenciaEtnica?: string;
+}
+
+/** Datos básicos devueltos por consulta por documento (ej. ADRES/BDUA). */
+export interface ConsultaDocumentoDto {
+  tipoDocumento?: string;
+  documento?: string;
+  nombres?: string;
+  apellidos?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  municipioResidencia?: string;
+  departamentoResidencia?: string;
+  regimenAfiliacion?: string;
+  tipoUsuario?: string;
+  epsNombre?: string;
+  epsId?: number;
+  estadoAfiliacion?: string;
 }
 
 export interface PageResponse<T> {
@@ -49,14 +91,33 @@ export class PacienteService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/pacientes`;
 
-  list(page = 0, size = 20, q?: string): Observable<PageResponse<PacienteDto>> {
+  list(page = 0, size = 20, q?: string, activo?: boolean | null): Observable<PageResponse<PacienteDto>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (q?.trim()) params = params.set('q', q.trim());
+    if (activo === true) params = params.set('activo', 'true');
+    if (activo === false) params = params.set('activo', 'false');
     return this.http.get<PageResponse<PacienteDto>>(this.apiUrl, { params });
   }
 
   get(id: number): Observable<PacienteDto> {
     return this.http.get<PacienteDto>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Consulta datos básicos por tipo y número de documento (ADRES/BDUA si está configurado).
+   * Retorna null si no hay integración o no hay datos.
+   */
+  consultaPorDocumento(tipoDocumento: string, documento: string): Observable<ConsultaDocumentoDto | null> {
+    const params = new HttpParams()
+      .set('tipoDocumento', tipoDocumento || 'CC')
+      .set('documento', documento.trim().replace(/\s/g, ''));
+    return this.http.get<ConsultaDocumentoDto>(`${this.apiUrl}/consulta-documento`, {
+      params,
+      observe: 'response',
+    }).pipe(
+      map((res) => (res.status === 204 || !res.body) ? null : res.body),
+      catchError(() => of(null)),
+    );
   }
 
   create(request: PacienteRequestDto): Observable<PacienteDto> {

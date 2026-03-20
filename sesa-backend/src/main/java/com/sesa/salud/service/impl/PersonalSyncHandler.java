@@ -52,19 +52,17 @@ public class PersonalSyncHandler implements SyncEntityHandler {
         Map<String, Object> body = toMap(op.getBody());
 
         String nombres = (String) body.get("nombres");
-        String cargo = (String) body.get("cargo");
-        if (nombres == null || cargo == null) {
+        if (nombres == null) {
             return SyncItemResult.builder()
                     .clientId(op.getClientId()).success(false).status(400)
-                    .error("nombres y cargo son obligatorios").build();
+                    .error("nombres es obligatorio").build();
         }
+
+        String rolSync = (String) body.get("rol");
 
         Personal p = Personal.builder()
                 .nombres(nombres)
                 .apellidos((String) body.get("apellidos"))
-                .cargo(cargo)
-                .servicio((String) body.get("servicio"))
-                .turno((String) body.get("turno"))
                 .identificacion((String) body.get("identificacion"))
                 .primerNombre((String) body.get("primerNombre"))
                 .segundoNombre((String) body.get("segundoNombre"))
@@ -72,8 +70,7 @@ public class PersonalSyncHandler implements SyncEntityHandler {
                 .segundoApellido((String) body.get("segundoApellido"))
                 .celular((String) body.get("celular"))
                 .email((String) body.get("email"))
-                .rol((String) body.get("rol"))
-                .institucionPrestadora((String) body.get("institucionPrestadora"))
+                .rol(rolSync)
                 .activo(true)
                 .build();
 
@@ -103,9 +100,6 @@ public class PersonalSyncHandler implements SyncEntityHandler {
 
         if (body.containsKey("nombres")) p.setNombres((String) body.get("nombres"));
         if (body.containsKey("apellidos")) p.setApellidos((String) body.get("apellidos"));
-        if (body.containsKey("cargo")) p.setCargo((String) body.get("cargo"));
-        if (body.containsKey("servicio")) p.setServicio((String) body.get("servicio"));
-        if (body.containsKey("turno")) p.setTurno((String) body.get("turno"));
         if (body.containsKey("identificacion")) p.setIdentificacion((String) body.get("identificacion"));
         if (body.containsKey("primerNombre")) p.setPrimerNombre((String) body.get("primerNombre"));
         if (body.containsKey("segundoNombre")) p.setSegundoNombre((String) body.get("segundoNombre"));
@@ -114,7 +108,6 @@ public class PersonalSyncHandler implements SyncEntityHandler {
         if (body.containsKey("celular")) p.setCelular((String) body.get("celular"));
         if (body.containsKey("email")) p.setEmail((String) body.get("email"));
         if (body.containsKey("rol")) p.setRol((String) body.get("rol"));
-        if (body.containsKey("institucionPrestadora")) p.setInstitucionPrestadora((String) body.get("institucionPrestadora"));
 
         p = personalRepository.save(p);
         return SyncItemResult.builder()
@@ -155,10 +148,4 @@ public class PersonalSyncHandler implements SyncEntityHandler {
         return m.find() ? Long.parseLong(m.group(1)) : null;
     }
 
-    private Long toLong(Object value) {
-        if (value == null) return null;
-        if (value instanceof Number) return ((Number) value).longValue();
-        if (value instanceof String) { try { return Long.parseLong((String) value); } catch (NumberFormatException e) { return null; } }
-        return null;
-    }
 }

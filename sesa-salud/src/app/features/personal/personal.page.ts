@@ -1,6 +1,13 @@
+/**
+ * Gestión de Personal — confirm dialog, toast CRUD, skeleton loading.
+ * Autor: Ing. J Sebastian Vargas S
+ */
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faUsers, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { SesaPageHeaderComponent } from '../../shared/components/sesa-page-header/sesa-page-header.component';
 import { forkJoin, Observable } from 'rxjs';
 import {
   PersonalService,
@@ -11,16 +18,19 @@ import {
 } from '../../core/services/personal.service';
 import { EmpresaService, EmpresaDto } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
-import { SesaCardComponent } from '../../shared/components/sesa-card/sesa-card.component';
+import { SesaToastService } from '../../shared/components/sesa-toast/sesa-toast.component';
+import { SesaConfirmDialogService } from '../../shared/components/sesa-confirm-dialog/sesa-confirm-dialog.component';
 
 @Component({
   standalone: true,
   selector: 'sesa-personal-page',
-  imports: [CommonModule, FormsModule, SesaCardComponent],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, SesaPageHeaderComponent],
   templateUrl: './personal.page.html',
   styleUrl: './personal.page.scss',
 })
 export class PersonalPageComponent implements OnInit {
+  readonly faUsers = faUsers;
+  readonly faPlus = faPlus;
   list: PersonalDto[] = [];
   totalElements = 0;
   page = 0;
@@ -40,13 +50,24 @@ export class PersonalPageComponent implements OnInit {
   editingId: number | null = null;
   showForm = false;
   rolesPersonal = ROLES_PERSONAL;
+  /** Roles seleccionados en el formulario (multi-rol). */
+  selectedRoles: string[] = [];
   fotoFile: File | null = null;
   firmaFile: File | null = null;
   form: PersonalRequestDto = {
-    nombres: '', apellidos: '', cargo: '', servicio: '', turno: '',
-    identificacion: '', primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
-    celular: '', email: '', password: '', rol: '', institucionPrestadora: '', activo: true,
+    nombres: '', apellidos: '',
+    tipoDocumento: '', identificacion: '',
+    primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
+    celular: '', email: '', password: '',
+    rol: '', roles: [], activo: true,
+    tarjetaProfesional: '', especialidadFormal: '', numeroRethus: '',
+    fechaNacimiento: '', sexo: '',
+    municipio: '', departamento: '',
+    tipoVinculacion: '', fechaIngreso: '', fechaRetiro: '',
   };
+
+  private readonly toast = inject(SesaToastService);
+  private readonly confirmDialog = inject(SesaConfirmDialogService);
 
   constructor(
     private personalService: PersonalService,
@@ -128,29 +149,40 @@ export class PersonalPageComponent implements OnInit {
 
   getEmptyForm(): PersonalRequestDto {
     return {
-      nombres: '',
-      apellidos: '',
-      cargo: '',
-      servicio: '',
-      turno: '',
-      identificacion: '',
-      primerNombre: '',
-      segundoNombre: '',
-      primerApellido: '',
-      segundoApellido: '',
-      celular: '',
-      email: '',
-      password: '',
-      rol: '',
-      institucionPrestadora: '',
-      activo: true,
+      nombres: '', apellidos: '',
+      tipoDocumento: '', identificacion: '',
+      primerNombre: '', segundoNombre: '', primerApellido: '', segundoApellido: '',
+      celular: '', email: '', password: '',
+      rol: '', roles: [], activo: true,
+      tarjetaProfesional: '', especialidadFormal: '', numeroRethus: '',
+      fechaNacimiento: '', sexo: '',
+      municipio: '', departamento: '',
+      tipoVinculacion: '', fechaIngreso: '', fechaRetiro: '',
     };
+  }
+
+  /** Devuelve true si el rol dado está en los roles seleccionados. */
+  isRolSelected(rol: string): boolean {
+    return this.selectedRoles.includes(rol);
+  }
+
+  /** Alterna la selección de un rol en el formulario. */
+  toggleRol(rol: string): void {
+    const idx = this.selectedRoles.indexOf(rol);
+    if (idx === -1) {
+      this.selectedRoles = [...this.selectedRoles, rol];
+    } else {
+      this.selectedRoles = this.selectedRoles.filter(r => r !== rol);
+    }
+    this.form.roles = [...this.selectedRoles];
+    this.form.rol = this.selectedRoles[0] ?? '';
   }
 
   openCreate(): void {
     this.editingId = null;
     this.showForm = true;
     this.form = this.getEmptyForm();
+    this.selectedRoles = [];
     this.fotoFile = null;
     this.firmaFile = null;
     this.saveError = null;
@@ -159,12 +191,11 @@ export class PersonalPageComponent implements OnInit {
   openEdit(p: PersonalDto): void {
     this.editingId = p.id;
     this.showForm = true;
+    this.selectedRoles = p.roles ? [...p.roles] : (p.rol ? [p.rol] : []);
     this.form = {
       nombres: p.nombres,
       apellidos: p.apellidos ?? '',
-      cargo: p.cargo,
-      servicio: p.servicio ?? '',
-      turno: p.turno ?? '',
+      tipoDocumento: p.tipoDocumento ?? '',
       identificacion: p.identificacion ?? '',
       primerNombre: p.primerNombre ?? '',
       segundoNombre: p.segundoNombre ?? '',
@@ -173,9 +204,19 @@ export class PersonalPageComponent implements OnInit {
       celular: p.celular ?? '',
       email: p.email ?? '',
       password: '',
-      rol: p.rol ?? '',
-      institucionPrestadora: p.institucionPrestadora ?? '',
+      rol: this.selectedRoles[0] ?? '',
+      roles: [...this.selectedRoles],
       activo: p.activo ?? true,
+      tarjetaProfesional: p.tarjetaProfesional ?? '',
+      especialidadFormal: p.especialidadFormal ?? '',
+      numeroRethus: p.numeroRethus ?? '',
+      fechaNacimiento: p.fechaNacimiento ?? '',
+      sexo: p.sexo ?? '',
+      municipio: p.municipio ?? '',
+      departamento: p.departamento ?? '',
+      tipoVinculacion: p.tipoVinculacion ?? '',
+      fechaIngreso: p.fechaIngreso ?? '',
+      fechaRetiro: p.fechaRetiro ?? '',
     };
     this.fotoFile = null;
     this.firmaFile = null;
@@ -203,11 +244,7 @@ export class PersonalPageComponent implements OnInit {
     const apellidos = [this.form.primerApellido, this.form.segundoApellido].filter(Boolean).join(' ').trim()
       || this.form.apellidos?.trim();
     if (!nombres || !this.form.primerApellido?.trim()) {
-      this.saveError = 'Primer nombre, primer apellido y cargo son obligatorios';
-      return;
-    }
-    if (!this.form.cargo?.trim()) {
-      this.saveError = 'Cargo es obligatorio';
+      this.saveError = 'Primer nombre y primer apellido son obligatorios';
       return;
     }
     if (!this.form.email?.trim()) {
@@ -218,8 +255,8 @@ export class PersonalPageComponent implements OnInit {
       this.saveError = 'La contraseña es obligatoria para el acceso';
       return;
     }
-    if (!this.form.rol?.trim()) {
-      this.saveError = 'Seleccione un rol';
+    if (this.selectedRoles.length === 0) {
+      this.saveError = 'Seleccione al menos un rol';
       return;
     }
     if (this.isSuperAdmin && !this.selectedSchema) {
@@ -231,9 +268,7 @@ export class PersonalPageComponent implements OnInit {
     const payload: PersonalRequestDto = {
       nombres,
       apellidos: apellidos || undefined,
-      cargo: this.form.cargo.trim(),
-      servicio: this.form.servicio?.trim() || undefined,
-      turno: this.form.turno?.trim() || undefined,
+      tipoDocumento: this.form.tipoDocumento?.trim() || undefined,
       identificacion: this.form.identificacion?.trim() || undefined,
       primerNombre: this.form.primerNombre?.trim() || undefined,
       segundoNombre: this.form.segundoNombre?.trim() || undefined,
@@ -242,9 +277,19 @@ export class PersonalPageComponent implements OnInit {
       celular: this.form.celular?.trim() || undefined,
       email: this.form.email.trim(),
       password: this.form.password?.trim() || undefined,
-      rol: this.form.rol.trim(),
-      institucionPrestadora: this.form.institucionPrestadora?.trim() || undefined,
+      rol: this.selectedRoles[0],
+      roles: [...this.selectedRoles],
       activo: this.form.activo ?? true,
+      tarjetaProfesional: this.form.tarjetaProfesional?.trim() || undefined,
+      especialidadFormal: this.form.especialidadFormal?.trim() || undefined,
+      numeroRethus: this.form.numeroRethus?.trim() || undefined,
+      fechaNacimiento: this.form.fechaNacimiento?.trim() || undefined,
+      sexo: this.form.sexo?.trim() || undefined,
+      municipio: this.form.municipio?.trim() || undefined,
+      departamento: this.form.departamento?.trim() || undefined,
+      tipoVinculacion: this.form.tipoVinculacion?.trim() || undefined,
+      fechaIngreso: this.form.fechaIngreso?.trim() || undefined,
+      fechaRetiro: this.form.fechaRetiro?.trim() || undefined,
     };
     const schema = this.isSuperAdmin ? this.selectedSchema : undefined;
     const isCreate = this.editingId == null;
@@ -266,6 +311,7 @@ export class PersonalPageComponent implements OnInit {
           this.saving = false;
           this.editingId = null;
           this.showForm = false;
+          this.toast.success(isCreate ? 'Personal creado.' : 'Personal actualizado.', 'Guardado');
           this.load();
           return;
         }
@@ -274,11 +320,13 @@ export class PersonalPageComponent implements OnInit {
             this.saving = false;
             this.editingId = null;
             this.showForm = false;
+            this.toast.success(isCreate ? 'Personal creado.' : 'Personal actualizado.', 'Guardado');
             this.load();
           },
           error: (err) => {
             this.saveError = err.error?.message || err.message || 'Error al subir foto/firma';
             this.saving = false;
+            this.toast.error(this.saveError!, 'Error');
           },
         });
       },
@@ -286,17 +334,29 @@ export class PersonalPageComponent implements OnInit {
         this.saveError =
           err.error?.message || err.error?.error || err.message || 'Error al guardar';
         this.saving = false;
+        this.toast.error(this.saveError!, 'Error');
       },
     });
   }
 
-  delete(p: PersonalDto): void {
+  async delete(p: PersonalDto): Promise<void> {
     const nombre = [p.nombres, p.apellidos].filter(Boolean).join(' ');
-    if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Eliminar personal',
+      message: `¿Estás seguro de eliminar a "${nombre}"? Esta acción no se puede deshacer.`,
+      type: 'danger',
+    });
+    if (!ok) return;
     const schema = this.isSuperAdmin ? this.selectedSchema : undefined;
     this.personalService.delete(p.id, schema).subscribe({
-      next: () => this.load(),
-      error: (e) => alert(e.error?.error || 'Error al eliminar'),
+      next: () => {
+        this.toast.success(`"${nombre}" eliminado correctamente.`, 'Eliminado');
+        this.load();
+      },
+      error: (e) => {
+        const msg = e.error?.error || 'Error al eliminar';
+        this.toast.error(msg, 'Error');
+      },
     });
   }
 
@@ -316,6 +376,48 @@ export class PersonalPageComponent implements OnInit {
 
   fullName(p: PersonalDto): string {
     return [p.nombres, p.apellidos].filter(Boolean).join(' ');
+  }
+
+  initials(p: PersonalDto): string {
+    const first = (p.nombres || '').trim().charAt(0).toUpperCase();
+    const last  = (p.apellidos || '').trim().charAt(0).toUpperCase();
+    return (first + last) || '?';
+  }
+
+  avatarStyle(name: string): Record<string, string> {
+    const palettes: [string, string][] = [
+      ['#1f6ae1', '#2bb0a6'],
+      ['#7c3aed', '#a855f7'],
+      ['#059669', '#10b981'],
+      ['#d97706', '#f59e0b'],
+      ['#dc2626', '#f87171'],
+      ['#0891b2', '#38bdf8'],
+      ['#db2777', '#f472b6'],
+    ];
+    const idx = (name.charCodeAt(0) || 0) % palettes.length;
+    const [from, to] = palettes[idx];
+    return { background: `linear-gradient(135deg, ${from}, ${to})` };
+  }
+
+  roleClass(rol: string | undefined): string {
+    const map: Record<string, string> = {
+      MEDICO: 'medico',
+      COORDINADOR_MEDICO: 'coordinador',
+      EBS: 'ebs',
+      COORDINADOR_TERRITORIAL: 'coordinador-territorial',
+      SUPERVISOR_APS: 'supervisor-aps',
+      ODONTOLOGO: 'odontologo',
+      BACTERIOLOGO: 'bacteriologo',
+      ENFERMERO: 'enfermero',
+      JEFE_ENFERMERIA: 'jefe-enfermeria',
+      AUXILIAR_ENFERMERIA: 'auxiliar',
+      PSICOLOGO: 'psicologo',
+      REGENTE_FARMACIA: 'farmacia',
+      RECEPCIONISTA: 'recepcionista',
+      ADMIN: 'admin',
+      SUPERADMINISTRADOR: 'super',
+    };
+    return map[(rol ?? '').toUpperCase()] || 'default';
   }
 }
 

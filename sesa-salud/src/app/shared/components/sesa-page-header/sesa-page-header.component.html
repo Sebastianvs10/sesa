@@ -1,0 +1,26 @@
+<header class="sesa-page-header" role="banner">
+  <div class="sesa-page-header__row">
+    <div class="sesa-page-header__left">
+      @if (backLink) {
+        <a [routerLink]="backLink" class="sesa-page-header__back" [attr.aria-label]="backAriaLabel">
+          <span class="sesa-page-header__back-icon" aria-hidden="true">←</span>
+          <span>{{ backLabel }}</span>
+        </a>
+      }
+    </div>
+    <div class="sesa-page-header__center">
+      <ng-content select="[header-icon]"></ng-content>
+      <h1 class="sesa-page-header__title">{{ title }}</h1>
+      @if (subtitle) {
+        <p class="sesa-page-header__subtitle">{{ subtitle }}</p>
+      }
+    </div>
+    <div class="sesa-page-header__right">
+      <ng-content select="[header-actions]"></ng-content>
+      @if (backLink) {
+        <span class="sesa-page-header__spacer" aria-hidden="true">{{ backLabel }}</span>
+      }
+    </div>
+  </div>
+  <div class="sesa-page-header__line" aria-hidden="true"></div>
+</header>

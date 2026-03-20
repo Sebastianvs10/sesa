@@ -1,0 +1,35 @@
+/* Mapa EBS – contenedor Leaflet */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-map__container {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  background: var(--sesa-surface);
+  border-radius: var(--sesa-radius-md);
+}
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+}
+
+::ng-deep .ebs-map-tooltip .leaflet-popup-content-wrapper {
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+::ng-deep .ebs-map-tooltip-inner {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  max-width: 220px;
+}
+
+::ng-deep .ebs-map-marker {
+  background: none !important;
+  border: none !important;
+}

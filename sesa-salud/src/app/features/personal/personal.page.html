@@ -1,121 +1,465 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <div>
-      <h1 class="sesa-page-title">Gestión de personal</h1>
-      <p class="sesa-page-subtitle">
-        Cree, liste, edite y elimine el personal de la empresa. Los datos se gestionan en el esquema de la empresa actual.
-      </p>
-    </div>
-    <button type="button" class="sesa-btn sesa-btn-primary" (click)="openCreate()">
+<section class="pp-page">
+
+  <!-- ═══ ENCABEZADO COMPARTIDO (sin márgenes, solo margen inferior mínimo) ═══ -->
+  <sesa-page-header
+    title="Gestión de personal"
+    subtitle="Administre el equipo profesional y sus accesos al sistema."
+    backLink="/inicio"
+    backLabel="Volver"
+    backAriaLabel="Volver al inicio">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="faUsers"></fa-icon>
+    </span>
+    <button type="button" header-actions class="pp-btn pp-btn--primary pp-btn--header" (click)="openCreate()">
+      <fa-icon [icon]="faPlus"></fa-icon>
       Nuevo integrante
     </button>
-  </header>
+  </sesa-page-header>
 
+  <!-- ═══ STATS ═════════════════════════════════════════════════════════════ -->
+  <div class="pp-content">
+  <div class="pp-stats-row">
+    <div class="pp-stat-card pp-stat-card--blue">
+      <span class="pp-stat-value">{{ totalElements }}</span>
+      <span class="pp-stat-label">Total integrantes</span>
+    </div>
+    <div class="pp-stat-card pp-stat-card--teal">
+      <span class="pp-stat-value">{{ list.length }}</span>
+      <span class="pp-stat-label">En esta página</span>
+    </div>
+  </div>
+
+  <!-- ═══ FORM PANEL ════════════════════════════════════════════════════════ -->
   @if (showForm) {
-    <sesa-card title="{{ editingId != null ? 'Editar persona' : 'Crear usuario' }}">
+    <div class="pp-form-panel">
+      <div class="pp-form-panel-head">
+        <div class="pp-form-panel-head-left">
+          <div class="pp-form-panel-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="pp-form-panel-title">{{ editingId != null ? 'Editar integrante' : 'Nuevo integrante' }}</h2>
+            <p class="pp-form-panel-subtitle">Complete los campos del formulario</p>
+          </div>
+        </div>
+        <button type="button" class="pp-close-btn" (click)="cancelForm()" title="Cerrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
       @if (saveError) {
-        <p class="sesa-error">{{ saveError }}</p>
+        <div class="pp-alert pp-alert--error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ saveError }}
+        </div>
       }
-      <div class="sesa-form-grid">
-        <div class="sesa-form-field">
-          <label for="identificacion">Identificación <span class="required">*</span></label>
-          <input id="identificacion" type="text" [(ngModel)]="form.identificacion" placeholder="Documento de identidad" />
+
+      <div class="pp-form-body">
+      <!-- §1 Identificación -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--blue"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Datos de identificación
         </div>
-        <div class="sesa-form-field">
-          <label for="primerNombre">Primer nombre <span class="required">*</span></label>
-          <input id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
+        <div class="pp-fields pp-fields--2">
+          <div class="pp-field">
+            <label class="pp-label">Tipo de documento</label>
+            <select class="pp-select" id="tipoDocumento" [(ngModel)]="form.tipoDocumento">
+              <option value="">Seleccione…</option>
+              <option value="CC">CC — Cédula de Ciudadanía</option>
+              <option value="CE">CE — Cédula de Extranjería</option>
+              <option value="PA">PA — Pasaporte</option>
+              <option value="PEP">PEP — Permiso Especial de Permanencia</option>
+              <option value="TI">TI — Tarjeta de Identidad</option>
+              <option value="RC">RC — Registro Civil</option>
+            </select>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Número de documento</label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="identificacion" type="text"
+                [(ngModel)]="form.identificacion" placeholder="Número de documento" />
+            </div>
+          </div>
         </div>
-        <div class="sesa-form-field">
-          <label for="segundoNombre">Segundo nombre</label>
-          <input id="segundoNombre" type="text" [(ngModel)]="form.segundoNombre" placeholder="Segundo nombre" />
+        <div class="pp-fields pp-fields--4 pp-fields--mt">
+          <div class="pp-field">
+            <label class="pp-label">Primer nombre <span class="pp-required">*</span></label>
+            <input class="pp-input" id="primerNombre" type="text" [(ngModel)]="form.primerNombre" placeholder="Primer nombre" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Segundo nombre</label>
+            <input class="pp-input" id="segundoNombre" type="text" [(ngModel)]="form.segundoNombre" placeholder="Opcional" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Primer apellido <span class="pp-required">*</span></label>
+            <input class="pp-input" id="primerApellido" type="text" [(ngModel)]="form.primerApellido" placeholder="Primer apellido" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Segundo apellido</label>
+            <input class="pp-input" id="segundoApellido" type="text" [(ngModel)]="form.segundoApellido" placeholder="Opcional" />
+          </div>
         </div>
-        <div class="sesa-form-field">
-          <label for="primerApellido">Primer apellido <span class="required">*</span></label>
-          <input id="primerApellido" type="text" [(ngModel)]="form.primerApellido" placeholder="Primer apellido" />
+      </div>
+
+      <!-- §2 Contacto -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--teal"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Información de contacto
         </div>
-        <div class="sesa-form-field">
-          <label for="segundoApellido">Segundo apellido</label>
-          <input id="segundoApellido" type="text" [(ngModel)]="form.segundoApellido" placeholder="Segundo apellido" />
+        <div class="pp-fields pp-fields--2">
+          <div class="pp-field">
+            <label class="pp-label">Celular <span class="pp-required">*</span></label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.07 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 17z"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="celular" type="tel"
+                [(ngModel)]="form.celular" placeholder="+57 300 000 0000" />
+            </div>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label">Correo electrónico <span class="pp-required">*</span></label>
+            <div class="pp-input-wrap">
+              <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input class="pp-input pp-input--icon" id="email" type="email"
+                [(ngModel)]="form.email" placeholder="correo&#64;empresa.com" />
+            </div>
+          </div>
         </div>
-        <div class="sesa-form-field">
-          <label for="celular">Número de celular <span class="required">*</span></label>
-          <input id="celular" type="text" [(ngModel)]="form.celular" placeholder="Celular" />
+      </div>
+
+      <!-- §3 Acceso (solo crear) -->
+      @if (editingId == null) {
+        <div class="pp-form-section">
+          <div class="pp-section-title">
+            <span class="pp-section-dot pp-dot--purple"></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Credenciales de acceso
+          </div>
+          <div class="pp-fields pp-fields--1half">
+            <div class="pp-field">
+              <label class="pp-label">Contraseña <span class="pp-required">*</span></label>
+              <div class="pp-input-wrap">
+                <svg class="pp-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input class="pp-input pp-input--icon" id="password" type="password"
+                  [(ngModel)]="form.password" placeholder="Contraseña para el acceso" />
+              </div>
+              <span class="pp-field-hint">El integrante iniciará sesión con su correo y esta contraseña.</span>
+            </div>
+          </div>
         </div>
-        <div class="sesa-form-field">
-          <label for="email">Correo electrónico <span class="required">*</span></label>
-          <input id="email" type="email" [(ngModel)]="form.email" placeholder="correo&#64;empresa.com" />
+      }
+
+      <!-- §4 Roles y permisos (multi-rol) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Roles y permisos <span class="pp-required">*</span>
         </div>
-        @if (editingId == null) {
-          <div class="sesa-form-field">
-            <label for="password">Contraseña <span class="required">*</span></label>
-            <input id="password" type="password" [(ngModel)]="form.password" placeholder="Para ingresar sesión" />
+        <p class="pp-section-hint">Seleccione uno o más roles. El primer rol marcado es el rol principal de acceso.</p>
+        <div class="pp-roles-grid">
+          @for (r of rolesPersonal; track r.value) {
+            @if (!r.disabled) {
+              <label class="pp-role-chip" [class.pp-role-chip--selected]="isRolSelected(r.value)">
+                <input type="checkbox"
+                  [checked]="isRolSelected(r.value)"
+                  (change)="toggleRol(r.value)"
+                  [disabled]="r.disabled ?? false" />
+                <span class="pp-role-chip-dot pp-role--{{ roleClass(r.value) }}"></span>
+                <span class="pp-role-chip-label">{{ r.label }}</span>
+                @if (selectedRoles.indexOf(r.value) === 0) {
+                  <span class="pp-role-primary-badge">Principal</span>
+                }
+              </label>
+            }
+          }
+        </div>
+        @if (selectedRoles.length > 0) {
+          <div class="pp-selected-roles-summary">
+            <span class="pp-summary-label">Roles seleccionados:</span>
+            @for (r of selectedRoles; track r) {
+              <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
+            }
           </div>
         }
-        <div class="sesa-form-field">
-          <label for="rol">Rol de usuario <span class="required">*</span></label>
-          <select id="rol" [(ngModel)]="form.rol">
-            <option value="">Seleccione rol</option>
-            @for (r of rolesPersonal; track r.value) {
-              <option [value]="r.value" [disabled]="r.disabled">{{ r.label }}</option>
-            }
-          </select>
+      </div>
+
+      <!-- §5 Archivos -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--green"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Archivos del profesional
         </div>
-        <div class="sesa-form-field sesa-form-field-full">
-          <label for="institucionPrestadora">Institución prestadora de servicio</label>
-          <input id="institucionPrestadora" type="text" [(ngModel)]="form.institucionPrestadora" placeholder="Ej. IPS, ESE, etc." />
-        </div>
-        <div class="sesa-form-field">
-          <label for="cargo">Cargo <span class="required">*</span></label>
-          <input id="cargo" type="text" [(ngModel)]="form.cargo" placeholder="Ej. Médico general, Enfermera" />
-        </div>
-        <div class="sesa-form-field">
-          <label for="servicio">Servicio</label>
-          <input id="servicio" type="text" [(ngModel)]="form.servicio" placeholder="Ej. Consulta externa, Urgencias" />
-        </div>
-        <div class="sesa-form-field">
-          <label for="turno">Turno</label>
-          <input id="turno" type="text" [(ngModel)]="form.turno" placeholder="Ej. Mañana, Noche" />
-        </div>
-        <div class="sesa-form-field sesa-form-field-full">
-          <label>Foto del profesional</label>
-          <input type="file" accept=".png,.jpg,.jpeg,.webp" (change)="onFotoSelected($event)" />
-          @if (fotoFile) {
-            <span class="sesa-form-hint">{{ fotoFile.name }}</span>
-          }
-        </div>
-        <div class="sesa-form-field sesa-form-field-full">
-          <label>Firma del profesional</label>
-          <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" (change)="onFirmaSelected($event)" />
-          @if (firmaFile) {
-            <span class="sesa-form-hint">{{ firmaFile.name }}</span>
-          }
-        </div>
-        <div class="sesa-form-field sesa-form-field-check">
-          <label>
-            <input type="checkbox" [(ngModel)]="form.activo" />
-            Activo
+        <div class="pp-fields pp-fields--2">
+          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!fotoFile">
+            <input type="file" accept=".png,.jpg,.jpeg,.webp" (change)="onFotoSelected($event)" hidden />
+            <div class="pp-upload-content">
+              <div class="pp-upload-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                  <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                </svg>
+              </div>
+              <span class="pp-upload-title">Foto del profesional</span>
+              @if (fotoFile) {
+                <span class="pp-upload-selected">{{ fotoFile.name }}</span>
+              } @else {
+                <span class="pp-upload-hint">PNG, JPG, WEBP · Clic para seleccionar</span>
+              }
+            </div>
+          </label>
+          <label class="pp-upload-area" [class.pp-upload-area--selected]="!!firmaFile">
+            <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg" (change)="onFirmaSelected($event)" hidden />
+            <div class="pp-upload-content">
+              <div class="pp-upload-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                  <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                  <path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>
+                </svg>
+              </div>
+              <span class="pp-upload-title">Firma del profesional</span>
+              @if (firmaFile) {
+                <span class="pp-upload-selected">{{ firmaFile.name }}</span>
+              } @else {
+                <span class="pp-upload-hint">PNG, JPG, WEBP, SVG · Clic para seleccionar</span>
+              }
+            </div>
           </label>
         </div>
       </div>
-      <p class="sesa-form-note">El personal podrá ingresar con su correo y contraseña. Los datos se asocian a la empresa actual.</p>
-      <div class="sesa-form-actions">
-        <button type="button" class="sesa-btn sesa-btn-secondary" (click)="cancelForm()" [disabled]="saving">
+
+      <!-- §6 Habilitación profesional (Res. 1449/2016 RETHUS / Ley 23/1981) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--indigo"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Habilitación profesional
+          <span class="pp-normative-tag">Res. 1449/2016 · RETHUS</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="tarjetaProfesional">Tarjeta Profesional / Ocupacional</label>
+            <input id="tarjetaProfesional" type="text" class="pp-input"
+              placeholder="Ej. TP-12345-2015"
+              [(ngModel)]="form.tarjetaProfesional" maxlength="30" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="especialidadFormal">Especialidad formal</label>
+            <input id="especialidadFormal" type="text" class="pp-input"
+              placeholder="Ej. Medicina General, Odontología…"
+              [(ngModel)]="form.especialidadFormal" maxlength="150" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="numeroRethus">Número RETHUS</label>
+            <input id="numeroRethus" type="text" class="pp-input"
+              placeholder="Ej. 123456789"
+              [(ngModel)]="form.numeroRethus" maxlength="30" />
+            <small class="pp-field-hint">Registro Único Nacional del Talento Humano en Salud</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- §7 Datos demográficos (RIPS Res. 3374/2000 / SISPRO) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--teal"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Datos demográficos
+          <span class="pp-normative-tag">Res. 3374/2000 · SISPRO</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="fechaNacimiento">Fecha de nacimiento</label>
+            <input id="fechaNacimiento" type="date" class="pp-input" [(ngModel)]="form.fechaNacimiento" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="sexo">Sexo biológico</label>
+            <select id="sexo" class="pp-select" [(ngModel)]="form.sexo">
+              <option value="">Seleccione…</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- §8 Lugar de práctica (Res. 2003/2014) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--green"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Lugar de práctica
+          <span class="pp-normative-tag">Res. 2003/2014</span>
+        </div>
+        <div class="pp-fields pp-fields--2">
+          <div class="pp-field">
+            <label class="pp-label" for="municipio">Código municipio DIVIPOLA</label>
+            <input id="municipio" type="text" class="pp-input"
+              placeholder="Ej. 11001 (Bogotá)" [(ngModel)]="form.municipio" maxlength="10" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="departamento">Código departamento DIVIPOLA</label>
+            <input id="departamento" type="text" class="pp-input"
+              placeholder="Ej. 11 (Cundinamarca)" [(ngModel)]="form.departamento" maxlength="10" />
+          </div>
+        </div>
+      </div>
+
+      <!-- §9 Vínculo laboral (Circular 047/2007 Min. Protección Social) -->
+      <div class="pp-form-section">
+        <div class="pp-section-title">
+          <span class="pp-section-dot pp-dot--amber"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          Vínculo laboral
+          <span class="pp-normative-tag">Circular 047/2007</span>
+        </div>
+        <div class="pp-fields pp-fields--3">
+          <div class="pp-field">
+            <label class="pp-label" for="tipoVinculacion">Tipo de vinculación</label>
+            <select id="tipoVinculacion" class="pp-select" [(ngModel)]="form.tipoVinculacion">
+              <option value="">Seleccione…</option>
+              <option value="PLANTA">Planta</option>
+              <option value="CONTRATO">Contrato</option>
+              <option value="PRESTADOR">Prestador de servicios</option>
+              <option value="CONVENIO">Convenio / Rotatorio</option>
+            </select>
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaIngreso">Fecha de ingreso</label>
+            <input id="fechaIngreso" type="date" class="pp-input" [(ngModel)]="form.fechaIngreso" />
+          </div>
+          <div class="pp-field">
+            <label class="pp-label" for="fechaRetiro">Fecha de retiro</label>
+            <input id="fechaRetiro" type="date" class="pp-input" [(ngModel)]="form.fechaRetiro" />
+            <small class="pp-field-hint">Dejar vacío si el profesional continúa activo.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- §10 Estado -->
+      <div class="pp-form-section pp-form-section--row pp-form-section--full">
+        <div class="pp-toggle-group">
+          <label class="pp-toggle">
+            <input type="checkbox" [(ngModel)]="form.activo" />
+            <span class="pp-toggle-track"></span>
+          </label>
+          <div class="pp-toggle-info">
+            <span class="pp-toggle-label">Integrante activo</span>
+            <span class="pp-toggle-hint">Habilitado para iniciar sesión en el sistema</span>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /.pp-form-body -->
+
+      <!-- Footer del formulario -->
+      <div class="pp-form-footer">
+        <button type="button" class="pp-btn pp-btn--ghost" (click)="cancelForm()" [disabled]="saving">
           Cancelar
         </button>
-        <button type="button" class="sesa-btn sesa-btn-primary" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Guardando…' : 'Guardar' }}
+        <button type="button" class="pp-btn pp-btn--primary" (click)="save()" [disabled]="saving">
+          @if (saving) {
+            <span class="pp-spinner" aria-hidden="true"></span>
+            Guardando…
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            {{ editingId != null ? 'Actualizar integrante' : 'Crear integrante' }}
+          }
         </button>
       </div>
-    </sesa-card>
+    </div>
   }
 
-  <sesa-card title="Personal activo">
-    @if (isSuperAdmin) {
-      <div class="sesa-toolbar">
-        <div class="sesa-form-field sesa-form-field-inline">
-          <label for="empresa">Empresa</label>
+  <!-- ═══ TARJETA DE LISTA ═══════════════════════════════════════════════ -->
+  <div class="pp-card">
+    <div class="pp-card-head">
+      <span class="pp-card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Personal registrado
+      </span>
+
+      @if (isSuperAdmin) {
+        <div class="pp-empresa-select">
+          <label for="empresa" class="pp-empresa-label">Empresa</label>
           <select
             id="empresa"
+            class="pp-empresa-control"
             [ngModel]="selectedSchema"
             (ngModelChange)="selectedSchema = $event; onEmpresaChange()"
             [disabled]="loadingEmpresas"
@@ -123,7 +467,7 @@
             @if (loadingEmpresas) {
               <option value="">Cargando empresas…</option>
             } @else {
-              <option [ngValue]="null">Seleccione una empresa</option>
+              <option [ngValue]="null">Seleccione empresa…</option>
               <option value="public">Public (administración)</option>
               @for (e of empresas; track e.id) {
                 <option [ngValue]="e.schemaName">{{ e.razonSocial }} ({{ e.schemaName }})</option>
@@ -131,94 +475,218 @@
             }
           </select>
         </div>
-      </div>
-    } @else if (selectedSchema) {
-      <p class="sesa-info">Empresa actual: <strong>{{ selectedSchema }}</strong></p>
-    }
-    <div class="sesa-toolbar">
-      <div class="sesa-search">
+      }
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="pp-toolbar">
+      <div class="pp-search-wrap">
+        <svg class="pp-search-ico" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
         <input
+          class="pp-search"
           type="text"
           [(ngModel)]="searchQ"
-          placeholder="Buscar por nombre, apellido o cargo…"
+          placeholder="Buscar por nombre o apellido…"
           (keyup.enter)="search()"
         />
-        <button type="button" class="sesa-btn sesa-btn-sm" (click)="search()">Buscar</button>
         @if (searchQ) {
-          <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-secondary" (click)="clearSearch()">
-            Limpiar
+          <button type="button" class="pp-search-clear" (click)="clearSearch()" title="Limpiar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         }
       </div>
+      <button type="button" class="pp-btn pp-btn--outline pp-btn--sm" (click)="search()">Buscar</button>
     </div>
+
+    <!-- Estados de carga / error / info -->
     @if (isSuperAdmin && !loadingEmpresas && selectedSchema === null && empresas.length > 0) {
-      <p class="sesa-info">Seleccione una empresa para ver y gestionar su personal.</p>
-    } @else if (loading) {
-      <p class="sesa-loading">Cargando…</p>
-    } @else if (error) {
-      <p class="sesa-error">{{ error }}</p>
-    } @else {
-      <div class="sesa-table-wrap">
-        <table class="sesa-table">
+      <div class="pp-info-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Seleccione una empresa para ver y gestionar su personal.
+      </div>
+    } @else if (!isSuperAdmin && selectedSchema) {
+      <div class="pp-info-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Empresa activa: <strong>{{ selectedSchema }}</strong>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="pp-table-wrap">
+        <table class="pp-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Correo</th>
+              <th>Integrante</th>
               <th>Rol</th>
-              <th>Cargo</th>
-              <th>Servicio</th>
               <th>Estado</th>
-              <th>Acciones</th>
+              <th class="pp-col-actions">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            @for (p of list; track p.id) {
-              <tr>
-                <td>{{ fullName(p) }}</td>
-                <td>{{ p.email || '—' }}</td>
-                <td>{{ p.rol || '—' }}</td>
-                <td>{{ p.cargo }}</td>
-                <td>{{ p.servicio || '—' }}</td>
-                <td>{{ p.activo ? 'Activo' : 'Inactivo' }}</td>
+            @for (sk of [1,2,3,4,5]; track sk) {
+              <tr class="pp-skeleton-row">
                 <td>
-                  <button type="button" class="sesa-link-inline" (click)="openEdit(p)">Editar</button>
-                  <button type="button" class="sesa-link-inline sesa-link-danger" (click)="delete(p)">
-                    Eliminar
-                  </button>
+                  <div class="pp-cell-person">
+                    <div class="pp-skeleton pp-skeleton--circle" style="width:38px;height:38px"></div>
+                    <div style="display:flex;flex-direction:column;gap:0.3rem">
+                      <div class="pp-skeleton" style="width:120px;height:0.8rem;border-radius:4px"></div>
+                      <div class="pp-skeleton" style="width:90px;height:0.65rem;border-radius:4px"></div>
+                    </div>
+                  </div>
                 </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="7">
-                  @if (isSuperAdmin && selectedSchema) {
-                    No hay personal en esta empresa. Use «Nuevo integrante» para agregar.
-                  } @else if (!isSuperAdmin) {
-                    No hay personal. Use «Nuevo integrante» para agregar.
-                  } @else {
-                    Seleccione una empresa para ver su personal.
-                  }
+                <td><div class="pp-skeleton" style="width:80px;height:1.3rem;border-radius:999px"></div></td>
+                <td><div class="pp-skeleton" style="width:60px;height:1.2rem;border-radius:999px"></div></td>
+                <td class="pp-col-actions">
+                  <div class="pp-row-actions">
+                    <div class="pp-skeleton pp-skeleton--rounded" style="width:32px;height:32px"></div>
+                    <div class="pp-skeleton pp-skeleton--rounded" style="width:32px;height:32px"></div>
+                  </div>
                 </td>
               </tr>
             }
           </tbody>
         </table>
       </div>
+    } @else if (error) {
+      <div class="pp-error-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </div>
+    } @else {
+      <div class="pp-table-wrap">
+        <table class="pp-table">
+          <thead>
+            <tr>
+              <th>Integrante</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th class="pp-col-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of list; track p.id) {
+              <tr class="pp-row">
+                <td class="pp-cell-person-td">
+                  <div class="pp-cell-person">
+                    <div class="pp-avatar" [ngStyle]="avatarStyle(fullName(p))">
+                      {{ initials(p) }}
+                    </div>
+                    <div class="pp-person-info">
+                      <span class="pp-person-name">{{ fullName(p) }}</span>
+                      <span class="pp-person-email">{{ p.email || '—' }}</span>
+                      @if (p.tarjetaProfesional) {
+                        <span class="pp-person-tp">TP: {{ p.tarjetaProfesional }}</span>
+                      }
+                      @if (p.numeroRethus) {
+                        <span class="pp-person-rethus">RETHUS: {{ p.numeroRethus }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  @if (p.roles && p.roles.length > 0) {
+                    <div class="pp-roles-cell">
+                      @for (r of p.roles; track r) {
+                        <span class="pp-role-badge pp-role--{{ roleClass(r) }}">{{ r }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="pp-role-badge pp-role--{{ roleClass(p.rol) }}">{{ p.rol || '—' }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="pp-status" [class.pp-status--active]="p.activo" [class.pp-status--inactive]="!p.activo">
+                    {{ p.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="pp-col-actions">
+                  <div class="pp-row-actions">
+                    <button type="button" class="pp-action-btn pp-action-btn--edit" (click)="openEdit(p)" title="Editar integrante">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="pp-action-btn pp-action-btn--delete" (click)="delete(p)" title="Eliminar integrante">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">
+                  <div class="pp-empty-state">
+                    <div class="pp-empty-icon">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                    </div>
+                    <p class="pp-empty-title">Sin integrantes</p>
+                    <p class="pp-empty-msg">
+                      @if (isSuperAdmin && selectedSchema) {
+                        No hay personal en esta empresa. Use «Nuevo integrante» para agregar.
+                      } @else if (!isSuperAdmin) {
+                        No hay personal registrado. Use «Nuevo integrante» para agregar.
+                      } @else {
+                        Seleccione una empresa para ver su personal.
+                      }
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
       @if (totalElements > size) {
-        <div class="sesa-pagination">
-          <button type="button" class="sesa-btn sesa-btn-sm" (click)="prevPage()" [disabled]="page === 0">
+        <div class="pp-pagination">
+          <button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" (click)="prevPage()" [disabled]="page === 0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
             Anterior
           </button>
-          <span>Página {{ page + 1 }} ({{ totalElements }} total)</span>
-          <button
-            type="button"
-            class="sesa-btn sesa-btn-sm"
-            (click)="nextPage()"
-            [disabled]="(page + 1) * size >= totalElements"
-          >
+          <span class="pp-page-info">Página {{ page + 1 }} · {{ totalElements }} integrantes</span>
+          <button type="button" class="pp-btn pp-btn--ghost pp-btn--sm" (click)="nextPage()"
+            [disabled]="(page + 1) * size >= totalElements">
             Siguiente
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
           </button>
         </div>
       }
     }
-  </sesa-card>
+  </div>
+
+  </div><!-- /.pp-content -->
 </section>

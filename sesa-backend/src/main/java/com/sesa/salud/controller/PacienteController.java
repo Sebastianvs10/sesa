@@ -4,6 +4,7 @@
 
 package com.sesa.salud.controller;
 
+import com.sesa.salud.dto.ConsultaDocumentoDto;
 import com.sesa.salud.dto.PacienteDto;
 import com.sesa.salud.dto.PacienteRequestDto;
 import com.sesa.salud.service.PacienteService;
@@ -17,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/pacientes")
 @RequiredArgsConstructor
@@ -25,27 +28,44 @@ public class PacienteController {
     private final PacienteService pacienteService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO'," +
+                  "'ENFERMERO','JEFE_ENFERMERIA','AUXILIAR_ENFERMERIA','PSICOLOGO'," +
+                  "'REGENTE_FARMACIA','RECEPCIONISTA','COORDINADOR_MEDICO')")
     public Page<PacienteDto> list(
             @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "activo", required = false) Boolean activo,
             @PageableDefault(size = 20) Pageable pageable) {
-        return q != null && !q.isBlank() ? pacienteService.search(q, pageable) : pacienteService.findAll(pageable);
+        if (q != null && !q.isBlank()) {
+            return pacienteService.search(q, pageable);
+        }
+        return pacienteService.findAll(pageable, activo);
+    }
+
+    @GetMapping("/consulta-documento")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
+    public ResponseEntity<ConsultaDocumentoDto> consultaPorDocumento(
+            @RequestParam("tipoDocumento") String tipoDocumento,
+            @RequestParam("documento") String documento) {
+        Optional<ConsultaDocumentoDto> opt = pacienteService.consultaPorDocumento(tipoDocumento, documento);
+        return opt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','BACTERIOLOGO'," +
+                  "'ENFERMERO','JEFE_ENFERMERIA','AUXILIAR_ENFERMERIA','PSICOLOGO'," +
+                  "'REGENTE_FARMACIA','RECEPCIONISTA','COORDINADOR_MEDICO')")
     public ResponseEntity<PacienteDto> get(@PathVariable("id") Long id) {
         return ResponseEntity.ok(pacienteService.findById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
     public ResponseEntity<PacienteDto> create(@Valid @RequestBody PacienteRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pacienteService.create(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','MEDICO','RECEPCIONISTA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERADMINISTRADOR','MEDICO','ODONTOLOGO','RECEPCIONISTA')")
     public ResponseEntity<PacienteDto> update(@PathVariable("id") Long id, @Valid @RequestBody PacienteRequestDto dto) {
         return ResponseEntity.ok(pacienteService.update(id, dto));
     }

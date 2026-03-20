@@ -1,0 +1,40 @@
+/* Página pública confirmar cita (S3) - Autor: Ing. J Sebastian Vargas S */
+.cita-public-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--sesa-bg);
+}
+.cita-public-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 2rem;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  text-align: center;
+}
+.cita-public-loading {
+  color: var(--sesa-text-secondary);
+}
+.cita-public-title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+.cita-public-title--success {
+  color: var(--sesa-success, #16a34a);
+}
+.cita-public-title--error {
+  color: var(--sesa-error, #dc2626);
+}
+.cita-public-mensaje,
+.cita-public-error {
+  margin: 0;
+  color: var(--sesa-text-primary);
+  line-height: 1.5;
+}
+.cita-public-error {
+  color: var(--sesa-error, #dc2626);
+}

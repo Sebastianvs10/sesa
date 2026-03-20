@@ -1,0 +1,342 @@
+/* Territorios y hogares EBS */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-territorios__grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .ebs-territorios__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ebs-territorios__new-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+}
+.ebs-territorios__new-link:hover {
+  text-decoration: underline;
+}
+
+.ebs-territorios__sidebar .ebs-territorios__filter {
+  margin-bottom: 0.75rem;
+}
+
+.ebs-territorios__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-territorios__select {
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-input-border);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.85rem;
+}
+
+.ebs-territorios__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ebs-territorios__item {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.35rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-territorios__item:hover,
+.ebs-territorios__item--active {
+  background: var(--sesa-surface-hover);
+  border-color: var(--sesa-border);
+}
+
+.ebs-territorios__item--active {
+  border-color: var(--sesa-secondary);
+  box-shadow: 0 0 0 1px var(--sesa-secondary);
+}
+
+.ebs-territorios__item-name { font-weight: 600; display: block; }
+.ebs-territorios__item-meta { font-size: 0.75rem; color: var(--sesa-text-secondary); }
+.ebs-territorios__item-igac {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--sesa-text-secondary);
+  margin-top: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ebs-territorios__item-risk { font-size: 0.75rem; color: var(--sesa-error); }
+
+/* Barra y formulario Límites IGAC */
+.ebs-territorios__igac-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+}
+.ebs-territorios__igac-current { flex: 1; min-width: 200px; }
+.ebs-territorios__igac-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-bottom: 0.25rem;
+}
+.ebs-territorios__igac-path { color: var(--sesa-text-primary); font-size: 0.9rem; }
+.ebs-territorios__igac-empty { font-size: 0.85rem; color: var(--sesa-text-secondary); font-style: italic; }
+.ebs-territorios__igac-btn {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-secondary);
+  background: var(--sesa-bg);
+  color: var(--sesa-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ebs-territorios__igac-btn:hover { background: rgba(31, 106, 225, 0.08); }
+.ebs-territorios__igac-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+}
+.ebs-territorios__igac-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+}
+.ebs-territorios__igac-field .ebs-territorios__select { width: 100%; }
+.ebs-territorios__igac-save {
+  align-self: end;
+  padding: 0.5rem 1rem;
+  border-radius: var(--sesa-radius-md);
+  border: none;
+  background: var(--sesa-secondary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ebs-territorios__igac-save:hover:not(:disabled) { opacity: 0.9; }
+.ebs-territorios__igac-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Toggle Lista / Mapa */
+.ebs-territorios__view-toggle {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.ebs-territorios__view-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ebs-territorios__view-btn:hover { background: var(--sesa-surface-hover); color: var(--sesa-text-primary); }
+.ebs-territorios__view-btn--active {
+  background: var(--sesa-secondary);
+  border-color: var(--sesa-secondary);
+  color: #fff;
+}
+
+/* Contenedor del mapa */
+.ebs-territorios__filter--inline { margin-bottom: 0.5rem; }
+
+.ebs-territorios__map-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  height: 50vh;
+  border-radius: var(--sesa-radius-md);
+  overflow: hidden;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+}
+.ebs-territorios__map-legend {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 500;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  font-size: 0.7rem;
+  color: var(--sesa-text-secondary);
+}
+.ebs-territorios__map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.ebs-territorios__map-legend-item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+.ebs-territorios__map-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  font-size: 0.9rem;
+  z-index: 0;
+}
+.ebs-territorios__map-hint { font-size: 0.8rem; opacity: 0.85; }
+
+/* Panel hogar seleccionado (desde el mapa) */
+.ebs-territorios__map-panel {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  max-width: 340px;
+  z-index: 1000;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+.ebs-territorios__map-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--sesa-border);
+}
+.ebs-territorios__map-panel-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--sesa-text-primary);
+}
+.ebs-territorios__map-panel-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sesa-text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ebs-territorios__map-panel-close:hover { background: var(--sesa-surface-hover); color: var(--sesa-text-primary); }
+.ebs-territorios__map-panel-body { padding: 0.75rem 0.85rem; }
+.ebs-territorios__map-panel-meta { margin: 0 0 0.35rem; font-size: 0.8rem; color: var(--sesa-text-secondary); }
+.ebs-territorios__map-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+.ebs-territorios__map-panel-btn {
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--sesa-radius-md);
+  border: none;
+  background: var(--sesa-secondary);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ebs-territorios__map-panel-btn--link {
+  background: var(--sesa-surface);
+  color: var(--sesa-secondary);
+  border: 1px solid var(--sesa-secondary);
+  text-decoration: none;
+}
+.ebs-territorios__map-panel-btn--link:hover { opacity: 0.9; }
+
+.ebs-territorios__skeleton { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.ebs-territorios__households { display: flex; flex-direction: column; gap: 0.75rem; }
+.ebs-territorios__household {
+  padding: 0.75rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+}
+.ebs-territorios__household-address { margin: 0 0 0.25rem; font-size: 0.95rem; font-weight: 600; color: var(--sesa-text-primary); }
+.ebs-territorios__household-meta { margin: 0; font-size: 0.8rem; color: var(--sesa-text-secondary); }
+.ebs-territorios__household-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.ebs-chip { display: inline-flex; align-items: center; padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+.ebs-chip-muted { background: var(--sesa-border-light); color: var(--sesa-text-secondary); }
+.ebs-chip-primary { background: rgba(31, 106, 225, 0.12); color: var(--sesa-secondary); }
+.ebs-chip-danger { background: var(--sesa-error-bg); color: var(--sesa-error); }
+.ebs-chip-warning { background: var(--sesa-warning-bg); color: var(--sesa-warning); }
+.ebs-chip-success { background: var(--sesa-success-bg); color: var(--sesa-success); }
+.ebs-chip-action { border: none; cursor: pointer; }
+.ebs-chip-link { text-decoration: none; cursor: pointer; }
+.ebs-chip-link:hover { opacity: 0.9; }
+
+/* Móvil: una columna, touch targets */
+@media (max-width: 768px) {
+  .ebs-territorios__grid {
+    grid-template-columns: 1fr;
+  }
+  .ebs-territorios__item {
+    min-height: 52px;
+    padding: 0.85rem 1rem;
+  }
+  .ebs-territorios__household {
+    padding: 1rem;
+  }
+  .ebs-territorios__household-tags .ebs-chip,
+  .ebs-territorios__household-tags .ebs-chip-link {
+    min-height: 40px;
+    padding: 0.4rem 0.65rem;
+  }
+}

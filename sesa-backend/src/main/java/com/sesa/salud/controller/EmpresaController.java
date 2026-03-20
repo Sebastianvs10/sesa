@@ -10,7 +10,6 @@ import com.sesa.salud.service.EmpresaService;
 import com.sesa.salud.tenant.TenantContextHolder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import com.sesa.salud.dto.LogoResourceDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -83,13 +82,27 @@ public class EmpresaController {
     /** Subir logo de la empresa del tenant actual. Solo ADMIN del tenant. */
     @PostMapping("/logo")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMINISTRADOR')")
-    public ResponseEntity<Void> uploadLogo(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> uploadLogo(@RequestParam("file") MultipartFile file) {
         String schema = TenantContextHolder.getTenantSchema();
         if (TenantContextHolder.PUBLIC.equals(schema)) {
             return ResponseEntity.badRequest().build();
         }
-        empresaService.saveLogo(schema, file);
-        return ResponseEntity.noContent().build();
+        String uuid = empresaService.saveLogo(schema, file);
+        return ResponseEntity.ok(Map.of("uuid", uuid, "url", "/archivos/" + uuid));
+    }
+
+    /**
+     * Subir logo de una empresa específica por ID.
+     * Permite al SUPERADMINISTRADOR gestionar logos de cualquier empresa
+     * sin importar su tenant (schema "public").
+     */
+    @PostMapping("/{id}/logo")
+    @PreAuthorize("hasRole('SUPERADMINISTRADOR') or hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadLogoById(
+            @PathVariable("id") Long id,
+            @RequestParam("file") MultipartFile file) {
+        String uuid = empresaService.saveLogoById(id, file);
+        return ResponseEntity.ok(Map.of("uuid", uuid, "url", "/archivos/" + uuid));
     }
 
     @GetMapping

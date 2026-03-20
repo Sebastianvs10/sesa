@@ -1,362 +1,378 @@
-<div class="sesa-empresa-wizard-page">
-  <div class="sesa-page-header sesa-page-header--premium">
-    <a class="sesa-btn sesa-btn-secondary sesa-btn--premium sesa-btn-back" routerLink="/empresas">
-      <span class="sesa-btn-arrow">←</span> Volver
-    </a>
-    <div class="sesa-page-header-content">
-      <div class="sesa-page-header-icon">
-        <fa-icon [icon]="isEdit ? faPenToSquare : faBuilding"></fa-icon>
-      </div>
-      <div>
-        <h1 class="sesa-page-title">{{ isEdit ? 'Editar empresa' : 'Nueva empresa' }}</h1>
-        <p class="sesa-page-subtitle">Complete la información en los pasos siguientes</p>
-      </div>
-    </div>
-    <div class="sesa-page-header-spacer"></div>
-  </div>
+<div class="ewizard">
+  <sesa-page-header
+    [title]="isEdit ? 'Editar empresa' : 'Nueva empresa'"
+    subtitle="Registro de nueva organización en el sistema."
+    backLink="/empresas"
+    backLabel="Volver"
+    backAriaLabel="Volver a Empresas">
+    <span header-icon class="sesa-page-header__icon" aria-hidden="true">
+      <fa-icon [icon]="isEdit ? faPenToSquare : faBuilding"></fa-icon>
+    </span>
+  </sesa-page-header>
 
-  <div class="sesa-wizard-container">
-    <!-- Progress bar -->
-    <div class="sesa-progress-wrapper">
-      <div class="sesa-progress-bar">
-        <div class="sesa-progress-fill" [style.width.%]="((step + 1) / steps.length) * 100"></div>
-      </div>
-      <p class="sesa-progress-text">Paso {{ step + 1 }} de {{ steps.length }}</p>
-    </div>
-
-    <!-- Tabs modernos -->
-    <div class="sesa-wizard-tabs">
-      @for (s of steps; track s; let i = $index) {
-      <button type="button" class="sesa-wizard-tab" [class.sesa-wizard-tab--active]="step === i"
-        [class.sesa-wizard-tab--completed]="step > i" (click)="goStep(i)" [disabled]="step < i">
-        <span class="sesa-wizard-tab-icon">
-          @if (step > i) {
-          ✓
-          } @else if (step === i) {
-          {{ i + 1 }}
-          } @else {
-          {{ i + 1 }}
-          }
-        </span>
-        <span class="sesa-wizard-tab-label">{{ s }}</span>
-      </button>
-      }
-    </div>
-
-    <!-- Contenido -->
-    <sesa-card class="sesa-wizard-card">
-      @if (error) {
-      <div class="sesa-login-error" role="alert">
-        <fa-icon [icon]="faTriangleExclamation" class="sesa-error-icon"></fa-icon>
-        <div class="sesa-error-content">
-          <p class="sesa-error-title">Error</p>
-          <p class="sesa-error-message">{{ error }}</p>
+  <div class="ewizard-container">
+    <div class="ewizard-stepper" role="tablist" aria-label="Pasos del asistente">
+      <div class="ewizard-step-card">
+        <div class="ewizard-step-head">
+          <div class="ewizard-step-info">
+            <span class="ewizard-step-badge">Paso {{ step + 1 }} de {{ steps.length }}</span>
+            <h2 class="ewizard-step-title">{{ steps[step] }}</h2>
+          </div>
+          <span class="ewizard-progress-label">{{ progressPercent() }}% completado</span>
+        </div>
+        <div class="ewizard-progress" aria-hidden="true">
+          <div class="ewizard-progress-track">
+            <div class="ewizard-progress-fill" [style.width.%]="progressPercent()"></div>
+          </div>
         </div>
       </div>
+      <div class="ewizard-tabs">
+        @for (s of steps; track s; let i = $index) {
+          <button type="button" class="ewizard-tab"
+            [class.ewizard-tab--current]="step === i"
+            [class.ewizard-tab--done]="step > i"
+            (click)="goStep(i)"
+            [disabled]="step < i"
+            [attr.aria-selected]="step === i"
+            [attr.aria-label]="'Paso ' + (i+1) + ': ' + s">
+            <span class="ewizard-tab-num">{{ step > i ? '✓' : (i + 1) }}</span>
+            <span class="ewizard-tab-text">{{ s }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <main class="ewizard-card" role="main">
+      @if (error) {
+        <div class="ewizard-error" role="alert">
+          <fa-icon [icon]="faTriangleExclamation" aria-hidden="true"></fa-icon>
+          <div>
+            <strong>Error</strong>
+            <p>{{ error }}</p>
+          </div>
+        </div>
       }
 
+      <div class="ewizard-card-body">
       @switch (step) {
       @case (0) {
-      <form [formGroup]="formGeneral" class="sesa-wizard-form sesa-wizard-form--premium">
-        <!-- Información básica -->
-        <div class="sesa-form-section sesa-form-section--premium">
-          <div class="sesa-form-section-header">
-            <fa-icon [icon]="faClipboardList" class="sesa-form-section-icon"></fa-icon>
-            <div>
-              <h3 class="sesa-form-section-title">Datos Generales</h3>
-              <p class="sesa-form-section-description">Información principal de la empresa</p>
+      <form [formGroup]="formGeneral" class="sesa-wizard-form sesa-wizard-form--premium ewizard-form-fit">
+        <div class="ewizard-step-cols ewizard-step-cols--equal">
+          <!-- Columna izquierda: Datos Generales + Contacto -->
+          <div class="ewizard-step-col">
+            <div class="ewizard-section-card">
+              <div class="sesa-form-section sesa-form-section--premium">
+                <div class="sesa-form-section-header sesa-form-section-header--card">
+                  <fa-icon [icon]="faClipboardList" class="sesa-form-section-icon"></fa-icon>
+                  <h3 class="sesa-form-section-title">Datos Generales</h3>
+                </div>
+                <div class="sesa-form-grid sesa-form-grid--two-cols">
+              <sesa-form-field label="Schema"
+                tooltip="Identificador único para la base de datos. Use solo letras minúsculas, números y guión bajo. Ej: mi_empresa"
+                [required]="true"
+                [success]="!!(formGeneral.get('schemaName')?.valid && formGeneral.get('schemaName')?.dirty)"
+                [error]="getSchemaError()">
+                <input type="text" formControlName="schemaName" placeholder="Ej: mi_empresa" [readonly]="isEdit" />
+              </sesa-form-field>
+              <sesa-form-field label="Razón Social" [required]="true"
+                [success]="!!(formGeneral.get('razonSocial')?.valid && formGeneral.get('razonSocial')?.dirty)"
+                [error]="formGeneral.get('razonSocial')?.invalid && formGeneral.get('razonSocial')?.touched ? 'Requerido' : ''">
+                <input type="text" formControlName="razonSocial" placeholder="Nombre completo de la empresa" />
+              </sesa-form-field>
+            </div>
             </div>
           </div>
-          <div class="sesa-form-grid sesa-form-grid--two-cols">
-            <sesa-form-field label="Schema"
-              tooltip="Identificador único para la base de datos. Use solo letras minúsculas, números y guión bajo. Ej: mi_empresa"
-              [required]="true"
-              [success]="!!(formGeneral.get('schemaName')?.valid && formGeneral.get('schemaName')?.dirty)"
-              [error]="getSchemaError()">
-              <input type="text" formControlName="schemaName" placeholder="Ej: mi_empresa" [readonly]="isEdit" />
-            </sesa-form-field>
-            <sesa-form-field label="Razón Social" [required]="true"
-              [success]="!!(formGeneral.get('razonSocial')?.valid && formGeneral.get('razonSocial')?.dirty)"
-              [error]="formGeneral.get('razonSocial')?.invalid && formGeneral.get('razonSocial')?.touched ? 'Requerido' : ''">
-              <input type="text" formControlName="razonSocial" placeholder="Nombre completo de la empresa" />
-            </sesa-form-field>
-          </div>
-        </div>
-
-        <!-- Contacto -->
-        <div class="sesa-form-section sesa-form-section--premium">
-          <div class="sesa-form-section-header">
-            <fa-icon [icon]="faPhone" class="sesa-form-section-icon"></fa-icon>
-            <div>
-              <h3 class="sesa-form-section-title">Información de Contacto</h3>
-              <p class="sesa-form-section-description">Teléfonos y ubicación</p>
+          <!-- Card Contacto (misma columna izquierda) -->
+          <div class="ewizard-section-card">
+            <div class="sesa-form-section sesa-form-section--premium">
+              <div class="sesa-form-section-header sesa-form-section-header--card">
+                <fa-icon [icon]="faPhone" class="sesa-form-section-icon"></fa-icon>
+                <h3 class="sesa-form-section-title">Contacto</h3>
+              </div>
+              <div class="sesa-form-grid sesa-form-grid--two-cols">
+                <sesa-form-field label="Teléfono principal">
+                  <input type="tel" formControlName="telefono" placeholder="Ej: +57 300..." />
+                </sesa-form-field>
+                <sesa-form-field label="Teléfono alterno">
+                  <input type="tel" formControlName="segundoTelefono" placeholder="Opcional" />
+                </sesa-form-field>
+                <div class="sesa-form-grid__full">
+                  <sesa-form-field label="Dirección">
+                    <input type="text" formControlName="direccionEmpresa" placeholder="Dirección completa de la oficina principal" />
+                  </sesa-form-field>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="sesa-form-grid sesa-form-grid--four-cols">
-            <sesa-form-field label="Teléfono principal">
-              <input type="tel" formControlName="telefono" placeholder="Teléfono" />
-            </sesa-form-field>
-            <sesa-form-field label="Teléfono alterno">
-              <input type="tel" formControlName="segundoTelefono" placeholder="Segundo teléfono" />
-            </sesa-form-field>
-            <sesa-form-field label="Dirección">
-              <input type="text" formControlName="direccionEmpresa" placeholder="Dirección empresa" />
-            </sesa-form-field>
-            <sesa-form-field label="Municipio">
-              <input type="text" formControlName="municipio" placeholder="Municipio" />
-            </sesa-form-field>
           </div>
-        </div>
-
-        <!-- Datos fiscales -->
-        <div class="sesa-form-section sesa-form-section--premium">
-          <div class="sesa-form-section-header">
-            <fa-icon [icon]="faBuildingColumns" class="sesa-form-section-icon"></fa-icon>
-            <div>
-              <h3 class="sesa-form-section-title">Información Fiscal</h3>
-              <p class="sesa-form-section-description">Datos tributarios y ubicación</p>
+          <!-- Columna derecha: Información Fiscal -->
+          <div class="ewizard-step-col">
+          <div class="ewizard-section-card">
+            <div class="sesa-form-section sesa-form-section--premium">
+              <div class="sesa-form-section-header sesa-form-section-header--card">
+                <fa-icon [icon]="faBuildingColumns" class="sesa-form-section-icon"></fa-icon>
+                <h3 class="sesa-form-section-title">Información Fiscal</h3>
+              </div>
+              <div class="sesa-form-grid sesa-form-grid--three-cols">
+                <sesa-form-field label="Tipo documento">
+                  <select formControlName="tipoDocumento" class="sesa-select--premium">
+                    <option value="">Seleccione</option>
+                    <option value="NIT">NIT</option>
+                    <option value="CE">CE</option>
+                    <option value="PA">PA</option>
+                    <option value="RC">RC</option>
+                    <option value="TI">TI</option>
+                    <option value="AS">AS</option>
+                    <option value="MS">MS</option>
+                    <option value="NU">NU</option>
+                    <option value="SD">SD</option>
+                    <option value="CC">CC</option>
+                  </select>
+                </sesa-form-field>
+                <sesa-form-field label="Identificación">
+                  <input type="text" formControlName="identificacion" placeholder="Identificación" />
+                </sesa-form-field>
+                <sesa-form-field label="Régimen">
+                  <select formControlName="regimen" class="sesa-select--premium">
+                    <option value="">Régimen</option>
+                    <option value="Contributivo">Contributivo</option>
+                    <option value="Privado">Privado</option>
+                    <option value="Régimen especial">Régimen especial</option>
+                    <option value="Subsidiado">Subsidiado</option>
+                  </select>
+                </sesa-form-field>
+                <sesa-form-field label="País">
+                  <select formControlName="pais" class="sesa-select--premium">
+                    <option value="Colombia">Colombia</option>
+                  </select>
+                </sesa-form-field>
+                <sesa-form-field label="Departamento">
+                  <select formControlName="departamento" class="sesa-select--premium" (change)="onDepartamentoChange()">
+                    <option value="">Departamento</option>
+                    @for (d of departamentos(); track d.codigoDane) {
+                      <option [value]="d.nombre">{{ d.nombre }}</option>
+                    }
+                  </select>
+                </sesa-form-field>
+                <sesa-form-field label="Municipio">
+                  <select formControlName="municipio" class="sesa-select--premium" [disabled]="!formGeneral.get('departamento')?.value">
+                    <option value="">Municipio</option>
+                    @for (m of municipios(); track m.codigoDane) {
+                      <option [value]="m.nombre">{{ m.nombre }}</option>
+                    }
+                  </select>
+                </sesa-form-field>
+                <div class="sesa-form-grid__full">
+                  <sesa-form-field label="Número divipola"
+                    tooltip="Código DIVIPOLA del municipio según el DANE. Ej: 05001 para Medellín">
+                    <input type="text" formControlName="numeroDivipola" placeholder="Código divipola" />
+                  </sesa-form-field>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="sesa-form-grid sesa-form-grid--four-cols">
-            <sesa-form-field label="Tipo de documento">
-              <select formControlName="tipoDocumento" class="sesa-select--premium">
-                <option value="">Seleccione</option>
-                <option value="NIT">NIT</option>
-                <option value="CC">Cédula</option>
-                <option value="CE">Cédula Extranjera</option>
-              </select>
-            </sesa-form-field>
-            <sesa-form-field label="Identificación">
-              <input type="text" formControlName="identificacion" placeholder="Identificación" />
-            </sesa-form-field>
-            <sesa-form-field label="Régimen tributario">
-              <select formControlName="regimen" class="sesa-select--premium">
-                <option value="">Seleccione</option>
-                <option value="Común">Común</option>
-                <option value="Simplificado">Simplificado</option>
-              </select>
-            </sesa-form-field>
-            <sesa-form-field label="Departamento">
-              <select formControlName="departamento" class="sesa-select--premium">
-                <option value="">Seleccione</option>
-                @for (d of departamentos; track d) {
-                <option [value]="d">{{ d }}</option>
-                }
-              </select>
-            </sesa-form-field>
-          </div>
-          <div class="sesa-form-grid sesa-form-grid--two-cols">
-            <sesa-form-field label="Número divipola"
-              tooltip="Código DIVIPOLA del municipio según el DANE. Ej: 05001 para Medellín">
-              <input type="text" formControlName="numeroDivipola" placeholder="Código divipola" />
-            </sesa-form-field>
-            <sesa-form-field label="País">
-              <select formControlName="pais" class="sesa-select--premium">
-                <option value="">Seleccione</option>
-                <option value="Colombia">Colombia</option>
-              </select>
-            </sesa-form-field>
           </div>
         </div>
       </form>
       }
       @case (1) {
-      <div class="sesa-modules-section sesa-modules-section--premium">
-        <div class="sesa-form-section-header sesa-modules-section-header">
-          <fa-icon [icon]="faGear" class="sesa-form-section-icon"></fa-icon>
-          <div class="sesa-modules-header-content">
-            <div>
-              <h3 class="sesa-form-section-title">Módulos y submódulos</h3>
-              <p class="sesa-form-section-description">Selecciona los módulos contratados y sus funcionalidades. Al
-                activar un módulo se activan todos sus submódulos.</p>
-            </div>
-            <div class="sesa-modules-toggle-btns">
-              <button type="button" class="sesa-modules-toggle-btn" (click)="expandAllModulos()">Expandir todo</button>
-              <button type="button" class="sesa-modules-toggle-btn" (click)="collapseAllModulos()">Colapsar todo</button>
-            </div>
-          </div>
-        </div>
-        @if (loadingModulos) {
-        <div class="sesa-modulos-loading">
-          <span class="sesa-loading-spinner"></span>
-          <p>Cargando catálogo de módulos desde la base de datos…</p>
-        </div>
-        } @else if (modulosError) {
-        <div class="sesa-modulos-error" role="alert">
-          <fa-icon [icon]="faTriangleExclamation" class="sesa-error-icon"></fa-icon>
-          <div>
-            <p class="sesa-modulos-error-title">No se pudo cargar el catálogo</p>
-            <p class="sesa-modulos-error-message">{{ modulosError }}</p>
-          </div>
-        </div>
-        } @else {
-        <div class="sesa-modulos-scroll-wrapper">
-          <ul class="sesa-modulos-list">
-            @for (m of modulos; track m.codigo) {
-            <li class="sesa-modulo-row" [class.sesa-modulo-row--selected]="getModuloCheckState(m.codigo) !== 'none'" [class.sesa-modulo-row--expanded]="isExpanded(m.codigo)">
-              <div class="sesa-modulo-row-header" [class.sesa-modulo-row-header--clickable]="m.submodulos.length > 0" (click)="m.submodulos.length > 0 && toggleExpanded(m.codigo)">
-                <label class="sesa-modulo-check-wrap" (click)="$event.stopPropagation()">
-                  <input type="checkbox" [checked]="getModuloCheckState(m.codigo) === 'full'" [indeterminate]="getModuloCheckState(m.codigo) === 'partial'" (change)="toggleModulo(m.codigo)" class="sesa-modulo-check" />
-                  <span class="sesa-modulo-check-custom" [class.sesa-modulo-check-custom--partial]="getModuloCheckState(m.codigo) === 'partial'" [class.sesa-modulo-check-custom--full]="getModuloCheckState(m.codigo) === 'full'"></span>
-                </label>
-                <span class="sesa-modulo-name">{{ m.nombre }}</span>
-                @if (m.submodulos.length > 0) {
-                <span class="sesa-modulo-badge">{{ countSelectedSubs(m.codigo) }}/{{ m.submodulos.length }}</span>
-                <span class="sesa-modulo-chevron" [class.sesa-modulo-chevron--open]="isExpanded(m.codigo)">▾</span>
-                }
+        <section class="ewizard-modules" aria-labelledby="modulos-title">
+          <div class="ewizard-modules-head">
+            <div class="ewizard-modules-title-block">
+              <fa-icon [icon]="faGear" class="ewizard-modules-icon" aria-hidden="true"></fa-icon>
+              <div>
+                <h2 id="modulos-title" class="ewizard-modules-title">Módulos desde la base de datos</h2>
+                <p class="ewizard-modules-desc">Los módulos que active aquí serán los que aparecerán al personal al entrar al sistema y al configurar roles y permisos. Catálogo cargado desde la base de datos.</p>
               </div>
-              @if (m.submodulos.length > 0 && isExpanded(m.codigo)) {
-              <div class="sesa-modulo-dropdown">
-                <ul class="sesa-submodulos-list">
-                  @for (sub of m.submodulos; track sub.codigo) {
-                  <li class="sesa-submodulo-item">
-                    <label class="sesa-submodulo-label">
-                      <input type="checkbox" [checked]="isSubmoduloSelected(sub.codigo)" (change)="toggleSubmodulo(m.codigo, sub.codigo)" />
-                      <span class="sesa-submodulo-name">{{ sub.nombre }}</span>
-                    </label>
+            </div>
+            <div class="ewizard-modules-actions">
+              <button type="button" class="ewizard-modules-btn" (click)="seleccionarTodosModulos()">Seleccionar todo</button>
+              <button type="button" class="ewizard-modules-btn" (click)="deseleccionarTodosModulos()">Deseleccionar todo</button>
+              <button type="button" class="ewizard-modules-btn ewizard-modules-btn--secondary" (click)="expandAllModulos()">Expandir</button>
+              <button type="button" class="ewizard-modules-btn ewizard-modules-btn--secondary" (click)="collapseAllModulos()">Colapsar</button>
+            </div>
+          </div>
+          @if (loadingModulos) {
+            <div class="ewizard-modules-loading">
+              <span class="ewizard-spinner" aria-hidden="true"></span>
+              <p>Cargando catálogo de módulos desde la base de datos…</p>
+            </div>
+          } @else if (modulosError) {
+            <div class="ewizard-modules-err" role="alert">
+              <fa-icon [icon]="faTriangleExclamation" aria-hidden="true"></fa-icon>
+              <div>
+                <strong>No se pudo cargar el catálogo</strong>
+                <p>{{ modulosError }}</p>
+              </div>
+            </div>
+          } @else {
+            <div class="ewizard-modules-scroll">
+              <ul class="ewizard-modules-list">
+                @for (m of modulos; track m.codigo) {
+                  <li class="ewizard-module-item" [class.ewizard-module-item--selected]="getModuloCheckState(m.codigo) !== 'none'" [class.ewizard-module-item--open]="isExpanded(m.codigo)">
+                    <div class="ewizard-module-head" [class.ewizard-module-head--clickable]="m.submodulos.length > 0" (click)="m.submodulos.length > 0 && toggleExpanded(m.codigo)">
+                      <label class="ewizard-module-check" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [checked]="getModuloCheckState(m.codigo) === 'full'" [indeterminate]="getModuloCheckState(m.codigo) === 'partial'" (change)="toggleModulo(m.codigo)" />
+                        <span class="ewizard-module-checkbox" [class.ewizard-module-checkbox--partial]="getModuloCheckState(m.codigo) === 'partial'" [class.ewizard-module-checkbox--full]="getModuloCheckState(m.codigo) === 'full'"></span>
+                      </label>
+                      <span class="ewizard-module-name">{{ m.nombre }}</span>
+                      @if (m.submodulos.length > 0) {
+                        <span class="ewizard-module-badge">{{ countSelectedSubs(m.codigo) }}/{{ m.submodulos.length }}</span>
+                        <span class="ewizard-module-chevron" [class.ewizard-module-chevron--open]="isExpanded(m.codigo)" aria-hidden="true">▾</span>
+                      }
+                    </div>
+                    @if (m.submodulos.length > 0 && isExpanded(m.codigo)) {
+                      <div class="ewizard-module-subs">
+                        <ul class="ewizard-subs-list">
+                          @for (sub of m.submodulos; track sub.codigo) {
+                            <li>
+                              <label class="ewizard-sub-item">
+                                <input type="checkbox" [checked]="isSubmoduloSelected(sub.codigo)" (change)="toggleSubmodulo(m.codigo, sub.codigo)" />
+                                <span>{{ sub.nombre }}</span>
+                              </label>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </li>
-                  }
-                </ul>
-              </div>
-              }
-            </li>
-            }
-          </ul>
-        </div>
-        }
-      </div>
+                }
+              </ul>
+            </div>
+          }
+        </section>
       }
       @case (2) {
-      <form [formGroup]="formGeneral" class="sesa-wizard-form sesa-wizard-form--premium">
-        <div class="sesa-form-section sesa-form-section--premium">
-          <div class="sesa-form-section-header">
-            <fa-icon [icon]="faUsers" class="sesa-form-section-icon"></fa-icon>
-            <div>
-              <h3 class="sesa-form-section-title">Límite de usuarios</h3>
-              <p class="sesa-form-section-description">Configura la cantidad de usuarios permitidos</p>
-            </div>
-          </div>
-          <div class="sesa-form-grid sesa-form-grid--two-cols">
-            <div class="sesa-user-limit-card">
-              <div class="sesa-user-limit-icon"><fa-icon [icon]="faMobileScreen"></fa-icon></div>
-              <sesa-form-field label="Usuarios Móvil" hint="Aplicación móvil">
-                <input type="number" formControlName="usuarioMovilLimit" min="0" placeholder="0" />
-              </sesa-form-field>
-            </div>
-            <div class="sesa-user-limit-card">
-              <div class="sesa-user-limit-icon"><fa-icon [icon]="faGlobe"></fa-icon></div>
-              <sesa-form-field label="Usuarios WEB" hint="Plataforma web">
-                <input type="number" formControlName="usuarioWebLimit" min="0" placeholder="0" />
-              </sesa-form-field>
+      <form [formGroup]="formGeneral" class="sesa-wizard-form sesa-wizard-form--premium ewizard-form-fit">
+        <div class="ewizard-step-vertical">
+          <div class="ewizard-section-card">
+            <div class="sesa-form-section sesa-form-section--premium">
+              <div class="sesa-form-section-header sesa-form-section-header--card">
+                <fa-icon [icon]="faUsers" class="sesa-form-section-icon"></fa-icon>
+                <h3 class="sesa-form-section-title">Límite de usuarios</h3>
+              </div>
+              <div class="ewizard-section-card-body">
+                <p class="ewizard-step-desc">Configura la cantidad de usuarios permitidos para móvil y web.</p>
+                <div class="sesa-form-grid sesa-form-grid--two-cols sesa-form-grid--limit-cards">
+                <div class="sesa-user-limit-card">
+                  <div class="sesa-user-limit-icon"><fa-icon [icon]="faMobileScreen"></fa-icon></div>
+                  <sesa-form-field label="Usuarios Móvil" hint="Aplicación móvil">
+                    <input type="number" formControlName="usuarioMovilLimit" min="0" placeholder="0" />
+                  </sesa-form-field>
+                </div>
+                <div class="sesa-user-limit-card">
+                  <div class="sesa-user-limit-icon"><fa-icon [icon]="faGlobe"></fa-icon></div>
+                  <sesa-form-field label="Usuarios WEB" hint="Plataforma web">
+                    <input type="number" formControlName="usuarioWebLimit" min="0" placeholder="0" />
+                  </sesa-form-field>
+                </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </form>
       }
       @case (3) {
-      <form [formGroup]="formAdmin" class="sesa-wizard-form sesa-wizard-form--premium">
-        <div class="sesa-form-section sesa-form-section--premium">
-          <div class="sesa-form-section-header">
-            <fa-icon [icon]="faUser" class="sesa-form-section-icon"></fa-icon>
-            <div>
-              <h3 class="sesa-form-section-title">Usuario Administrador</h3>
-              <p class="sesa-form-section-description">Datos de la persona que administrará la empresa</p>
-            </div>
-          </div>
-
-          <!-- Nombres y apellidos -->
-          <div class="sesa-form-grid sesa-form-grid--four-cols">
-            <sesa-form-field label="Identificación" [required]="true"
-              [error]="formAdmin.get('identificacion')?.invalid && formAdmin.get('identificacion')?.touched ? 'Requerido' : ''">
-              <input type="text" formControlName="identificacion" placeholder="Identificación" />
-            </sesa-form-field>
-            <sesa-form-field label="Primer Nombre" [required]="true"
-              [error]="formAdmin.get('primerNombre')?.invalid && formAdmin.get('primerNombre')?.touched ? 'Requerido' : ''">
-              <input type="text" formControlName="primerNombre" placeholder="Primer nombre" />
-            </sesa-form-field>
-            <sesa-form-field label="Segundo Nombre">
-              <input type="text" formControlName="segundoNombre" placeholder="Segundo nombre (opcional)" />
-            </sesa-form-field>
-            <sesa-form-field label="Primer Apellido" [required]="true"
-              [error]="formAdmin.get('primerApellido')?.invalid && formAdmin.get('primerApellido')?.touched ? 'Requerido' : ''">
-              <input type="text" formControlName="primerApellido" placeholder="Primer apellido" />
-            </sesa-form-field>
-          </div>
-
-          <!-- Más datos personales -->
-          <div class="sesa-form-grid sesa-form-grid--four-cols">
-            <sesa-form-field label="Segundo Apellido">
-              <input type="text" formControlName="segundoApellido" placeholder="Segundo apellido (opcional)" />
-            </sesa-form-field>
-            <sesa-form-field label="Teléfono Celular" [required]="true"
-              [error]="formAdmin.get('telefonoCelular')?.invalid && formAdmin.get('telefonoCelular')?.touched ? 'Requerido' : ''">
-              <input type="tel" formControlName="telefonoCelular" placeholder="+57 3XX XXXXXXX" />
-            </sesa-form-field>
-            <sesa-form-field label="Proveedor de Servicio">
-              <select formControlName="proveedorServicio" class="sesa-select--premium">
-                <option value="">Seleccione</option>
-                <option value="Claro">Claro</option>
-                <option value="Movistar">Movistar</option>
-                <option value="Tigo">Tigo</option>
-              </select>
-            </sesa-form-field>
-            <div></div>
-          </div>
-
-          <!-- Credenciales -->
-          <div class="sesa-form-section sesa-form-section--nested sesa-form-section--premium">
-            <div class="sesa-form-section-header">
-              <fa-icon [icon]="faLock" class="sesa-form-section-icon"></fa-icon>
-              <div>
-                <h4 class="sesa-form-section-title sesa-form-section-title--small">Credenciales de acceso</h4>
+      <form [formGroup]="formAdmin" class="sesa-wizard-form sesa-wizard-form--premium ewizard-form-fit">
+        <div class="ewizard-step3-cols">
+          <div class="ewizard-section-card">
+            <div class="sesa-form-section sesa-form-section--premium">
+              <div class="sesa-form-section-header sesa-form-section-header--card">
+                <fa-icon [icon]="faUser" class="sesa-form-section-icon"></fa-icon>
+                <h3 class="sesa-form-section-title">Usuario Administrador</h3>
+              </div>
+              <div class="ewizard-section-card-body">
+                <p class="ewizard-step-desc">Datos de la persona que administrará la empresa.</p>
+                <div class="sesa-form-grid sesa-form-grid--three-cols">
+                <sesa-form-field label="Identificación" [required]="true"
+                  [error]="formAdmin.get('identificacion')?.invalid && formAdmin.get('identificacion')?.touched ? 'Requerido' : ''">
+                  <input type="text" formControlName="identificacion" placeholder="Identificación" />
+                </sesa-form-field>
+                <sesa-form-field label="Primer Nombre" [required]="true"
+                  [error]="formAdmin.get('primerNombre')?.invalid && formAdmin.get('primerNombre')?.touched ? 'Requerido' : ''">
+                  <input type="text" formControlName="primerNombre" placeholder="Primer nombre" />
+                </sesa-form-field>
+                <sesa-form-field label="Segundo Nombre">
+                  <input type="text" formControlName="segundoNombre" placeholder="Segundo nombre (opcional)" />
+                </sesa-form-field>
+                <sesa-form-field label="Primer Apellido" [required]="true"
+                  [error]="formAdmin.get('primerApellido')?.invalid && formAdmin.get('primerApellido')?.touched ? 'Requerido' : ''">
+                  <input type="text" formControlName="primerApellido" placeholder="Primer apellido" />
+                </sesa-form-field>
+                <sesa-form-field label="Segundo Apellido">
+                  <input type="text" formControlName="segundoApellido" placeholder="Segundo apellido (opcional)" />
+                </sesa-form-field>
+                <sesa-form-field label="Teléfono Celular" [required]="true"
+                  [error]="formAdmin.get('telefonoCelular')?.invalid && formAdmin.get('telefonoCelular')?.touched ? 'Requerido' : ''">
+                  <input type="tel" formControlName="telefonoCelular" placeholder="+57 3XX XXXXXXX" />
+                </sesa-form-field>
+              </div>
               </div>
             </div>
-            <div class="sesa-form-grid sesa-form-grid--two-cols">
-              <sesa-form-field label="Correo Electrónico" [required]="true"
-                [error]="formAdmin.get('correo')?.invalid && formAdmin.get('correo')?.touched ? 'Correo válido requerido' : ''">
-                <input type="email" formControlName="correo" placeholder="admin@empresa.com" [readonly]="isEdit" />
-              </sesa-form-field>
-              <div></div>
+          </div>
+          <div class="ewizard-section-card">
+            <div class="sesa-form-section sesa-form-section--premium">
+              <div class="sesa-form-section-header sesa-form-section-header--card">
+                <fa-icon [icon]="faLock" class="sesa-form-section-icon"></fa-icon>
+                <h3 class="sesa-form-section-title">Credenciales de acceso</h3>
+              </div>
+              <div class="ewizard-section-card-body">
+              <div class="sesa-form-grid sesa-form-grid--two-cols">
+                <sesa-form-field label="Correo Electrónico" [required]="true"
+                  [error]="formAdmin.get('correo')?.invalid && formAdmin.get('correo')?.touched ? 'Correo válido requerido' : ''">
+                  <input type="email" formControlName="correo" placeholder="admin@empresa.com" [readonly]="isEdit" />
+                </sesa-form-field>
+                @if (!isEdit) {
+                <sesa-form-field label="Contraseña" [required]="true"
+                  [error]="formAdmin.get('contraseña')?.invalid && formAdmin.get('contraseña')?.touched ? 'Mínimo 6 caracteres' : ''">
+                  <input type="password" formControlName="contraseña" placeholder="Ingrese contraseña segura" />
+                </sesa-form-field>
+                }
+              </div>
+              @if (!isEdit) {
+              <div class="sesa-form-grid sesa-form-grid--two-cols">
+                <sesa-form-field label="Confirmar Contraseña" [required]="true"
+                  [error]="formAdmin.get('repetirContraseña')?.hasError('mismatch') ? 'Las contraseñas no coinciden' : (formAdmin.get('repetirContraseña')?.invalid && formAdmin.get('repetirContraseña')?.touched ? 'Requerido' : '')">
+                  <input type="password" formControlName="repetirContraseña" placeholder="Repita la contraseña" />
+                </sesa-form-field>
+              </div>
+              }
+              </div>
             </div>
-            @if (!isEdit) {
-            <div class="sesa-form-grid sesa-form-grid--two-cols">
-              <sesa-form-field label="Contraseña" [required]="true"
-                [error]="formAdmin.get('contraseña')?.invalid && formAdmin.get('contraseña')?.touched ? 'Mínimo 6 caracteres' : ''">
-                <input type="password" formControlName="contraseña" placeholder="Ingrese contraseña segura" />
-              </sesa-form-field>
-              <sesa-form-field label="Confirmar Contraseña" [required]="true"
-                [error]="formAdmin.get('repetirContraseña')?.hasError('mismatch') ? 'Las contraseñas no coinciden' : (formAdmin.get('repetirContraseña')?.invalid && formAdmin.get('repetirContraseña')?.touched ? 'Requerido' : '')">
-                <input type="password" formControlName="repetirContraseña" placeholder="Repita la contraseña" />
-              </sesa-form-field>
-            </div>
-            }
           </div>
         </div>
       </form>
       }
       }
 
-      <!-- Acciones -->
+      </div><!-- .ewizard-card-body -->
+
+      <!-- Acciones: estilo referencia con SESA -->
       <div class="sesa-wizard-actions">
-        @if (step > 0) {
-        <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-icon" (click)="goStep(step - 1)">
-          <span>← Anterior</span>
-        </button>
-        }
-        <button type="button" class="sesa-btn sesa-btn-primary sesa-btn-icon" (click)="next()" [disabled]="loading">
-          @if (loading) {
-          <span class="sesa-loading-spinner"></span>
-          <span>Guardando…</span>
-          } @else {
-          @if (step === steps.length - 1) {
-          <fa-icon [icon]="isEdit ? faFloppyDisk : faWandMagicSparkles"></fa-icon>
-          <span>{{ isEdit ? ' Guardar' : ' Crear empresa' }}</span>
-          } @else {
-          <span>Siguiente →</span>
+        <a routerLink="/empresas" class="sesa-btn-cancel">Cancelar</a>
+        <div class="sesa-wizard-actions-right">
+          @if (step > 0) {
+          <button type="button" class="sesa-btn sesa-btn-secondary sesa-btn-icon" (click)="goStep(step - 1)">
+            <span>← Anterior</span>
+          </button>
           }
-          }
-        </button>
+          <button type="button" class="sesa-btn sesa-btn-primary sesa-btn-icon" (click)="next()" [disabled]="loading">
+            @if (loading) {
+            <span class="sesa-loading-spinner"></span>
+            <span>Guardando…</span>
+            } @else {
+            @if (step === steps.length - 1) {
+            <fa-icon [icon]="isEdit ? faFloppyDisk : faWandMagicSparkles"></fa-icon>
+            <span>{{ isEdit ? ' Guardar' : ' Crear empresa' }}</span>
+            } @else {
+            <span>Siguiente paso</span>
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+            }
+            }
+          </button>
+        </div>
       </div>
-    </sesa-card>
+    </main>
   </div>
 </div>

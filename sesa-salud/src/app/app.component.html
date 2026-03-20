@@ -1,8 +1,4 @@
-<ng-container *ngIf="isLoginRoute; else sesaShell">
-  <router-outlet />
-</ng-container>
-
-<ng-template #sesaShell>
+<ng-container *ngIf="showAppShell; else onlyOutlet">
   <div class="sesa-shell">
     <aside class="sesa-sidebar">
       <div class="sesa-logo">
@@ -17,223 +13,64 @@
         </div>
       </div>
 
+      <!-- Sidebar: generado dinámicamente desde sidebarSections (permisos vienen del backend) -->
       <nav class="sesa-nav">
-        <div>
-          <div class="sesa-nav-section-title">Principal</div>
-          @if (permissions.canAccess('DASHBOARD')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/dashboard"
-            routerLinkActive="sesa-nav-link-active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            title="Dashboard"
-          >
-            <fa-icon [icon]="faChartLine" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Dashboard</span>
-          </a>
-          }
-        </div>
 
-        <div>
-          <div class="sesa-nav-section-title">Atención</div>
-          @if (permissions.canAccess('PACIENTES')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/pacientes"
-            routerLinkActive="sesa-nav-link-active"
-            title="Pacientes"
-          >
-            <fa-icon [icon]="faUsers" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Pacientes</span>
-          </a>
-          }
-          @if (permissions.canAccess('HISTORIA_CLINICA')) {
-          <div class="sesa-nav-group sesa-nav-group-hc">
-            <div class="sesa-nav-group-label">
-              <fa-icon [icon]="faClipboardList" class="sesa-nav-link-icon"></fa-icon>
-              <span class="sesa-nav-link-label">Historia clínica</span>
-            </div>
-            <a
-              class="sesa-nav-link sesa-nav-sublink"
-              routerLink="/historia-clinica"
-              routerLinkActive="sesa-nav-link-active"
-              title="Consultar Historia clínica"
-            >
-              <fa-icon [icon]="faMagnifyingGlass" class="sesa-nav-link-icon"></fa-icon>
-              <span class="sesa-nav-link-label">Consultar Historia clínica</span>
-            </a>
-            @if (permissions.canCrearHistoriaClinica()) {
-              <a
-                class="sesa-nav-link sesa-nav-sublink"
-                routerLink="/historia-clinica/nueva"
-                routerLinkActive="sesa-nav-link-active"
-                title="Crear Historia Clínica"
-              >
-                <fa-icon [icon]="faPlus" class="sesa-nav-link-icon"></fa-icon>
-                <span class="sesa-nav-link-label">Crear Historia Clínica</span>
-              </a>
+        @if (permissions.isLoading()) {
+          <!-- Esqueleto mientras llegan los permisos del backend -->
+          <div class="sesa-nav-skeleton">
+            @for (i of skeletonItems; track i) {
+              <div class="sesa-nav-skeleton-item"></div>
             }
           </div>
-          }
-          @if (permissions.canAccess('LABORATORIOS')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/laboratorios"
-            routerLinkActive="sesa-nav-link-active"
-            title="Laboratorios"
-          >
-            <fa-icon [icon]="faFlask" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Laboratorios</span>
-          </a>
-          }
-          @if (permissions.canAccess('IMAGENES')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/imagenes-diagnosticas"
-            routerLinkActive="sesa-nav-link-active"
-            title="Imágenes"
-          >
-            <fa-icon [icon]="faImage" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Imágenes</span>
-          </a>
-          }
-          @if (permissions.canAccess('URGENCIAS')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/urgencias"
-            routerLinkActive="sesa-nav-link-active"
-            title="Urgencias"
-          >
-            <fa-icon [icon]="faTruckMedical" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Urgencias</span>
-          </a>
-          }
-          @if (permissions.canAccess('HOSPITALIZACION')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/hospitalizacion"
-            routerLinkActive="sesa-nav-link-active"
-            title="Hospitalización"
-          >
-            <fa-icon [icon]="faBed" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Hospitalización</span>
-          </a>
-          }
-          @if (permissions.canAccess('FARMACIA')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/farmacia"
-            routerLinkActive="sesa-nav-link-active"
-            title="Farmacia"
-          >
-            <fa-icon [icon]="faPills" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Farmacia</span>
-          </a>
-          }
-          @if (permissions.canAccess('FACTURACION')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/facturacion"
-            routerLinkActive="sesa-nav-link-active"
-            title="Facturación"
-          >
-            <fa-icon [icon]="faFileInvoice" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Facturación</span>
-          </a>
-          }
-          @if (permissions.canAccess('CITAS')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/citas"
-            routerLinkActive="sesa-nav-link-active"
-            title="Citas"
-          >
-            <fa-icon [icon]="faCalendarDays" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Citas</span>
-          </a>
-          }
-        </div>
 
-        <div>
-          <div class="sesa-nav-section-title">Administración</div>
-          @if (permissions.canAccess('EMPRESAS') || permissions.canAccess('PERSONAL') || isSuperAdmin()) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/mi-empresa"
-            routerLinkActive="sesa-nav-link-active"
-            title="Mi empresa"
-          >
-            <fa-icon [icon]="faBuilding" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Mi empresa</span>
-          </a>
+        } @else {
+
+          @for (section of sidebarSections(); track section.title) {
+            <div>
+              <div class="sesa-nav-section-title">{{ section.title }}</div>
+
+              @for (entry of section.entries; track entry.label) {
+
+                @if (!entry.children || entry.children.length === 0) {
+                  <!-- Enlace simple -->
+                  <a
+                    class="sesa-nav-link"
+                    [routerLink]="entry.route"
+                    routerLinkActive="sesa-nav-link-active"
+                    [routerLinkActiveOptions]="{ exact: !!entry.exactRoute }"
+                    [title]="entry.label"
+                  >
+                    <fa-icon [icon]="$any(entry.icon)" class="sesa-nav-link-icon"></fa-icon>
+                    <span class="sesa-nav-link-label">{{ entry.label }}</span>
+                  </a>
+
+                } @else {
+                  <!-- Grupo con sub-enlaces -->
+                  <div class="sesa-nav-group sesa-nav-group-hc">
+                    <div class="sesa-nav-group-label">
+                      <fa-icon [icon]="$any(entry.icon)" class="sesa-nav-link-icon"></fa-icon>
+                      <span class="sesa-nav-link-label">{{ entry.label }}</span>
+                    </div>
+                    @for (child of entry.visibleChildren; track child.route) {
+                      <a
+                        class="sesa-nav-link sesa-nav-sublink"
+                        [routerLink]="child.route"
+                        routerLinkActive="sesa-nav-link-active"
+                        [title]="child.label"
+                      >
+                        <fa-icon [icon]="$any(child.icon)" class="sesa-nav-link-icon"></fa-icon>
+                        <span class="sesa-nav-link-label">{{ child.label }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+
+              }
+            </div>
           }
-          @if (isSuperAdmin()) {
-            <a
-              class="sesa-nav-link"
-              routerLink="/empresas"
-              routerLinkActive="sesa-nav-link-active"
-              title="Gestión empresas"
-            >
-              <fa-icon [icon]="faBuildingColumns" class="sesa-nav-link-icon"></fa-icon>
-              <span class="sesa-nav-link-label">Gestión empresas</span>
-            </a>
-          }
-          @if (permissions.canAccess('PERSONAL')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/personal"
-            routerLinkActive="sesa-nav-link-active"
-            title="Personal"
-          >
-            <fa-icon [icon]="faUsers" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Personal</span>
-          </a>
-          }
-          @if (permissions.canGestionarUsuarios()) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/usuarios"
-            routerLinkActive="sesa-nav-link-active"
-            title="Usuarios"
-          >
-            <fa-icon [icon]="faShieldHalved" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Usuarios</span>
-          </a>
-          }
-          @if (permissions.canAccess('REPORTES')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/reportes"
-            routerLinkActive="sesa-nav-link-active"
-            title="Reportes"
-          >
-            <fa-icon [icon]="faChartBar" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Reportes</span>
-          </a>
-          }
-          @if (permissions.canAccess('NOTIFICACIONES')) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/notificaciones"
-            routerLinkActive="sesa-nav-link-active"
-            title="Notificaciones"
-          >
-            <fa-icon [icon]="faBell" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Notificaciones</span>
-          </a>
-          }
-          @if (permissions.canGestionarRoles()) {
-          <a
-            class="sesa-nav-link"
-            routerLink="/roles"
-            routerLinkActive="sesa-nav-link-active"
-            title="Gestión de roles"
-          >
-            <fa-icon [icon]="faShieldHalved" class="sesa-nav-link-icon"></fa-icon>
-            <span class="sesa-nav-link-label">Roles del sistema</span>
-          </a>
-          }
-        </div>
+
+        }
       </nav>
     </aside>
 
@@ -242,6 +79,7 @@
         <div class="sesa-topbar-title">
           {{ pageTitle }}
         </div>
+        <img src="/logo.png" alt="SESA" class="sesa-topbar-logo" width="250" height="120" />
         <div class="sesa-topbar-meta">
           <!-- Indicador de conexión a la red -->
           <span
@@ -295,7 +133,7 @@
                       role="menuitem"
                       (click)="openNotification(notif)">
                       <div class="sesa-topbar-notification-item-title">{{ notif.titulo }}</div>
-                      <div class="sesa-topbar-notification-item-preview">{{ notif.contenido | slice:0:80 }}{{ notif.contenido.length > 80 ? '…' : '' }}</div>
+                      <div class="sesa-topbar-notification-item-preview">{{ notifPreview(notif.contenido) }}</div>
                       <div class="sesa-topbar-notification-item-date">{{ notif.fechaEnvio | date:'short' }}</div>
                     </button>
                   }
@@ -333,19 +171,101 @@
               <span class="sesa-topbar-avatar">{{ userInitials }}</span>
             </button>
             @if (showProfileMenu) {
-              <div class="sesa-topbar-profile-dropdown" role="menu">
-                @if (authService.currentSchema(); as schema) {
-                  <div class="sesa-topbar-profile-tenant" role="none">Empresa: {{ schema }}</div>
+              <div class="pd" role="menu" aria-label="Menú de usuario">
+
+                <!-- ── Header: avatar + identidad ── -->
+                <div class="pd-header">
+                  <div class="pd-avatar" aria-hidden="true">{{ userInitials }}</div>
+                  <div class="pd-identity">
+                    <span class="pd-name">{{ authService.currentUser()?.nombreCompleto ?? 'Usuario' }}</span>
+                    <span class="pd-email">{{ authService.currentUser()?.email ?? '' }}</span>
+                  </div>
+                </div>
+
+                <!-- ── Empresa + rol activo ── -->
+                <div class="pd-meta">
+                  @if (authService.currentSchema(); as schema) {
+                    <span class="pd-badge pd-badge--tenant">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                      </svg>
+                      {{ schema }}
+                    </span>
+                  }
+                  <span class="pd-badge pd-badge--role">
+                    <span class="pd-badge-dot" aria-hidden="true"></span>
+                    {{ rolLabel(authService.rolActivo()) }}
+                  </span>
+                </div>
+
+                <!-- ── Cambio de rol ── -->
+                @if (authService.currentRoles().length > 1) {
+                  <div class="pd-section" role="none">
+                    <span class="pd-section-label">Cambiar vista</span>
+                    <div class="pd-roles">
+                      @for (rol of authService.currentRoles(); track rol) {
+                        <button
+                          type="button"
+                          class="pd-role-btn"
+                          [class.pd-role-btn--active]="authService.rolActivo() === rol"
+                          role="menuitem"
+                          (click)="switchRole(rol)"
+                          [attr.aria-pressed]="authService.rolActivo() === rol"
+                          [title]="'Cambiar a ' + rolLabel(rol)">
+                          <span class="pd-role-icon" aria-hidden="true">
+                            @if (authService.rolActivo() === rol) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            } @else {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"/>
+                              </svg>
+                            }
+                          </span>
+                          <span class="pd-role-label">{{ rolLabel(rol) }}</span>
+                          @if (authService.rolActivo() === rol) {
+                            <span class="pd-role-active-tag">Activo</span>
+                          }
+                        </button>
+                      }
+                    </div>
+                  </div>
                 }
-                <div class="sesa-topbar-profile-name" role="none">{{ authService.currentUser()?.nombreCompleto ?? 'Usuario' }}</div>
-                <button
-                  type="button"
-                  class="sesa-topbar-profile-logout"
-                  role="menuitem"
-                  (click)="closeProfileAndLogout()"
-                  title="Cerrar sesión">
-                  Salir
-                </button>
+
+                <!-- ── Acciones ── -->
+                <div class="pd-actions">
+                  <button type="button" class="pd-action" role="menuitem" (click)="openPerfil()">
+                    <span class="pd-action-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                    </span>
+                    <span>Mi perfil</span>
+                  </button>
+                </div>
+
+                <!-- ── Footer: salir ── -->
+                <div class="pd-footer">
+                  <button type="button" class="pd-logout" role="menuitem" (click)="closeProfileAndLogout()">
+                    <span class="pd-action-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                      </svg>
+                    </span>
+                    <span>Cerrar sesión</span>
+                  </button>
+                </div>
+
               </div>
             }
           </div>
@@ -365,4 +285,20 @@
     <!-- Indicador flotante de estado offline / sincronización -->
     <sesa-offline-status />
   </div>
+</ng-container>
+
+<ng-template #onlyOutlet>
+  <router-outlet />
 </ng-template>
+
+<!-- Sistema de notificaciones toast (global) -->
+<sesa-toast-container />
+
+<!-- Overlay de carga global -->
+<sesa-loading-overlay />
+
+<!-- Dialog de confirmación premium (global) -->
+<sesa-confirm-dialog-outlet />
+
+<!-- Modal Mi Perfil (global) -->
+<sesa-perfil-modal-outlet />

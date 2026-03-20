@@ -39,7 +39,7 @@ public class HistoriaClinica {
     @Column(name = "grupo_sanguineo", length = 10)
     private String grupoSanguineo;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "alergias_generales", columnDefinition = "TEXT")
     private String alergiasGenerales;
 
     @Column(name = "antecedentes_personales", columnDefinition = "TEXT")

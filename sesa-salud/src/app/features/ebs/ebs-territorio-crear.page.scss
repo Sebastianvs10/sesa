@@ -1,0 +1,133 @@
+/* Crear territorio EBS — formulario premium */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-crear {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ebs-crear__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-crear__back {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: var(--sesa-secondary);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+.ebs-crear__back:hover {
+  text-decoration: underline;
+}
+
+.ebs-crear__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-crear__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-crear__card {
+  border-radius: var(--sesa-radius-lg);
+  box-shadow: var(--sesa-shadow-md);
+}
+
+.ebs-crear__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ebs-crear__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ebs-crear__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-crear__req {
+  color: var(--sesa-error);
+}
+
+.ebs-crear__input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--sesa-input-border);
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-input-bg);
+  color: var(--sesa-text-primary);
+  transition: border-color var(--sesa-transition), box-shadow var(--sesa-transition);
+}
+.ebs-crear__input:focus {
+  outline: none;
+  border-color: var(--sesa-secondary);
+  box-shadow: 0 0 0 3px rgba(31, 106, 225, 0.15);
+}
+
+.ebs-crear__error {
+  font-size: 0.8rem;
+  color: var(--sesa-error);
+}
+
+.ebs-crear__divider {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.ebs-crear__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sesa-border);
+}
+
+.ebs-crear__btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--sesa-radius-md);
+  border: none;
+  cursor: pointer;
+  transition: background var(--sesa-transition), opacity var(--sesa-transition);
+}
+.ebs-crear__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ebs-crear__btn--primary {
+  background: linear-gradient(135deg, var(--sesa-secondary), #1557b0);
+  color: #fff;
+}
+.ebs-crear__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.ebs-crear__btn--secondary {
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  border: 1px solid var(--sesa-border);
+}
+.ebs-crear__btn--secondary:hover {
+  background: var(--sesa-surface-hover);
+}

@@ -1,0 +1,138 @@
+/* Dashboard Supervisor APS EBS — premium */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.ebs-dashboard-supervisor {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.ebs-dashboard-supervisor__header {
+  margin-bottom: 1.5rem;
+}
+
+.ebs-dashboard-supervisor__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  letter-spacing: -0.02em;
+}
+.ebs-dashboard-supervisor__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-dashboard-supervisor__period {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-dashboard-supervisor__btn {
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--sesa-radius-md);
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-bg);
+  color: var(--sesa-text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ebs-dashboard-supervisor__btn--active {
+  background: var(--sesa-secondary);
+  border-color: var(--sesa-secondary);
+  color: #fff;
+}
+
+.ebs-dashboard-supervisor__skeleton { display: flex; flex-direction: column; gap: 0.75rem; }
+.ebs-dashboard-supervisor__error { color: var(--sesa-error); margin: 0; }
+
+.ebs-dashboard-supervisor__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.ebs-dashboard-supervisor__kpi {
+  padding: 0.85rem;
+  border-radius: var(--sesa-radius-md);
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border-light);
+  text-align: center;
+}
+
+.ebs-dashboard-supervisor__kpi-value {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+}
+
+.ebs-dashboard-supervisor__kpi-label {
+  font-size: 0.75rem;
+  color: var(--sesa-text-secondary);
+  margin-top: 0.2rem;
+  display: block;
+}
+
+.ebs-dashboard-supervisor__kpi--highlight .ebs-dashboard-supervisor__kpi-value {
+  color: var(--sesa-secondary);
+}
+
+.ebs-dashboard-supervisor__kpi--alert .ebs-dashboard-supervisor__kpi-value {
+  color: var(--sesa-error);
+}
+
+.ebs-dashboard-supervisor__table-wrap {
+  overflow-x: auto;
+}
+
+.ebs-dashboard-supervisor__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ebs-dashboard-supervisor__table th,
+.ebs-dashboard-supervisor__table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sesa-border-light);
+}
+
+.ebs-dashboard-supervisor__table th {
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+}
+
+.ebs-dashboard-supervisor__cell-alert {
+  color: var(--sesa-error);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .ebs-dashboard-supervisor__kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ebs-dashboard-supervisor__btn {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+  .ebs-dashboard-supervisor__table-wrap {
+    margin: 0 -1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ebs-dashboard-supervisor__table {
+    font-size: 0.85rem;
+  }
+  .ebs-dashboard-supervisor__table th,
+  .ebs-dashboard-supervisor__table td {
+    padding: 0.6rem 0.5rem;
+    white-space: nowrap;
+  }
+}

@@ -26,7 +26,8 @@ export class SesaCalendarComponent {
 
   get monthLabel(): string {
     const d = new Date(this.currentYear, this.currentMonth);
-    return d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+    const raw = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
   }
 
   get grid(): Array<Array<{ day: number; date: string; isCurrentMonth: boolean; isToday: boolean; isHighlighted: boolean; isSelected: boolean }>> {

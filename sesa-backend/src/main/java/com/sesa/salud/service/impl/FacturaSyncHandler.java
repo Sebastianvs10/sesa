@@ -96,6 +96,7 @@ public class FacturaSyncHandler implements SyncEntityHandler {
         }
         
         Factura f = Factura.builder()
+                .numeroFactura((String) body.get("numeroFactura"))
                 .paciente(paciente)
                 .orden(orden)
                 .valorTotal(valorTotal)

@@ -30,11 +30,25 @@ export interface NotificacionDto {
   destinatarios?: DestinatarioInfo[];
 }
 
+export interface DestinatarioDisponible {
+  id: number;
+  nombre?: string;
+  email: string;
+  rol?: string;
+}
+
+export interface NotificacionBroadcastResult {
+  schemasProcessados: number;
+  totalDestinatarios: number;
+  errores: string[];
+}
+
 export interface NotificacionCreateRequest {
   titulo: string;
   contenido: string;
   tipo?: string;
-  destinatarioIds: number[];
+  destinatarioIds?: number[];
+  broadcastTodos?: boolean;
 }
 
 export interface PageResponse<T> {
@@ -79,6 +93,18 @@ export class NotificacionService {
     return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas`, { params });
   }
 
+  /** Listar notificaciones archivadas (paginado) */
+  listArchivadas(page = 0, size = 20): Observable<PageResponse<NotificacionDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas/archivadas`, { params });
+  }
+
+  /** Listar notificaciones en papelera (paginado) */
+  listPapelera(page = 0, size = 20): Observable<PageResponse<NotificacionDto>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<PageResponse<NotificacionDto>>(`${this.apiUrl}/recibidas/papelera`, { params });
+  }
+
   /** Contar no leídas */
   countNoLeidas(): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/recibidas/count`);
@@ -89,6 +115,51 @@ export class NotificacionService {
     return this.http.put<void>(`${this.apiUrl}/${id}/leer`, {});
   }
 
+  /** Marcar varias notificaciones como leídas (solo donde el usuario es destinatario) */
+  marcarLeidas(ids: number[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/marcar-leidas`, { notificacionIds: ids });
+  }
+
+  /** Marcar una notificación como no leída (solo destinatario) */
+  marcarNoLeida(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/no-leer`, {});
+  }
+
+  /** Archivar notificación (solo destinatario) */
+  archivar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/archivar`, {});
+  }
+
+  /** Desarchivar notificación (solo destinatario) */
+  desarchivar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/desarchivar`, {});
+  }
+
+  /** Mover a papelera (soft delete por destinatario) */
+  moverAPapelera(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/papelera`, {});
+  }
+
+  /** Restaurar desde papelera */
+  restaurar(id: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}/restaurar`, {});
+  }
+
+  /** Eliminar definitivamente (si ya estaba en papelera) */
+  eliminarDefinitivo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /** Marcar varias notificaciones como no leídas (solo donde el usuario es destinatario) */
+  marcarNoLeidas(ids: number[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/marcar-no-leidas`, { notificacionIds: ids });
+  }
+
+  /** Eliminar un adjunto de una notificación (solo el remitente puede) */
+  deleteAdjunto(notificacionId: number, adjuntoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`);
+  }
+
   /** URL de descarga de adjunto */
   adjuntoUrl(notificacionId: number, adjuntoId: number): string {
     return `${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`;
@@ -97,5 +168,15 @@ export class NotificacionService {
   /** Descargar adjunto como blob */
   downloadAdjunto(notificacionId: number, adjuntoId: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${notificacionId}/adjuntos/${adjuntoId}`, { responseType: 'blob' });
+  }
+
+  /** Lista usuarios disponibles como destinatarios en el schema actual */
+  getDestinatariosDisponibles(): Observable<DestinatarioDisponible[]> {
+    return this.http.get<DestinatarioDisponible[]>(`${this.apiUrl}/destinatarios-disponibles`);
+  }
+
+  /** SUPERADMINISTRADOR: enviar notificación a los admins de todos los schemas */
+  broadcastAdmins(request: NotificacionCreateRequest): Observable<NotificacionBroadcastResult> {
+    return this.http.post<NotificacionBroadcastResult>(`${this.apiUrl}/broadcast-admins`, request);
   }
 }

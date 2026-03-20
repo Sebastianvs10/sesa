@@ -1,0 +1,236 @@
+/* API Keys — Integradores */
+/* Autor: Ing. J Sebastian Vargas S */
+
+.api-keys-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.api-keys-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.sesa-link-docs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--sesa-primary);
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--sesa-primary) 30%, var(--sesa-border));
+  background: color-mix(in srgb, var(--sesa-primary) 8%, var(--sesa-surface));
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 140ms ease, background 140ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--sesa-primary) 14%, var(--sesa-surface));
+  }
+}
+
+.api-keys-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.api-kpi {
+  border: 1px solid var(--sesa-border);
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sesa-primary) 11%, transparent),
+      transparent 55%
+    ),
+    var(--sesa-surface);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  span {
+    color: var(--sesa-text-secondary);
+    font-size: 0.78rem;
+  }
+  strong {
+    color: var(--sesa-text-primary);
+    font-size: 1.3rem;
+  }
+}
+
+.api-kpi--ok {
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sesa-success, #22c55e) 20%, transparent),
+      transparent 60%
+    ),
+    var(--sesa-surface);
+}
+
+.api-kpi--muted {
+  background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sesa-text-secondary) 12%, transparent),
+      transparent 60%
+    ),
+    var(--sesa-surface);
+}
+
+.api-created-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.api-help-inline {
+  margin: 0 0 0.85rem 0;
+  color: var(--sesa-text-secondary);
+  font-size: 0.84rem;
+}
+
+.api-keys-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.9rem;
+}
+
+.api-filter-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+
+  label {
+    color: var(--sesa-text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  input {
+    border: 1px solid var(--sesa-input-border);
+    background: var(--sesa-input-bg);
+    color: var(--sesa-text-primary);
+    border-radius: 0.65rem;
+    padding: 0.6rem 0.75rem;
+  }
+}
+
+.api-filter-status {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.api-chip {
+  border: 1px solid var(--sesa-border);
+  background: var(--sesa-surface);
+  color: var(--sesa-text-secondary);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.api-chip--active {
+  border-color: color-mix(in srgb, var(--sesa-primary) 45%, var(--sesa-border));
+  color: var(--sesa-primary);
+  background: color-mix(in srgb, var(--sesa-primary) 12%, var(--sesa-surface));
+}
+
+.sesa-pre-key {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.sesa-alert-success {
+  background: var(--sesa-surface);
+  border-left: 4px solid var(--sesa-success, #22c55e);
+  padding: 1rem;
+  margin-bottom: 0.25rem;
+  border-radius: 4px;
+}
+
+.sesa-badge-success { color: var(--sesa-success, #22c55e); }
+.sesa-badge-secondary { color: var(--sesa-text-secondary); }
+
+.api-state {
+  padding: 1rem;
+  border: 1px dashed var(--sesa-border);
+  border-radius: 0.75rem;
+  text-align: center;
+  color: var(--sesa-text-secondary);
+}
+
+.api-state--loading {
+  background: color-mix(in srgb, var(--sesa-primary) 8%, var(--sesa-surface));
+}
+
+.api-state--empty {
+  background: color-mix(in srgb, var(--sesa-warning, #f59e0b) 10%, var(--sesa-surface));
+}
+
+.api-table th,
+.api-table td {
+  vertical-align: middle;
+}
+
+.api-name-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+
+  strong {
+    color: var(--sesa-text-primary);
+    font-size: 0.9rem;
+  }
+  small {
+    color: var(--sesa-text-secondary);
+    font-size: 0.72rem;
+  }
+}
+
+.api-perm-list {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.api-perm-chip {
+  border: 1px solid color-mix(in srgb, var(--sesa-primary) 28%, var(--sesa-border));
+  background: color-mix(in srgb, var(--sesa-primary) 10%, var(--sesa-surface));
+  color: var(--sesa-text-primary);
+  border-radius: 0.45rem;
+  padding: 0.15rem 0.42rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.api-row-muted {
+  color: var(--sesa-text-secondary);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1024px) {
+  .api-keys-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .api-keys-kpis {
+    grid-template-columns: 1fr;
+  }
+}

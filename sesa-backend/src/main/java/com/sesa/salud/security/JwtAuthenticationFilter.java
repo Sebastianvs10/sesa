@@ -21,23 +21,18 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter implements Ordered {
 
-    /**
-     * Orden para que Spring Security lo registre al usar
-     * addFilterBefore/addFilterAfter.
-     */
     private static final int ORDER = 1;
 
     @Override
-    public int getOrder() {
-        return ORDER;
-    }
+    public int getOrder() { return ORDER; }
 
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -50,18 +45,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter implements Ord
             String jwt = getJwtFromRequest(request);
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
                 String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
-                String role = jwtTokenProvider.getRoleFromToken(jwt);
-                String schema = jwtTokenProvider.getSchemaFromToken(jwt);
-                JwtPrincipal principal = new JwtPrincipal(username, userId, role, schema);
+                Long   userId   = jwtTokenProvider.getUserIdFromToken(jwt);
+                Set<String> roles = jwtTokenProvider.getRolesFromToken(jwt);
+                String schema   = jwtTokenProvider.getSchemaFromToken(jwt);
 
-                List<GrantedAuthority> authorities = Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_" + role));
+                JwtPrincipal principal = new JwtPrincipal(username, userId, roles, schema);
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        authorities);
+                // Una GrantedAuthority por cada rol → @PreAuthorize("hasRole('X')") funciona
+                // con cualquiera de los roles del usuario.
+                List<GrantedAuthority> authorities = roles.stream()
+                        .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r))
+                        .collect(Collectors.toList());
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

@@ -1,7 +1,16 @@
+/**
+ * Servicio de Historia Clínica. API base: GET/POST/PUT /api/historia-clinica
+ *
+ * Endpoints usados:
+ *   GET  /paciente/{id}           → HC del paciente (200 + body o 200 sin body si no hay HC)
+ *   POST /paciente/{id}           → Crear HC
+ *   POST /paciente/{id}/completa  → Crear HC + primera atención
+ *   PUT  /{id}                    → Actualizar HC
+ */
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface HistoriaClinicaDto {
@@ -14,7 +23,15 @@ export interface HistoriaClinicaDto {
   grupoSanguineo?: string;
   alergiasGenerales?: string;
   antecedentesPersonales?: string;
+  antecedentesQuirurgicos?: string;
+  antecedentesFarmacologicos?: string;
+  antecedentesTraumaticos?: string;
+  antecedentesGinecoobstetricos?: string;
   antecedentesFamiliares?: string;
+  habitosTabaco?: boolean;
+  habitosAlcohol?: boolean;
+  habitosSustancias?: boolean;
+  habitosDetalles?: string;
 }
 
 export interface HistoriaClinicaRequestDto {
@@ -83,10 +100,24 @@ export class HistoriaClinicaService {
     return this.http.get<HistoriaClinicaDto>(`${this.apiUrl}/paciente/${pacienteId}`);
   }
 
+  /**
+   * Obtiene la historia clínica del paciente, o null si no existe o hay error (404 / cuerpo vacío).
+   * Soporta: 200 con body, 200 sin body (backend devuelve ok vacío), 404.
+   */
   getByPacienteOrNull(pacienteId: number): Observable<HistoriaClinicaDto | null> {
-    return this.http.get<HistoriaClinicaDto>(`${this.apiUrl}/paciente/${pacienteId}`).pipe(
-      catchError(() => of(null))
-    );
+    return this.http
+      .get(`${this.apiUrl}/paciente/${pacienteId}`, { responseType: 'text' })
+      .pipe(
+        catchError(() => of('')),
+        map((body) => {
+          if (!body || body.trim() === '' || body.trim() === 'null') return null;
+          try {
+            return JSON.parse(body) as HistoriaClinicaDto;
+          } catch {
+            return null;
+          }
+        })
+      );
   }
 
   create(pacienteId: number, dto: HistoriaClinicaRequestDto): Observable<HistoriaClinicaDto> {

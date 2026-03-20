@@ -1,67 +1,520 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <h1 class="sesa-page-title">Farmacia</h1>
-    <p class="sesa-page-subtitle">Inventario, lotes, vencimientos y dispensación</p>
+<section class="sesa-page farm-page">
+
+  <!-- Toolbar -->
+  <header class="farm-toolbar">
+    <div class="farm-toolbar__brand">
+      <div class="farm-toolbar__icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.5 20.5 10 10l10-5-5 10-5 5.5z"/><path d="m15 5 3 3"/><path d="M12 15l-3-3"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="farm-toolbar__title">Farmacia</h1>
+        <p class="farm-toolbar__sub">Órdenes HC · inventario · dispensación rápida</p>
+      </div>
+    </div>
+    <div class="farm-toolbar__actions">
+      <button type="button" class="farm-icon-btn" (click)="toolbarRefresh()" [attr.aria-label]="tabActiva() === 'ordenes' ? 'Actualizar órdenes' : 'Actualizar'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      </button>
+    </div>
   </header>
 
-  @if (error) { <p class="sesa-error">{{ error }}</p> }
-
-  <sesa-card title="Ingreso de medicamentos">
-    <div class="sesa-form-grid">
-      <div class="sesa-form-field"><label>Medicamento</label><input type="text" [(ngModel)]="medForm.nombre" /></div>
-      <div class="sesa-form-field"><label>Lote</label><input type="text" [(ngModel)]="medForm.lote" /></div>
-      <div class="sesa-form-field"><label>Vencimiento</label><input type="date" [(ngModel)]="medForm.fechaVencimiento" /></div>
-      <div class="sesa-form-field"><label>Cantidad</label><input type="number" [(ngModel)]="medForm.cantidad" /></div>
-      <div class="sesa-form-field"><label>Precio</label><input type="number" [(ngModel)]="medForm.precio" /></div>
-      <div class="sesa-form-field"><label>Stock mínimo</label><input type="number" [(ngModel)]="medForm.stockMinimo" /></div>
+  <!-- Stat strip -->
+  <div class="farm-stat-strip">
+    <div class="farm-stat farm-stat--teal">
+      <span class="farm-stat__label">Órdenes pendientes</span>
+      <span class="farm-stat__value">{{ kpiOrdenesPendientes() }}</span>
     </div>
-    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crearMedicamento()">Guardar medicamento</button>
-  </sesa-card>
+    <div class="farm-stat-sep"></div>
+    <div class="farm-stat farm-stat--amber">
+      <span class="farm-stat__label">Stock bajo</span>
+      <span class="farm-stat__value">{{ kpiStockBajo() }}</span>
+    </div>
+    <div class="farm-stat-sep"></div>
+    <div class="farm-stat farm-stat--rose">
+      <span class="farm-stat__label">Por vencer (30 d)</span>
+      <span class="farm-stat__value">{{ kpiProxVencer() }}</span>
+    </div>
+    <div class="farm-stat-sep"></div>
+    <div class="farm-stat farm-stat--slate">
+      <span class="farm-stat__label">SKUs inventario</span>
+      <span class="farm-stat__value">{{ kpiSkus() }}</span>
+    </div>
+  </div>
 
-  <sesa-card title="Dispensación">
-    <div class="sesa-form-grid">
-      <div class="sesa-form-field">
-        <label>Medicamento</label>
-        <select [(ngModel)]="dispForm.medicamentoId">
-          <option [ngValue]="null">Seleccione...</option>
-          @for (m of medicamentos; track m.id) {
-            <option [ngValue]="m.id">{{ m.nombre }} (stock: {{ m.cantidad }})</option>
+  <!-- Tabs -->
+  <nav class="farm-tabs" aria-label="Secciones farmacia">
+    <button type="button" class="farm-tab" [class.farm-tab--active]="tabActiva() === 'ordenes'" (click)="setTab('ordenes')">
+      Órdenes médicas
+      @if (ordenesPendientesGlobalTotal() > 0) {
+        <span class="farm-tab__badge">{{ ordenesPendientesGlobalTotal() }}</span>
+      }
+    </button>
+    <button type="button" class="farm-tab" [class.farm-tab--active]="tabActiva() === 'inventario'" (click)="setTab('inventario')">Inventario</button>
+    <button type="button" class="farm-tab" [class.farm-tab--active]="tabActiva() === 'dispensar'" (click)="setTab('dispensar')">Dispensación directa</button>
+  </nav>
+
+  @if (error()) {
+    <div class="farm-inline-error" role="alert">{{ error() }}</div>
+  }
+
+  <!-- ═══ TAB ÓRDENES ═══ -->
+  @if (tabActiva() === 'ordenes') {
+    <div class="farm-panel">
+      <div class="farm-panel__head">
+        <div>
+          <h2 class="farm-panel__title">Órdenes pendientes de dispensar</h2>
+          <p class="farm-panel__hint">Clic en una fila para abrir el panel de dispensación</p>
+        </div>
+        <div class="farm-search">
+          <svg class="farm-search__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="farm-search__input" type="search" placeholder="Filtrar por paciente, documento, médico, detalle…" [value]="qOrdenes()" (input)="qOrdenes.set($any($event.target).value)" aria-label="Filtrar órdenes" />
+          @if (qOrdenes()) {
+            <button type="button" class="farm-search__clear" (click)="qOrdenes.set('')" aria-label="Limpiar filtro">✕</button>
           }
-        </select>
+        </div>
       </div>
-      <div class="sesa-form-field">
-        <label>Paciente</label>
-        <select [(ngModel)]="dispForm.pacienteId">
-          <option [ngValue]="null">Seleccione...</option>
-          @for (p of pacientes; track p.id) {
-            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
-          }
-        </select>
-      </div>
-      <div class="sesa-form-field"><label>Cantidad</label><input type="number" [(ngModel)]="dispForm.cantidad" /></div>
-      <div class="sesa-form-field"><label>Entregado por</label><input type="text" [(ngModel)]="dispForm.entregadoPor" /></div>
-    </div>
-    <button type="button" class="sesa-btn sesa-btn-primary" (click)="dispensar()">Dispensar</button>
-  </sesa-card>
 
-  <sesa-card title="Inventario actual">
-    <div class="sesa-table-wrap">
-      <table class="sesa-table">
-        <thead><tr><th>Medicamento</th><th>Lote</th><th>Vencimiento</th><th>Cantidad</th><th>Stock mínimo</th></tr></thead>
-        <tbody>
-          @for (m of medicamentos; track m.id) {
-            <tr>
-              <td>{{ m.nombre }}</td>
-              <td>{{ m.lote || '—' }}</td>
-              <td>{{ m.fechaVencimiento || '—' }}</td>
-              <td>{{ m.cantidad }}</td>
-              <td>{{ m.stockMinimo || 0 }}</td>
-            </tr>
-          } @empty {
-            <tr><td colspan="5">Sin medicamentos registrados.</td></tr>
-          }
-        </tbody>
-      </table>
+      @if (cargandoOrdenes()) {
+        <div class="farm-state farm-state--loading">
+          <div class="farm-spinner"></div>
+          <span>Cargando órdenes…</span>
+        </div>
+      } @else if (ordenesTotalElements() === 0 && !qOrdenes().trim()) {
+        <div class="farm-state farm-state--empty">
+          <p class="farm-state__title">Sin órdenes pendientes</p>
+          <p class="farm-state__sub">Cuando existan prescripciones desde HC, aparecerán aquí.</p>
+        </div>
+      } @else if (ordenesTotalElements() === 0 && qOrdenes().trim()) {
+        <div class="farm-state farm-state--empty">
+          <p class="farm-state__title">Ninguna orden coincide con el filtro</p>
+          <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="limpiarBusquedaOrdenes()">Limpiar búsqueda</button>
+        </div>
+      } @else {
+        <div class="farm-table-wrap">
+          <table class="farm-table">
+            <thead>
+              <tr>
+                <th>Orden</th>
+                <th>Paciente</th>
+                <th>Prescripción</th>
+                <th>Estado</th>
+                <th class="farm-th-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of ordenesRows(); track trackOrden($index, o)) {
+                <tr
+                  class="farm-tr"
+                  (click)="abrirDispensarOrden(o)"
+                  (keydown.enter)="abrirDispensarOrden(o)"
+                  (keydown.space)="$event.preventDefault(); abrirDispensarOrden(o)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'Dispensar orden ' + o.id + ' de ' + o.pacienteNombre"
+                >
+                  <td><span class="farm-orden-id">#{{ o.id }}</span></td>
+                  <td>
+                    <span class="farm-pac-nombre">{{ o.pacienteNombre }}</span>
+                    <span class="farm-pac-doc">{{ o.tipoDocumentoPaciente || '' }} {{ o.pacienteDocumento || '—' }}</span>
+                  </td>
+                  <td>
+                    @if (ordenConVariosItems(o)) {
+                      <span class="farm-prescripcion">{{ o.items!.length }} medicamentos</span>
+                      <span class="farm-prescripcion-sub">Orden compuesta</span>
+                    } @else if (formatoPrescripcion(o)) {
+                      <span class="farm-prescripcion">{{ formatoPrescripcion(o) }}</span>
+                    } @else {
+                      <span class="farm-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="farm-pill" [class.farm-pill--parcial]="o.estadoDispensacionFarmacia === 'PARCIAL'">{{ estadoDispensacionLabel(o.estadoDispensacionFarmacia) }}</span>
+                  </td>
+                  <td class="farm-td-actions">
+                    <button type="button" class="farm-btn farm-btn--primary farm-btn--sm" (click)="abrirDispensarOrden(o); $event.stopPropagation()">Dispensar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="farm-pagination" role="navigation" aria-label="Paginación órdenes">
+          <span class="farm-pagination__meta">
+            @if (qOrdenes().trim()) {
+              {{ ordenesTotalElements() }} coincidencia(s) · página {{ ordenesPageNumber() + 1 }} de {{ ordenesTotalPages() || 1 }}
+            } @else {
+              Página {{ ordenesPageNumber() + 1 }} de {{ ordenesTotalPages() || 1 }} · {{ ordenesTotalElements() }} orden(es)
+            }
+          </span>
+          <div class="farm-pagination__btns">
+            <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="ordenesPrev()" [disabled]="ordenesPageNumber() <= 0 || cargandoOrdenes()">Anterior</button>
+            <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="ordenesNext()" [disabled]="ordenesPageNumber() >= ordenesTotalPages() - 1 || ordenesTotalPages() <= 1 || cargandoOrdenes()">Siguiente</button>
+          </div>
+        </div>
+      }
     </div>
-  </sesa-card>
+  }
+
+  <!-- ═══ TAB INVENTARIO ═══ -->
+  @if (tabActiva() === 'inventario') {
+    @if ((kpiStockBajo() > 0) || (kpiProxVencer() > 0)) {
+      <div class="farm-alerts">
+        @if (kpiStockBajo() > 0) {
+          <div class="farm-alert farm-alert--stock">
+            <strong>Stock bajo</strong> · {{ kpiStockBajo() }} SKU(s) por debajo del mínimo
+            <span class="farm-alert__detail">Use la búsqueda y revise la columna Estado en la tabla.</span>
+          </div>
+        }
+        @if (kpiProxVencer() > 0) {
+          <div class="farm-alert farm-alert--expire">
+            <strong>Vencen en 30 días</strong> · {{ kpiProxVencer() }} SKU(s)
+            <span class="farm-alert__detail">Priorice rotación y verifique fechas en el listado.</span>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="farm-panel farm-panel--compact">
+      <div class="farm-panel__head">
+        <h2 class="farm-panel__title">Nuevo ítem de inventario</h2>
+        <div class="farm-chips-inline" aria-label="Atajos stock mínimo">
+          <span class="farm-chip-label">Stock mín. rápido:</span>
+          @for (n of [5, 10, 20, 50]; track n) {
+            <button type="button" class="farm-chip" (click)="setStockMinimoRapido(n)">{{ n }}</button>
+          }
+        </div>
+      </div>
+      <div class="farm-form-grid">
+        <div class="farm-field">
+          <label for="fm-nombre">Medicamento <span class="farm-req">*</span></label>
+          <input id="fm-nombre" type="text" [(ngModel)]="medForm.nombre" placeholder="Nombre comercial o genérico" />
+        </div>
+        <div class="farm-field">
+          <label for="fm-lote">Lote</label>
+          <input id="fm-lote" type="text" [(ngModel)]="medForm.lote" placeholder="Opcional" />
+        </div>
+        <div class="farm-field">
+          <label for="fm-cb">Código de barras</label>
+          <input
+            id="fm-cb"
+            type="text"
+            [(ngModel)]="medForm.codigoBarras"
+            maxlength="64"
+            placeholder="EAN/GTIN o interno — Enter para verificar duplicado"
+            (keydown)="onCodigoBarrasInventarioKeydown($event)"
+            aria-label="Código de barras del medicamento"
+          />
+        </div>
+        <div class="farm-field">
+          <label for="fm-venc">Vencimiento</label>
+          <input id="fm-venc" type="date" [(ngModel)]="medForm.fechaVencimiento" />
+        </div>
+        <div class="farm-field">
+          <label for="fm-cant">Cantidad</label>
+          <input id="fm-cant" type="number" min="0" [(ngModel)]="medForm.cantidad" placeholder="0" />
+        </div>
+        <div class="farm-field">
+          <label for="fm-precio">Precio</label>
+          <input id="fm-precio" type="number" min="0" step="0.01" [(ngModel)]="medForm.precio" placeholder="Opcional" />
+        </div>
+        <div class="farm-field">
+          <label for="fm-min">Stock mínimo</label>
+          <input id="fm-min" type="number" min="0" [(ngModel)]="medForm.stockMinimo" placeholder="0" />
+        </div>
+      </div>
+      <button type="button" class="farm-btn farm-btn--primary" (click)="crearMedicamento()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Guardar en inventario
+      </button>
+    </div>
+
+    <div class="farm-panel">
+      <div class="farm-panel__head">
+        <h2 class="farm-panel__title">Inventario actual</h2>
+        <div class="farm-search farm-search--sm">
+          <svg class="farm-search__icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            class="farm-search__input"
+            type="search"
+            placeholder="Nombre, lote o código de barras…"
+            [value]="qInventario()"
+            (input)="onQInventarioInput($any($event.target).value)"
+            aria-label="Buscar en inventario"
+          />
+        </div>
+      </div>
+      @if (invLoading()) {
+        <div class="farm-state farm-state--loading">
+          <div class="farm-spinner"></div>
+          <span>Cargando inventario…</span>
+        </div>
+      } @else {
+        <div class="farm-table-wrap">
+          <table class="farm-table">
+            <thead>
+              <tr>
+                <th>Medicamento</th>
+                <th>Cód. barras</th>
+                <th>Lote</th>
+                <th>Vencimiento</th>
+                <th>Stock</th>
+                <th>Mín.</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of invRows(); track trackMed($index, m)) {
+                <tr [class.farm-tr--warn]="m.stockMinimo != null && m.cantidad <= m.stockMinimo">
+                  <td><strong>{{ m.nombre }}</strong></td>
+                  <td><span class="farm-cb-cell">{{ m.codigoBarras || '—' }}</span></td>
+                  <td>{{ m.lote || '—' }}</td>
+                  <td>{{ m.fechaVencimiento || '—' }}</td>
+                  <td><span class="farm-stock-num">{{ m.cantidad }}</span></td>
+                  <td>{{ m.stockMinimo ?? 0 }}</td>
+                  <td>
+                    @if (m.stockMinimo != null && m.cantidad <= m.stockMinimo) {
+                      <span class="farm-pill farm-pill--warn">Bajo</span>
+                    } @else {
+                      <span class="farm-pill farm-pill--ok">OK</span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="farm-muted">Sin resultados en esta página.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="farm-pagination" role="navigation" aria-label="Paginación inventario">
+          <span class="farm-pagination__meta">
+            Página {{ invPageNumber() + 1 }} de {{ invTotalPages() || 1 }} · {{ invTotalElements() }} ítem(s)
+          </span>
+          <div class="farm-pagination__btns">
+            <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="invPrev()" [disabled]="invPageNumber() <= 0 || invLoading()">Anterior</button>
+            <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="invNext()" [disabled]="invPageNumber() >= invTotalPages() - 1 || invTotalPages() <= 1 || invLoading()">Siguiente</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══ TAB DISPENSACIÓN DIRECTA ═══ -->
+  @if (tabActiva() === 'dispensar') {
+    <div class="farm-panel farm-panel--direct">
+      <div class="farm-panel__head">
+        <div>
+          <h2 class="farm-panel__title">Dispensación directa</h2>
+          <p class="farm-panel__hint">Sin orden HC — búsqueda rápida y cantidades en un clic</p>
+        </div>
+      </div>
+
+      <div class="farm-direct-grid">
+        <div class="farm-field farm-field--combo">
+          <label>Medicamento</label>
+          <div class="farm-combo" [class.farm-combo--open]="showDropMed()">
+            <div class="farm-combo__trigger">
+              <svg class="farm-combo__icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                type="text"
+                [value]="dispForm.medicamentoId ? nombreMedSeleccionado() : dispMedQuery()"
+                (input)="onMedInputDirecto($any($event.target).value)"
+                (keydown)="onMedicamentoDirectoKeydown($event)"
+                (focus)="showDropMed.set(true)"
+                (blur)="blurMedDirecto()"
+                placeholder="Nombre o escanee código de barras (Enter)"
+                aria-label="Buscar medicamento o escanear código"
+              />
+            </div>
+            @if (showDropMed()) {
+              <div class="farm-combo__drop" role="listbox">
+                @for (m of medsDispResults(); track m.id) {
+                  <button type="button" class="farm-combo__opt" (mousedown)="seleccionarMedDirecto(m)">
+                    <span>{{ m.nombre }}</span>
+                    <span class="farm-combo__stock">Stock {{ m.cantidad }}</span>
+                  </button>
+                }
+                @if (medsDispResults().length === 0) {
+                  <div class="farm-combo__empty">Sin coincidencias con stock</div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="farm-field farm-field--combo">
+          <label>Paciente</label>
+          <p class="farm-field__hint">Búsqueda en servidor (hasta 25 por página). Escriba para filtrar.</p>
+          <div class="farm-combo" [class.farm-combo--open]="showDropPac()">
+            <div class="farm-combo__trigger">
+              <svg class="farm-combo__icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input
+                type="text"
+                [value]="dispForm.pacienteId ? nombrePacSeleccionado() : dispPacQuery()"
+                (input)="onPacInputDirecto($any($event.target).value)"
+                (focus)="onPacFocusDirecto()"
+                (blur)="blurPacDirecto()"
+                placeholder="Nombre o documento…"
+                aria-label="Buscar paciente"
+              />
+            </div>
+            @if (showDropPac()) {
+              <div class="farm-combo__drop" role="listbox">
+                @if (pacDropdownLoading()) {
+                  <div class="farm-combo__empty farm-combo__empty--muted">Buscando…</div>
+                } @else if (pacDropdownRows().length === 0) {
+                  <div class="farm-combo__empty">Sin coincidencias. Refine la búsqueda.</div>
+                } @else {
+                  @for (p of pacDropdownRows(); track trackPac($index, p)) {
+                    <button type="button" class="farm-combo__opt" (mousedown)="seleccionarPacDirecto(p)">
+                      <span>{{ p.nombres }} {{ p.apellidos }}</span>
+                      <span class="farm-combo__stock">{{ p.documento }}</span>
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="farm-field">
+          <label>Cantidad</label>
+          <div class="farm-qty-row">
+            <div class="farm-stepper">
+              <button type="button" class="farm-stepper__btn" (click)="ajustarCantidadDirecta(-1)" aria-label="Menos uno">−</button>
+              <input type="number" min="1" [(ngModel)]="dispForm.cantidad" placeholder="1" />
+              <button type="button" class="farm-stepper__btn" (click)="ajustarCantidadDirecta(1)" aria-label="Más uno">+</button>
+            </div>
+            <div class="farm-qty-chips">
+              @for (c of [1, 2, 3, 6, 10]; track c) {
+                <button type="button" class="farm-chip" (click)="setCantidadDirecta(c)">{{ c }}</button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="farm-field farm-field--full">
+          <label for="fm-entregado">Entregado por <span class="farm-opt">(opcional)</span></label>
+          <input id="fm-entregado" type="text" [(ngModel)]="dispForm.entregadoPor" placeholder="Nombre quien entrega" />
+        </div>
+      </div>
+
+      <button type="button" class="farm-btn farm-btn--primary farm-btn--lg" (click)="dispensar()" [disabled]="!dispForm.medicamentoId || !dispForm.pacienteId || !dispForm.cantidad">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Registrar dispensación
+      </button>
+    </div>
+  }
+
 </section>
+
+<!-- Panel lateral dispensar orden -->
+@if (ordenSeleccionada(); as orden) {
+  <div class="farm-overlay" (click)="cerrarDispensarOrden()" role="presentation" aria-hidden="true"></div>
+  <aside class="farm-side" role="dialog" aria-modal="true" aria-label="Dispensar orden de farmacia">
+    <div class="farm-side__head">
+      <div>
+        <h2 class="farm-side__title">Orden #{{ orden.id }}</h2>
+        <p class="farm-side__sub">{{ orden.pacienteNombre }} · {{ orden.pacienteDocumento || 'Sin documento' }}</p>
+      </div>
+      <button type="button" class="farm-side__close" (click)="cerrarDispensarOrden()" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    @if (orden.alergiasPaciente?.trim()) {
+      <div class="farm-allergy" role="alert">
+        <strong>Alergias (HC)</strong>
+        <p>{{ orden.alergiasPaciente }}</p>
+        <span class="farm-allergy__law">Verificar contraindicaciones antes de dispensar.</span>
+      </div>
+    }
+
+    <div class="farm-side__body">
+      @if (ordenConVariosItems(orden)) {
+        <div class="farm-presc-block">
+          <h3 class="farm-side__h3">Prescripción</h3>
+          @for (item of orden.items; track $index) {
+            <div class="farm-presc-line">
+              <span>{{ item.detalle || 'Medicamento ' + ($index + 1) }}</span>
+              @if (formatoPrescripcionItem(item)) {
+                <span class="farm-muted">{{ formatoPrescripcionItem(item) }}</span>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        @if (formatoPrescripcion(orden)) {
+          <p class="farm-presc-single"><strong>Cantidad prescrita:</strong> {{ formatoPrescripcion(orden) }}</p>
+        }
+        <p class="farm-presc-single"><strong>Detalle:</strong> {{ orden.detalle || '—' }}</p>
+      }
+      @if (orden.medicoNombre) {
+        <p class="farm-muted farm-medico-line">Médico: {{ orden.medicoNombre }}</p>
+      }
+
+      <div class="farm-side__toolbar">
+        <button type="button" class="farm-btn farm-btn--secondary farm-btn--sm" (click)="autoAsignarInventarioDesdePrescripcion()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m12 3-1.9 5.8H4.2l4.9 3.6-1.9 5.8 4.9-3.6 4.9 3.6-1.9-5.8 4.9-3.6H13.9z"/></svg>
+          Auto-asignar inventario
+        </button>
+        <span class="farm-toolbar-hint">Empareja texto prescrito con SKUs en stock</span>
+      </div>
+
+      <div class="farm-scan-row">
+        <label class="farm-scan-label" for="farm-scan-orden">Escanear código (primera línea libre)</label>
+        <input
+          id="farm-scan-orden"
+          type="text"
+          class="farm-scan-input"
+          autocomplete="off"
+          placeholder="Enfocar y escanear — Enter confirma"
+          (keydown)="onScanOrdenPanelKeydown($event)"
+          aria-label="Escanear código de barras para asignar medicamento"
+        />
+      </div>
+
+      <h3 class="farm-side__h3">Entregar desde inventario</h3>
+      @for (linea of lineasDispensacion(); track $index) {
+        <div class="farm-line-card">
+          @if (ordenConVariosItems(orden) && orden.items && orden.items[$index]) {
+            <p class="farm-line-ref">Prescrito: {{ orden.items[$index].detalle }}</p>
+          }
+          <div class="farm-line-card__row">
+            <select class="farm-select" [ngModel]="linea.medicamentoId" (ngModelChange)="setLineaMedicamento($index, $event)">
+              <option [ngValue]="0">Elegir del inventario…</option>
+              @for (m of medicamentosConStock(); track m.id) {
+                <option [ngValue]="m.id">{{ m.nombre }} ({{ m.cantidad }})</option>
+              }
+            </select>
+            @if (linea.medicamentoId > 0) {
+              <span class="farm-match-ok" title="SKU seleccionado">✓ {{ truncNombreInventario(linea.medicamentoId) }}</span>
+            }
+          </div>
+          <div class="farm-line-card__qty">
+            <span class="farm-qty-label">Cantidad</span>
+            <div class="farm-stepper farm-stepper--sm">
+              <button type="button" class="farm-stepper__btn" (click)="ajustarCantidadLinea($index, -1)">−</button>
+              <input type="number" min="1" [ngModel]="linea.cantidad" (ngModelChange)="setLineaCantidad($index, $event)" />
+              <button type="button" class="farm-stepper__btn" (click)="ajustarCantidadLinea($index, 1)">+</button>
+            </div>
+            @if (cantidadPrescritaLinea($index); as cp) {
+              <button type="button" class="farm-chip farm-chip--accent" (click)="aplicarCantidadPrescrita($index)">Usar prescrito ({{ cp }})</button>
+            }
+            <button type="button" class="farm-btn-text" (click)="quitarLineaDispensacion($index)" [disabled]="lineasDispensacion().length <= 1">Quitar línea</button>
+          </div>
+        </div>
+      }
+      <button type="button" class="farm-btn farm-btn--ghost farm-btn--sm" (click)="agregarLineaDispensacion()">+ Agregar línea</button>
+    </div>
+
+    <div class="farm-side__foot">
+      <button type="button" class="farm-btn farm-btn--ghost" (click)="cerrarDispensarOrden()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="farm-btn farm-btn--primary" [disabled]="guardando()" (click)="enviarDispensacionOrden()">
+        @if (guardando()) { <span class="farm-spinner farm-spinner--white"></span> Guardando… }
+        @else { Confirmar dispensación }
+      </button>
+    </div>
+  </aside>
+}

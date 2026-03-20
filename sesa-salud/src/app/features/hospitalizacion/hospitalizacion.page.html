@@ -1,57 +1,891 @@
-<section class="sesa-page">
-  <header class="sesa-page-header">
-    <h1 class="sesa-page-title">Hospitalización</h1>
-    <p class="sesa-page-subtitle">Ingreso, evolución y egreso de pacientes internados</p>
-  </header>
+<div class="hosp-page">
 
-  @if (error) { <p class="sesa-error">{{ error }}</p> }
-
-  <sesa-card title="Nuevo ingreso hospitalario">
-    <div class="sesa-form-grid">
-      <div class="sesa-form-field">
-        <label>Paciente</label>
-        <select [(ngModel)]="form.pacienteId">
-          <option [ngValue]="null">Seleccione...</option>
-          @for (p of pacientes; track p.id) {
-            <option [ngValue]="p.id">{{ p.nombres }} {{ p.apellidos || '' }}</option>
-          }
-        </select>
+  <!-- ══════════════════════════════════════════════════════
+       TOOLBAR
+  ══════════════════════════════════════════════════════ -->
+  <div class="hosp-toolbar">
+    <div class="hosp-toolbar__brand">
+      <div class="hosp-toolbar__icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
       </div>
-      <div class="sesa-form-field"><label>Servicio</label><input type="text" [(ngModel)]="form.servicio" /></div>
-      <div class="sesa-form-field"><label>Cama</label><input type="text" [(ngModel)]="form.cama" /></div>
-      <div class="sesa-form-field">
-        <label>Estado</label>
-        <select [(ngModel)]="form.estado">
-          <option value="INGRESADO">INGRESADO</option>
-          <option value="ESTABLE">ESTABLE</option>
-          <option value="EGRESADO">EGRESADO</option>
-        </select>
+      <div class="hosp-toolbar__meta">
+        <h1 class="hosp-toolbar__title">Hospitalización</h1>
+        <span class="hosp-toolbar__sub">Censo hospitalario · {{ hospitalizaciones().length }} registros</span>
       </div>
-      <div class="sesa-form-field"><label>Evolución diaria</label><textarea rows="2" [(ngModel)]="form.evolucionDiaria"></textarea></div>
-      <div class="sesa-form-field"><label>Órdenes médicas</label><textarea rows="2" [(ngModel)]="form.ordenesMedicas"></textarea></div>
-      <div class="sesa-form-field"><label>Epicrisis</label><textarea rows="2" [(ngModel)]="form.epicrisis"></textarea></div>
     </div>
-    <button type="button" class="sesa-btn sesa-btn-primary" (click)="crear()">Guardar ingreso</button>
-  </sesa-card>
 
-  <sesa-card title="Pacientes hospitalizados">
-    <div class="sesa-table-wrap">
-      <table class="sesa-table">
-        <thead><tr><th>Paciente</th><th>Servicio</th><th>Cama</th><th>Estado</th><th>Ingreso</th></tr></thead>
-        <tbody>
-          @for (h of hospitalizaciones; track h.id) {
+    <div class="hosp-toolbar__actions">
+      <div class="hosp-search">
+        <svg class="hosp-search__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          class="hosp-search__input"
+          type="text"
+          placeholder="Buscar por nombre, documento, cama…"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          aria-label="Buscar paciente hospitalizado"
+        />
+        @if (searchQuery()) {
+          <button class="hosp-search__clear" (click)="searchQuery.set('')" aria-label="Limpiar búsqueda">✕</button>
+        }
+      </div>
+
+      <button class="hosp-toolbar-btn" (click)="cargar()" title="Recargar censo" aria-label="Recargar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+        </svg>
+      </button>
+
+      <button class="hosp-btn hosp-btn--primary" (click)="abrirNuevoIngreso()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14"/><path d="M12 5v14"/>
+        </svg>
+        Nuevo ingreso
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       STAT STRIP
+  ══════════════════════════════════════════════════════ -->
+  <div class="hosp-stat-strip">
+    <div class="hosp-stat-chip hosp-stat-chip--blue">
+      <span class="hosp-stat-chip__label">Ingresados</span>
+      <span class="hosp-stat-chip__value">{{ totalIngresados() }}</span>
+      <span class="hosp-stat-chip__sub">activos ahora</span>
+    </div>
+    <div class="hosp-stat-sep"></div>
+    <div class="hosp-stat-chip hosp-stat-chip--success">
+      <span class="hosp-stat-chip__label">Ingresos hoy</span>
+      <span class="hosp-stat-chip__value">{{ ingresosHoy() }}</span>
+      <span class="hosp-stat-chip__sub">nuevos del día</span>
+    </div>
+    <div class="hosp-stat-sep"></div>
+    <div class="hosp-stat-chip hosp-stat-chip--warning">
+      <span class="hosp-stat-chip__label">Egresos hoy</span>
+      <span class="hosp-stat-chip__value">{{ egresosHoy() }}</span>
+      <span class="hosp-stat-chip__sub">dados de alta</span>
+    </div>
+    <div class="hosp-stat-sep"></div>
+    <div class="hosp-stat-chip hosp-stat-chip--purple">
+      <span class="hosp-stat-chip__label">Estancia prom.</span>
+      <span class="hosp-stat-chip__value">{{ avgEstancia() }}<span class="hosp-stat-chip__unit">d</span></span>
+      <span class="hosp-stat-chip__sub">días promedio</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       FILTER BAR
+  ══════════════════════════════════════════════════════ -->
+  <div class="hosp-filter-bar">
+    <div class="hosp-filter-chips">
+      <button class="hosp-chip" [class.hosp-chip--active]="selectedEstado() === ''" (click)="selectedEstado.set('')">
+        Todos <span class="hosp-chip__count">{{ hospitalizaciones().length }}</span>
+      </button>
+      <button class="hosp-chip hosp-chip--ingresado" [class.hosp-chip--active]="selectedEstado() === 'INGRESADO'" (click)="selectedEstado.set('INGRESADO')">
+        <span class="hosp-chip__dot"></span>Ingresados <span class="hosp-chip__count">{{ contarEstado('INGRESADO') }}</span>
+      </button>
+      <button class="hosp-chip hosp-chip--observacion" [class.hosp-chip--active]="selectedEstado() === 'OBSERVACION'" (click)="selectedEstado.set('OBSERVACION')">
+        <span class="hosp-chip__dot"></span>Observación <span class="hosp-chip__count">{{ contarEstado('OBSERVACION') }}</span>
+      </button>
+      <button class="hosp-chip hosp-chip--egresado" [class.hosp-chip--active]="selectedEstado() === 'EGRESADO'" (click)="selectedEstado.set('EGRESADO')">
+        <span class="hosp-chip__dot"></span>Egresados <span class="hosp-chip__count">{{ contarEstado('EGRESADO') }}</span>
+      </button>
+    </div>
+    @if (filteredHosp().length !== hospitalizaciones().length) {
+      <span class="hosp-filter-result">{{ filteredHosp().length }} resultado{{ filteredHosp().length !== 1 ? 's' : '' }}</span>
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       CUERPO PRINCIPAL — tabla censo
+  ══════════════════════════════════════════════════════ -->
+  <div class="hosp-body">
+
+    @if (loading()) {
+      <div class="hosp-loading">
+        <div class="hosp-spinner"></div>
+        <span>Cargando censo hospitalario…</span>
+      </div>
+    }
+
+    @if (!loading() && filteredHosp().length === 0) {
+      <div class="hosp-empty">
+        <div class="hosp-empty__icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <p class="hosp-empty__title">
+          @if (searchQuery() || selectedEstado()) { Sin pacientes que coincidan } @else { No hay pacientes hospitalizados }
+        </p>
+        <p class="hosp-empty__sub">
+          @if (searchQuery() || selectedEstado()) { Limpia los filtros para ver todos } @else { Registra el primer ingreso con el botón superior }
+        </p>
+        @if (!searchQuery() && !selectedEstado()) {
+          <button class="hosp-btn hosp-btn--primary hosp-btn--sm" (click)="abrirNuevoIngreso()">+ Nuevo ingreso</button>
+        }
+      </div>
+    }
+
+    @if (!loading() && filteredHosp().length > 0) {
+      <div class="hosp-table-wrap">
+        <table class="hosp-table" aria-label="Censo de pacientes hospitalizados">
+          <thead>
             <tr>
-              <td>{{ h.pacienteNombre }}</td>
-              <td>{{ h.servicio || '—' }}</td>
-              <td>{{ h.cama || '—' }}</td>
-              <td>{{ h.estado || '—' }}</td>
-              <td>{{ h.fechaIngreso || '—' }}</td>
+              <th class="hosp-th hosp-th--cama">Cama</th>
+              <th class="hosp-th hosp-th--paciente">Paciente</th>
+              <th class="hosp-th">Servicio</th>
+              <th class="hosp-th">Ingreso</th>
+              <th class="hosp-th hosp-th--dias">Días</th>
+              <th class="hosp-th">Estado</th>
+              <th class="hosp-th hosp-th--actions">Acciones</th>
             </tr>
-          } @empty {
-            <tr><td colspan="5">Sin registros.</td></tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (h of filteredHosp(); track h.id) {
+              <tr class="hosp-row" [class.hosp-row--egresado]="h.estado === 'EGRESADO'">
+                <td class="hosp-td hosp-td--cama"><span class="hosp-cama-badge">{{ h.cama || '—' }}</span></td>
+                <td class="hosp-td hosp-td--paciente">
+                  <span class="hosp-patient-name">{{ h.pacienteNombre }}</span>
+                  @if (h.pacienteDocumento) { <span class="hosp-patient-doc">{{ h.pacienteDocumento }}</span> }
+                </td>
+                <td class="hosp-td"><span class="hosp-servicio">{{ h.servicio || '—' }}</span></td>
+                <td class="hosp-td hosp-td--fecha">
+                  <span class="hosp-fecha">{{ formatFecha(h.fechaIngreso) }}</span>
+                  @if (h.fechaEgreso) { <span class="hosp-fecha hosp-fecha--egreso">Alta: {{ formatFecha(h.fechaEgreso) }}</span> }
+                </td>
+                <td class="hosp-td hosp-td--dias">
+                  <span class="hosp-dias" [ngClass]="diasClass(h)">{{ diasEstancia(h) }}d</span>
+                </td>
+                <td class="hosp-td">
+                  <span class="hosp-badge" [ngClass]="estadoBadgeClass(h.estado)">
+                    <span class="hosp-badge__dot"></span>{{ estadoLabel(h.estado) }}
+                  </span>
+                </td>
+                <td class="hosp-td hosp-td--actions">
+                  <div class="hosp-row-actions">
+                    <button class="hosp-action-btn hosp-action-btn--primary" (click)="verDetalle(h)" title="Gestionar">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      Gestionar
+                    </button>
+                    <button class="hosp-action-btn hosp-action-btn--rda" [class.hosp-action-btn--loading]="rdaEnviandoId() === h.id" [disabled]="rdaEnviandoId() === h.id" (click)="generarYEnviarRda(h)" title="Generar RDA">
+                      @if (rdaEnviandoId() === h.id) { <span class="hosp-mini-spinner"></span> }
+                      @else {
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                      }
+                      RDA
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL — NUEVO INGRESO
+══════════════════════════════════════════════════════ -->
+@if (showPanel() && panelMode() === 'ingresar') {
+  <div class="hosp-modal-backdrop" (click)="cerrarPanel()" role="presentation" aria-hidden="true"></div>
+
+  <div class="hosp-modal" role="dialog" aria-modal="true" aria-label="Nuevo ingreso hospitalario">
+
+    <!-- ── Cabecera ──────────────────────────── -->
+    <div class="hosp-modal__head">
+      <div class="hosp-modal__head-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div class="hosp-modal__head-text">
+        <h2 class="hosp-modal__title">Nuevo ingreso hospitalario</h2>
+        <span class="hosp-modal__sub">Completa los datos del paciente, evolución inicial y órdenes médicas</span>
+      </div>
+      <button class="hosp-modal__close" (click)="cerrarPanel()" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
     </div>
-  </sesa-card>
-</section>
+
+    <!-- ── Cuerpo: 2 columnas ──────────────── -->
+    <div class="hosp-modal__body">
+
+      <!-- Columna izquierda: paciente + ubicación + estado + sv -->
+      <div class="hosp-modal__col">
+
+        <div class="hosp-modal__section">
+          <div class="hosp-modal__section-header">
+            <span class="hosp-modal__section-num">1</span>
+            <h3 class="hosp-modal__section-title">Paciente <span class="hosp-label--req">*</span></h3>
+          </div>
+          <div class="hosp-form-field">
+            <input
+              id="pac-search-modal"
+              class="hosp-input"
+              type="text"
+              placeholder="Buscar por nombre o número de documento…"
+              [value]="ingresoForm.pacienteSearch"
+              (input)="onPacienteSearchInput($any($event.target).value)"
+              autocomplete="off"
+            />
+            @if (ingrPacienteSearch() && ingrPacienteSearch() !== '__SELECTED__' && !ingresoForm.pacienteId) {
+              <div class="hosp-autocomplete">
+                @for (p of pacientesFiltrados(); track p.id) {
+                  <button type="button" class="hosp-autocomplete__item" (click)="seleccionarPaciente(p)">
+                    <span class="hosp-autocomplete__name">{{ p.nombres }} {{ p.apellidos }}</span>
+                    <span class="hosp-autocomplete__doc">{{ p.documento }}</span>
+                  </button>
+                }
+                @if (pacientesFiltrados().length === 0) {
+                  <div class="hosp-autocomplete__empty">Sin coincidencias</div>
+                }
+              </div>
+            }
+            @if (ingresoForm.pacienteId) {
+              <div class="hosp-selected-patient">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Paciente seleccionado
+                <button type="button" class="hosp-selected-patient__clear" (click)="limpiarPacienteSeleccionado()">Cambiar</button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="hosp-modal__section">
+          <div class="hosp-modal__section-header">
+            <span class="hosp-modal__section-num">2</span>
+            <h3 class="hosp-modal__section-title">Ubicación hospitalaria</h3>
+          </div>
+          <div class="hosp-form-grid-2">
+            <div class="hosp-form-field">
+              <label class="hosp-label" for="ing-servicio-m">Servicio</label>
+              <input id="ing-servicio-m" class="hosp-input" type="text" placeholder="Ej: Medicina Interna" [(ngModel)]="ingresoForm.servicio" />
+            </div>
+            <div class="hosp-form-field">
+              <label class="hosp-label" for="ing-cama-m">Cama</label>
+              <input id="ing-cama-m" class="hosp-input" type="text" placeholder="Ej: 12A" [(ngModel)]="ingresoForm.cama" />
+            </div>
+          </div>
+        </div>
+
+        <div class="hosp-modal__section">
+          <div class="hosp-modal__section-header">
+            <span class="hosp-modal__section-num">3</span>
+            <h3 class="hosp-modal__section-title">Estado al ingreso <span class="hosp-modal__section-opt">(opcional)</span></h3>
+          </div>
+
+          <!-- Estado general -->
+          <div class="hosp-evol-row">
+            <span class="hosp-evol-row__label">Estado general</span>
+            <div class="hosp-eg-chips">
+              @for (e of ESTADOS_GENERALES; track e) {
+                <button
+                  type="button"
+                  class="hosp-eg-chip"
+                  [class.hosp-eg-chip--active]="evolucionIngreso.estadoGeneral === e"
+                  [ngClass]="evolucionIngreso.estadoGeneral === e ? estadoGeneralClass(e) : ''"
+                  (click)="evolucionIngreso.estadoGeneral = e"
+                >{{ estadoGeneralLabel(e) }}</button>
+              }
+            </div>
+          </div>
+
+          <!-- Signos vitales -->
+          <div class="hosp-sv-wrap">
+            <span class="hosp-sv-title">Signos vitales</span>
+            <div class="hosp-sv-grid">
+              <div class="hosp-sv-item">
+                <span class="hosp-sv-label">TA</span>
+                <div class="hosp-sv-ta">
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="Sist." [(ngModel)]="evolucionIngreso.ta_s" min="60" max="250" />
+                  <span class="hosp-sv-sep">/</span>
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="Diast." [(ngModel)]="evolucionIngreso.ta_d" min="30" max="150" />
+                  <span class="hosp-sv-unit">mmHg</span>
+                </div>
+              </div>
+              <div class="hosp-sv-item">
+                <span class="hosp-sv-label">FC</span>
+                <div class="hosp-sv-inline">
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="72" [(ngModel)]="evolucionIngreso.fc" min="0" max="300" />
+                  <span class="hosp-sv-unit">lpm</span>
+                </div>
+              </div>
+              <div class="hosp-sv-item">
+                <span class="hosp-sv-label">FR</span>
+                <div class="hosp-sv-inline">
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="18" [(ngModel)]="evolucionIngreso.fr" min="0" max="60" />
+                  <span class="hosp-sv-unit">rpm</span>
+                </div>
+              </div>
+              <div class="hosp-sv-item">
+                <span class="hosp-sv-label">T°</span>
+                <div class="hosp-sv-inline">
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="36.8" [(ngModel)]="evolucionIngreso.temp" step="0.1" min="34" max="43" />
+                  <span class="hosp-sv-unit">°C</span>
+                </div>
+              </div>
+              <div class="hosp-sv-item">
+                <span class="hosp-sv-label">SpO₂</span>
+                <div class="hosp-sv-inline">
+                  <input class="hosp-input hosp-input--xs" type="number" placeholder="98" [(ngModel)]="evolucionIngreso.spo2" min="0" max="100" />
+                  <span class="hosp-sv-unit">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna derecha: motivos rápidos + observaciones + órdenes médicas -->
+      <div class="hosp-modal__col hosp-modal__col--right">
+
+        <div class="hosp-modal__section">
+          <div class="hosp-modal__section-header">
+            <span class="hosp-modal__section-num">4</span>
+            <h3 class="hosp-modal__section-title">Motivo y observaciones <span class="hosp-modal__section-opt">(opcional)</span></h3>
+          </div>
+          <!-- Motivos rápidos -->
+          <div class="hosp-motivos-wrap">
+            <span class="hosp-motivos-label">Acceso rápido</span>
+            <div class="hosp-motivos-chips">
+              @for (m of MOTIVOS_RAPIDOS; track m) {
+                <button type="button" class="hosp-motivo-chip" (click)="aplicarMotivoRapido(m)">{{ m }}</button>
+              }
+            </div>
+          </div>
+          <div class="hosp-form-field">
+            <label class="hosp-label" for="ing-obs-m">Observaciones clínicas</label>
+            <textarea id="ing-obs-m" class="hosp-textarea" rows="3" placeholder="Motivo de ingreso, antecedentes relevantes, estado actual…" [(ngModel)]="evolucionIngreso.observaciones"></textarea>
+          </div>
+        </div>
+
+        <div class="hosp-modal__section hosp-modal__section--flex">
+          <div class="hosp-modal__section-header">
+            <span class="hosp-modal__section-num">5</span>
+            <h3 class="hosp-modal__section-title">Órdenes médicas iniciales <span class="hosp-modal__section-opt">(opcional)</span></h3>
+          </div>
+
+          <!-- Medication builder -->
+          <div class="hosp-med-form">
+            <div class="hosp-med-form__row hosp-med-form__row--main">
+
+              <!-- Combobox medicamento (ingreso) -->
+              <div class="hosp-med-combo" [class.hosp-med-combo--open]="showMedDropIngreso">
+                <div class="hosp-med-combo__trigger">
+                  <svg class="hosp-med-combo__search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    class="hosp-med-combo__input"
+                    type="text"
+                    placeholder="Buscar medicamento…"
+                    [(ngModel)]="newMedIngreso.nombre"
+                    (focus)="showMedDropIngreso = true"
+                    (blur)="onMedBlurIngreso()"
+                    (input)="showMedDropIngreso = true"
+                    autocomplete="off"
+                    aria-label="Nombre del medicamento"
+                  />
+                  <button
+                    type="button"
+                    class="hosp-med-combo__chevron"
+                    (mousedown)="$event.preventDefault(); toggleMedDropIngreso()"
+                    tabindex="-1"
+                    aria-label="Abrir lista de medicamentos"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+
+                @if (showMedDropIngreso) {
+                  <div class="hosp-med-combo__dropdown" role="listbox">
+                    @if (newMedIngreso.nombre) {
+                      <div class="hosp-med-combo__section-label">
+                        Coincidencias ({{ filteredMedsIngreso().length }})
+                      </div>
+                    } @else {
+                      <div class="hosp-med-combo__section-label">Medicamentos frecuentes</div>
+                    }
+                    @for (med of filteredMedsIngreso(); track med) {
+                      <button
+                        type="button"
+                        class="hosp-med-combo__option"
+                        [class.hosp-med-combo__option--selected]="newMedIngreso.nombre === med"
+                        (mousedown)="seleccionarMedIngreso(med)"
+                        role="option"
+                      >
+                        <svg class="hosp-med-combo__option-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>
+                        </svg>
+                        {{ med }}
+                        @if (newMedIngreso.nombre === med) {
+                          <svg class="hosp-med-combo__check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        }
+                      </button>
+                    }
+                    @if (filteredMedsIngreso().length === 0) {
+                      <div class="hosp-med-combo__empty">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        Sin coincidencias — se usará el nombre escrito
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <input class="hosp-input hosp-input--sm hosp-med-dosis" type="text" placeholder="Dosis" [(ngModel)]="newMedIngreso.dosis" />
+            </div>
+            <div class="hosp-med-form__row">
+              <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedIngreso.via">
+                @for (v of VIAS; track v) { <option [value]="v">{{ v }}</option> }
+              </select>
+              <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedIngreso.frecuencia">
+                @for (f of FRECUENCIAS; track f) { <option [value]="f">{{ f }}</option> }
+              </select>
+              <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedIngreso.duracion">
+                <option value="">Duración (opc.)</option>
+                @for (d of DURACIONES; track d) { <option [value]="d">{{ d }}</option> }
+              </select>
+              <button type="button" class="hosp-btn hosp-btn--sm hosp-btn--add" (click)="agregarMedIngreso()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                Añadir
+              </button>
+            </div>
+          </div>
+
+          @if (medicamentosIngreso.length > 0) {
+            <div class="hosp-med-list">
+              @for (med of medicamentosIngreso; track med.nombre; let i = $index) {
+                <div class="hosp-med-item">
+                  <span class="hosp-med-item__num">{{ i + 1 }}</span>
+                  <div class="hosp-med-item__info">
+                    <span class="hosp-med-item__nombre">{{ med.nombre }} <strong>{{ med.dosis }}</strong></span>
+                    <span class="hosp-med-item__detail">{{ med.via }} · {{ med.frecuencia }}{{ med.duracion ? ' · ' + med.duracion : '' }}</span>
+                  </div>
+                  <button type="button" class="hosp-med-item__remove" (click)="quitarMedIngreso(i)" aria-label="Quitar">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="hosp-med-empty">Sin órdenes. Agrega medicamentos con el formulario.</div>
+          }
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Pie del modal ────────────────────── -->
+    <div class="hosp-modal__foot">
+      <div class="hosp-modal__foot-info">
+        @if (ingresoForm.pacienteId) {
+          <span class="hosp-modal__foot-ready">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            Paciente listo para ingreso
+          </span>
+        } @else {
+          <span class="hosp-modal__foot-hint">Selecciona un paciente para continuar</span>
+        }
+        @if (medicamentosIngreso.length > 0) {
+          <span class="hosp-modal__foot-badge">{{ medicamentosIngreso.length }} orden{{ medicamentosIngreso.length !== 1 ? 'es' : '' }}</span>
+        }
+      </div>
+      <div class="hosp-modal__foot-actions">
+        <button class="hosp-btn hosp-btn--ghost" (click)="cerrarPanel()">Cancelar</button>
+        <button class="hosp-btn hosp-btn--primary" [disabled]="!ingresoForm.pacienteId || saving()" (click)="registrarIngreso()">
+          @if (saving()) { <span class="hosp-mini-spinner hosp-mini-spinner--white"></span> Guardando… }
+          @else {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Registrar ingreso
+          }
+        </button>
+      </div>
+    </div>
+
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     PANEL LATERAL — gestión del paciente hospitalizado
+══════════════════════════════════════════════════════ -->
+@if (showPanel() && panelMode() === 'detalle') {
+  <div class="hosp-overlay" (click)="cerrarPanel()" role="presentation" aria-hidden="true"></div>
+
+  <aside class="hosp-panel" role="dialog" aria-modal="true" aria-label="Gestionar hospitalización">
+
+    <!-- ── Cabecera del panel ──────────────── -->
+    <div class="hosp-panel__head">
+      <div class="hosp-panel__head-info">
+        <h2 class="hosp-panel__title">{{ selectedHosp()?.pacienteNombre }}</h2>
+        <span class="hosp-panel__sub">
+          {{ selectedHosp()?.pacienteDocumento }} · Cama {{ selectedHosp()?.cama || '—' }} · {{ selectedHosp()?.servicio || 'Sin servicio' }}
+        </span>
+      </div>
+      <button class="hosp-panel__close" (click)="cerrarPanel()" aria-label="Cerrar panel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+
+      <!-- Contexto rápido del paciente -->
+      <div class="hosp-panel__patient-ctx">
+        <div class="hosp-panel__patient-grid">
+          <div class="hosp-panel__ctx-item">
+            <span class="hosp-panel__ctx-label">Ingreso</span>
+            <span class="hosp-panel__ctx-val">{{ formatFechaHora(selectedHosp()?.fechaIngreso) }}</span>
+          </div>
+          <div class="hosp-panel__ctx-item">
+            <span class="hosp-panel__ctx-label">Días</span>
+            <span class="hosp-panel__ctx-val" [ngClass]="diasClass(selectedHosp()!)">{{ diasEstancia(selectedHosp()!) }}d</span>
+          </div>
+          <div class="hosp-panel__ctx-item">
+            <span class="hosp-panel__ctx-label">Estado</span>
+            <span class="hosp-badge hosp-badge--sm" [ngClass]="estadoBadgeClass(selectedHosp()?.estado)">
+              <span class="hosp-badge__dot"></span>{{ estadoLabel(selectedHosp()?.estado) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hosp-panel__body">
+
+        <!-- Ubicación rápida -->
+        <div class="hosp-panel-section">
+          <h3 class="hosp-panel-section__title">Ubicación</h3>
+          <div class="hosp-form-grid-2">
+            <div class="hosp-form-field">
+              <label class="hosp-label" for="det-servicio">Servicio</label>
+              <input id="det-servicio" class="hosp-input" type="text" placeholder="Servicio hospitalario" [(ngModel)]="detalleForm.servicio" />
+            </div>
+            <div class="hosp-form-field">
+              <label class="hosp-label" for="det-cama">Cama</label>
+              <input id="det-cama" class="hosp-input" type="text" placeholder="Número de cama" [(ngModel)]="detalleForm.cama" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="hosp-panel-tabs">
+          <button class="hosp-panel-tab" [class.hosp-panel-tab--active]="panelTab() === 'evolucion'" (click)="panelTab.set('evolucion')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Evolución
+          </button>
+          <button class="hosp-panel-tab" [class.hosp-panel-tab--active]="panelTab() === 'ordenes'" (click)="panelTab.set('ordenes')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Órdenes
+          </button>
+          <button class="hosp-panel-tab hosp-panel-tab--egreso" [class.hosp-panel-tab--active]="panelTab() === 'egreso'" (click)="panelTab.set('egreso')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Egreso
+          </button>
+        </div>
+
+        <!-- ── Tab: Evolución ─────────────────── -->
+        @if (panelTab() === 'evolucion') {
+          <div class="hosp-tab-panel">
+
+            <!-- Historial previo (readonly) -->
+            @if (detalleForm.evolucionDiariaRaw) {
+              <div class="hosp-history-block">
+                <div class="hosp-history-block__header">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Historial de evolución
+                </div>
+                <pre class="hosp-history-block__text">{{ detalleForm.evolucionDiariaRaw }}</pre>
+              </div>
+            }
+
+            <!-- Nueva nota estructurada -->
+            <div class="hosp-new-note-header">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Nueva nota de evolución
+            </div>
+
+            <!-- Estado general chips -->
+            <div class="hosp-evol-row">
+              <span class="hosp-evol-row__label">Estado general</span>
+              <div class="hosp-eg-chips">
+                @for (e of ESTADOS_GENERALES; track e) {
+                  <button
+                    type="button"
+                    class="hosp-eg-chip"
+                    [class.hosp-eg-chip--active]="evolucionDetalle.estadoGeneral === e"
+                    [ngClass]="evolucionDetalle.estadoGeneral === e ? estadoGeneralClass(e) : ''"
+                    (click)="evolucionDetalle.estadoGeneral = e"
+                  >
+                    {{ estadoGeneralLabel(e) }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Signos vitales -->
+            <div class="hosp-sv-wrap">
+              <span class="hosp-sv-title">Signos vitales</span>
+              <div class="hosp-sv-grid">
+                <div class="hosp-sv-item">
+                  <span class="hosp-sv-label">TA</span>
+                  <div class="hosp-sv-ta">
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="Sist." [(ngModel)]="evolucionDetalle.ta_s" min="60" max="250" />
+                    <span class="hosp-sv-sep">/</span>
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="Diast." [(ngModel)]="evolucionDetalle.ta_d" min="30" max="150" />
+                    <span class="hosp-sv-unit">mmHg</span>
+                  </div>
+                </div>
+                <div class="hosp-sv-item">
+                  <span class="hosp-sv-label">FC</span>
+                  <div class="hosp-sv-inline">
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="72" [(ngModel)]="evolucionDetalle.fc" min="0" max="300" />
+                    <span class="hosp-sv-unit">lpm</span>
+                  </div>
+                </div>
+                <div class="hosp-sv-item">
+                  <span class="hosp-sv-label">FR</span>
+                  <div class="hosp-sv-inline">
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="18" [(ngModel)]="evolucionDetalle.fr" min="0" max="60" />
+                    <span class="hosp-sv-unit">rpm</span>
+                  </div>
+                </div>
+                <div class="hosp-sv-item">
+                  <span class="hosp-sv-label">T°</span>
+                  <div class="hosp-sv-inline">
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="36.8" [(ngModel)]="evolucionDetalle.temp" step="0.1" min="34" max="43" />
+                    <span class="hosp-sv-unit">°C</span>
+                  </div>
+                </div>
+                <div class="hosp-sv-item">
+                  <span class="hosp-sv-label">SpO₂</span>
+                  <div class="hosp-sv-inline">
+                    <input class="hosp-input hosp-input--xs" type="number" placeholder="98" [(ngModel)]="evolucionDetalle.spo2" min="0" max="100" />
+                    <span class="hosp-sv-unit">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="hosp-form-field">
+              <label class="hosp-label" for="det-obs">Observaciones clínicas</label>
+              <textarea id="det-obs" class="hosp-textarea" rows="3" placeholder="Respuesta al tratamiento, cambios clínicos, plan…" [(ngModel)]="evolucionDetalle.observaciones"></textarea>
+            </div>
+
+          </div>
+        }
+
+        <!-- ── Tab: Órdenes médicas ─────────────── -->
+        @if (panelTab() === 'ordenes') {
+          <div class="hosp-tab-panel">
+
+            <!-- Órdenes previas (readonly) -->
+            @if (detalleForm.ordenesMedicasRaw) {
+              <div class="hosp-history-block">
+                <div class="hosp-history-block__header">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Órdenes anteriores
+                </div>
+                <pre class="hosp-history-block__text">{{ detalleForm.ordenesMedicasRaw }}</pre>
+              </div>
+            }
+
+            <div class="hosp-new-note-header">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Nuevas órdenes
+              <span class="hosp-new-note-hint">(reemplazarán las anteriores al guardar)</span>
+            </div>
+
+            <!-- Medication builder -->
+            <div class="hosp-med-form">
+              <div class="hosp-med-form__row hosp-med-form__row--main">
+
+                <!-- Combobox medicamento (detalle) -->
+                <div class="hosp-med-combo" [class.hosp-med-combo--open]="showMedDropDetalle">
+                  <div class="hosp-med-combo__trigger">
+                    <svg class="hosp-med-combo__search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input
+                      class="hosp-med-combo__input"
+                      type="text"
+                      placeholder="Buscar medicamento…"
+                      [(ngModel)]="newMedDetalle.nombre"
+                      (focus)="showMedDropDetalle = true"
+                      (blur)="onMedBlurDetalle()"
+                      (input)="showMedDropDetalle = true"
+                      autocomplete="off"
+                      aria-label="Nombre del medicamento"
+                    />
+                    <button
+                      type="button"
+                      class="hosp-med-combo__chevron"
+                      (mousedown)="$event.preventDefault(); toggleMedDropDetalle()"
+                      tabindex="-1"
+                      aria-label="Abrir lista de medicamentos"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  @if (showMedDropDetalle) {
+                    <div class="hosp-med-combo__dropdown" role="listbox">
+                      @if (newMedDetalle.nombre) {
+                        <div class="hosp-med-combo__section-label">Coincidencias ({{ filteredMedsDetalle().length }})</div>
+                      } @else {
+                        <div class="hosp-med-combo__section-label">Medicamentos frecuentes</div>
+                      }
+                      @for (med of filteredMedsDetalle(); track med) {
+                        <button
+                          type="button"
+                          class="hosp-med-combo__option"
+                          [class.hosp-med-combo__option--selected]="newMedDetalle.nombre === med"
+                          (mousedown)="seleccionarMedDetalle(med)"
+                          role="option"
+                        >
+                          <svg class="hosp-med-combo__option-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>
+                          </svg>
+                          {{ med }}
+                          @if (newMedDetalle.nombre === med) {
+                            <svg class="hosp-med-combo__check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                          }
+                        </button>
+                      }
+                      @if (filteredMedsDetalle().length === 0) {
+                        <div class="hosp-med-combo__empty">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                          Sin coincidencias — se usará el nombre escrito
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <input class="hosp-input hosp-input--sm hosp-med-dosis" type="text" placeholder="Dosis" [(ngModel)]="newMedDetalle.dosis" />
+              </div>
+              <div class="hosp-med-form__row">
+                <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedDetalle.via">
+                  @for (v of VIAS; track v) { <option [value]="v">{{ v }}</option> }
+                </select>
+                <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedDetalle.frecuencia">
+                  @for (f of FRECUENCIAS; track f) { <option [value]="f">{{ f }}</option> }
+                </select>
+                <select class="hosp-select hosp-select--sm" [(ngModel)]="newMedDetalle.duracion">
+                  <option value="">Duración (opc.)</option>
+                  @for (d of DURACIONES; track d) { <option [value]="d">{{ d }}</option> }
+                </select>
+                <button type="button" class="hosp-btn hosp-btn--sm hosp-btn--add" (click)="agregarMedDetalle()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  Añadir
+                </button>
+              </div>
+            </div>
+
+            @if (medicamentosDetalle.length > 0) {
+              <div class="hosp-med-list">
+                @for (med of medicamentosDetalle; track med.nombre; let i = $index) {
+                  <div class="hosp-med-item">
+                    <span class="hosp-med-item__num">{{ i + 1 }}</span>
+                    <div class="hosp-med-item__info">
+                      <span class="hosp-med-item__nombre">{{ med.nombre }} <strong>{{ med.dosis }}</strong></span>
+                      <span class="hosp-med-item__detail">{{ med.via }} · {{ med.frecuencia }}{{ med.duracion ? ' · ' + med.duracion : '' }}</span>
+                    </div>
+                    <button type="button" class="hosp-med-item__remove" (click)="quitarMedDetalle(i)" aria-label="Quitar medicamento">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="hosp-med-empty">Sin nuevas órdenes. Agrega medicamentos con el formulario.</div>
+            }
+
+          </div>
+        }
+
+        <!-- ── Tab: Egreso ──────────────────────── -->
+        @if (panelTab() === 'egreso') {
+          <div class="hosp-tab-panel">
+            @if (selectedHosp()?.estado === 'EGRESADO') {
+              <div class="hosp-egreso-done">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <div>
+                  <p class="hosp-egreso-done__title">Paciente egresado</p>
+                  <p class="hosp-egreso-done__date">Alta: {{ formatFechaHora(selectedHosp()?.fechaEgreso) }}</p>
+                </div>
+              </div>
+              @if (selectedHosp()?.epicrisis) {
+                <div class="hosp-form-field" style="margin-top:1rem">
+                  <label class="hosp-label">Epicrisis registrada</label>
+                  <div class="hosp-epicrisis-readonly">{{ selectedHosp()?.epicrisis }}</div>
+                </div>
+              }
+            } @else {
+              <div class="hosp-egreso-warning">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Esta acción dará de alta al paciente. Requiere epicrisis completa.</span>
+              </div>
+              <div class="hosp-form-field" style="margin-top:1rem">
+                <label class="hosp-label" for="det-epicrisis">Epicrisis / Resumen de egreso <span class="hosp-label--req">*</span></label>
+                <textarea
+                  id="det-epicrisis"
+                  class="hosp-textarea hosp-textarea--tall"
+                  rows="7"
+                  placeholder="Diagnóstico final, tratamiento realizado, condición al egreso, indicaciones, citas de control…"
+                  [(ngModel)]="detalleForm.epicrisis"
+                ></textarea>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+
+      <!-- Pie del panel -->
+      <div class="hosp-panel__foot">
+        @if (panelTab() !== 'egreso') {
+          <button class="hosp-btn hosp-btn--ghost" (click)="cerrarPanel()">Cerrar</button>
+          <button class="hosp-btn hosp-btn--secondary" (click)="generarYEnviarRda(selectedHosp()!)" [disabled]="rdaEnviandoId() === selectedHosp()?.id || saving()">
+            @if (rdaEnviandoId() === selectedHosp()?.id) { <span class="hosp-mini-spinner"></span> } RDA
+          </button>
+          <button class="hosp-btn hosp-btn--primary" (click)="guardarDetalle()" [disabled]="saving()">
+            @if (saving()) { <span class="hosp-mini-spinner hosp-mini-spinner--white"></span> Guardando… }
+            @else { Guardar cambios }
+          </button>
+        } @else if (selectedHosp()?.estado !== 'EGRESADO') {
+          <button class="hosp-btn hosp-btn--ghost" (click)="cerrarPanel()">Cancelar</button>
+          <button class="hosp-btn hosp-btn--danger" [disabled]="!detalleForm.epicrisis.trim() || saving()" (click)="darEgreso()">
+            @if (saving()) { <span class="hosp-mini-spinner hosp-mini-spinner--white"></span> Procesando… }
+            @else {
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Confirmar egreso
+            }
+          </button>
+        } @else {
+          <button class="hosp-btn hosp-btn--ghost" (click)="cerrarPanel()">Cerrar</button>
+        }
+      </div>
+
+  </aside>
+}

@@ -1,0 +1,143 @@
+<!-- S12: Gestión de API Keys para integradores -->
+<section class="sesa-page api-keys-page">
+  <header class="sesa-page-header api-keys-header">
+    <div>
+      <h1 class="sesa-page-title">API Keys — Integradores</h1>
+      <p class="sesa-page-subtitle">Gestione credenciales seguras para laboratorio, PACS o dispositivos de signos vitales.</p>
+    </div>
+    <a [href]="apiDocsUrl" target="_blank" rel="noopener" class="sesa-link-docs">Abrir documentación Swagger</a>
+  </header>
+
+  <div class="api-keys-kpis">
+    <article class="api-kpi">
+      <span>Total</span>
+      <strong>{{ totalKeys() }}</strong>
+    </article>
+    <article class="api-kpi api-kpi--ok">
+      <span>Activas</span>
+      <strong>{{ activeKeys() }}</strong>
+    </article>
+    <article class="api-kpi api-kpi--muted">
+      <span>Inactivas</span>
+      <strong>{{ inactiveKeys() }}</strong>
+    </article>
+  </div>
+
+  @if (error) {
+    <p class="sesa-error">{{ error }}</p>
+  }
+  @if (createdKey(); as c) {
+    <div class="sesa-alert sesa-alert-success">
+      <div class="api-created-top">
+        <strong>Clave creada correctamente.</strong>
+        <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-primary" (click)="copiarClaveCreada()">
+          Copiar clave
+        </button>
+      </div>
+      <p>Copie y guarde esta clave ahora. No se mostrará nuevamente.</p>
+      <pre class="sesa-pre-key">{{ c.apiKeyRaw }}</pre>
+      <p>Permisos: {{ c.permisos }}</p>
+    </div>
+  }
+
+  <div class="api-keys-grid">
+    <sesa-card title="Nueva API Key">
+      <p class="api-help-inline">Incluya en cada petición: <strong>X-API-Key</strong> y <strong>X-Tenant-Schema</strong>.</p>
+      <div class="sesa-form-grid">
+        <div class="sesa-form-field">
+          <label>Nombre del integrador</label>
+          <input type="text" [(ngModel)]="form.nombre" placeholder="Ej. Laboratorio Central" />
+        </div>
+        <div class="sesa-form-field">
+          <label>Permisos (separados por coma)</label>
+          <input type="text" [(ngModel)]="form.permisos" placeholder="LABORATORIO, SIGNOS_VITALES, IMAGEN" />
+        </div>
+      </div>
+      <button type="button" class="sesa-btn sesa-btn-primary" [disabled]="guardando()" (click)="crear()">
+        {{ guardando() ? 'Creando...' : 'Crear API Key' }}
+      </button>
+    </sesa-card>
+
+    <sesa-card title="Filtros y control">
+      <div class="api-filter-block">
+        <label>Buscar por nombre o permiso</label>
+        <input
+          type="text"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          placeholder="Buscar..."
+        />
+      </div>
+      <div class="api-filter-status">
+        <button type="button" class="api-chip" [class.api-chip--active]="statusFilter() === 'all'" (click)="setStatusFilter('all')">
+          Todas
+        </button>
+        <button type="button" class="api-chip" [class.api-chip--active]="statusFilter() === 'active'" (click)="setStatusFilter('active')">
+          Activas
+        </button>
+        <button type="button" class="api-chip" [class.api-chip--active]="statusFilter() === 'inactive'" (click)="setStatusFilter('inactive')">
+          Inactivas
+        </button>
+      </div>
+      <button type="button" class="sesa-btn sesa-btn-sm" (click)="clearFilters()">Limpiar filtros</button>
+    </sesa-card>
+  </div>
+
+  <sesa-card title="Claves existentes">
+    @if (cargando()) {
+      <div class="api-state api-state--loading">Cargando API Keys...</div>
+    } @else if (filteredKeys().length === 0) {
+      <div class="api-state api-state--empty">No hay resultados con los filtros actuales.</div>
+    } @else {
+      <div class="sesa-table-wrap">
+        <table class="sesa-table api-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Permisos</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (k of filteredKeys(); track k.id) {
+              <tr>
+                <td>
+                  <div class="api-name-col">
+                    <strong>{{ k.nombreIntegrador }}</strong>
+                    <small>ID {{ k.id }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="api-perm-list">
+                    @for (perm of formatPermisos(k.permisos); track perm) {
+                      <span class="api-perm-chip">{{ perm }}</span>
+                    } @empty {
+                      <span class="api-perm-chip">Sin permisos</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span [class]="k.activo ? 'sesa-badge sesa-badge-success' : 'sesa-badge sesa-badge-secondary'">
+                    {{ k.activo ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td>{{ k.createdAt | date:'short' }}</td>
+                <td>
+                  @if (k.activo) {
+                    <button type="button" class="sesa-btn sesa-btn-sm sesa-btn-danger" (click)="desactivar(k.id)">
+                      Desactivar
+                    </button>
+                  } @else {
+                    <span class="api-row-muted">Sin acciones</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </sesa-card>
+</section>

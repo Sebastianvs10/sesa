@@ -1,144 +1,1060 @@
-/* Crear Historia Clínica - formulario en pestañas */
+/* Crear Historia Clínica — Stepper premium médico */
 /* Autor: Ing. J Sebastian Vargas S */
 
-.sesa-page-crear-hc {
+/* ═══════════════════════════════════════════════════
+   PÁGINA RAÍZ
+═══════════════════════════════════════════════════ */
+.chc-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  min-height: calc(100vh - 4rem);
 }
 
-.sesa-tabs-wrap {
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
+.chc-header {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.sesa-tabs {
-  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.25rem 0;
-  border-bottom: 2px solid var(--sesa-border);
+  gap: 1rem;
+  padding: 1.5rem 0 1rem;
+  border-bottom: 1px solid var(--sesa-border);
+  margin-bottom: 1.5rem;
 }
 
-.sesa-tab {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px 8px 0 0;
-  background: transparent;
+.chc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chc-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--sesa-primary), var(--sesa-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 26px;
+    height: 26px;
+    color: #fff;
+    stroke: #fff;
+  }
+}
+
+.chc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.15rem;
+  letter-spacing: -0.02em;
+}
+
+.chc-subtitle {
+  font-size: 0.85rem;
   color: var(--sesa-text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  margin: 0;
 }
 
-.sesa-tab:hover {
-  background: var(--sesa-bg);
+/* Mini-tarjeta del paciente en el header */
+.chc-patient-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  background: var(--sesa-surface);
+}
+
+.chc-patient-mini-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-secondary), var(--sesa-primary));
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chc-patient-mini-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--sesa-text-primary);
 }
 
-.sesa-tab-active {
-  background: var(--sesa-surface);
-  color: var(--sesa-secondary);
-  border: 1px solid var(--sesa-border);
-  border-bottom-color: var(--sesa-surface);
-  margin-bottom: -2px;
+.chc-patient-mini-doc {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
 }
 
-.sesa-actions-card {
-  margin-top: 0.5rem;
+/* Loading skeleton */
+.chc-loading {
+  padding: 1.5rem 0;
 }
 
-.sesa-form-grid {
-  display: grid;
+.chc-loading-inner {
+  display: flex;
+  align-items: center;
   gap: 1rem;
-  margin-bottom: 1rem;
+}
 
-  h3 {
-    grid-column: 1 / -1;
-    margin: 1rem 0 0.5rem 0;
-    font-size: 0.95rem;
-    color: var(--sesa-text-primary);
-    font-weight: 500;
+/* ═══════════════════════════════════════════════════
+   STEPPER
+═══════════════════════════════════════════════════ */
+.chc-stepper {
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.chc-progress-bar {
+  height: 4px;
+  background: var(--sesa-border);
+  position: relative;
+}
+
+.chc-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sesa-primary), var(--sesa-secondary));
+  border-radius: 0 2px 2px 0;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chc-steps {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.chc-step {
+  flex: 1;
+  min-width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.875rem 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  text-align: center;
+
+  & + & {
+    border-left: 1px solid var(--sesa-border);
+  }
+
+  &:hover { background: var(--sesa-bg); }
+
+  &.chc-step--active {
+    background: color-mix(in srgb, var(--sesa-primary) 8%, transparent);
+
+    .chc-step-circle {
+      background: linear-gradient(135deg, var(--sesa-primary), var(--sesa-secondary));
+      color: #fff;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--sesa-primary) 35%, transparent);
+    }
+
+    .chc-step-label {
+      color: var(--sesa-primary);
+      font-weight: 700;
+    }
+  }
+
+  &.chc-step--done {
+    .chc-step-circle {
+      background: color-mix(in srgb, var(--sesa-success, #22c55e) 15%, transparent);
+      color: var(--sesa-success, #22c55e);
+      border-color: var(--sesa-success, #22c55e);
+    }
+
+    .chc-step-label {
+      color: var(--sesa-success, #22c55e);
+    }
   }
 }
 
-.sesa-checkboxes-row {
-  grid-column: 1 / -1;
+.chc-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--sesa-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--sesa-text-secondary);
+  transition: all 0.2s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.chc-step-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.chc-step-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.chc-step-desc {
+  font-size: 0.68rem;
+  color: var(--sesa-text-secondary);
+  opacity: 0.75;
+  white-space: nowrap;
+  display: none;
+
+  @media (min-width: 1200px) { display: block; }
+}
+
+/* ═══════════════════════════════════════════════════
+   CONTENIDO
+═══════════════════════════════════════════════════ */
+.chc-content {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.chc-step-content {
+  animation: chcFadeIn 0.25s ease both;
+  background: var(--sesa-surface);
+  border: 1px solid var(--sesa-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@keyframes chcFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Encabezado de cada paso */
+.chc-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.chc-step-head-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.chc-step-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.01em;
+}
+
+.chc-step-caption {
+  font-size: 0.85rem;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   PASO 1 — PACIENTE
+═══════════════════════════════════════════════════ */
+.chc-patient-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--sesa-primary) 6%, transparent),
+    color-mix(in srgb, var(--sesa-secondary) 4%, transparent));
+  border: 1px solid color-mix(in srgb, var(--sesa-primary) 20%, transparent);
+  border-radius: 14px;
+}
+
+.chc-pc-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sesa-primary), var(--sesa-secondary));
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--sesa-primary) 35%, transparent);
+}
+
+.chc-pc-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.chc-pc-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.4rem;
+}
+
+.chc-pc-chip {
+  display: inline-flex;
   align-items: center;
-}
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 20px;
+  background: var(--sesa-bg);
+  border: 1px solid var(--sesa-border);
+  font-size: 0.78rem;
+  color: var(--sesa-text-secondary);
+  font-weight: 500;
 
-.sesa-form-col-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  grid-column: 1 / -1;
-}
-
-.sesa-form-col-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  grid-column: 1 / -1;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
+  &--doc {
+    background: color-mix(in srgb, var(--sesa-primary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--sesa-primary) 25%, transparent);
+    color: var(--sesa-primary);
   }
+
+  &--blood {
+    background: #fee2e222;
+    border-color: #fca5a5;
+    color: #dc2626;
+  }
+
+  &--eps {
+    background: color-mix(in srgb, var(--sesa-secondary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--sesa-secondary) 25%, transparent);
+    color: var(--sesa-secondary);
+  }
+}
+
+.chc-readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  overflow: hidden;
 
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 }
 
-.sesa-checkbox {
+.chc-ro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--sesa-border);
+  border-right: 1px solid var(--sesa-border);
+
+  &:nth-child(even) { border-right: none; }
+  &:nth-last-child(-n+2) { border-bottom: none; }
+  &--full {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+}
+
+.chc-ro-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sesa-text-secondary);
+}
+
+.chc-ro-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--sesa-text-primary);
+
+  &.chc-blood {
+    color: #dc2626;
+    font-weight: 700;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   CAMPOS GENÉRICOS
+═══════════════════════════════════════════════════ */
+.chc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &--full { grid-column: 1 / -1; }
+}
+
+.chc-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+
+  &--required { position: relative; }
+}
+
+.chc-req-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--sesa-error, #ef4444) 10%, transparent);
+  color: var(--sesa-error, #ef4444);
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.chc-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.75rem;
+
+  &--green {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  &--red {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+}
+
+.chc-input,
+.chc-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: var(--sesa-input-bg);
+  border: 1.5px solid var(--sesa-input-border);
+  border-radius: 10px;
+  color: var(--sesa-text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+  box-sizing: border-box;
+
+  &::placeholder { color: var(--sesa-input-placeholder); }
+
+  &:focus {
+    outline: none;
+    border-color: var(--sesa-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sesa-primary) 15%, transparent);
+  }
+
+  &[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    resize: none;
+  }
+
+  &--large {
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  &--warning {
+    border-color: #f59e0b44;
+    background: color-mix(in srgb, #f59e0b 5%, var(--sesa-input-bg));
+  }
+
+  &--sistema {
+    resize: none;
+    font-size: 0.82rem;
+  }
+
+  &--readonly {
+    cursor: default;
+    color: var(--sesa-text-secondary);
+  }
+}
+
+.chc-char-count {
+  font-size: 0.72rem;
+  color: var(--sesa-text-secondary);
+  text-align: right;
+  margin-top: 0.15rem;
+}
+
+.chc-input {
+  height: 42px;
+  resize: none;
+}
+
+/* Grilla genérica */
+.chc-form-grid {
+  display: grid;
+  gap: 1rem;
+
+  &--2 {
+    grid-template-columns: 1fr 1fr;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &--3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* Divisor con texto */
+.chc-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--sesa-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--sesa-border);
+  }
+}
+
+/* Motivo principal destacado */
+.chc-motivo-principal {
+  padding: 1rem;
+  background: color-mix(in srgb, var(--sesa-primary) 5%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--sesa-primary) 20%, transparent);
+  border-radius: 12px;
+}
+
+/* ═══════════════════════════════════════════════════
+   PASO 3 — ANTECEDENTES
+═══════════════════════════════════════════════════ */
+.chc-ante-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.chc-ante-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sesa-text-secondary);
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--sesa-border);
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+}
+
+.chc-habitos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.chc-habito-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid var(--sesa-border);
+  border-radius: 12px;
   cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  text-align: center;
+  background: var(--sesa-bg);
+
+  input[type='checkbox'] { display: none; }
+
+  &:hover {
+    border-color: var(--sesa-primary);
+    background: color-mix(in srgb, var(--sesa-primary) 5%, transparent);
+  }
+
+  &--active {
+    border-color: var(--sesa-primary);
+    background: color-mix(in srgb, var(--sesa-primary) 8%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sesa-primary) 15%, transparent);
+  }
+}
+
+.chc-habito-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.chc-habito-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sesa-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════
+   PASO 4 — REVISIÓN POR SISTEMAS
+═══════════════════════════════════════════════════ */
+.chc-sistemas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.875rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chc-sistema-card {
+  border: 1px solid var(--sesa-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: var(--sesa-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--sesa-primary) 15%, transparent);
+  }
+}
+
+.chc-sistema-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sesa-bg);
+  border-bottom: 1px solid var(--sesa-border);
+}
+
+.chc-sistema-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.chc-sistema-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chc-textarea--sistema {
+  border: none;
+  border-radius: 0;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.82rem;
+
+  &:focus { box-shadow: none; }
+}
+
+.chc-systems-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--sesa-info, #0ea5e9) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sesa-info, #0ea5e9) 25%, transparent);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: var(--sesa-text-secondary);
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--sesa-info, #0ea5e9);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PASO 5 — EXAMEN FÍSICO
+═══════════════════════════════════════════════════ */
+.chc-sv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.chc-section-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sesa-text-secondary);
+  margin: 0;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+}
+
+/* Grid de signos vitales — tarjetas visuales */
+.chc-sv-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+}
+
+.chc-sv-card {
+  flex: 1;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 1rem 0.75rem;
+  background: var(--sesa-bg);
+  border: 1.5px solid var(--sesa-border);
+  border-radius: 14px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: var(--sesa-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sesa-primary) 15%, transparent);
+  }
+}
+
+.chc-sv-card-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.chc-sv-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sesa-text-secondary);
+}
+
+.chc-sv-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sesa-text-primary);
   padding: 0.25rem 0;
 
-  input[type='checkbox'] {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
+  &::placeholder {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--sesa-input-placeholder);
   }
 
-  span {
-    color: var(--sesa-text-primary);
-    font-size: 0.95rem;
-  }
+  &:focus { outline: none; }
+
+  &[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  /* Ocultar flechas de tipo number */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; }
+  -moz-appearance: textfield;
 }
 
-.sesa-form-actions {
+/* Antropometría */
+.chc-antro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 500px) { grid-template-columns: 1fr; }
+}
+
+.chc-antro-item {
   display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.chc-imc-wrap {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
-  margin-top: 0;
-  padding-top: 0;
+}
 
-  button {
-    flex: 1;
+.chc-imc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.625rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   PASO 6 — DIAGNÓSTICO
+═══════════════════════════════════════════════════ */
+.chc-diag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.chc-cie-wrap {
+  position: relative;
+
+  input { text-transform: uppercase; }
+}
+
+/* Banners de estado */
+.chc-success-banner,
+.chc-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1.125rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
   }
 }
 
-.sesa-success-card {
-  background-color: var(--sesa-success-bg);
-  border-color: var(--sesa-success-border);
-  margin-bottom: 1rem;
+.chc-success-banner {
+  background: color-mix(in srgb, var(--sesa-success, #22c55e) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sesa-success, #22c55e) 30%, transparent);
+  color: var(--sesa-success, #22c55e);
+}
 
-  .sesa-success {
-    color: var(--sesa-success);
-    font-weight: 500;
-    margin: 0;
+.chc-error-banner {
+  background: color-mix(in srgb, var(--sesa-error, #ef4444) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sesa-error, #ef4444) 30%, transparent);
+  color: var(--sesa-error, #ef4444);
+}
+
+/* ═══════════════════════════════════════════════════
+   FOOTER STICKY — dentro del scroll del content,
+   nunca se superpone al sidebar
+═══════════════════════════════════════════════════ */
+.chc-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 2rem;
+  background: var(--sesa-surface);
+  border-top: 1px solid var(--sesa-border);
+  box-shadow: 0 -4px 24px color-mix(in srgb, #000 10%, transparent);
+  /* Compensa el padding del .sesa-main-content para ocupar el ancho completo */
+  margin: 0 -1.75rem -2rem;
+}
+
+.chc-footer-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.chc-footer-step {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sesa-text-secondary);
+  white-space: nowrap;
+}
+
+.chc-footer-dots {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.chc-footer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sesa-border);
+  transition: all 0.3s;
+
+  &--active {
+    background: var(--sesa-primary);
+    width: 20px;
+    border-radius: 4px;
+  }
+
+  &--done {
+    background: var(--sesa-success, #22c55e);
   }
 }
 
-sesa-form-field {
-  &[readOnly] input {
-    background-color: var(--sesa-input-readonly-bg);
+.chc-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+/* ═══════════════════════════════════════════════════
+   BOTONES
+═══════════════════════════════════════════════════ */
+.chc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  svg { width: 18px; height: 18px; }
+
+  &:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &--primary {
+    background: linear-gradient(135deg, var(--sesa-primary), var(--sesa-secondary));
+    color: #fff;
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--sesa-primary) 35%, transparent);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 20px color-mix(in srgb, var(--sesa-primary) 45%, transparent);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) { transform: translateY(0); }
+  }
+
+  &--secondary {
+    background: var(--sesa-bg);
+    color: var(--sesa-text-primary);
+    border: 1.5px solid var(--sesa-border);
+
+    &:hover:not(:disabled) {
+      border-color: var(--sesa-primary);
+      color: var(--sesa-primary);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--sesa-text-secondary);
+
+    &:hover:not(:disabled) { color: var(--sesa-error, #ef4444); }
+  }
+
+  &--save {
+    min-width: 200px;
+    padding: 0.7rem 1.75rem;
+    font-size: 0.925rem;
+  }
+}
+
+/* Spinner en botón */
+.chc-btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: chcSpin 0.7s linear infinite;
+}
+
+@keyframes chcSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — Ajustes menores
+═══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .chc-step-content { padding: 1.25rem; }
+  .chc-footer {
+    padding: 0.75rem 1rem;
+    margin: 0 -1rem -2rem;
+  }
+  .chc-footer-progress { display: none; }
+  .chc-patient-card { flex-direction: column; text-align: center; }
 }

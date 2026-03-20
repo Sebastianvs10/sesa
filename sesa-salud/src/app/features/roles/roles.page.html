@@ -1,123 +1,223 @@
-<section class="sesa-roles-page">
-  <div class="sesa-roles-scroll">
-    <header class="sesa-roles-header">
-      <div class="sesa-roles-header-content">
-        <h1 class="sesa-roles-title">Roles del sistema</h1>
-        <p class="sesa-roles-subtitle">Consulta y configura los módulos permitidos para cada rol</p>
+<section class="roles-page">
+
+  <!-- ══════════ HEADER ══════════ -->
+  <header class="roles-header">
+    <div class="roles-header-left">
+      <div class="roles-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
       </div>
-      <button type="button" class="sesa-roles-btn sesa-roles-btn--add" (click)="openCreate()">
-        <span class="sesa-roles-btn-icon">+</span>
+      <div>
+        <h1 class="roles-title">Roles del sistema</h1>
+        <p class="roles-subtitle">Configura los módulos y permisos de acceso para cada rol clínico y administrativo</p>
+      </div>
+    </div>
+    <div class="roles-header-actions">
+      <button type="button" class="roles-btn roles-btn--refresh" (click)="load()" [disabled]="loading" title="Recargar roles">
+        <svg viewBox="0 0 20 20" fill="currentColor" [class.spin]="loading" aria-hidden="true">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"/>
+        </svg>
+        Recargar
+      </button>
+      <button type="button" class="roles-btn roles-btn--add" (click)="openCreate()">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+        </svg>
         Nuevo rol
       </button>
-    </header>
+    </div>
+  </header>
 
   @if (error) {
-    <div class="sesa-roles-alert sesa-roles-alert-error">{{ error }}</div>
+    <div class="roles-alert roles-alert--error">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/>
+      </svg>
+      {{ error }}
+    </div>
   }
 
   @if (loading) {
-    <div class="sesa-roles-loading">
-      <span class="sesa-roles-spinner"></span>
-      <p>Cargando roles…</p>
+    <div class="roles-loading">
+      <span class="roles-spinner"></span>
+      <span>Cargando roles del sistema…</span>
     </div>
   } @else {
-    <div class="sesa-roles-card">
-      <div class="sesa-roles-card-header">
-        <h2 class="sesa-roles-card-title">Matriz de permisos RBAC</h2>
-        <span class="sesa-roles-card-badge">{{ roles.length }} roles</span>
-      </div>
 
-      <div class="sesa-roles-table-wrap">
-        <table class="sesa-roles-table">
-          <thead>
-            <tr>
-              <th class="sesa-roles-col-rol">Rol</th>
-              <th class="sesa-roles-col-modulos">Módulos permitidos</th>
-              <th class="sesa-roles-col-actions">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (r of roles; track r.codigo; let i = $index) {
-              <tr class="sesa-roles-row" [class.sesa-roles-row--editing]="isEditing(r)" [class.sesa-roles-row--zebra]="i % 2 === 1">
-                <td class="sesa-roles-col-rol">
-                  <span class="sesa-roles-rol-badge">{{ r.nombre }}</span>
-                </td>
-                <td class="sesa-roles-col-modulos">
-                  @if (isEditing(r)) {
-                    <div class="sesa-roles-edit-panel">
-                      <div class="sesa-roles-edit-chips">
-                        @for (m of modulosDisponibles; track m.codigo) {
-                          <label class="sesa-roles-chip sesa-roles-chip--check" [class.sesa-roles-chip--active]="hasModulo(m.codigo)">
+    <!-- ══════════ ESTADÍSTICAS ══════════ -->
+    <div class="roles-stats">
+      <div class="roles-stat-card">
+        <span class="roles-stat-value">{{ roles.length }}</span>
+        <span class="roles-stat-label">Roles totales</span>
+      </div>
+      <div class="roles-stat-card">
+        <span class="roles-stat-value">{{ modulosDisponibles.length }}</span>
+        <span class="roles-stat-label">Módulos disponibles</span>
+      </div>
+      <div class="roles-stat-card">
+        <span class="roles-stat-value">{{ getCategorias().length }}</span>
+        <span class="roles-stat-label">Categorías</span>
+      </div>
+    </div>
+
+    <!-- ══════════ ROLES POR CATEGORÍA ══════════ -->
+    @for (cat of getCategorias(); track cat) {
+      <div class="roles-category-section">
+        <h2 class="roles-category-title">{{ cat }}</h2>
+        <div class="roles-cards-grid">
+          @for (r of getRolesByCategoria(cat); track r.codigo) {
+            <div class="roles-role-card" [class.roles-role-card--editing]="isEditing(r)">
+
+              <!-- Cabecera del rol -->
+              <div class="roles-role-header">
+                <div class="roles-role-avatar" [style.background]="getRolMeta(r.codigo).color + '1a'" [style.border-color]="getRolMeta(r.codigo).color + '33'">
+                  <span class="roles-role-emoji">{{ getRolMeta(r.codigo).icon }}</span>
+                </div>
+                <div class="roles-role-info">
+                  <h3 class="roles-role-name">{{ r.nombre }}</h3>
+                  <code class="roles-role-code">{{ r.codigo }}</code>
+                </div>
+                @if (!isEditing(r)) {
+                  <button type="button" class="roles-btn roles-btn--edit" (click)="startEdit(r)" title="Editar módulos">
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                    </svg>
+                    Editar
+                  </button>
+                }
+              </div>
+
+              <!-- Descripción -->
+              <p class="roles-role-desc">{{ getRolMeta(r.codigo).descripcion }}</p>
+
+              <!-- Módulos activos (vista lectura) -->
+              @if (!isEditing(r)) {
+                <div class="roles-modules-view">
+                  @if (r.modulos.length) {
+                    <div class="roles-modules-chips">
+                      @for (m of r.modulos; track m) {
+                        <span class="roles-module-chip">
+                          {{ getModuloIcon(m) }} {{ getModuloLabel(m) }}
+                        </span>
+                      }
+                    </div>
+                    <span class="roles-modules-count">{{ r.modulos.length }} módulo{{ r.modulos.length !== 1 ? 's' : '' }}</span>
+                  } @else {
+                    <span class="roles-modules-empty">Sin módulos asignados</span>
+                  }
+                </div>
+              }
+
+              <!-- Panel de edición -->
+              @if (isEditing(r)) {
+                <div class="roles-edit-panel">
+                  <p class="roles-edit-label">Selecciona los módulos para <strong>{{ r.nombre }}</strong>:</p>
+
+                  @for (grupo of modulosGrupos; track grupo.grupo) {
+                    <div class="roles-grupo">
+                      <div class="roles-grupo-header">
+                        <span>{{ grupo.icon }}</span>
+                        <span class="roles-grupo-title">{{ grupo.grupo }}</span>
+                      </div>
+                      <div class="roles-grupo-items">
+                        @for (m of grupo.items; track m.codigo) {
+                          <label class="roles-modulo-toggle" [class.roles-modulo-toggle--active]="hasModulo(m.codigo)">
                             <input type="checkbox" [checked]="hasModulo(m.codigo)" (change)="toggleModulo(m.codigo)" />
-                            {{ m.label }}
+                            <span class="roles-modulo-icon">{{ m.icon }}</span>
+                            <span class="roles-modulo-label">{{ m.label }}</span>
+                            @if (hasModulo(m.codigo)) {
+                              <svg class="roles-modulo-check" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                              </svg>
+                            }
                           </label>
                         }
                       </div>
-                      <div class="sesa-roles-edit-actions">
-                        <button type="button" class="sesa-roles-btn sesa-roles-btn--secondary" (click)="cancelEdit()" [disabled]="saving">Cancelar</button>
-                        <button type="button" class="sesa-roles-btn sesa-roles-btn--primary" (click)="save()" [disabled]="saving">
-                          {{ saving ? 'Guardando…' : 'Guardar cambios' }}
-                        </button>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="sesa-roles-chips">
-                      @for (m of r.modulos; track m) {
-                        <span class="sesa-roles-chip">{{ getModuloLabel(m) }}</span>
-                      }
-                      @if (!r.modulos.length) {
-                        <span class="sesa-roles-chip sesa-roles-chip--empty">Sin módulos</span>
-                      }
                     </div>
                   }
-                </td>
-                <td class="sesa-roles-col-actions">
-                  @if (!isEditing(r)) {
-                    <button type="button" class="sesa-roles-btn sesa-roles-btn--edit" (click)="startEdit(r)">
-                      <span class="sesa-roles-btn-icon">✎</span>
-                      Editar
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="3" class="sesa-roles-empty">No hay roles configurados.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
 
-      <div class="sesa-roles-footer">
-        <span class="sesa-roles-footer-icon">ℹ</span>
-        Haga clic en «Editar» para modificar los módulos permitidos. Los cambios se aplican de inmediato.
+                  <div class="roles-edit-footer">
+                    <span class="roles-edit-count">{{ editingModulos.size }} módulo{{ editingModulos.size !== 1 ? 's' : '' }} seleccionado{{ editingModulos.size !== 1 ? 's' : '' }}</span>
+                    <div class="roles-edit-actions">
+                      <button type="button" class="roles-btn roles-btn--secondary" (click)="cancelEdit()" [disabled]="saving">
+                        Cancelar
+                      </button>
+                      <button type="button" class="roles-btn roles-btn--primary" (click)="save()" [disabled]="saving">
+                        @if (saving) {
+                          <span class="roles-spinner roles-spinner--sm"></span>
+                          Guardando…
+                        } @else {
+                          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                          </svg>
+                          Guardar cambios
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
-    </div>
+    }
+
+    @if (!roles.length) {
+      <div class="roles-empty-state">
+        <div class="roles-empty-icon">🛡️</div>
+        <h3>No hay roles configurados</h3>
+        <p>Crea el primer rol del sistema usando el botón «Nuevo rol».</p>
+      </div>
+    }
   }
-  </div>
 
+  <!-- ══════════ MODAL CREAR ROL ══════════ -->
   @if (showCreateForm) {
-    <div class="sesa-roles-modal" (click)="closeCreate($event)">
-      <div class="sesa-roles-modal-content" (click)="$event.stopPropagation()">
-        <h3 class="sesa-roles-modal-title">Crear nuevo rol</h3>
-        <form class="sesa-roles-create-form" (ngSubmit)="createRole()">
-          <div class="sesa-roles-form-field">
-            <label for="rol-codigo">Código (mayúsculas, sin espacios)</label>
-            <input id="rol-codigo" type="text" [(ngModel)]="newRolCodigo" name="codigo" placeholder="EJ: NUEVO_ROL" required />
+    <div class="roles-modal-backdrop" (click)="closeCreate($event)">
+      <div class="roles-modal" (click)="$event.stopPropagation()">
+        <div class="roles-modal-header">
+          <div class="roles-modal-icon">👤</div>
+          <div>
+            <h3 class="roles-modal-title">Crear nuevo rol</h3>
+            <p class="roles-modal-subtitle">Define el código único y el nombre del rol</p>
           </div>
-          <div class="sesa-roles-form-field">
-            <label for="rol-nombre">Nombre del rol</label>
-            <input id="rol-nombre" type="text" [(ngModel)]="newRolNombre" name="nombre" placeholder="Ej: Nuevo rol" required />
+          <button type="button" class="roles-modal-close" (click)="closeCreate($event)" aria-label="Cerrar">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+            </svg>
+          </button>
+        </div>
+        <form class="roles-modal-form" (ngSubmit)="createRole()">
+          <div class="roles-form-field">
+            <label class="roles-form-label" for="rol-codigo">Código del rol</label>
+            <input id="rol-codigo" type="text" class="roles-form-input" [(ngModel)]="newRolCodigo" name="codigo"
+              placeholder="EJ: COORDINADOR_MEDICO" required autocomplete="off"
+              style="text-transform:uppercase" />
+            <span class="roles-form-hint">Mayúsculas, sin espacios (se normalizará automáticamente)</span>
           </div>
-          <div class="sesa-roles-modal-actions">
-            <button type="button" class="sesa-roles-btn sesa-roles-btn--secondary" (click)="closeCreate($event)">Cancelar</button>
-            <button type="submit" class="sesa-roles-btn sesa-roles-btn--primary" [disabled]="creating || !newRolCodigo.trim() || !newRolNombre.trim()">
-              {{ creating ? 'Creando…' : 'Crear rol' }}
+          <div class="roles-form-field">
+            <label class="roles-form-label" for="rol-nombre">Nombre del rol</label>
+            <input id="rol-nombre" type="text" class="roles-form-input" [(ngModel)]="newRolNombre" name="nombre"
+              placeholder="Ej: Coordinador Médico" required autocomplete="off" />
+          </div>
+          <div class="roles-modal-actions">
+            <button type="button" class="roles-btn roles-btn--secondary" (click)="closeCreate($event)">Cancelar</button>
+            <button type="submit" class="roles-btn roles-btn--primary" [disabled]="creating || !newRolCodigo.trim() || !newRolNombre.trim()">
+              @if (creating) {
+                <span class="roles-spinner roles-spinner--sm"></span> Creando…
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                </svg>
+                Crear rol
+              }
             </button>
           </div>
         </form>
       </div>
     </div>
   }
+
 </section>

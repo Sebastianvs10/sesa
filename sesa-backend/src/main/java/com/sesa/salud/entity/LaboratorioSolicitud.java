@@ -41,6 +41,19 @@ public class LaboratorioSolicitud {
     @Column(name = "fecha_solicitud", nullable = false)
     private LocalDate fechaSolicitud;
 
+    @Column(columnDefinition = "TEXT")
+    private String resultado;
+
+    @Column(columnDefinition = "TEXT")
+    private String observaciones;
+
+    @Column(name = "fecha_resultado")
+    private Instant fechaResultado;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bacteriologo_id")
+    private Personal bacteriologo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

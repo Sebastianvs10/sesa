@@ -1,4 +1,5 @@
 /**
+ * Controlador del módulo de Farmacia — medicamentos, inventario, órdenes médicas y dispensación.
  * Autor: Ing. J Sebastian Vargas S
  */
 package com.sesa.salud.controller;
@@ -7,6 +8,7 @@ import com.sesa.salud.dto.*;
 import com.sesa.salud.service.FarmaciaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -23,41 +25,81 @@ public class FarmaciaController {
 
     private final FarmaciaService farmaciaService;
 
+    /**
+     * Inventario paginado. {@code q} filtra por nombre, lote o código de barras.
+     * {@code soloStock=true} excluye cantidad 0 (útil para dispensación).
+     */
     @GetMapping("/medicamentos")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','MEDICO','SUPERADMINISTRADOR')")
-    public List<FarmaciaMedicamentoDto> listMedicamentos(@PageableDefault(size = 50) Pageable pageable) {
-        return farmaciaService.listMedicamentos(pageable);
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','MEDICO','SUPERADMINISTRADOR','FACTURACION','ENFERMERO','RECEPCIONISTA')")
+    public Page<FarmaciaMedicamentoDto> listMedicamentos(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false, defaultValue = "false") boolean soloStock,
+            @PageableDefault(size = 25) Pageable pageable) {
+        return farmaciaService.listMedicamentos(q, soloStock, pageable);
+    }
+
+    /** Búsqueda exacta por código de barras (lector escanea y envía el código). */
+    @GetMapping("/medicamentos/por-codigo")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','MEDICO','SUPERADMINISTRADOR','FACTURACION','ENFERMERO','RECEPCIONISTA')")
+    public ResponseEntity<FarmaciaMedicamentoDto> medicamentoPorCodigo(@RequestParam("codigo") String codigo) {
+        return farmaciaService.findMedicamentoPorCodigoBarras(codigo)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/medicamentos/indicadores")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','MEDICO','SUPERADMINISTRADOR','FACTURACION','ENFERMERO','RECEPCIONISTA')")
+    public FarmaciaIndicadoresDto indicadoresInventario() {
+        return farmaciaService.indicadoresInventario();
     }
 
     @PostMapping("/medicamentos")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','SUPERADMINISTRADOR')")
     public ResponseEntity<FarmaciaMedicamentoDto> createMedicamento(@Valid @RequestBody FarmaciaMedicamentoRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(farmaciaService.createMedicamento(dto));
     }
 
     @PutMapping("/medicamentos/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','SUPERADMINISTRADOR')")
     public ResponseEntity<FarmaciaMedicamentoDto> updateMedicamento(@PathVariable("id") Long id, @Valid @RequestBody FarmaciaMedicamentoRequestDto dto) {
         return ResponseEntity.ok(farmaciaService.updateMedicamento(id, dto));
     }
 
     @DeleteMapping("/medicamentos/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','SUPERADMINISTRADOR')")
     public ResponseEntity<Void> deleteMedicamento(@PathVariable("id") Long id) {
         farmaciaService.deleteMedicamento(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/dispensaciones/paciente/{pacienteId}")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','MEDICO','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','MEDICO','SUPERADMINISTRADOR','FACTURACION','ENFERMERO')")
     public List<FarmaciaDispensacionDto> listDispensaciones(@PathVariable("pacienteId") Long pacienteId,
                                                             @PageableDefault(size = 30) Pageable pageable) {
         return farmaciaService.listDispensacionesByPaciente(pacienteId, pageable);
     }
 
     @PostMapping("/dispensar")
-    @PreAuthorize("hasAnyRole('ADMIN','FARMACIA','SUPERADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','SUPERADMINISTRADOR')")
     public ResponseEntity<FarmaciaDispensacionDto> dispensar(@Valid @RequestBody FarmaciaDispensacionRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(farmaciaService.dispensar(dto));
+    }
+
+    /**
+     * Órdenes de medicamento pendientes/parciales de dispensar. Paginado; {@code q} filtra en servidor
+     * (paciente, documento, detalle, ítems, médico).
+     */
+    @GetMapping("/ordenes-pendientes")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','MEDICO','SUPERADMINISTRADOR','FACTURACION','ENFERMERO','RECEPCIONISTA')")
+    public Page<OrdenFarmaciaPendienteDto> listOrdenesPendientes(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return farmaciaService.listOrdenesPendientes(q, pageable);
+    }
+
+    @PostMapping("/dispensar-orden")
+    @PreAuthorize("hasAnyRole('ADMIN','REGENTE_FARMACIA','SUPERADMINISTRADOR')")
+    public ResponseEntity<List<FarmaciaDispensacionDto>> dispensarOrden(@Valid @RequestBody DispensarOrdenRequestDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(farmaciaService.dispensarOrden(dto));
     }
 }
