@@ -38,6 +38,30 @@ Variables en `src/main/resources/application.yml`:
 
 En producción definir `SESA_JWT_SECRET` en el entorno.
 
+### Correo (Resend)
+
+El backend ya está preparado para Resend (`sesa.email.*` en `application.yml`). **No guardes la API key en Git.**
+
+**Opción A — archivo local (recomendado en desarrollo)**  
+
+1. En la carpeta `sesa-backend` (donde está `pom.xml`), copia `application-local.example.yml` → `application-local.yml`.  
+2. Edita `application-local.yml`: pon tu clave `re_...` en `sesa.email.resend-api-key`, `enabled: true` y `from` con un correo de tu dominio verificado en Resend (ej. `SESA <noreply@appsesa.online>`).  
+3. Arranca el backend desde esa misma carpeta (`mvn spring-boot:run` o el IDE con working directory = `sesa-backend`).
+
+**Opción B — variables de entorno** (CI, Docker, Render, etc.)
+
+| Variable | Descripción |
+|----------|-------------|
+| `RESEND_API_KEY` | Clave API de Resend (`re_...`) |
+| `SESA_EMAIL_ENABLED` | `true` para enviar |
+| `SESA_EMAIL_FROM` | Ej. `SESA <noreply@appsesa.online>` |
+| `SESA_EMAIL_LOGO_URL` | (Opcional) URL HTTPS pública del logo |
+| `SESA_FRONTEND_URL` | Base del front para enlaces en plantillas |
+
+Si `enabled=true` pero falta la clave, no se llama a Resend (se registra en log).
+
+**Producción (Render, etc.):** guía detallada en [`docs/CORREO-PRODUCCION-RESEND.md`](docs/CORREO-PRODUCCION-RESEND.md) y lista de variables en [`env.produccion.ejemplo.txt`](env.produccion.ejemplo.txt).
+
 ## Ejecución
 
 ```bash

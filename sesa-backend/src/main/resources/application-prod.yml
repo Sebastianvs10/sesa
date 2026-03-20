@@ -68,6 +68,18 @@ sesa:
     cron: ${SESA_RECORDATORIOS_CRON:0 0 * * * ?}
   frontend-url: ${SESA_FRONTEND_URL:https://appsesa.online}
 
+  # Correo Resend: secretos solo por env (RESEND_API_KEY, SESA_EMAIL_ENABLED, SESA_EMAIL_FROM).
+  # Guía paso a paso: docs/CORREO-PRODUCCION-RESEND.md · lista de variables: env.produccion.ejemplo.txt
+  email:
+    enabled: ${SESA_EMAIL_ENABLED:false}
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${SESA_EMAIL_FROM:SESA <onboarding@resend.dev>}
+    reply-to: ${SESA_EMAIL_REPLY_TO:}
+    logo-url: ${SESA_EMAIL_LOGO_URL:}
+    brand-name: ${SESA_EMAIL_BRAND_NAME:SESA}
+    footer-legal: ${SESA_EMAIL_FOOTER_LEGAL:Sistema Electrónico de Salud · Colombia}
+    resend-api-base: ${SESA_RESEND_API_BASE:https://api.resend.com}
+
 logging:
   level:
     root: WARN

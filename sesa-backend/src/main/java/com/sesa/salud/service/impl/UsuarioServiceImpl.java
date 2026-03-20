@@ -7,8 +7,10 @@ import com.sesa.salud.dto.UsuarioDto;
 import com.sesa.salud.dto.UsuarioRequestDto;
 import com.sesa.salud.entity.Usuario;
 import com.sesa.salud.repository.UsuarioRepository;
+import com.sesa.salud.event.email.NewUserWelcomeEmailEvent;
 import com.sesa.salud.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -57,7 +60,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .activo(dto.getActivo() != null ? dto.getActivo() : true)
                 .roles(roles)
                 .build();
-        return toDto(usuarioRepository.save(usuario));
+        Usuario saved = usuarioRepository.save(usuario);
+        eventPublisher.publishEvent(
+                new NewUserWelcomeEmailEvent(saved.getEmail(), saved.getNombreCompleto(), null));
+        return toDto(saved);
     }
 
     @Override

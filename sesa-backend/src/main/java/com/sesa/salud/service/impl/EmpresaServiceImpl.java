@@ -7,6 +7,7 @@ package com.sesa.salud.service.impl;
 import com.sesa.salud.dto.EmpresaCreateRequest;
 import com.sesa.salud.dto.EmpresaDto;
 import com.sesa.salud.dto.LogoResourceDto;
+import com.sesa.salud.event.email.TenantAdminWelcomeEmailEvent;
 import com.sesa.salud.entity.master.Empresa;
 import com.sesa.salud.entity.master.EmpresaModulo;
 import com.sesa.salud.entity.master.EmpresaSubmodulo;
@@ -25,6 +26,7 @@ import com.sesa.salud.service.TenantSetupService;
 import com.sesa.salud.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +57,7 @@ public class EmpresaServiceImpl implements EmpresaService {
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
     private final ArchivoService archivoService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -119,7 +122,25 @@ public class EmpresaServiceImpl implements EmpresaService {
 
         saveModulosAndSubmodulos(empresa.getId(), request);
 
+        String adminNombre = buildAdminDisplayName(request.getAdminUser());
+        eventPublisher.publishEvent(new TenantAdminWelcomeEmailEvent(
+                adminEmail, adminNombre, request.getRazonSocial()));
+
         return toDto(empresa);
+    }
+
+    private static String buildAdminDisplayName(EmpresaCreateRequest.AdminUserRequest admin) {
+        if (admin == null) return "";
+        StringBuilder sb = new StringBuilder();
+        if (admin.getPrimerNombre() != null) sb.append(admin.getPrimerNombre());
+        if (admin.getSegundoNombre() != null && !admin.getSegundoNombre().isBlank()) {
+            sb.append(" ").append(admin.getSegundoNombre());
+        }
+        if (admin.getPrimerApellido() != null) sb.append(" ").append(admin.getPrimerApellido());
+        if (admin.getSegundoApellido() != null && !admin.getSegundoApellido().isBlank()) {
+            sb.append(" ").append(admin.getSegundoApellido());
+        }
+        return sb.toString().trim();
     }
 
     private static String sanitizeSchemaName(String name) {

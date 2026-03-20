@@ -37,3 +37,5 @@ uploads/
 # ── Environment / Secrets ──
 .env
 .env.*
+# Overrides locales (API keys Resend, etc.) — copiar desde application-local.example.yml
+application-local.yml

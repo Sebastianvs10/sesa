@@ -408,3 +408,12 @@ sesa-root {
   font-size: 0.875rem;
   font-weight: 500;
 }
+
+/* Bloqueo de scroll del documento mientras un modal overlay está activo (p. ej. recuperación de contraseña) */
+body.sesa-modal-body-lock {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+  left: 0;
+  right: 0;
+}

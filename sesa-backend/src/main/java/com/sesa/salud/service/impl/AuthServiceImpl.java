@@ -18,6 +18,8 @@ import com.sesa.salud.repository.UsuarioRepository;
 import com.sesa.salud.repository.master.EmpresaRepository;
 import com.sesa.salud.repository.master.PasswordResetTokenPublicRepository;
 import com.sesa.salud.repository.master.TenantUsuarioLoginRepository;
+import com.sesa.salud.event.email.PasswordChangedEvent;
+import com.sesa.salud.event.email.PasswordResetRequestedEvent;
 import com.sesa.salud.security.JwtTokenProvider;
 import com.sesa.salud.service.AuthService;
 import com.sesa.salud.tenant.TenantContextHolder;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccesoAuditoriaRepository accesoAuditoriaRepository;
     private final PasswordResetTokenPublicRepository passwordResetTokenPublicRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${sesa.jwt.expiration-ms}")
     private long jwtExpirationMs;
@@ -177,6 +181,7 @@ public class AuthServiceImpl implements AuthService {
             }
 
             String schema = tenantOpt.get().getSchemaName();
+            String recipientName = null;
             try {
                 TenantContextHolder.setTenantSchema(schema);
                 var usuarioOpt = usuarioRepository.findByEmail(normalized);
@@ -184,6 +189,7 @@ public class AuthServiceImpl implements AuthService {
                     log.debug("Recuperación: usuario inexistente o inactivo en tenant (respuesta uniforme)");
                     return buildResetRequestResponse(null);
                 }
+                recipientName = usuarioOpt.get().getNombreCompleto();
             } finally {
                 TenantContextHolder.clear();
             }
@@ -199,6 +205,10 @@ public class AuthServiceImpl implements AuthService {
                     .usado(false)
                     .build();
             passwordResetTokenPublicRepository.save(entity);
+            if (issuedToken != null) {
+                eventPublisher.publishEvent(
+                        new PasswordResetRequestedEvent(normalized, issuedToken, (int) ttlMinutes, recipientName));
+            }
             logAcceso(normalized, "RESET_REQUEST", "Solicitud de recuperación (token en public)");
             log.info("Recuperación: token emitido para tenant {}", schema);
         } catch (Exception ex) {
@@ -273,6 +283,7 @@ public class AuthServiceImpl implements AuthService {
             usuarioRepository.save(usuario);
             resetRow.setUsado(true);
             passwordResetTokenPublicRepository.save(resetRow);
+            eventPublisher.publishEvent(new PasswordChangedEvent(email, usuario.getNombreCompleto()));
             logAcceso(email, "RESET_OK", "Contraseña restablecida");
         } finally {
             TenantContextHolder.clear();
