@@ -1,6 +1,8 @@
 <ng-container *ngIf="showAppShell; else onlyOutlet">
   <div class="sesa-shell">
-    <aside class="sesa-sidebar">
+    <aside class="sesa-sidebar" [class.sesa-sidebar--pinned]="sidebarPinned()">
+
+      <!-- ── Logo + Pin ── -->
       <div class="sesa-logo">
         @if (empresaCurrent.hasLogo()) {
           <img [src]="empresaCurrent.currentEmpresa().logoUrl!" alt="" class="sesa-logo-img" />
@@ -8,16 +10,29 @@
           <div class="sesa-logo-mark">SE</div>
         }
         <div class="sesa-logo-text">
-          <div>{{ empresaCurrent.displayName() }}</div>
-          <small style="opacity: 0.7; font-size: 0.75rem">Plataforma clínica</small>
+          <span class="sesa-logo-name">{{ empresaCurrent.displayName() }}</span>
+          <span class="sesa-logo-sub">Plataforma clínica</span>
         </div>
+        <button
+          class="sesa-sidebar-pin"
+          type="button"
+          (click)="toggleSidebarPin()"
+          [class.sesa-sidebar-pin--active]="sidebarPinned()"
+          [attr.title]="sidebarPinned() ? 'Soltar sidebar' : 'Fijar sidebar abierto'"
+          [attr.aria-label]="sidebarPinned() ? 'Soltar sidebar' : 'Fijar sidebar abierto'"
+          aria-pressed="sidebarPinned()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="17" x2="12" y2="22"/>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
+          </svg>
+        </button>
       </div>
 
-      <!-- Sidebar: generado dinámicamente desde sidebarSections (permisos vienen del backend) -->
-      <nav class="sesa-nav">
+      <!-- ── Nav ── -->
+      <nav class="sesa-nav" aria-label="Navegación principal">
 
         @if (permissions.isLoading()) {
-          <!-- Esqueleto mientras llegan los permisos del backend -->
           <div class="sesa-nav-skeleton">
             @for (i of skeletonItems; track i) {
               <div class="sesa-nav-skeleton-item"></div>
@@ -27,61 +42,93 @@
         } @else {
 
           @for (section of sidebarSections(); track section.title) {
-            <div>
-              <div class="sesa-nav-section-title">{{ section.title }}</div>
+            <div class="sesa-nav-section">
+              <div class="sesa-nav-section-title">
+                <span class="sesa-nav-section-dot" aria-hidden="true"></span>
+                <span class="sesa-nav-section-text">{{ section.title }}</span>
+              </div>
 
               @for (entry of section.entries; track entry.label) {
-
                 @if (!entry.children || entry.children.length === 0) {
-                  <!-- Enlace simple -->
                   <a
                     class="sesa-nav-link"
                     [routerLink]="entry.route"
                     routerLinkActive="sesa-nav-link-active"
                     [routerLinkActiveOptions]="{ exact: !!entry.exactRoute }"
-                    [title]="entry.label"
+                    [attr.data-label]="entry.label"
+                    [attr.aria-label]="entry.label"
                   >
-                    <fa-icon [icon]="$any(entry.icon)" class="sesa-nav-link-icon"></fa-icon>
+                    <span class="sesa-nav-link-ico" aria-hidden="true">
+                      <fa-icon [icon]="$any(entry.icon)"></fa-icon>
+                    </span>
                     <span class="sesa-nav-link-label">{{ entry.label }}</span>
                   </a>
 
                 } @else {
-                  <!-- Grupo con sub-enlaces -->
-                  <div class="sesa-nav-group sesa-nav-group-hc">
-                    <div class="sesa-nav-group-label">
-                      <fa-icon [icon]="$any(entry.icon)" class="sesa-nav-link-icon"></fa-icon>
+                  <div class="sesa-nav-group">
+                    <div class="sesa-nav-group-label" [attr.data-label]="entry.label">
+                      <span class="sesa-nav-link-ico" aria-hidden="true">
+                        <fa-icon [icon]="$any(entry.icon)"></fa-icon>
+                      </span>
                       <span class="sesa-nav-link-label">{{ entry.label }}</span>
                     </div>
-                    @for (child of entry.visibleChildren; track child.route) {
-                      <a
-                        class="sesa-nav-link sesa-nav-sublink"
-                        [routerLink]="child.route"
-                        routerLinkActive="sesa-nav-link-active"
-                        [title]="child.label"
-                      >
-                        <fa-icon [icon]="$any(child.icon)" class="sesa-nav-link-icon"></fa-icon>
-                        <span class="sesa-nav-link-label">{{ child.label }}</span>
-                      </a>
-                    }
+                    <div class="sesa-nav-group-children">
+                      @for (child of entry.visibleChildren; track child.route) {
+                        <a
+                          class="sesa-nav-link sesa-nav-sublink"
+                          [routerLink]="child.route"
+                          routerLinkActive="sesa-nav-link-active"
+                          [attr.data-label]="child.label"
+                          [attr.aria-label]="child.label"
+                        >
+                          <span class="sesa-nav-link-ico" aria-hidden="true">
+                            <fa-icon [icon]="$any(child.icon)"></fa-icon>
+                          </span>
+                          <span class="sesa-nav-link-label">{{ child.label }}</span>
+                        </a>
+                      }
+                    </div>
                   </div>
                 }
-
               }
             </div>
           }
-
         }
       </nav>
+
+      <!-- ── User footer ── -->
+      <div class="sesa-sidebar-footer">
+        <div class="sesa-sidebar-user" [attr.title]="authService.currentUser()?.nombreCompleto">
+          <span class="sesa-sidebar-user-av" aria-hidden="true">{{ userInitials }}</span>
+          <div class="sesa-sidebar-user-meta">
+            <span class="sesa-sidebar-user-name">{{ authService.currentUser()?.nombreCompleto }}</span>
+            <span class="sesa-sidebar-user-role">{{ rolLabel(authService.rolActivo()) }}</span>
+          </div>
+        </div>
+      </div>
+
     </aside>
 
     <section class="sesa-shell-main">
       <header class="sesa-topbar">
-        <div class="sesa-topbar-title">
-          {{ pageTitle }}
-        </div>
+
+        <!-- ── Izquierda: búsqueda rápida ── -->
+        <button class="sesa-topbar-cmd" type="button" aria-label="Búsqueda rápida de módulos y acciones" title="Búsqueda rápida (Ctrl+K)" (click)="openCmdPalette()">
+          <svg class="sesa-topbar-cmd-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span class="sesa-topbar-cmd-text">Buscar módulos…</span>
+          <kbd class="sesa-topbar-cmd-kbd">⌘K</kbd>
+        </button>
+
+        <!-- ── Centro: logo ── -->
         <img src="/logo.png" alt="SESA" class="sesa-topbar-logo" width="250" height="120" />
-        <div class="sesa-topbar-meta">
-          <!-- Indicador de conexión a la red -->
+
+        <!-- ── Derecha: pill de acciones ── -->
+        <div class="sesa-topbar-actions">
+
+          <!-- Conexión -->
           <span
             class="sesa-topbar-connection"
             [class.sesa-topbar-connection--online]="connectionService.isOnline() && connectionService.status() === 'online'"
@@ -101,7 +148,10 @@
               <span class="sesa-topbar-connection-label">Sin conexión</span>
             }
           </span>
-          <!-- Icono de notificaciones con dropdown -->
+
+          <span class="sesa-topbar-sep" aria-hidden="true"></span>
+
+          <!-- Notificaciones con dropdown -->
           <div class="sesa-topbar-notifications" #notificationsRef>
             <button
               type="button"
@@ -159,6 +209,9 @@
               <fa-icon [icon]="faMoon" class="sesa-topbar-theme-icon" aria-hidden="true"></fa-icon>
             }
           </button>
+
+          <span class="sesa-topbar-sep" aria-hidden="true"></span>
+
           <div class="sesa-topbar-profile" #profileRef>
             <button
               type="button"
@@ -269,7 +322,7 @@
               </div>
             }
           </div>
-        </div>
+        </div><!-- /.sesa-topbar-actions -->
       </header>
 
       <div class="sesa-main-wrap">
@@ -284,6 +337,78 @@
 
     <!-- Indicador flotante de estado offline / sincronización -->
     <sesa-offline-status />
+
+    <!-- ── Command palette ── -->
+    @if (showCmdPalette()) {
+      <div class="sesa-cmd-overlay" (click)="closeCmdPalette()" role="dialog" aria-modal="true" aria-label="Búsqueda de módulos">
+        <div class="sesa-cmd-panel" (click)="$event.stopPropagation()">
+
+          <!-- Input de búsqueda -->
+          <div class="sesa-cmd-search">
+            <svg class="sesa-cmd-search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              #cmdInput
+              class="sesa-cmd-input"
+              type="text"
+              placeholder="Buscar módulos y acciones…"
+              autocomplete="off"
+              [value]="cmdQuery()"
+              (input)="onCmdInput($event)"
+              aria-label="Buscar módulos"
+            />
+            <kbd class="sesa-cmd-esc" (click)="closeCmdPalette()">Esc</kbd>
+          </div>
+
+          <!-- Lista de resultados -->
+          <div class="sesa-cmd-list" role="listbox">
+            @if (filteredCmdItems().length === 0) {
+              <div class="sesa-cmd-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                Sin resultados para <strong>{{ cmdQuery() }}</strong>
+              </div>
+            } @else {
+              @if (!cmdQuery()) {
+                <div class="sesa-cmd-list-label">Módulos disponibles</div>
+              } @else {
+                <div class="sesa-cmd-list-label">{{ filteredCmdItems().length }} resultado{{ filteredCmdItems().length !== 1 ? 's' : '' }}</div>
+              }
+              @for (item of filteredCmdItems(); track item.route; let i = $index) {
+                <button
+                  type="button"
+                  class="sesa-cmd-item"
+                  [class.sesa-cmd-item--active]="i === selectedCmdIdx()"
+                  (click)="navigateCmdItem(item)"
+                  (mouseenter)="selectedCmdIdx.set(i)"
+                  role="option"
+                  [attr.aria-selected]="i === selectedCmdIdx()"
+                >
+                  <span class="sesa-cmd-item-ico" aria-hidden="true">
+                    <fa-icon [icon]="$any(item.icon)"></fa-icon>
+                  </span>
+                  <span class="sesa-cmd-item-label">{{ item.label }}</span>
+                  <span class="sesa-cmd-item-section">{{ item.section }}</span>
+                  @if (i === selectedCmdIdx()) {
+                    <span class="sesa-cmd-item-enter" aria-hidden="true">↵</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Footer de ayuda -->
+          <div class="sesa-cmd-footer" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
+            <span><kbd>↵</kbd> Abrir</span>
+            <span><kbd>Esc</kbd> Cerrar</span>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 </ng-container>
 

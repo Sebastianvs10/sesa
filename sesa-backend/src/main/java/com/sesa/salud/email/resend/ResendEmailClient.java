@@ -33,7 +33,9 @@ public class ResendEmailClient {
      */
     public Optional<String> sendHtml(String to, String subject, String html) {
         if (!emailProperties.isResendConfigured()) {
-            log.debug("Correo no enviado (Resend deshabilitado o sin API key): asunto={}", subject);
+            log.warn(
+                    "Correo no enviado (sesa.email.enabled=false o RESEND_API_KEY vacía). Asunto={}. Defina RESEND_API_KEY y, en prod, SESA_EMAIL_ENABLED=true.",
+                    subject);
             return Optional.empty();
         }
         if (to == null || to.isBlank()) {
@@ -63,11 +65,15 @@ public class ResendEmailClient {
                 log.info("Correo enviado vía Resend: destino=**** asunto={}", subject);
                 return Optional.ofNullable(response.getBody());
             }
-            log.warn("Resend respuesta no exitosa: status={}", response.getStatusCode());
+            log.error("Resend respuesta no exitosa: status={} body={}", response.getStatusCode(), sanitizeForLog(response.getBody()));
         } catch (RestClientResponseException e) {
-            log.warn("Resend error HTTP {}: {}", e.getStatusCode().value(), sanitizeForLog(e.getResponseBodyAsString()));
+            log.error(
+                    "Resend error HTTP {}: {}",
+                    e.getStatusCode().value(),
+                    sanitizeForLog(e.getResponseBodyAsString()),
+                    e);
         } catch (Exception e) {
-            log.warn("Resend error al enviar: {}", e.getMessage());
+            log.error("Resend error al enviar: {}", e.getMessage(), e);
         }
         return Optional.empty();
     }

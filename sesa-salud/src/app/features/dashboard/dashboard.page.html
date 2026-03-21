@@ -1,165 +1,276 @@
-<section class="sesa-page sesa-dashboard-page">
-  <header class="sesa-dashboard-header">
-    <div class="sesa-dashboard-header-left">
-      <div class="sesa-dashboard-icon-wrap">
-        <fa-icon [icon]="faChartLine" class="sesa-dashboard-icon" aria-hidden="true"></fa-icon>
+<section class="db">
+
+  <!-- ══════════════════════════════════════════════════════
+       FILA 1 — Reloj + KPIs + Acciones
+  ══════════════════════════════════════════════════════ -->
+  <div class="db-top">
+
+    <!-- Reloj premium -->
+    <div class="db-clock" aria-label="Fecha y hora">
+      <div class="db-clock-live" aria-hidden="true"></div>
+      <div class="db-clock-time">{{ clockTime() }}</div>
+      <div class="db-clock-meta">
+        <span class="db-clock-day">{{ clockDay() }}</span>
+        <span class="db-clock-sep">·</span>
+        <span class="db-clock-date">{{ clockDate() }}</span>
       </div>
-      <div>
-        <h1 class="sesa-dashboard-title">Dashboard</h1>
-        <p class="sesa-dashboard-subtitle">
-          {{ fechaHoyFormateada }} · {{ roleLabel }}
-        </p>
-      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="db-kpis" role="list">
+      @if (loading) {
+        @for (sk of skeletonStatCount; track sk) {
+          <div class="db-kpi-sk" aria-hidden="true">
+            <div class="db-kpi-sk-bar"></div>
+            <div class="db-kpi-sk-ico"></div>
+            <div class="db-kpi-sk-body">
+              <sesa-skeleton width="44px" height="1.1rem" />
+              <sesa-skeleton width="68px" height="0.62rem" style="margin-top:.22rem" />
+            </div>
+          </div>
+        }
+      } @else {
+        @for (card of statCards; track card.titulo) {
+          <a [routerLink]="card.link ?? '#'" class="db-kpi" role="listitem">
+            <span class="db-kpi-bar" [style.background]="card.gradient"></span>
+            <span class="db-kpi-ico" [style.background]="card.gradient" aria-hidden="true">
+              <fa-icon [icon]="card.icon"></fa-icon>
+            </span>
+            <div class="db-kpi-body">
+              <span class="db-kpi-val">{{ getDisplayValue(card) }}</span>
+              <span class="db-kpi-label">{{ card.titulo }}</span>
+            </div>
+            @if (card.chip) {
+              <span class="db-kpi-chip {{ card.chipClase }}">{{ card.chip }}</span>
+            }
+          </a>
+        }
+      }
     </div>
 
     @if (isAdmin) {
-      <a routerLink="/reportes" class="sesa-btn sesa-btn-secondary sesa-btn-sm sesa-btn-icon">
-        <fa-icon [icon]="faChartBar"></fa-icon>
+      <a routerLink="/reportes" class="db-btn-reports">
+        <fa-icon [icon]="faChartBar" aria-hidden="true"></fa-icon>
         <span>Reportes</span>
       </a>
     }
-  </header>
+  </div>
 
-  <!-- Skeleton stat cards durante carga -->
-  @if (loading) {
-    <div class="sesa-dashboard-stats">
-      @for (sk of skeletonStatCount; track sk) {
-        <div class="sesa-stat-card-skeleton">
-          <div class="sesa-sk-stat-icon-skeleton"></div>
-          <div class="sesa-sk-stat-body">
-            <sesa-skeleton width="40%" height="1.6rem" />
-            <sesa-skeleton width="60%" height="0.75rem" style="margin-top:0.4rem" />
-            <sesa-skeleton width="45%" height="1.2rem" style="margin-top:0.5rem;border-radius:20px" />
+
+  <!-- ══════════════════════════════════════════════════════
+       ERROR
+  ══════════════════════════════════════════════════════ -->
+  @if (loadError && !loading) {
+    <div class="db-error">
+      <sesa-empty-state icon="box" title="Error al cargar" message="No se pudo obtener la información." actionLabel="Reintentar" (action)="load()" />
+    </div>
+  }
+
+
+  @if (!loading && !loadError) {
+    <!-- ════════════════════════════════════════════════════
+         FILA 2 — Gráficas + Panel de módulos
+    ════════════════════════════════════════════════════ -->
+    <div class="db-mid">
+
+      <!-- Chart principal: tendencia (línea o barras) -->
+      <div class="db-card db-card--main-chart">
+        <div class="db-card-head">
+          <div class="db-card-head-left">
+            @if (showChartCitas) {
+              <span class="db-card-title">Citas — tendencia semanal</span>
+              <span class="db-card-sub">Últimos 7 días registrados</span>
+            } @else if (showChartConsultas) {
+              <span class="db-card-title">Consultas — evolución mensual</span>
+              <span class="db-card-sub">Últimos 6 meses</span>
+            } @else {
+              <span class="db-card-title">Actividad clínica</span>
+              <span class="db-card-sub">Resumen de operaciones</span>
+            }
+          </div>
+          <div class="db-card-head-right">
+            @if (showChartCitas) {
+              <span class="db-stat-badge">
+                <span class="db-stat-badge-val">{{ totalCitasSemana }}</span>
+                <span class="db-stat-badge-lbl">esta semana</span>
+              </span>
+            } @else if (showChartConsultas) {
+              <span class="db-stat-badge">
+                <span class="db-stat-badge-val">{{ totalConsultasMes }}</span>
+                <span class="db-stat-badge-lbl">este mes</span>
+              </span>
+            }
+          </div>
+        </div>
+        <div class="db-chart-body">
+          @if (chartLoading()) {
+            <div class="db-chart-sk"></div>
+          } @else if (showChartCitas && citasDiaValues.length > 0) {
+            <sesa-dashboard-chart-bar [labels]="citasDiaLabels" [values]="citasDiaValues" type="line" title="Citas" />
+          } @else if (showChartConsultas && consultasMesValues.length > 0) {
+            <sesa-dashboard-chart-bar [labels]="consultasMesLabels" [values]="consultasMesValues" type="bar" title="Consultas" />
+          } @else {
+            <div class="db-chart-empty"><fa-icon [icon]="faChartLine" aria-hidden="true"></fa-icon><span>Sin datos disponibles</span></div>
+          }
+        </div>
+      </div>
+
+      <!-- Panel de actividad por módulo (progress bars) -->
+      <div class="db-card db-card--modules">
+        <div class="db-card-head">
+          <div class="db-card-head-left">
+            <span class="db-card-title">Actividad por módulo</span>
+            <span class="db-card-sub">Métricas clave del sistema</span>
+          </div>
+        </div>
+        <div class="db-module-list">
+          @if (loading) {
+            @for (sk of [1,2,3,4,5]; track sk) {
+              <div class="db-module-sk" aria-hidden="true"></div>
+            }
+          } @else {
+            @for (item of moduleActivityItems; track item.label) {
+              <a [routerLink]="item.link" class="db-module-item">
+                <span class="db-module-ico" [style.background]="item.gradient">
+                  <fa-icon [icon]="item.icon" aria-hidden="true"></fa-icon>
+                </span>
+                <div class="db-module-body">
+                  <div class="db-module-top">
+                    <span class="db-module-label">{{ item.label }}</span>
+                    <span class="db-module-val">{{ item.displayValue }}</span>
+                  </div>
+                  <div class="db-module-track">
+                    <div class="db-module-fill" [style.width.%]="item.pct" [style.background]="item.gradient"></div>
+                  </div>
+                </div>
+              </a>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Doughnut: distribución de citas por estado -->
+      @if (showChartEstados) {
+        <div class="db-card db-card--donut">
+          <div class="db-card-head">
+            <div class="db-card-head-left">
+              <span class="db-card-title">Estado de citas</span>
+              <span class="db-card-sub">Distribución actual</span>
+            </div>
+          </div>
+          <div class="db-donut-wrap">
+            @if (chartLoading()) {
+              <div class="db-chart-sk db-chart-sk--round" aria-hidden="true"></div>
+            } @else if (citasEstadoValues.length > 0) {
+              <sesa-dashboard-chart-doughnut [labels]="citasEstadoLabels" [values]="citasEstadoValues" />
+              <div class="db-donut-center" aria-hidden="true">
+                <span class="db-donut-total">{{ totalCitasEstado }}</span>
+                <span class="db-donut-lbl">Total</span>
+              </div>
+            } @else {
+              <div class="db-chart-empty"><span>Sin datos</span></div>
+            }
           </div>
         </div>
       }
-    </div>
-  } @else if (data?.error) {
-    <div class="sesa-dashboard-error">
-      <sesa-empty-state
-        icon="box"
-        title="Error al cargar"
-        [message]="data?.error ?? 'Error desconocido'"
-        actionLabel="Reintentar"
-        (action)="load()"
-      />
-    </div>
-  } @else {
-    <!-- Tarjetas de resumen dinámicas por rol -->
-    <div class="sesa-dashboard-stats">
-      @for (card of statCards; track card.titulo) {
-        <a [routerLink]="card.link ?? '#'" class="sesa-stat-card sesa-stat-card-link">
-          <div class="sesa-stat-card-icon" [style.background]="card.gradient" aria-hidden="true">
-            <fa-icon [icon]="card.icon"></fa-icon>
+
+      <!-- Si admin, chart de facturación también -->
+      @if (showChartFact) {
+        <div class="db-card db-card--fact-chart">
+          <div class="db-card-head">
+            <div class="db-card-head-left">
+              <span class="db-card-title">Facturación</span>
+              <span class="db-card-sub">Facturas emitidas por mes</span>
+            </div>
           </div>
-          <div class="sesa-stat-card-content">
-            <span class="sesa-stat-value">{{ getDisplayValue(card) }}</span>
-            <span class="sesa-stat-label">{{ card.titulo }}</span>
-            @if (card.chip) {
-              <span class="sesa-chip" [ngClass]="card.chipClase ?? 'sesa-chip-secondary'">{{ card.chip }}</span>
+          <div class="db-chart-body">
+            @if (chartLoading()) {
+              <div class="db-chart-sk"></div>
+            } @else {
+              <sesa-dashboard-chart-bar [labels]="facturacionLabels" [values]="facturacionValues" type="bar" title="Facturas" />
             }
           </div>
-        </a>
+        </div>
       }
-    </div>
 
-    <!-- Layout principal: Calendario + Citas -->
-    <div class="sesa-dashboard-main">
+    </div><!-- /db-mid -->
+
+
+    <!-- ════════════════════════════════════════════════════
+         FILA 3 — Actividad reciente + Calendario
+    ════════════════════════════════════════════════════ -->
+    <div class="db-bot">
+
+      <!-- Citas de hoy: estilo "transacciones" -->
       @if (permissions.canAccess('CITAS')) {
-        <aside class="sesa-dashboard-sidebar">
-          <sesa-card title="Calendario" subtitle="Selecciona un día para ver citas" alignHeader="start">
-            <sesa-calendar
-              [highlightedDates]="highlightedDates"
-              [selectedDate]="selectedDate"
-              (dateSelected)="onDateSelected($event)"
-            ></sesa-calendar>
-          </sesa-card>
+        <div class="db-card db-card--activity">
+          <div class="db-card-head">
+            <div class="db-card-head-left">
+              <span class="db-card-title">{{ selectedDate ? 'Citas del día seleccionado' : 'Actividad de hoy' }}</span>
+              <span class="db-card-sub">{{ fechaSeleccionadaFormateada }}</span>
+            </div>
+            <a routerLink="/citas" class="db-link-more">Ver todas →</a>
+          </div>
+
+          @if (loadingCitasParaFecha) {
+            <div class="db-activity-sk-list">
+              @for (sk of [1,2,3,4,5]; track sk) {
+                <div class="db-activity-sk-row" aria-hidden="true">
+                  <div class="db-activity-sk-av"></div>
+                  <sesa-skeleton width="38%" height="0.72rem" />
+                  <sesa-skeleton width="25%" height="0.65rem" />
+                  <sesa-skeleton width="55px" height="0.65rem" />
+                  <sesa-skeleton width="62px" height="1.15rem" variant="rounded" />
+                </div>
+              }
+            </div>
+          } @else if (proximasCitas.length === 0) {
+            <div class="db-activity-empty">
+              <span class="db-activity-empty-ico">📅</span>
+              <span>No hay citas para {{ fechaSeleccionadaFormateada }}</span>
+            </div>
+          } @else {
+            <div class="db-activity-head-row">
+              <span>Paciente</span>
+              <span class="db-col-hide-sm">Servicio</span>
+              <span>Hora</span>
+              <span>Estado</span>
+            </div>
+            <div class="db-activity-rows">
+              @for (c of proximasCitas; track c.id) {
+                <div class="db-activity-row">
+                  <div class="db-activity-avatar" [style.background]="getInitialBgColor(c.pacienteNombre)" aria-hidden="true">
+                    {{ getPatientInitials(c.pacienteNombre) }}
+                  </div>
+                  <div class="db-activity-info">
+                    <span class="db-activity-name">{{ c.pacienteNombre }}</span>
+                    <span class="db-activity-svc db-col-hide-sm">{{ c.servicio || '—' }}</span>
+                  </div>
+                  <span class="db-activity-hora">{{ formatHora(c.fechaHora) }}</span>
+                  <span class="db-badge {{ estadoBadgeClass(c.estado) }}">{{ c.estado || 'Pendiente' }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Calendario -->
+      @if (permissions.canAccess('CITAS')) {
+        <aside class="db-card db-card--cal">
+          <div class="db-card-head">
+            <span class="db-card-title">Calendario</span>
+            <span class="db-card-sub">Selecciona una fecha</span>
+          </div>
+          <sesa-calendar
+            [highlightedDates]="highlightedDates"
+            [selectedDate]="selectedDate"
+            (dateSelected)="onDateSelected($event)"
+          ></sesa-calendar>
         </aside>
       }
 
-      <main class="sesa-dashboard-content">
-        @if (permissions.canAccess('CITAS')) {
-          <sesa-card
-            [title]="selectedDate ? 'Citas del día seleccionado' : 'Citas de hoy'"
-            [subtitle]="fechaSeleccionadaFormateada"
-            alignHeader="start"
-          >
-            @if (loadingCitasParaFecha) {
-              <div class="sesa-citas-skeleton-list">
-                @for (sk of [1,2,3,4,5]; track sk) {
-                  <div class="sesa-cita-skeleton-item">
-                    <sesa-skeleton width="48px" height="0.8rem" />
-                    <sesa-skeleton width="45%" height="0.8rem" />
-                    <sesa-skeleton width="30%" height="0.8rem" />
-                    <sesa-skeleton width="70px" height="1.4rem" variant="rounded" />
-                  </div>
-                }
-              </div>
-            } @else if (proximasCitas.length === 0) {
-              <sesa-empty-state
-                icon="calendar"
-                title="Sin citas"
-                [message]="'No hay citas para ' + fechaSeleccionadaFormateada"
-                actionLabel="Ir a Citas"
-                (action)="null"
-                [compact]="true"
-              />
-            } @else {
-              <div class="sesa-citas-list">
-                @for (c of proximasCitas; track c.id) {
-                  <div class="sesa-cita-item">
-                    <span class="sesa-cita-hora">{{ formatHora(c.fechaHora) }}</span>
-                    <span class="sesa-cita-paciente">{{ c.pacienteNombre }}</span>
-                    <span class="sesa-cita-servicio">{{ c.servicio || 'Sin servicio' }}</span>
-                    <span class="sesa-cita-estado sesa-badge" [ngClass]="{
-                      'sesa-badge-warning': c.estado === 'PENDIENTE',
-                      'sesa-badge-info': c.estado === 'CONFIRMADA',
-                      'sesa-badge-success': c.estado === 'ATENDIDO',
-                      'sesa-badge-secondary': !['PENDIENTE','CONFIRMADA','ATENDIDO'].includes(c.estado || '')
-                    }">{{ c.estado || 'Pendiente' }}</span>
-                  </div>
-                }
-              </div>
-              <a routerLink="/citas" class="sesa-dashboard-more">Ver todas las citas →</a>
-            }
-          </sesa-card>
-        } @else if (permissions.canAccess('PACIENTES')) {
-          <sesa-card title="Resumen del día" subtitle="Actividades" alignHeader="start">
-            <sesa-empty-state
-              icon="users"
-              title="Módulo de Pacientes"
-              message="Accede a Pacientes para gestionar la información clínica."
-              actionLabel="Ir a Pacientes"
-              [compact]="true"
-            />
-          </sesa-card>
-        }
-
-        @if (permissions.canAccess('EBS')) {
-          <sesa-card
-            title="Resumen EBS — APS territorial"
-            subtitle="Cobertura y seguimiento (Equipos Básicos de Salud)"
-            alignHeader="start"
-            class="sesa-dashboard-ebs-card"
-          >
-            <div class="sesa-dashboard-ebs-hooks">
-              <div class="sesa-dashboard-ebs-metric">
-                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCoberturaTerritorial() }}</span>
-                <span class="sesa-dashboard-ebs-metric-label">Cobertura territorial</span>
-              </div>
-              <div class="sesa-dashboard-ebs-metric">
-                <span class="sesa-dashboard-ebs-metric-value">{{ ebsPoblacionVisitada() }}</span>
-                <span class="sesa-dashboard-ebs-metric-label">Población visitada</span>
-              </div>
-              <div class="sesa-dashboard-ebs-metric">
-                <span class="sesa-dashboard-ebs-metric-value">{{ ebsCronicosControlados() }}</span>
-                <span class="sesa-dashboard-ebs-metric-label">Crónicos controlados</span>
-              </div>
-            </div>
-            <a routerLink="/ebs" class="sesa-dashboard-more">Ver módulo EBS →</a>
-          </sesa-card>
-        }
-      </main>
-    </div>
+    </div><!-- /db-bot -->
   }
+
 </section>

@@ -89,11 +89,13 @@ public class TransactionalEmailServiceImpl implements TransactionalEmailService 
 
     private boolean shouldSend() {
         if (!emailProperties.isEnabled()) {
-            log.trace("Correos transaccionales deshabilitados (sesa.email.enabled=false)");
+            log.debug("Correos transaccionales deshabilitados (sesa.email.enabled=false)");
             return false;
         }
-        if (!emailProperties.isResendConfigured()) {
-            log.debug("Correo omitido: habilita sesa.email.enabled y define resend-api-key (RESEND_API_KEY)");
+        if (emailProperties.getResendApiKey() == null || emailProperties.getResendApiKey().isBlank()) {
+            log.warn(
+                    "Correo omitido: defina RESEND_API_KEY (o sesa.email.resend-api-key). sesa.email.enabled={}",
+                    emailProperties.isEnabled());
             return false;
         }
         return true;

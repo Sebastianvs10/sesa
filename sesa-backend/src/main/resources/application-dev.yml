@@ -45,6 +45,19 @@ sesa:
     # Mismos orígenes que application.yml; debe incluir el puerto del front (ng serve).
     allowed-origins: http://localhost:3000,http://localhost:4200
 
+  frontend-url: ${SESA_FRONTEND_URL:http://localhost:4200}
+
+  # Mismo contrato que application.yml: con perfil dev también aplica RESEND_API_KEY + SESA_EMAIL_ENABLED.
+  email:
+    enabled: ${SESA_EMAIL_ENABLED:true}
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${SESA_EMAIL_FROM:SESA <onboarding@resend.dev>}
+    reply-to: ${SESA_EMAIL_REPLY_TO:}
+    logo-url: ${SESA_EMAIL_LOGO_URL:}
+    brand-name: ${SESA_EMAIL_BRAND_NAME:SESA}
+    footer-legal: ${SESA_EMAIL_FOOTER_LEGAL:Sistema Electrónico de Salud · Colombia}
+    resend-api-base: ${SESA_RESEND_API_BASE:https://api.resend.com}
+
 logging:
   level:
     root: INFO

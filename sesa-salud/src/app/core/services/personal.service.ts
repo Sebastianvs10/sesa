@@ -100,7 +100,7 @@ export const ROLES_PERSONAL: { value: string; label: string; disabled?: boolean 
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;
-  totalPages: number;
+  totalPages?: number;
   size: number;
   number: number;
 }

@@ -61,17 +61,23 @@ docker run -e SPRING_PROFILES_ACTIVE=prod \
 
 | Dónde | Cómo configurar |
 |--------|------------------|
-| **Local** | Archivo `application-local.yml` en la carpeta `sesa-backend` (ver `application-local.example.yml`) **o** variables `RESEND_API_KEY` + `SESA_EMAIL_ENABLED` en el IDE. |
+| **Local** | `application-local.yml` junto a `pom.xml` (plantilla: `application-local.example.yml` en la misma carpeta) **o** variables `RESEND_API_KEY` (+ `SESA_EMAIL_ENABLED` si quieres forzar). Con perfil `dev`, `application-dev.yml` ya mapea las mismas variables. |
 | **Producción** | **Solo** variables de entorno en Render (u otro host). **No** subas `application-local.yml` ni la API key al Git. |
 
 ---
 
 ## Si no llegan correos
 
-1. **Render → Logs**: busca `Resend error` o `Correo omitido`.
-2. **Resend → Logs**: rechazos por dominio no verificado o `from` inválido.
-3. Comprueba que `SESA_EMAIL_ENABLED=true` y que `RESEND_API_KEY` no tenga espacios ni comillas de más.
-4. El `from` debe coincidir con un remitente permitido para el dominio verificado.
+1. **Al arrancar el backend**, revisa el log `[sesa.email]`: avisa si hay clave sin `enabled`, o `enabled` sin clave.
+2. **Render → Logs**: busca `Resend error`, `Correo omitido` o `Resend respuesta no exitosa` (el cuerpo de error suele truncarse a 200 caracteres).
+3. **Resend → Logs**: rechazos por dominio no verificado o `from` inválido.
+4. En **producción** hace falta **las dos** cosas: `SESA_EMAIL_ENABLED=true` **y** `RESEND_API_KEY` válida (`application-prod` deja `enabled` en `false` hasta que lo actives).
+5. Comprueba que `RESEND_API_KEY` no tenga espacios ni comillas de más.
+6. El `from` debe coincidir con un remitente permitido para el dominio verificado.
+
+### Perfil `dev` sin `application-local.yml`
+
+Si solo usas `spring.profiles.active=dev`, el bloque `sesa.email` de `application-dev.yml` ya lee `RESEND_API_KEY` y `SESA_EMAIL_ENABLED` igual que el YAML por defecto. No dependes del `optional:file:./application-local.yml` de la raíz del proceso.
 
 ---
 

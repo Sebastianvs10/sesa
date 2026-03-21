@@ -4,6 +4,24 @@
 :host {
   display: block;
   padding: 4px 2px;
+
+  /*
+   * Identidad de color SESA — remapea el primario al teal corporativo
+   * dentro de este componente sin afectar el resto de la app.
+   */
+  --sesa-primary:      var(--sesa-accent, #2bb0a6);
+  --sesa-primary-soft: color-mix(in srgb, var(--sesa-accent, #2bb0a6) 11%, transparent);
+
+  /* Paleta semántica de tipos de notificación */
+  --notif-urgente-bg:    color-mix(in srgb, var(--sesa-danger, #ef4444) 11%, transparent);
+  --notif-urgente-fg:    var(--sesa-danger, #ef4444);
+  --notif-urgente-bdr:   color-mix(in srgb, var(--sesa-danger, #ef4444) 22%, transparent);
+  --notif-general-bg:    color-mix(in srgb, var(--sesa-accent, #2bb0a6) 11%, transparent);
+  --notif-general-fg:    var(--sesa-accent, #2bb0a6);
+  --notif-general-bdr:   color-mix(in srgb, var(--sesa-accent, #2bb0a6) 22%, transparent);
+  --notif-info-bg:       color-mix(in srgb, #6366f1 11%, transparent);
+  --notif-info-fg:       #6366f1;
+  --notif-info-bdr:      color-mix(in srgb, #6366f1 22%, transparent);
 }
 
 /* ─── CONTENEDOR PRINCIPAL ──────────────────────────────────────── */
@@ -18,6 +36,20 @@
   overflow: hidden;
   box-shadow: 0 14px 34px color-mix(in srgb, var(--sesa-text-primary) 10%, transparent);
   position: relative;
+
+  /* Barra de acento SESA en la parte superior */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--sesa-accent, #2bb0a6) 0%,
+      #6366f1 55%,
+      var(--sesa-accent, #2bb0a6) 100%);
+    z-index: 10;
+    border-radius: 18px 18px 0 0;
+  }
 }
 
 .mail-app::after {
@@ -40,9 +72,10 @@
   gap: 10px;
   padding: 14px 10px;
   background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--sesa-primary) 9%, var(--sesa-bg)) 0%,
-    var(--sesa-bg) 28%
+    160deg,
+    color-mix(in srgb, var(--sesa-accent, #2bb0a6) 13%, var(--sesa-bg)) 0%,
+    color-mix(in srgb, #6366f1 7%, var(--sesa-bg)) 38%,
+    var(--sesa-bg) 65%
   );
   border-right: 1px solid var(--sesa-border);
   overflow-y: auto;
@@ -95,9 +128,9 @@
   min-width: 0;
   border: 0;
   border-radius: 11px;
-  background: var(--sesa-primary);
+  background: linear-gradient(135deg, var(--sesa-accent, #2bb0a6) 0%, #6366f1 100%);
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13px;
   padding: 9px 12px;
   cursor: pointer;
@@ -105,13 +138,20 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--sesa-primary) 30%, transparent);
-  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms;
+  box-shadow:
+    0 6px 16px color-mix(in srgb, var(--sesa-accent, #2bb0a6) 32%, transparent),
+    0 1px 0 rgba(255,255,255,.18) inset;
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms, filter 160ms;
   white-space: nowrap;
   overflow: hidden;
+  letter-spacing: 0.01em;
 }
 
-.mail-new-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px color-mix(in srgb, var(--sesa-primary) 36%, transparent); }
+.mail-new-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--sesa-accent, #2bb0a6) 42%, transparent);
+}
 
 /* Botón de compose en modo colapsado: pill cuadrada con glow */
 .mail-new-btn--icon {
@@ -683,16 +723,17 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid var(--sesa-border);
+  border: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--sesa-primary);
-  background: color-mix(in srgb, var(--sesa-primary-soft) 78%, var(--sesa-surface));
-  font-size: 12.5px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--sesa-accent, #2bb0a6) 0%, #0d9488 100%);
+  font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sesa-primary) 14%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--sesa-accent, #2bb0a6) 38%, transparent);
+  letter-spacing: -0.01em;
 }
 
 .mail-row-body {
@@ -727,24 +768,27 @@
   font-size: 10px;
   font-weight: 700;
   border-radius: 999px;
-  padding: 1px 6px;
+  padding: 1px 7px;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--sesa-primary-soft) 65%, transparent);
-  color: var(--sesa-primary);
-  border: 1px solid color-mix(in srgb, var(--sesa-primary) 16%, transparent);
-  line-height: 16px;
+  background: var(--notif-general-bg);
+  color: var(--notif-general-fg);
+  border: 1px solid var(--notif-general-bdr);
+  line-height: 17px;
+  letter-spacing: 0.02em;
 }
 
 .mail-row-tipo.tipo-urgente {
-  background: color-mix(in srgb, var(--sesa-danger) 12%, transparent);
-  color: var(--sesa-danger);
-  border-color: color-mix(in srgb, var(--sesa-danger) 22%, transparent);
+  background: var(--notif-urgente-bg);
+  color: var(--notif-urgente-fg);
+  border-color: var(--notif-urgente-bdr);
+  /* Pequeño pulso en urgentes para llamar la atención */
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sesa-danger, #ef4444) 12%, transparent);
 }
 
 .mail-row-tipo.tipo-informativo {
-  background: color-mix(in srgb, var(--sesa-info, #0ea5e9) 10%, transparent);
-  color: var(--sesa-info, #0ea5e9);
-  border-color: color-mix(in srgb, var(--sesa-info, #0ea5e9) 20%, transparent);
+  background: var(--notif-info-bg);
+  color: var(--notif-info-fg);
+  border-color: var(--notif-info-bdr);
 }
 
 .mail-clip { font-size: 10px; color: var(--sesa-text-secondary); flex-shrink: 0; }

@@ -21,7 +21,7 @@ public class TransactionalEmailEventListener {
     private final TransactionalEmailService transactionalEmailService;
 
     @Async(EmailAsyncConfig.EMAIL_TASK_EXECUTOR)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPasswordResetRequested(PasswordResetRequestedEvent e) {
         try {
             transactionalEmailService.sendPasswordResetCode(
@@ -32,7 +32,7 @@ public class TransactionalEmailEventListener {
     }
 
     @Async(EmailAsyncConfig.EMAIL_TASK_EXECUTOR)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPasswordChanged(PasswordChangedEvent e) {
         try {
             transactionalEmailService.sendPasswordChangedNotice(e.email(), e.recipientDisplayName());
@@ -42,7 +42,7 @@ public class TransactionalEmailEventListener {
     }
 
     @Async(EmailAsyncConfig.EMAIL_TASK_EXECUTOR)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onTenantAdminWelcome(TenantAdminWelcomeEmailEvent e) {
         try {
             transactionalEmailService.sendTenantAdminWelcome(
@@ -53,7 +53,7 @@ public class TransactionalEmailEventListener {
     }
 
     @Async(EmailAsyncConfig.EMAIL_TASK_EXECUTOR)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onNewUserWelcome(NewUserWelcomeEmailEvent e) {
         try {
             transactionalEmailService.sendWelcomeNewUser(e.email(), e.displayName(), e.organizationHint());

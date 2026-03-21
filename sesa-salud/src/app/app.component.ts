@@ -90,6 +90,13 @@ export interface ResolvedSection {
   entries: ResolvedEntry[];
 }
 
+export interface CmdItem {
+  label: string;
+  route: string;
+  section: string;
+  icon: unknown;
+}
+
 // ── Catálogo del sidebar (metadatos UI, no permisos) ─────────────────────────
 // Las RUTAS, ICONOS y ETIQUETAS son constantes de la UI.
 // Los PERMISOS (qué rol ve qué módulo) vienen exclusivamente de la BD.
@@ -177,6 +184,7 @@ export class AppComponent implements OnInit, OnDestroy {
   showNotificationsMenu = false;
   @ViewChild('profileRef') profileRef!: ElementRef<HTMLElement>;
   @ViewChild('notificationsRef') notificationsRef!: ElementRef<HTMLElement>;
+  @ViewChild('cmdInput') cmdInputRef?: ElementRef<HTMLInputElement>;
 
   /* Iconos topbar */
   faSun  = faSun;
@@ -194,6 +202,15 @@ export class AppComponent implements OnInit, OnDestroy {
   private router      = inject(Router);
 
   isSuperAdmin = this.authService.isSuperAdmin;
+
+  /** Estado de pin del sidebar (fijado abierto o colapsado auto). */
+  sidebarPinned = signal(false);
+  toggleSidebarPin() { this.sidebarPinned.update(v => !v); }
+
+  /* ── Command palette ── */
+  showCmdPalette  = signal(false);
+  cmdQuery        = signal('');
+  selectedCmdIdx  = signal(0);
 
   unreadCount         = signal(0);
   recentNotifications = signal<NotificacionDto[]>([]);
@@ -233,6 +250,59 @@ export class AppComponent implements OnInit, OnDestroy {
       }))
       .filter(section => section.entries.length > 0);
   });
+
+  /** Lista plana de todos los módulos navegables del sidebar. */
+  readonly cmdItems = computed<CmdItem[]>(() => {
+    const flat: CmdItem[] = [];
+    for (const section of this.sidebarSections()) {
+      for (const entry of section.entries) {
+        if (entry.route) {
+          flat.push({ label: entry.label, route: entry.route, section: section.title, icon: entry.icon });
+        }
+        for (const child of entry.visibleChildren) {
+          flat.push({ label: child.label, route: child.route, section: entry.label, icon: child.icon });
+        }
+      }
+    }
+    return flat;
+  });
+
+  /** Items filtrados por la búsqueda (máx 10). */
+  readonly filteredCmdItems = computed<CmdItem[]>(() => {
+    const q = this.cmdQuery().toLowerCase().trim();
+    const all = this.cmdItems();
+    if (!q) return all.slice(0, 8);
+    return all.filter(item =>
+      item.label.toLowerCase().includes(q) || item.section.toLowerCase().includes(q)
+    ).slice(0, 10);
+  });
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault();
+      if (this.showCmdPalette()) {
+        this.closeCmdPalette();
+      } else {
+        this.openCmdPalette();
+      }
+      return;
+    }
+    if (!this.showCmdPalette()) return;
+    if (event.key === 'Escape') { this.closeCmdPalette(); return; }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.selectedCmdIdx.update(i => Math.min(i + 1, this.filteredCmdItems().length - 1));
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.selectedCmdIdx.update(i => Math.max(i - 1, 0));
+    }
+    if (event.key === 'Enter') {
+      const item = this.filteredCmdItems()[this.selectedCmdIdx()];
+      if (item) this.navigateCmdItem(item);
+    }
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -349,6 +419,29 @@ export class AppComponent implements OnInit, OnDestroy {
     const text = (div.textContent || div.innerText || '').trim().replace(/\s+/g, ' ');
     if (text.length <= maxLen) return text;
     return text.slice(0, maxLen) + '…';
+  }
+
+  openCmdPalette(): void {
+    this.showCmdPalette.set(true);
+    this.cmdQuery.set('');
+    this.selectedCmdIdx.set(0);
+    setTimeout(() => this.cmdInputRef?.nativeElement.focus(), 40);
+  }
+
+  closeCmdPalette(): void {
+    this.showCmdPalette.set(false);
+    this.cmdQuery.set('');
+    this.selectedCmdIdx.set(0);
+  }
+
+  navigateCmdItem(item: CmdItem): void {
+    this.router.navigate([item.route]);
+    this.closeCmdPalette();
+  }
+
+  onCmdInput(event: Event): void {
+    this.cmdQuery.set((event.target as HTMLInputElement).value);
+    this.selectedCmdIdx.set(0);
   }
 
   /** Etiqueta legible para un rol técnico. */

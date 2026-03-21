@@ -31,7 +31,7 @@ $drop-radius: 16px;
 /* Encabezado: sin márgenes salvo el inferior (muy mínimo) */
 .emp-page .sesa-page-header {
   flex-shrink: 0;
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.15rem;
   padding-top: 0;
 }
 
@@ -48,28 +48,32 @@ $drop-radius: 16px;
   }
 }
 
-/* Encabezado compacto: poco espacio interno, solo margen inferior mínimo */
+/* Encabezado alineado al padding horizontal del contenido */
 .emp-page .sesa-page-header__row {
-  padding: 0.25rem 0.75rem 0.3rem;
-  min-height: 0;
+  padding-inline: 1.5rem;
+}
+
+@media (min-width: 960px) {
+  .emp-page .sesa-page-header__row {
+    padding-inline: 1.75rem;
+  }
 }
 
 .emp-page .sesa-page-header__title {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
 }
 
 .emp-page .sesa-page-header__subtitle {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
-.emp-page .sesa-page-header__center .sesa-page-header__icon {
-  width: 1.75rem;
-  height: 1.75rem;
-  margin-bottom: 0.05rem;
+.emp-page .sesa-page-header__icon-wrap .sesa-page-header__icon {
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
-.emp-page .sesa-page-header__center .sesa-page-header__icon fa-icon {
+.emp-page .sesa-page-header__icon-wrap .sesa-page-header__icon fa-icon {
   font-size: 0.95rem;
 }
 

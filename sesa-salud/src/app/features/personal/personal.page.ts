@@ -25,6 +25,9 @@ import {
   SesaComboboxOption,
 } from '../../shared/components/sesa-combobox-select/sesa-combobox-select.component';
 
+/** Segmento de la barra de paginación (número de página 0-based o elipsis). */
+type PaginationSegment = number | 'ellipsis';
+
 @Component({
   standalone: true,
   selector: 'sesa-personal-page',
@@ -45,8 +48,14 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
   readonly faPlus = faPlus;
   list: PersonalDto[] = [];
   totalElements = 0;
+  /** Total de páginas según la última respuesta del API (Spring Page.totalPages). */
+  totalPages = 0;
   page = 0;
-  size = 20;
+  /** Tamaño de página por defecto más pequeño para que la paginación sea útil con equipos medianos. */
+  size = 10;
+  readonly pageSizeOptions: ReadonlyArray<number> = [10, 20, 50];
+  /** Valor 1-based para «Ir a página» (sincronizado tras cada carga). */
+  goToPageInput = 1;
   searchQ = '';
   loading = false;
   error: string | null = null;
@@ -228,7 +237,7 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  onIntegranteModalEscape(e: KeyboardEvent): void {
+  onIntegranteModalEscape(e: Event): void {
     if (!this.showForm || this.saving) {
       return;
     }
@@ -278,6 +287,8 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
     if (this.isSuperAdmin && !this.selectedSchema) {
       this.list = [];
       this.totalElements = 0;
+      this.totalPages = 0;
+      this.goToPageInput = 1;
       this.loading = false;
       return;
     }
@@ -290,6 +301,16 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
         next: (res: PageResponse<PersonalDto>) => {
           this.list = res.content ?? [];
           this.totalElements = res.totalElements ?? 0;
+          const sz = res.size ?? this.size;
+          if (sz > 0) {
+            this.size = sz;
+          }
+          const apiPages = res.totalPages;
+          const fallbackPages =
+            this.size > 0 ? Math.ceil(this.totalElements / this.size) : 0;
+          this.totalPages =
+            apiPages != null && apiPages > 0 ? apiPages : Math.max(0, fallbackPages);
+          this.syncGoToPageInput();
           this.loading = false;
         },
         error: (err) => {
@@ -659,7 +680,7 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
   }
 
   nextPage(): void {
-    if ((this.page + 1) * this.size < this.totalElements) {
+    if (this.page + 1 < this.totalPages) {
       this.page++;
       this.load();
     }
@@ -670,6 +691,100 @@ export class PersonalPageComponent implements OnInit, OnDestroy {
       this.page--;
       this.load();
     }
+  }
+
+  goToPage(index: number): void {
+    if (index < 0 || index >= this.totalPages || index === this.page) {
+      return;
+    }
+    this.page = index;
+    this.load();
+  }
+
+  onPageSizeChange(raw: string): void {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0 || n === this.size) {
+      return;
+    }
+    this.size = n;
+    this.page = 0;
+    this.load();
+  }
+
+  private syncGoToPageInput(): void {
+    const max = Math.max(1, this.totalPages);
+    this.goToPageInput = Math.min(Math.max(1, this.page + 1), max);
+  }
+
+  /** Confirma el salto desde el campo «Ir a página». */
+  submitGoToPage(): void {
+    const raw = Number(this.goToPageInput);
+    if (!Number.isFinite(raw)) {
+      this.syncGoToPageInput();
+      return;
+    }
+    const max = Math.max(1, this.totalPages);
+    const clamped = Math.min(Math.max(1, Math.round(raw)), max);
+    this.goToPage(clamped - 1);
+  }
+
+  onPaginationPageClick(item: PaginationSegment): void {
+    if (item === 'ellipsis') {
+      return;
+    }
+    this.goToPage(item);
+  }
+
+  trackPagination(_index: number, item: PaginationSegment): string | number {
+    return item === 'ellipsis' ? `ellipsis-${_index}` : item;
+  }
+
+  /** Primer ítem en la página actual (1-based para mostrar al usuario). */
+  get rangeFrom(): number {
+    if (this.totalElements === 0) {
+      return 0;
+    }
+    return this.page * this.size + 1;
+  }
+
+  /** Último ítem en la página actual (1-based). */
+  get rangeTo(): number {
+    if (this.totalElements === 0) {
+      return 0;
+    }
+    return this.page * this.size + this.list.length;
+  }
+
+  /**
+   * Páginas a mostrar con elipsis (estilo barra premium: 1 2 … 33 34).
+   */
+  get paginationItems(): PaginationSegment[] {
+    const total = this.totalPages;
+    if (total <= 0) {
+      return [];
+    }
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i);
+    }
+    const cur = this.page;
+    const set = new Set<number>();
+    set.add(0);
+    set.add(total - 1);
+    for (let d = -1; d <= 1; d++) {
+      const p = cur + d;
+      if (p >= 0 && p < total) {
+        set.add(p);
+      }
+    }
+    const sorted = [...set].sort((a, b) => a - b);
+    const out: PaginationSegment[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+        out.push('ellipsis');
+      }
+      out.push(sorted[i]);
+    }
+    return out;
   }
 
   fullName(p: PersonalDto): string {

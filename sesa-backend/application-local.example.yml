@@ -1,0 +1,13 @@
+# Ejemplo para copiar a application-local.yml (misma carpeta que pom.xml).
+# application-local.yml está en .gitignore — no versionar secretos.
+#
+# Resend: https://resend.com/api-keys
+# En local: exporta RESEND_API_KEY=re_... o pega la clave solo en application-local.yml (local).
+
+sesa:
+  email:
+    enabled: true
+    resend-api-key: "${RESEND_API_KEY:}"
+    from: "SESA <noreply@tudominio-verificado.com>"
+    # reply-to: "soporte@tudominio.com"
+    # logo-url: "https://tudominio.com/logo.png"

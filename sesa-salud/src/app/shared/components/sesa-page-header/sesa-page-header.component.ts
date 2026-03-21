@@ -1,5 +1,6 @@
 /**
- * Encabezado de página compartido: ancho completo, título centrado, botón Volver a la izquierda.
+ * Encabezado de página compartido: identidad (icono + título + subtítulo) alineada a la izquierda,
+ * Volver y acciones en la misma fila; barra de acento y tipografía tokens SESA.
  * Autor: Ing. J Sebastian Vargas S
  */
 import { CommonModule } from '@angular/common';

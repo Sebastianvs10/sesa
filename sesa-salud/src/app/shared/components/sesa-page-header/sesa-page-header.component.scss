@@ -1,42 +1,47 @@
-/* Encabezado de página compartido: ancho completo del contenedor, título centrado, Volver a la izquierda */
-/* Sin 100vw para que Volver no quede detrás del sidebar; el padre (.ewizard) rompe el padding. */
+/* Encabezado de página — SaaS limpio: alineación clara, aire, separador Volver | identidad */
 /* Autor: Ing. J Sebastian Vargas S */
 
 .sesa-page-header {
   flex-shrink: 0;
   width: 100%;
-  margin: 0;
-  margin-bottom: 1rem;
-  padding-top: 0;
+  margin: 0 0 0.65rem;
+  padding: 0;
   box-sizing: border-box;
   background: var(--sesa-surface);
   border-bottom: 1px solid var(--sesa-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--sesa-border) 45%, transparent);
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
-/* Refuerzo borde superior sutil (premium) */
-.sesa-page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(31, 106, 225, 0.12), transparent);
-  opacity: 0.8;
-}
-
 .sesa-page-header__row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
   align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 0.75rem 1rem;
-  min-height: 3.75rem;
+  column-gap: 1rem;
+  row-gap: 0.5rem;
+  padding: 0.65rem 1.5rem 0.7rem;
+  min-height: 3.25rem;
   box-sizing: border-box;
+}
+
+/* Separación visual entre «Volver» y el bloque título (patrón Linear / Stripe) */
+.sesa-page-header__row--has-back .sesa-page-header__left {
+  padding-right: 1rem;
+  margin-right: 0;
+  border-right: 1px solid color-mix(in srgb, var(--sesa-border) 75%, transparent);
+}
+
+.sesa-page-header__row--has-back .sesa-page-header__center {
+  padding-left: 0;
+}
+
+@media (min-width: 960px) {
+  .sesa-page-header__row {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
 }
 
 .sesa-page-header__left {
@@ -48,90 +53,128 @@
 
 .sesa-page-header__center {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.sesa-page-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.sesa-page-header__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.sesa-page-header__titles {
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
   gap: 0.2rem;
   min-width: 0;
-  padding: 0 0.5rem;
 }
 
 .sesa-page-header__title {
   margin: 0;
-  font-size: 1.375rem;
+  font-size: 1.1875rem;
   font-weight: 700;
   color: var(--sesa-text-primary);
-  letter-spacing: -0.025em;
-  line-height: 1.25;
+  letter-spacing: -0.035em;
+  line-height: 1.22;
 }
 
 .sesa-page-header__subtitle {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.78125rem;
+  font-weight: 400;
   color: var(--sesa-text-secondary);
-  line-height: 1.4;
+  line-height: 1.45;
+  max-width: min(40rem, 100%);
+  opacity: 0.95;
 }
 
-/* Icono proyectado (opcional) */
-.sesa-page-header__center .sesa-page-header__icon {
+/* Icono módulo: “tile” suave, sin ruido visual */
+.sesa-page-header__icon-wrap .sesa-page-header__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-bottom: 0.2rem;
-  background: rgba(31, 106, 225, 0.08);
+  width: 2.625rem;
+  height: 2.625rem;
+  margin-top: 0.06rem;
+  background: color-mix(in srgb, var(--sesa-secondary) 7%, var(--sesa-surface));
   color: var(--sesa-secondary);
-  border-radius: var(--sesa-radius-md, 10px);
+  border-radius: var(--sesa-radius-lg, 12px);
+  border: 1px solid color-mix(in srgb, var(--sesa-border) 88%, var(--sesa-secondary));
+  box-shadow: var(--sesa-shadow-sm);
 }
 
-.sesa-page-header__center .sesa-page-header__icon fa-icon {
-  font-size: 1.125rem;
+.sesa-page-header__icon-wrap .sesa-page-header__icon fa-icon {
+  font-size: 1.05rem;
 }
 
-/* Botón Volver: estilo SaaS premium (pill discreto, hover claro) */
 .sesa-page-header__back {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
-  border-radius: 999px;
-  background: transparent;
+  padding: 0.42rem 0.7rem;
+  border-radius: var(--sesa-radius-md);
+  background: color-mix(in srgb, var(--sesa-bg) 55%, var(--sesa-surface));
   color: var(--sesa-text-secondary);
   font-size: 0.8125rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--sesa-border) 90%, transparent);
+  transition:
+    background var(--sesa-motion-fast, 120ms) var(--sesa-ease-standard, cubic-bezier(0.2, 0, 0, 1)),
+    color var(--sesa-motion-fast, 120ms) ease,
+    border-color var(--sesa-motion-fast, 120ms) ease,
+    box-shadow var(--sesa-motion-fast, 120ms) ease;
 }
 
 .sesa-page-header__back:hover {
-  background: rgba(31, 106, 225, 0.06);
+  background: color-mix(in srgb, var(--sesa-secondary) 9%, var(--sesa-surface));
   color: var(--sesa-secondary);
-  border-color: rgba(31, 106, 225, 0.15);
+  border-color: color-mix(in srgb, var(--sesa-secondary) 22%, var(--sesa-border));
 }
 
 [data-theme='dark'] .sesa-page-header__back:hover {
-  background: rgba(31, 106, 225, 0.12);
-  border-color: rgba(31, 106, 225, 0.25);
+  background: color-mix(in srgb, var(--sesa-secondary) 14%, var(--sesa-surface));
+  border-color: color-mix(in srgb, var(--sesa-secondary) 28%, var(--sesa-border));
 }
 
 .sesa-page-header__back:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-secondary);
+  box-shadow: 0 0 0 2px var(--sesa-surface), 0 0 0 4px var(--sesa-accent);
 }
 
 .sesa-page-header__back-icon {
-  font-size: 0.95rem;
-  line-height: 1;
-  opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.88;
+
+  svg {
+    stroke: currentColor;
+  }
 }
 
 .sesa-page-header__right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.5rem;
   min-width: 0;
 }
 
@@ -139,40 +182,83 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: transparent;
-  padding: 0.45rem 0.85rem;
+  padding: 0.38rem 0.75rem;
   pointer-events: none;
   user-select: none;
   visibility: hidden;
 }
 
-/* Ocultar spacer cuando se proyectan acciones en la derecha */
 .sesa-page-header__right:has(> [header-actions]) .sesa-page-header__spacer {
   display: none;
 }
 
-/* Línea azul a todo el ancho */
+/* Acento inferior discreto (marca sin competir con el contenido) */
 .sesa-page-header__line {
   width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--sesa-secondary), var(--sesa-accent));
-  opacity: 0.55;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sesa-accent) 85%, transparent) 0%,
+    color-mix(in srgb, var(--sesa-secondary) 70%, transparent) 14%,
+    transparent 52%
+  );
+  opacity: 0.75;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .sesa-page-header__row {
-    padding: 0.6rem 0.75rem 0.85rem;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    padding: 0.55rem 1.25rem 0.6rem;
+    min-height: 0;
+  }
+
+  .sesa-page-header__left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .sesa-page-header__right {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .sesa-page-header__center {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .sesa-page-header__row--has-back .sesa-page-header__center {
+    padding-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--sesa-border) 65%, transparent);
+    padding-top: 0.55rem;
+    margin-top: 0.15rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .sesa-page-header__row--has-back .sesa-page-header__left {
+    border-right: none;
+    padding-right: 0;
   }
 
   .sesa-page-header__title {
-    font-size: 1.2rem;
+    font-size: 1.0625rem;
   }
 
   .sesa-page-header__subtitle {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    max-width: 100%;
   }
 
+  .sesa-page-header__icon-wrap .sesa-page-header__icon {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .sesa-page-header__back {
-    padding: 0.4rem 0.7rem;
-    font-size: 0.75rem;
+    transition: none;
   }
 }

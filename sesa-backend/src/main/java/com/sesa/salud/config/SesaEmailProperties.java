@@ -13,8 +13,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "sesa.email")
 public class SesaEmailProperties {
 
-    /** false = no se llama a Resend (desarrollo sin API key). */
-    private boolean enabled = false;
+    /**
+     * false = no se llama a Resend (kill switch). Por defecto en YAML suele ser true salvo perfil prod.
+     */
+    private boolean enabled = true;
 
     /** API key re_… (variable de entorno RESEND_API_KEY en producción). */
     private String resendApiKey = "";

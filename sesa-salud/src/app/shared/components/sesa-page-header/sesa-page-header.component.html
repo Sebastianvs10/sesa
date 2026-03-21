@@ -1,19 +1,33 @@
 <header class="sesa-page-header" role="banner">
-  <div class="sesa-page-header__row">
+  <div
+    class="sesa-page-header__row"
+    [class.sesa-page-header__row--has-back]="!!backLink"
+  >
     <div class="sesa-page-header__left">
       @if (backLink) {
         <a [routerLink]="backLink" class="sesa-page-header__back" [attr.aria-label]="backAriaLabel">
-          <span class="sesa-page-header__back-icon" aria-hidden="true">←</span>
+          <span class="sesa-page-header__back-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </span>
           <span>{{ backLabel }}</span>
         </a>
       }
     </div>
     <div class="sesa-page-header__center">
-      <ng-content select="[header-icon]"></ng-content>
-      <h1 class="sesa-page-header__title">{{ title }}</h1>
-      @if (subtitle) {
-        <p class="sesa-page-header__subtitle">{{ subtitle }}</p>
-      }
+      <div class="sesa-page-header__identity">
+        <span class="sesa-page-header__icon-wrap">
+          <ng-content select="[header-icon]"></ng-content>
+        </span>
+        <div class="sesa-page-header__titles">
+          <h1 class="sesa-page-header__title">{{ title }}</h1>
+          @if (subtitle) {
+            <p class="sesa-page-header__subtitle">{{ subtitle }}</p>
+          }
+        </div>
+      </div>
     </div>
     <div class="sesa-page-header__right">
       <ng-content select="[header-actions]"></ng-content>

@@ -74,7 +74,8 @@ sesa:
   # ── Correo transaccional (Resend: https://resend.com) ─────────────────────
   # Plantillas HTML con logo SESA (sesa.email.logo-url o por defecto frontend-url/logo.png).
   email:
-    enabled: ${SESA_EMAIL_ENABLED:false}
+    # true por defecto en dev: basta RESEND_API_KEY. En prod, application-prod fuerza SESA_EMAIL_ENABLED=false hasta activarlo explícitamente.
+    enabled: ${SESA_EMAIL_ENABLED:true}
     resend-api-key: ${RESEND_API_KEY:}
     from: ${SESA_EMAIL_FROM:SESA <onboarding@resend.dev>}
     reply-to: ${SESA_EMAIL_REPLY_TO:}
